@@ -126,7 +126,7 @@
   @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
   .splash .skip{position:absolute;bottom:26px;inset-inline-end:26px;z-index:3;background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.3);font-family:inherit;font-weight:700;font-size:13.5px;padding:10px 20px;border-radius:12px;cursor:pointer;backdrop-filter:blur(6px);transition:.15s}
   .splash .skip:hover{background:rgba(255,255,255,.28)}
-  .splash .brandmark{position:absolute;top:24px;inset-inline-start:26px;z-index:3;display:flex;align-items:center;gap:10px;color:#fff}
+  .splash .brandmark{position:absolute;top:22px;right:30px;left:auto;z-index:3;display:flex;align-items:center;gap:9px;color:#fff;direction:ltr;background:rgba(13,10,28,.58);padding:7px 15px 7px 8px;border-radius:14px;backdrop-filter:blur(6px);box-shadow:0 6px 18px rgba(0,0,0,.25)}
   .splash .brandmark .lg{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#4B23C9,#7C4DFF);display:grid;place-items:center;font-weight:800;font-size:19px}
   .splash .brandmark span{font-weight:800;font-size:18px}
   .introbtn{background:var(--brand-soft);color:var(--brand);border:none;font-family:inherit;font-weight:700;font-size:12.5px;padding:8px 14px;border-radius:11px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;flex-shrink:0}
@@ -373,7 +373,7 @@ boot();
 <div class="splash" id="splash">
   <video id="introVideo" src="intro.mp4" autoplay muted playsinline preload="auto"></video>
   <div class="brandmark"><div class="lg">A</div><span>Adltix</span></div>
-  <button class="unmute" id="unmuteBtn" onclick="unmuteIntro(event)">🔊 تشغيل الصوت</button>
+  <button class="unmute" id="unmuteBtn" onclick="unmuteIntro(event)">🔊 شغّل الصوت</button>
   <button class="skip" onclick="endSplash()">تخطّي ⟵</button>
 </div>
 <script>
@@ -382,15 +382,27 @@ boot();
   const v=document.getElementById('introVideo');
   const ub=document.getElementById('unmuteBtn');
   let done=false, sounded=false;
-  window.endSplash=function(){ if(done) return; done=true; try{v.pause();}catch(e){} sp.classList.add('hide'); setTimeout(()=>{ sp.style.display='none'; },650); };
-  window.unmuteIntro=function(e){ if(e&&e.stopPropagation) e.stopPropagation(); if(sounded) return; sounded=true; try{ v.muted=false; v.currentTime=0; v.play().catch(()=>{}); }catch(err){} if(ub) ub.style.display='none'; };
+  const EVTS=['pointerdown','pointermove','keydown','touchstart','wheel','scroll'];
+  try{ document.body.style.overflow='hidden'; }catch(e){}
+  function rm(){ EVTS.forEach(ev=>window.removeEventListener(ev,enableSound,true)); }
+  function enableSound(){
+    if(sounded||done) return; sounded=true;
+    try{ v.muted=false; v.volume=1; if(v.currentTime<3) v.currentTime=0; v.play().catch(()=>{}); }catch(e){}
+    if(ub) ub.style.display='none'; rm();
+  }
+  window.unmuteIntro=function(e){ if(e&&e.stopPropagation) e.stopPropagation(); enableSound(); };
+  window.endSplash=function(){ if(done) return; done=true; try{v.pause();}catch(e){} try{document.body.style.overflow='';}catch(e){} rm(); sp.classList.add('hide'); setTimeout(()=>{ sp.style.display='none'; },650); };
   if(v){
     v.addEventListener('ended', window.endSplash);
-    v.muted=true; v.play().catch(()=>{});                 // تشغيل تلقائي ساكت (سياسة المتصفح)
-    sp.addEventListener('click', function(ev){ if(ev.target===ub) return; window.unmuteIntro(); });
+    v.muted=false; v.volume=1;
+    v.play().then(()=>{ sounded=true; if(ub) ub.style.display='none'; }).catch(()=>{
+      // المتصفح منع الصوت التلقائي -> نشغّل ساكت ونفتح الصوت أول حركة من الزائر
+      v.muted=true; v.play().catch(()=>{});
+      EVTS.forEach(ev=>window.addEventListener(ev,enableSound,true));
+    });
     setTimeout(()=>{ if(!done && v.error) window.endSplash(); }, 15000);
   } else { window.endSplash(); }
-  window.replaySplash=function(){ done=false; sounded=false; if(ub) ub.style.display=''; sp.style.display='flex'; void sp.offsetWidth; sp.classList.remove('hide'); try{ v.currentTime=0; v.muted=false; v.play().catch(()=>{ v.muted=true; v.play().catch(()=>{}); }); }catch(e){} };
+  window.replaySplash=function(){ done=false; sounded=false; if(ub) ub.style.display=''; try{document.body.style.overflow='hidden';}catch(e){} sp.style.display='flex'; void sp.offsetWidth; sp.classList.remove('hide'); try{ v.currentTime=0; v.muted=false; v.volume=1; v.play().catch(()=>{ v.muted=true; v.play().catch(()=>{}); }); }catch(e){} };
 })();
 </script>
 </body>
