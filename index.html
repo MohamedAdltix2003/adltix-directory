@@ -382,27 +382,25 @@ boot();
   const v=document.getElementById('introVideo');
   const ub=document.getElementById('unmuteBtn');
   let done=false, sounded=false;
-  const EVTS=['pointerdown','pointermove','keydown','touchstart','wheel','scroll'];
+  const GEST=['pointerdown','keydown','touchstart','click'];
   try{ document.body.style.overflow='hidden'; }catch(e){}
-  function rm(){ EVTS.forEach(ev=>window.removeEventListener(ev,enableSound,true)); }
+  function rm(){ GEST.forEach(ev=>window.removeEventListener(ev,enableSound,true)); }
   function enableSound(){
-    if(sounded||done) return; sounded=true;
-    try{ v.muted=false; v.volume=1; if(v.currentTime<3) v.currentTime=0; v.play().catch(()=>{}); }catch(e){}
+    if(done||sounded) return; sounded=true;
+    try{ v.muted=false; v.volume=1; const p=v.play(); if(p&&p.catch) p.catch(()=>{ v.muted=true; v.play().catch(()=>{}); }); }catch(e){}
     if(ub) ub.style.display='none'; rm();
   }
   window.unmuteIntro=function(e){ if(e&&e.stopPropagation) e.stopPropagation(); enableSound(); };
   window.endSplash=function(){ if(done) return; done=true; try{v.pause();}catch(e){} try{document.body.style.overflow='';}catch(e){} rm(); sp.classList.add('hide'); setTimeout(()=>{ sp.style.display='none'; },650); };
   if(v){
     v.addEventListener('ended', window.endSplash);
-    v.muted=false; v.volume=1;
-    v.play().then(()=>{ sounded=true; if(ub) ub.style.display='none'; }).catch(()=>{
-      // المتصفح منع الصوت التلقائي -> نشغّل ساكت ونفتح الصوت أول حركة من الزائر
-      v.muted=true; v.play().catch(()=>{});
-      EVTS.forEach(ev=>window.addEventListener(ev,enableSound,true));
-    });
-    setTimeout(()=>{ if(!done && v.error) window.endSplash(); }, 15000);
+    // تشغيل تلقائي ساكت = مضمون يكمّل من غير توقف
+    v.muted=true; v.play().catch(()=>{});
+    // أول ضغطة/لمسة/زرار في أي مكان => الصوت يشتغل
+    GEST.forEach(ev=>window.addEventListener(ev,enableSound,true));
+    setTimeout(()=>{ if(!done && v.error) window.endSplash(); }, 20000);
   } else { window.endSplash(); }
-  window.replaySplash=function(){ done=false; sounded=false; if(ub) ub.style.display=''; try{document.body.style.overflow='hidden';}catch(e){} sp.style.display='flex'; void sp.offsetWidth; sp.classList.remove('hide'); try{ v.currentTime=0; v.muted=false; v.volume=1; v.play().catch(()=>{ v.muted=true; v.play().catch(()=>{}); }); }catch(e){} };
+  window.replaySplash=function(){ done=false; sounded=false; if(ub) ub.style.display=''; try{document.body.style.overflow='hidden';}catch(e){} sp.style.display='flex'; void sp.offsetWidth; sp.classList.remove('hide'); try{ v.currentTime=0; v.muted=false; v.volume=1; v.play().catch(()=>{ v.muted=true; v.play().catch(()=>{}); }); }catch(e){} GEST.forEach(ev=>window.addEventListener(ev,enableSound,true)); };
 })();
 </script>
 </body>
