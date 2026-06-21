@@ -198,10 +198,11 @@
   </div>
 </div>
 
-<footer>Adltix — دليل المؤثرين · يُحدَّث أوتوماتيك من راشا (Agent 1)</footer>
+<footer>Adltix — دليل المؤثرين · يُحدَّث أوتوماتيك من Google Sheet</footer>
 
 <script>
-const DATA_URL = "https://148-230-114-103.nip.io/webhook/creators-api";
+const SHEET_ID = "1SZpJPbpmkZ6OAvpfLaiREX5BmpbiyMiP4IEaFOO7KHM";
+const SHEET_TABS = ["fashion","moms","luxury","sports"];
 const MIN_FOLLOWERS = 8000;
 
 let CREATORS = [
@@ -352,20 +353,51 @@ document.getElementById("q").addEventListener("input",e=>{state.q=e.target.value
 document.getElementById("f-fol").addEventListener("change",e=>{state.fol=e.target.value;render();});
 document.getElementById("sort").addEventListener("change",e=>{state.sort=e.target.value;render();});
 
-async function boot(){
-  if(DATA_URL){
-    try{
-      const res=await fetch(DATA_URL);
-      const j=await res.json();
-      const arr=Array.isArray(j)?j:(j.data||j.creators||[]);
-      if(arr.length) CREATORS=arr.map(c=>({
-        handle:(c.handle||"").replace(/^@/,""), platform:c.platform, followers:Number(c.followers)||0,
-        niche:c.niche||"fashion", country:c.location||c.country||"الخليج",
-        url:c.profile_url||c.url||"#", avatar_url:c.avatar_url||"",
-        videos:Array.isArray(c.videos)?c.videos:[]
-      }));
-    }catch(e){ console.log("using embedded data:",e); }
+function gvizUrl(tab){
+  return "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/gviz/tq?tqx=out:json&sheet="+encodeURIComponent(tab)+"&_="+Date.now();
+}
+function parseGviz(text){
+  const s=text.indexOf("{"), e=text.lastIndexOf("}");
+  if(s<0||e<0) return [];
+  const json=JSON.parse(text.substring(s,e+1));
+  if(!json.table) return [];
+  let labels=(json.table.cols||[]).map(c=>String(c.label||"").trim().toLowerCase());
+  let rows=json.table.rows||[];
+  if(!labels.some(Boolean) && rows.length){
+    labels=(rows[0].c||[]).map(c=>c&&c.v!=null?String(c.v).trim().toLowerCase():"");
+    rows=rows.slice(1);
   }
+  const out=[];
+  for(const r of rows){
+    if(!r||!r.c) continue;
+    const o={};
+    for(let i=0;i<labels.length;i++){ const cell=r.c[i]; o[labels[i]]=cell&&cell.v!=null?cell.v:""; }
+    if(!o.handle) continue;
+    let vids=[];
+    try{ vids=o.videos?JSON.parse(o.videos):[]; }catch(_){ vids=[]; }
+    out.push({
+      handle:String(o.handle||"").replace(/^@/,""),
+      platform:o.platform||"",
+      followers:Number(o.followers)||0,
+      niche:o.niche||"",
+      country:o.location||"الخليج",
+      url:o.profile_url||"#",
+      avatar_url:o.avatar_url||"",
+      videos:Array.isArray(vids)?vids:[]
+    });
+  }
+  return out;
+}
+async function boot(){
+  try{
+    const results=await Promise.all(SHEET_TABS.map(async tab=>{
+      try{ const res=await fetch(gvizUrl(tab)); const txt=await res.text(); return parseGviz(txt); }
+      catch(e){ console.log("tab failed",tab,e); return []; }
+    }));
+    const all=[]; results.forEach(a=>all.push(...a));
+    const filtered=all.filter(c=>c.platform==="snapchat"?true:c.followers>=MIN_FOLLOWERS);
+    if(filtered.length) CREATORS=filtered;
+  }catch(e){ console.log("using embedded data:",e); }
   buildAllPills(); renderStats(); render();
 }
 boot();
