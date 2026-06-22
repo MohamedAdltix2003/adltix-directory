@@ -131,6 +131,17 @@
   .splash .brandmark span{font-weight:800;font-size:18px}
   .introbtn{background:var(--brand-soft);color:var(--brand);border:none;font-family:inherit;font-weight:700;font-size:12.5px;padding:8px 14px;border-radius:11px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;flex-shrink:0}
   .introbtn:hover{background:var(--brand);color:#fff}
+
+  .contact{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px;padding-top:11px;border-top:1px solid rgba(17,12,46,.07)}
+  .contact .d{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;font-family:inherit;padding:6px 11px;border-radius:10px;text-decoration:none;border:1px solid transparent;transition:.15s;cursor:pointer}
+  .contact .wa{background:#E7F8EE;color:#0E9F57}
+  .contact .em{background:#EDE9FB;color:#4B23C9}
+  .contact .ph{background:#EAEEFF;color:#3340CC}
+  .contact .lk{background:#FFF1E6;color:#D9682A}
+  .contact .lg{background:#F1F2F5;color:#5A5A66}
+  .contact .d:hover{filter:brightness(.96);transform:translateY(-1px)}
+  .contact.none{display:block;font-size:11px;color:var(--muted,#8a8a96);border-top:1px solid rgba(17,12,46,.07);font-weight:600}
+  .contact .d.acc{background:var(--brand-soft);color:var(--brand)}
 </style>
 </head>
 <body>
@@ -244,7 +255,13 @@ function buildPills(id, items, key){
 function buildAllPills(){
   buildPills("f-niche",[{v:"all",l:"الكل"},{v:"fashion",l:"فاشن"},{v:"moms",l:"أمهات"},{v:"luxury",l:"لاكشري"},{v:"sports",l:"رياضة"}],"niche");
   buildPills("f-platform",[{v:"all",l:"الكل"},{v:"instagram",l:"انستجرام",dot:PLAT.instagram.c},{v:"tiktok",l:"تيك توك",dot:"#25F4EE"},{v:"youtube",l:"يوتيوب",dot:PLAT.youtube.c},{v:"x",l:"تويتر",dot:"#555"},{v:"snapchat",l:"سناب",dot:PLAT.snapchat.c}],"platform");
-  buildPills("f-country",[{v:"all",l:"الكل"},{v:"السعودية",l:"السعودية"},{v:"الإمارات",l:"الإمارات"},{v:"الكويت",l:"الكويت"}],"country");
+  const data=clean(CREATORS); const cc=(n)=>data.filter(c=>c.country===n).length;
+  buildPills("f-country",[
+    {v:"all",l:"كل الدول ("+data.length+")"},
+    {v:"السعودية",l:"🇸🇦 السعودية ("+cc("السعودية")+")"},
+    {v:"الإمارات",l:"🇦🇪 الإمارات ("+cc("الإمارات")+")"},
+    {v:"الكويت",l:"🇰🇼 الكويت ("+cc("الكويت")+")"}
+  ],"country");
 }
 
 function applyFilters(){
@@ -282,6 +299,18 @@ function stripHtml(c){
   return '<div class="strip" style="grid-template-columns:repeat('+cols+',1fr)">'+tiles+'</div>';
 }
 
+function contactRow(c){
+  const items=[];
+  if(c.whatsapp){ const h=String(c.whatsapp).indexOf("http")===0?c.whatsapp:("https://wa.me/"+String(c.whatsapp).replace(/[^\d]/g,"")); items.push('<a class="d wa" href="'+esc(h)+'" target="_blank" rel="noopener">\uD83D\uDCF1 واتساب</a>'); }
+  if(c.email){ items.push('<a class="d em" href="mailto:'+esc(c.email)+'">\u2709\uFE0F إيميل</a>'); }
+  if(c.phone && !c.whatsapp){ items.push('<a class="d ph" href="tel:'+esc(String(c.phone).replace(/[^\d+]/g,""))+'">\uD83D\uDCDE اتصال</a>'); }
+  if(c.links){ const first=String(c.links).split(" | ")[0]; if(first) items.push('<a class="d lk" href="'+esc(first)+'" target="_blank" rel="noopener">\uD83D\uDD17 روابط</a>'); }
+  if(c.language){ const L=c.language==="ar"?"عربي":(c.language==="en"?"English":(String(c.language).indexOf("+")>=0?"عربي + EN":c.language)); items.push('<span class="d lg">\uD83C\uDF10 '+esc(L)+'</span>'); }
+  if(!items.length){
+    return '<div class="contact"><a class="d acc" href="'+esc(c.url)+'" target="_blank" rel="noopener">\uD83D\uDCE9 راسل عبر الحساب</a></div>';
+  }
+  return '<div class="contact">'+items.join("")+'</div>';
+}
 function card(c){
   const p=PLAT[c.platform]||PLAT.instagram;
   const av = c.avatar_url? '<img src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" onerror="this.remove()">' : initial(c.handle);
@@ -294,6 +323,7 @@ function card(c){
       '<div class="loc">📍 '+(c.country||"الخليج")+'</div>'+
       '<div class="fol"><span class="big num">'+fmt(c.followers)+'</span><span class="lbl">متابع</span></div>'+
       '<div class="tags"><span class="t">'+(NICHE_AR[c.niche]||c.niche||"")+'</span><span class="t co">'+(c.country||"الخليج")+'</span></div>'+
+      contactRow(c)+
       '<div class="actions">'+
         '<a class="btn primary" href="'+esc(c.url)+'" target="_blank" rel="noopener">زيارة الحساب</a>'+
         '<button class="btn ghost" title="نسخ الحساب" onclick="navigator.clipboard&&navigator.clipboard.writeText(\'@'+esc(c.handle)+'\')">⧉</button>'+
@@ -383,7 +413,9 @@ function parseGviz(text){
       country:o.location||"الخليج",
       url:o.profile_url||"#",
       avatar_url:o.avatar_url||"",
-      videos:Array.isArray(vids)?vids:[]
+      videos:Array.isArray(vids)?vids:[],
+      email:o.email||"", whatsapp:o.whatsapp||"", phone:o.phone||"",
+      links:o.links_bio||"", language:o.language||""
     });
   }
   return out;
