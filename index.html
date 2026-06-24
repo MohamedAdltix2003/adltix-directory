@@ -142,6 +142,17 @@
   .contact .d:hover{filter:brightness(.96);transform:translateY(-1px)}
   .contact.none{display:block;font-size:11px;color:var(--muted,#8a8a96);border-top:1px solid rgba(17,12,46,.07);font-weight:600}
   .contact .d.acc{background:var(--brand-soft);color:var(--brand)}
+
+  .contact .clist{display:flex;flex-direction:column;gap:6px;margin-bottom:6px}
+  .crow{display:flex;align-items:center;gap:8px;background:#F5F4FA;border:1px solid #ECEAF4;border-radius:10px;padding:7px 10px}
+  .crow .cic{font-size:14px;flex-shrink:0}
+  .crow .cval{flex:1;font-size:12.5px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.2px}
+  .crow .cbtn{flex-shrink:0;width:28px;height:28px;border:none;border-radius:8px;background:#fff;cursor:pointer;font-size:13px;display:grid;place-items:center;color:var(--brand);border:1px solid #ECEAF4;text-decoration:none}
+  .crow .cbtn:hover{background:var(--brand);color:#fff}
+  .crow .cbtn.wa{background:#25D366;color:#fff;border-color:#25D366}
+  .crow .cbtn.wa:hover{filter:brightness(.92)}
+  .crow .cbtn.em{background:var(--brand-soft);color:var(--brand)}
+  .cmeta{display:flex;gap:6px;flex-wrap:wrap}
 </style>
 </head>
 <body>
@@ -260,7 +271,8 @@ function buildAllPills(){
     {v:"all",l:"كل الدول ("+data.length+")"},
     {v:"السعودية",l:"🇸🇦 السعودية ("+cc("السعودية")+")"},
     {v:"الإمارات",l:"🇦🇪 الإمارات ("+cc("الإمارات")+")"},
-    {v:"الكويت",l:"🇰🇼 الكويت ("+cc("الكويت")+")"}
+    {v:"الكويت",l:"🇰🇼 الكويت ("+cc("الكويت")+")"},
+    {v:"__other__",l:"🌍 دول أخرى ("+data.filter(c=>["السعودية","الإمارات","الكويت"].indexOf(c.country)===-1).length+")"}
   ],"country");
 }
 
@@ -268,7 +280,8 @@ function applyFilters(){
   let r=clean(CREATORS).slice();
   if(state.niche!=="all") r=r.filter(c=>c.niche===state.niche);
   if(state.platform!=="all") r=r.filter(c=>c.platform===state.platform);
-  if(state.country!=="all") r=r.filter(c=>c.country===state.country);
+  if(state.country==="__other__") r=r.filter(c=>["السعودية","الإمارات","الكويت"].indexOf(c.country)===-1);
+  else if(state.country!=="all") r=r.filter(c=>c.country===state.country);
   if(state.fol!=="all"){ const [a,b]=state.fol.split("-").map(Number); r=r.filter(c=>c.followers>=a*1000 && c.followers<b*1000); }
   if(state.q){ const q=state.q.toLowerCase(); r=r.filter(c=>(c.handle||"").toLowerCase().includes(q)); }
   if(state.sort==="fol") r.sort((a,b)=>(b.followers||0)-(a.followers||0));
@@ -300,16 +313,49 @@ function stripHtml(c){
 }
 
 function contactRow(c){
-  const items=[];
-  if(c.whatsapp){ const h=String(c.whatsapp).indexOf("http")===0?c.whatsapp:("https://wa.me/"+String(c.whatsapp).replace(/[^\d]/g,"")); items.push('<a class="d wa" href="'+esc(h)+'" target="_blank" rel="noopener">\uD83D\uDCF1 واتساب</a>'); }
-  if(c.email){ items.push('<a class="d em" href="mailto:'+esc(c.email)+'">\u2709\uFE0F إيميل</a>'); }
-  if(c.phone && !c.whatsapp){ items.push('<a class="d ph" href="tel:'+esc(String(c.phone).replace(/[^\d+]/g,""))+'">\uD83D\uDCDE اتصال</a>'); }
-  if(c.links){ const first=String(c.links).split(" | ")[0]; if(first) items.push('<a class="d lk" href="'+esc(first)+'" target="_blank" rel="noopener">\uD83D\uDD17 روابط</a>'); }
-  if(c.language){ const L=c.language==="ar"?"عربي":(c.language==="en"?"English":(String(c.language).indexOf("+")>=0?"عربي + EN":c.language)); items.push('<span class="d lg">\uD83C\uDF10 '+esc(L)+'</span>'); }
-  if(!items.length){
+  const rows=[];
+  // الواتساب/الرقم الفعلي
+  const rawPhone = c.whatsapp ? String(c.whatsapp).replace(/[^\d+]/g,"") : (c.phone ? String(c.phone).replace(/[^\d+]/g,"") : "");
+  if(rawPhone){
+    const wa = "https://wa.me/"+rawPhone.replace(/[^\d]/g,"");
+    rows.push(
+      '<div class="crow">'+
+        '<span class="cic">\uD83D\uDCF1</span>'+
+        '<span class="cval" dir="ltr">'+esc(rawPhone)+'</span>'+
+        '<a class="cbtn wa" href="'+esc(wa)+'" target="_blank" rel="noopener" title="واتساب">\uD83D\uDCAC</a>'+
+        '<button class="cbtn" title="نسخ" onclick="copyTxt(\''+esc(rawPhone)+'\',this)">\u29C9</button>'+
+      '</div>'
+    );
+  }
+  // الإيميل الفعلي
+  if(c.email){
+    rows.push(
+      '<div class="crow">'+
+        '<span class="cic">\u2709\uFE0F</span>'+
+        '<span class="cval" dir="ltr">'+esc(c.email)+'</span>'+
+        '<a class="cbtn em" href="mailto:'+esc(c.email)+'" title="إرسال إيميل">\u2197</a>'+
+        '<button class="cbtn" title="نسخ" onclick="copyTxt(\''+esc(c.email)+'\',this)">\u29C9</button>'+
+      '</div>'
+    );
+  }
+  // روابط + لغة (صف صغير)
+  const meta=[];
+  if(c.links){ const first=String(c.links).split(" | ")[0]; if(first) meta.push('<a class="d lk" href="'+esc(first)+'" target="_blank" rel="noopener">\uD83D\uDD17 روابط</a>'); }
+  if(c.language){ const L=c.language==="ar"?"عربي":(c.language==="en"?"English":(String(c.language).indexOf("+")>=0?"عربي + EN":c.language)); meta.push('<span class="d lg">\uD83C\uDF10 '+esc(L)+'</span>'); }
+
+  if(!rows.length && !meta.length){
     return '<div class="contact"><a class="d acc" href="'+esc(c.url)+'" target="_blank" rel="noopener">\uD83D\uDCE9 راسل عبر الحساب</a></div>';
   }
-  return '<div class="contact">'+items.join("")+'</div>';
+  let html='<div class="contact">';
+  if(rows.length) html+='<div class="clist">'+rows.join("")+'</div>';
+  if(!rows.length) html+='<a class="d acc" href="'+esc(c.url)+'" target="_blank" rel="noopener">\uD83D\uDCE9 راسل عبر الحساب</a>';
+  if(meta.length) html+='<div class="cmeta">'+meta.join("")+'</div>';
+  html+='</div>';
+  return html;
+}
+function copyTxt(txt, el){
+  try{ navigator.clipboard && navigator.clipboard.writeText(txt); }catch(e){}
+  if(el){ const o=el.textContent; el.textContent="\u2713"; setTimeout(()=>{el.textContent=o;},1000); }
 }
 function card(c){
   const p=PLAT[c.platform]||PLAT.instagram;
