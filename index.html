@@ -67,6 +67,10 @@
   .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow);transition:transform .2s,box-shadow .2s;display:flex;flex-direction:column}
   .card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
   .strip{display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px;height:120px;background:var(--line)}
+  .igwrap{height:420px;overflow:hidden;background:#fff;display:flex;justify-content:center}
+  .igframe{width:100%;max-width:100%;height:540px;margin-top:-1px;border:none}
+  .ttwrap{height:500px;overflow:hidden;background:#000;display:flex;justify-content:center}
+  .ttframe{width:100%;max-width:100%;height:575px;border:none}
   .tile{position:relative;overflow:hidden;display:grid;place-items:center;cursor:pointer;background-size:cover;background-position:center}
   .tile .thumb{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1}
   .tile .play{position:relative;z-index:2;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.92);display:grid;place-items:center;transition:.18s;backdrop-filter:blur(2px)}
@@ -290,12 +294,52 @@ function applyFilters(){
   return r;
 }
 
+function igCode(u){ const m=String(u||'').match(/\/(p|reel|tv)\/([^/?#]+)/); return m?{kind:m[1],code:m[2]}:null; }
+function ytThumbId(u){ try{ return (typeof ytId==='function')?ytId(u):''; }catch(e){ return ''; } }
+function ttVidId(u){ const m=String(u||'').match(/\/video\/(\d+)/); return m?m[1]:''; }
+
 function stripHtml(c){
   const p=PLAT[c.platform]||PLAT.instagram;
   const playSvg='<div class="play"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>';
   let vids=(c.videos||[]).filter(v=>v && (v.url||v.thumb));
   const seen={}; vids=vids.filter(v=>{ const k=(v.url||'')+'|'+(v.thumb||''); if(seen[k]) return false; seen[k]=1; return true; });
   const total=vids.length;
+
+  // إنستجرام: embed رسمي للبوست (الصورة/الفيديو يبان من غير دوس)
+  if(c.platform==='instagram' && total){
+    const first=vids.find(v=>igCode(v.url)) || vids[0];
+    const ic=igCode(first&&first.url);
+    if(ic){
+      const src='https://www.instagram.com/'+ic.kind+'/'+ic.code+'/embed';
+      return '<div class="igwrap"><iframe class="igframe" src="'+esc(src)+'" loading="lazy" scrolling="no" allowtransparency="true" frameborder="0"></iframe></div>';
+    }
+  }
+
+  // تيك توك: embed رسمي للفيديو لو اللينك فيه /video/ID
+  if(c.platform==='tiktok'){
+    let vid=ttVidId(c.url);
+    if(!vid && total){ for(const v of vids){ vid=ttVidId(v.url); if(vid) break; } }
+    if(vid){
+      const src='https://www.tiktok.com/embed/v2/'+vid;
+      return '<div class="ttwrap"><iframe class="ttframe" src="'+esc(src)+'" loading="lazy" scrolling="no" allow="encrypted-media" frameborder="0"></iframe></div>';
+    }
+  }
+
+  // يوتيوب: الصورة المصغّرة الحقيقية (بتشتغل من برّه)
+  if(c.platform==='youtube'){
+    let id=ytThumbId(c.url); if(!id && total){ for(const v of vids){ id=ytThumbId(v.url); if(id) break; } }
+    if(id){
+      const t='https://i.ytimg.com/vi/'+id+'/hqdefault.jpg';
+      return '<div class="strip" style="grid-template-columns:1fr"><div class="tile" onclick="openVideo(\''+esc(c.url)+'\',\'youtube\')" style="background:'+p.g+'"><img class="thumb" src="'+esc(t)+'" loading="lazy" onerror="this.remove()">'+playSvg+'<span class="vlabel">▶ تشغيل</span></div></div>';
+    }
+  }
+
+  // سناب شات (أو أي لينك بروفايل من غير بوست محدد): مربع بلون المنصة بيفتح الحساب
+  if(c.platform==='snapchat'){
+    return '<div class="strip" style="grid-template-columns:1fr"><div class="tile" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')" style="background:'+p.g+'">'+playSvg+'<span class="vlabel">👻 افتح سناب</span></div></div>';
+  }
+
+  // باقي الحالات: مربعات بلون المنصة (fallback)
   let tiles, cols;
   if(!total){
     cols=3;
