@@ -491,6 +491,11 @@
   .bgfx .pt:nth-child(16){left:95%;width:9px;height:9px;animation-duration:36s;animation-delay:-16s}
   @media (prefers-reduced-motion:reduce){ .bgfx .gridfx,.bgfx .pt{animation:none} .bgfx .pt{opacity:.3} }
 
+
+  .ochip.txt{background:color-mix(in srgb,var(--line) 40%,transparent);color:var(--ink);cursor:default;box-shadow:none}
+  .ochip.txt:hover{transform:none;filter:none;box-shadow:none}
+  .others.links .ochip{cursor:pointer}
+
 </style>
 </head>
 <body>
@@ -707,44 +712,36 @@ function copyTxt(txt, el){
   try{ navigator.clipboard && navigator.clipboard.writeText(txt); }catch(e){}
   if(el){ const o=el.textContent; el.textContent="\u2713"; setTimeout(()=>{el.textContent=o;},1000); }
 }
-function otherChips(c){
-  const raw=[];
-  if(c.other) raw.push(...String(c.other).split(/[\n,|;]+/));
-  if(c.links) raw.push(...String(c.links).split(/[\n,|;]+/));
-  const parts=raw.map(s=>s.trim()).filter(Boolean);
+function otherText(c){
+  if(!c.other) return '';
+  const parts=String(c.other).split(/[\n,|;]+/).map(s=>s.trim()).filter(Boolean);
+  if(!parts.length) return '';
+  const chips=parts.map(p=>'<span class="ochip txt">'+esc(p)+'</span>').join('');
+  return '<div class="others"><span class="olbl">منصات أخرى:</span>'+chips+'</div>';
+}
+function linksChips(c){
+  if(!c.links) return '';
+  const parts=String(c.links).split(/[\n,|;]+/).map(s=>s.trim()).filter(Boolean);
   const seen={}; const chips=[];
   for(let part of parts){
     let url='', plat='', label='';
     const low=part.toLowerCase();
-    if(/instagram\.com/.test(low)||/^insta|^ig[:@]/.test(low)){plat='instagram';label='انستجرام';}
-    else if(/tiktok\.com|^tiktok|^tt[:@]/.test(low)){plat='tiktok';label='تيك توك';}
-    else if(/youtube\.com|youtu\.be|^yt[:@]/.test(low)){plat='youtube';label='يوتيوب';}
-    else if(/snapchat\.com|^snap/.test(low)){plat='snapchat';label='سناب';}
-    else if(/twitter\.com|x\.com|^x[:@]|^tw[:@]/.test(low)){plat='x';label='تويتر';}
+    if(/instagram\.com/.test(low)){plat='instagram';label='انستجرام';}
+    else if(/tiktok\.com/.test(low)){plat='tiktok';label='تيك توك';}
+    else if(/youtube\.com|youtu\.be/.test(low)){plat='youtube';label='يوتيوب';}
+    else if(/snapchat\.com/.test(low)){plat='snapchat';label='سناب';}
+    else if(/twitter\.com|x\.com/.test(low)){plat='x';label='تويتر';}
     else if(/t\.me|telegram/.test(low)){plat='tg';label='تيليجرام';}
-    else if(/facebook\.com|fb\.com|^fb[:@]/.test(low)){plat='fb';label='فيسبوك';}
-    // build a REAL url (never '#')
+    else if(/facebook\.com|fb\.com/.test(low)){plat='fb';label='فيسبوك';}
     if(/^https?:\/\//i.test(part)){ url=part; }
-    else if(plat){ const h=part.replace(/^@/,'').replace(/^[a-z]+[:@]/i,'').replace(/^https?:\/\//,'').replace(/\/+$/,'');
-      if(plat==='instagram')url='https://instagram.com/'+h.replace(/^@/,'');
-      else if(plat==='tiktok')url='https://www.tiktok.com/@'+h.replace(/^@/,'');
-      else if(plat==='youtube')url='https://youtube.com/'+h;
-      else if(plat==='snapchat')url='https://www.snapchat.com/add/'+h;
-      else if(plat==='x')url='https://x.com/'+h.replace(/^@/,'');
-      else if(plat==='tg')url='https://t.me/'+h.replace(/^@/,'');
-      else if(plat==='fb')url='https://facebook.com/'+h;
-    }
     else if(/^[\w.-]+\.[a-z]{2,}(\/|$)/i.test(part)){ url='https://'+part.replace(/^https?:\/\//,''); }
-    if(!url) continue;                       // ملوش لينك صح -> مايظهرش (مفيش "رابط" ولا reload)
-    if(!label){                              // مش منصة معروفة -> اكتب اسم الموقع بدل "رابط"
-      try{ const host=new URL(url).hostname.replace(/^www\./,''); label=host; }catch(e){ continue; }
-    }
-    if(plat && plat===c.platform) continue;            // متكتبش نفس منصة الكارت تاني
-    const key=(plat||'link')+'|'+url; if(seen[key]) continue; seen[key]=1;
+    if(!url) continue;
+    if(!label){ try{ label=new URL(url).hostname.replace(/^www\./,''); }catch(e){ continue; } }
+    const key=url; if(seen[key]) continue; seen[key]=1;
     const col=(PLAT[plat]&&PLAT[plat].c)||'#5b6470';
     chips.push('<a class="ochip" href="'+esc(url)+'" target="_blank" rel="noopener" style="--oc:'+col+'">'+esc(label)+'</a>');
   }
-  return chips.length? '<div class="others"><span class="olbl">روابط أخرى:</span>'+chips.join('')+'</div>':'';
+  return chips.length? '<div class="others links"><span class="olbl">روابط أخرى:</span>'+chips.join('')+'</div>':'';
 }
 function card(c){
   const p=PLAT[c.platform]||PLAT.instagram;
@@ -759,7 +756,8 @@ function card(c){
         '<span class="pchip" style="background:'+p.c+'">'+p.ar+'</span>'+
       '</div>'+
       '<div class="fol"><span class="big num">'+fmt(c.followers)+'</span><span class="lbl">متابع</span><span class="nichetag">'+(NICHE_AR[c.niche]||c.niche||"")+'</span></div>'+
-      otherChips(c)+
+      otherText(c)+
+      linksChips(c)+
       contactRow(c)+
       '<div class="actions">'+
         '<a class="btn primary" href="'+esc(c.url)+'" target="_blank" rel="noopener">زيارة الحساب الرسمي</a>'+
