@@ -157,6 +157,52 @@
   .crow .cbtn.wa:hover{filter:brightness(.92)}
   .crow .cbtn.em{background:var(--brand-soft);color:var(--brand)}
   .cmeta{display:flex;gap:6px;flex-wrap:wrap}
+
+  /* ===== Media (all platforms) ===== */
+  .media{position:relative;height:360px;overflow:hidden;background:#0b0a14;display:grid;place-items:center;cursor:pointer}
+  .media .cover{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;transition:transform .6s cubic-bezier(.2,.7,.2,1)}
+  .card:hover .media .cover{transform:scale(1.07)}
+  .media .ovl{position:absolute;inset:0;z-index:2;background:linear-gradient(180deg,rgba(0,0,0,.04),rgba(0,0,0,.42))}
+  .media .ovl.soft{background:rgba(0,0,0,.22)}
+  .media .playbig{position:relative;z-index:3;width:62px;height:62px;border-radius:50%;background:rgba(255,255,255,.94);display:grid;place-items:center;color:var(--brand);box-shadow:0 10px 30px rgba(0,0,0,.35);transition:transform .22s, box-shadow .22s}
+  .media .playbig svg{margin-inline-start:3px}
+  .media:hover .playbig{transform:scale(1.13);box-shadow:0 14px 38px rgba(0,0,0,.45)}
+  .media .mlabel{position:absolute;z-index:4;bottom:12px;inset-inline-start:14px;color:#fff;font-weight:800;font-size:12.5px;text-shadow:0 1px 8px rgba(0,0,0,.5);background:rgba(0,0,0,.32);padding:5px 11px;border-radius:9px;backdrop-filter:blur(3px)}
+  .media .mlabel.dark{color:#1a1a1a;background:rgba(255,255,255,.6)}
+  .poster{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;gap:11px;align-items:center;justify-content:center;cursor:pointer}
+  .poster::before{content:"";position:absolute;inset:0;background:rgba(0,0,0,.12)}
+  .poster .ptxt{position:relative;z-index:2;color:#fff;font-weight:800;font-size:13px;text-shadow:0 1px 8px rgba(0,0,0,.5)}
+  .embedhost{height:360px;background:#000}
+  .embedhost .embedframe{position:absolute;inset:0;width:100%;height:580px;top:0;border:0;z-index:1}
+  .media.ytchan{flex-direction:column;gap:14px}
+  .media .ytav{width:118px;height:118px;border-radius:50%;border:4px solid rgba(255,255,255,.9);object-fit:cover;position:relative;z-index:3;box-shadow:0 12px 32px rgba(0,0,0,.4)}
+  .media.snap .ghost{font-size:64px;position:relative;z-index:3;filter:drop-shadow(0 6px 14px rgba(0,0,0,.25))}
+
+  /* ===== Card entrance + hover ===== */
+  .grid .card{opacity:0;transform:translateY(20px) scale(.985);transition:opacity .6s cubic-bezier(.2,.7,.2,1), transform .4s cubic-bezier(.2,.7,.2,1), box-shadow .25s}
+  .grid .card.in{opacity:1;transform:none}
+  .grid .card:hover{transform:translateY(-6px);box-shadow:var(--shadow-lg)}
+
+  /* ===== Hero / header entrance ===== */
+  @keyframes floatUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  .hero .tag{animation:floatUp .6s .05s both}
+  .hero h2{animation:floatUp .6s .12s both}
+  .hero p{animation:floatUp .6s .2s both}
+  .stats .stat{animation:floatUp .6s both}
+  .stats .stat:nth-child(2){animation-delay:.08s}
+  .stats .stat:nth-child(3){animation-delay:.16s}
+  .stats .stat:nth-child(4){animation-delay:.24s}
+  .stat .v{transition:transform .2s}
+  .stat:hover .v{transform:scale(1.08)}
+  .pill{transition:transform .15s, background .15s, border-color .15s, color .15s, box-shadow .15s}
+  .pill:hover{transform:translateY(-1px)}
+
+  @media (prefers-reduced-motion:reduce){
+    .grid .card{opacity:1!important;transform:none!important}
+    .media .cover{transition:none!important}
+    .hero .tag,.hero h2,.hero p,.stats .stat{animation:none!important}
+  }
+
 </style>
 </head>
 <body>
@@ -300,60 +346,44 @@ function ttVidId(u){ const m=String(u||'').match(/\/video\/(\d+)/); return m?m[1
 
 function stripHtml(c){
   const p=PLAT[c.platform]||PLAT.instagram;
-  const playSvg='<div class="play"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>';
   let vids=(c.videos||[]).filter(v=>v && (v.url||v.thumb));
   const seen={}; vids=vids.filter(v=>{ const k=(v.url||'')+'|'+(v.thumb||''); if(seen[k]) return false; seen[k]=1; return true; });
-  const total=vids.length;
+  const bigPlay='<span class="playbig"><svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M8 5v14l11-7z"/></svg></span>';
 
-  // إنستجرام: embed رسمي للبوست (الصورة/الفيديو يبان من غير دوس)
-  if(c.platform==='instagram' && total){
-    const first=vids.find(v=>igCode(v.url)) || vids[0];
+  // إنستجرام + ريلز -> عرض تلقائي (embed يحمّل لما يظهر)
+  if(c.platform==='instagram'){
+    const first=vids.find(v=>igCode(v.url))||vids[0];
     const ic=igCode(first&&first.url);
     if(ic){
-      const src='https://www.instagram.com/'+ic.kind+'/'+ic.code+'/embed';
-      return '<div class="igwrap"><iframe class="igframe" src="'+esc(src)+'" loading="lazy" scrolling="no" allowtransparency="true" frameborder="0"></iframe></div>';
+      const srcU='https://www.instagram.com/'+ic.kind+'/'+ic.code+'/embed';
+      const lbl=ic.kind==='reel'?'الريل':'المنشور';
+      return '<div class="media embedhost ig" data-embed-src="'+esc(srcU)+'"><div class="poster" onclick="loadEmbed(this.parentNode)" style="background:'+p.g+'">'+bigPlay+'<span class="ptxt">عرض '+lbl+'</span></div></div>';
     }
   }
-
-  // تيك توك: embed رسمي للفيديو لو اللينك فيه /video/ID
+  // تيك توك -> عرض تلقائي
   if(c.platform==='tiktok'){
-    let vid=ttVidId(c.url);
-    if(!vid && total){ for(const v of vids){ vid=ttVidId(v.url); if(vid) break; } }
+    let vid=ttVidId(c.url); if(!vid){ for(const v of vids){ vid=ttVidId(v.url); if(vid) break; } }
     if(vid){
-      const src='https://www.tiktok.com/embed/v2/'+vid;
-      return '<div class="ttwrap"><iframe class="ttframe" src="'+esc(src)+'" loading="lazy" scrolling="no" allow="encrypted-media" frameborder="0"></iframe></div>';
+      const srcU='https://www.tiktok.com/embed/v2/'+vid;
+      return '<div class="media embedhost tt" data-embed-src="'+esc(srcU)+'"><div class="poster" onclick="loadEmbed(this.parentNode)" style="background:'+p.g+'">'+bigPlay+'<span class="ptxt">عرض فيديو تيك توك</span></div></div>';
     }
   }
-
-  // يوتيوب: الصورة المصغّرة الحقيقية (بتشتغل من برّه)
+  // يوتيوب -> صورة الفيديو لو فيه id، وإلا صورة القناة
   if(c.platform==='youtube'){
-    let id=ytThumbId(c.url); if(!id && total){ for(const v of vids){ id=ytThumbId(v.url); if(id) break; } }
+    let id=ytThumbId(c.url); if(!id){ for(const v of vids){ id=ytThumbId(v.url); if(id) break; } }
     if(id){
       const t='https://i.ytimg.com/vi/'+id+'/hqdefault.jpg';
-      return '<div class="strip" style="grid-template-columns:1fr"><div class="tile" onclick="openVideo(\''+esc(c.url)+'\',\'youtube\')" style="background:'+p.g+'"><img class="thumb" src="'+esc(t)+'" loading="lazy" onerror="this.remove()">'+playSvg+'<span class="vlabel">▶ تشغيل</span></div></div>';
+      return '<div class="media yt" onclick="openVideo(\''+esc(c.url)+'\',\'youtube\')"><img class="cover" src="'+esc(t)+'" loading="lazy" onerror="this.remove()"><div class="ovl"></div>'+bigPlay+'<span class="mlabel">▶ فيديو يوتيوب</span></div>';
     }
+    const avc=c.avatar_url? '<img class="ytav" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" onerror="this.remove()">' : '';
+    return '<div class="media ytchan" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')" style="background:'+p.g+'">'+avc+'<div class="ovl soft"></div>'+bigPlay+'<span class="mlabel">قناة يوتيوب</span></div>';
   }
-
-  // سناب شات (أو أي لينك بروفايل من غير بوست محدد): مربع بلون المنصة بيفتح الحساب
+  // سناب
   if(c.platform==='snapchat'){
-    return '<div class="strip" style="grid-template-columns:1fr"><div class="tile" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')" style="background:'+p.g+'">'+playSvg+'<span class="vlabel">👻 افتح سناب</span></div></div>';
+    return '<div class="media snap" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')" style="background:'+p.g+'"><span class="ghost">\uD83D\uDC7B</span><span class="mlabel dark">افتح سناب</span></div>';
   }
-
-  // باقي الحالات: مربعات بلون المنصة (fallback)
-  let tiles, cols;
-  if(!total){
-    cols=3;
-    tiles=[0,1,2].map(()=>'<div class="tile" onclick="openVideo(\''+esc(c.url)+'\',\''+c.platform+'\')" style="background:'+p.g+';opacity:.9">'+playSvg+'<span class="vlabel">'+p.ar+'</span></div>').join("");
-  } else {
-    const show=vids.slice(0,3); cols=show.length;
-    tiles=show.map((v,i)=>{
-      const url=v.url||c.url;
-      const thumb=v.thumb? '<img class="thumb" src="'+esc(v.thumb)+'" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">' : "";
-      const more=(i===2 && total>3)? '<span class="more">+'+(total-3)+'</span>' : '';
-      return '<div class="tile" onclick="openVideo(\''+esc(url)+'\',\''+c.platform+'\')" style="background:'+p.g+'">'+thumb+playSvg+more+'<span class="vlabel">▶ تشغيل</span></div>';
-    }).join("");
-  }
-  return '<div class="strip" style="grid-template-columns:repeat('+cols+',1fr)">'+tiles+'</div>';
+  // افتراضي
+  return '<div class="media fb" onclick="openVideo(\''+esc(c.url)+'\',\''+c.platform+'\')" style="background:'+p.g+'">'+bigPlay+'<span class="mlabel">'+p.ar+'</span></div>';
 }
 
 function contactRow(c){
@@ -421,12 +451,34 @@ function card(c){
     '</div></div>';
 }
 
+/* ===== تحميل الفيديوهات تلقائياً + أنيميشن الكروت ===== */
+function loadEmbed(host){
+  if(!host || host.dataset.loaded) return;
+  const src=host.getAttribute('data-embed-src'); if(!src) return;
+  host.dataset.loaded='1';
+  const f=document.createElement('iframe');
+  f.src=src; f.loading='lazy'; f.className='embedframe';
+  f.setAttribute('scrolling','no'); f.setAttribute('allow','encrypted-media; clipboard-write'); f.setAttribute('allowfullscreen','');
+  host.innerHTML=''; host.appendChild(f);
+}
+let _revealObs=null, _embedObs=null;
+function observeCards(){
+  const cards=document.querySelectorAll('.card');
+  cards.forEach((el,i)=>{ el.style.transitionDelay=(Math.min(i,10)*45)+'ms'; });
+  if(_revealObs) _revealObs.disconnect();
+  _revealObs=new IntersectionObserver((es)=>{ es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); _revealObs.unobserve(e.target);} }); },{threshold:.08});
+  cards.forEach(el=>_revealObs.observe(el));
+  if(_embedObs) _embedObs.disconnect();
+  _embedObs=new IntersectionObserver((es)=>{ es.forEach(e=>{ if(e.isIntersecting){ loadEmbed(e.target); _embedObs.unobserve(e.target);} }); },{rootMargin:'250px 0px'});
+  document.querySelectorAll('.embedhost').forEach(el=>_embedObs.observe(el));
+}
 function render(){
   const r=applyFilters();
   document.getElementById("grid").innerHTML=r.map(card).join("");
   document.getElementById("shown").textContent=r.length;
   document.getElementById("empty").style.display=r.length?"none":"block";
   document.getElementById("grid").style.display=r.length?"grid":"none";
+  observeCards();
 }
 function renderStats(){
   const data=clean(CREATORS);
