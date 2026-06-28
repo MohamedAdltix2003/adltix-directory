@@ -437,10 +437,64 @@
   select.sortsel:hover{border-color:var(--brand-2)}
   select.sortsel:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
 
+
+  /* ============ FINAL: pro filter toolbar ============ */
+  .filters .ftop{align-items:center}
+  .ftitle{font-size:14px;font-weight:900;color:var(--ink);letter-spacing:-.2px;display:inline-flex;align-items:center;gap:8px}
+  .ftitle::before{content:"";width:18px;height:18px;border-radius:6px;background:linear-gradient(135deg,var(--brand),var(--brand-2));box-shadow:0 4px 10px rgba(75,35,201,.35)}
+  .fctl{display:inline-flex;align-items:center;gap:7px;background:color-mix(in srgb,var(--line) 26%,transparent);border:1px solid var(--line);border-radius:12px;padding:5px 6px 5px 10px}
+  .fctl .ftiny{font-size:11px;font-weight:800;color:var(--muted);white-space:nowrap}
+  .fctl .sortsel{border:none !important;background-color:var(--surface) !important;padding:8px 12px 8px 30px !important;border-radius:9px}
+  .filters .ftop + .frow{border-top:1px solid var(--line) !important;margin-top:14px !important;padding-top:14px !important}
+  @media (max-width:720px){ .ftop{flex-wrap:wrap} .fctl{flex:1 1 auto} }
+
+  /* ============ FINAL: richer animated background ============ */
+  .bgfx .b4{width:32vw;height:32vw;background:radial-gradient(circle,#FFB23E,transparent 68%);bottom:8%;inset-inline-start:6%;animation:drift 30s ease-in-out infinite;animation-delay:-20s;opacity:.22}
+  .bgfx .mesh{position:absolute;inset:-20%;background:
+     radial-gradient(40% 40% at 20% 30%, color-mix(in srgb,var(--brand) 16%,transparent), transparent 60%),
+     radial-gradient(35% 35% at 80% 70%, color-mix(in srgb,var(--accent) 14%,transparent), transparent 60%);
+     filter:blur(30px);animation:spin 60s linear infinite;transform-origin:center}
+  @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+  body.dark .bgfx .mesh{opacity:.5}
+  @media (prefers-reduced-motion:reduce){ .bgfx .mesh{animation:none} }
+
+
+  /* ============ Background: visible professional motion ============ */
+  .bgfx .blob{opacity:.4}
+  body.dark .bgfx .blob{opacity:.34}
+  /* moving subtle grid */
+  .bgfx .gridfx{position:absolute;inset:-2px;background-image:
+     linear-gradient(color-mix(in srgb,var(--brand) 9%,transparent) 1px,transparent 1px),
+     linear-gradient(90deg,color-mix(in srgb,var(--brand) 9%,transparent) 1px,transparent 1px);
+     background-size:46px 46px;mask-image:radial-gradient(circle at 50% 35%,#000,transparent 78%);-webkit-mask-image:radial-gradient(circle at 50% 35%,#000,transparent 78%);animation:gridmove 18s linear infinite;opacity:.55}
+  body.dark .bgfx .gridfx{opacity:.4}
+  @keyframes gridmove{from{background-position:0 0,0 0}to{background-position:46px 46px,46px 46px}}
+  /* floating particles */
+  .bgfx .parts{position:absolute;inset:0}
+  .bgfx .pt{position:absolute;border-radius:50%;background:linear-gradient(135deg,var(--brand-2),var(--accent));opacity:.5;filter:blur(.4px);animation:floatPt linear infinite}
+  @keyframes floatPt{0%{transform:translateY(20px) translateX(0) scale(.7);opacity:0}10%{opacity:.55}90%{opacity:.5}100%{transform:translateY(-110vh) translateX(40px) scale(1);opacity:0}}
+  .bgfx .pt:nth-child(1){left:6%;width:8px;height:8px;animation-duration:24s;animation-delay:-2s}
+  .bgfx .pt:nth-child(2){left:14%;width:5px;height:5px;animation-duration:30s;animation-delay:-8s}
+  .bgfx .pt:nth-child(3){left:22%;width:11px;height:11px;animation-duration:21s;animation-delay:-5s}
+  .bgfx .pt:nth-child(4){left:31%;width:6px;height:6px;animation-duration:27s;animation-delay:-12s}
+  .bgfx .pt:nth-child(5){left:39%;width:9px;height:9px;animation-duration:33s;animation-delay:-3s}
+  .bgfx .pt:nth-child(6){left:47%;width:5px;height:5px;animation-duration:23s;animation-delay:-15s}
+  .bgfx .pt:nth-child(7){left:55%;width:12px;height:12px;animation-duration:29s;animation-delay:-7s}
+  .bgfx .pt:nth-child(8){left:62%;width:6px;height:6px;animation-duration:26s;animation-delay:-1s}
+  .bgfx .pt:nth-child(9){left:69%;width:8px;height:8px;animation-duration:31s;animation-delay:-10s}
+  .bgfx .pt:nth-child(10){left:76%;width:5px;height:5px;animation-duration:22s;animation-delay:-6s}
+  .bgfx .pt:nth-child(11){left:83%;width:10px;height:10px;animation-duration:34s;animation-delay:-13s}
+  .bgfx .pt:nth-child(12){left:90%;width:6px;height:6px;animation-duration:25s;animation-delay:-4s}
+  .bgfx .pt:nth-child(13){left:11%;width:7px;height:7px;animation-duration:28s;animation-delay:-18s}
+  .bgfx .pt:nth-child(14){left:43%;width:7px;height:7px;animation-duration:32s;animation-delay:-9s}
+  .bgfx .pt:nth-child(15){left:66%;width:6px;height:6px;animation-duration:20s;animation-delay:-11s}
+  .bgfx .pt:nth-child(16){left:95%;width:9px;height:9px;animation-duration:36s;animation-delay:-16s}
+  @media (prefers-reduced-motion:reduce){ .bgfx .gridfx,.bgfx .pt{animation:none} .bgfx .pt{opacity:.3} }
+
 </style>
 </head>
 <body>
-<div class="bgfx" aria-hidden="true"><span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span></div>
+<div class="bgfx" aria-hidden="true"><span class="gridfx"></span><span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span><span class="blob b4"></span><span class="mesh"></span><div class="parts"><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span></div></div>
 
 <header>
   <div class="bar">
@@ -469,32 +523,37 @@
   </div>
 
   <div class="filters">
+    <div class="frow ftop">
+      <span class="ftitle">تصفية النتائج</span>
+      <span class="spacer"></span>
+      <div class="fctl"><span class="ftiny">المتابعين</span>
+        <select id="f-fol" class="sortsel">
+          <option value="all">الكل (8K+)</option>
+          <option value="8-50">8K – 50K</option>
+          <option value="50-100">50K – 100K</option>
+          <option value="100-500">100K – 500K</option>
+        </select>
+      </div>
+      <div class="fctl"><span class="ftiny">وسيلة التواصل</span>
+        <select id="f-contact" class="sortsel">
+          <option value="all">كل المؤثرين</option>
+          <option value="email">بريد إلكتروني متاح</option>
+          <option value="whatsapp">واتساب متاح</option>
+          <option value="both">بريد + واتساب</option>
+          <option value="none">بدون بيانات تواصل</option>
+        </select>
+      </div>
+      <div class="fctl"><span class="ftiny">الترتيب</span>
+        <select id="sort" class="sortsel">
+          <option value="fol">الأعلى متابعةً</option>
+          <option value="fola">الأقل متابعةً</option>
+          <option value="name">أبجديًا</option>
+        </select>
+      </div>
+    </div>
     <div class="frow"><span class="flabel">المجال</span><div id="f-niche"></div></div>
     <div class="frow"><span class="flabel">المنصة</span><div id="f-platform"></div></div>
-    <div class="frow">
-      <span class="flabel">الدولة</span><div id="f-country"></div>
-      <span class="spacer"></span>
-      <span class="flabel" style="width:auto">المتابعين</span>
-      <select id="f-fol" class="sortsel">
-        <option value="all">الكل (8K+)</option>
-        <option value="8-50">8K – 50K</option>
-        <option value="50-100">50K – 100K</option>
-        <option value="100-500">100K – 500K</option>
-      </select>
-      <span class="flabel" style="width:auto">وسيلة التواصل</span>
-      <select id="f-contact" class="sortsel">
-        <option value="all">كل المؤثرين</option>
-        <option value="email">بريد إلكتروني متاح</option>
-        <option value="whatsapp">واتساب متاح</option>
-        <option value="both">بريد + واتساب</option>
-        <option value="none">بدون بيانات تواصل</option>
-      </select>
-      <select id="sort" class="sortsel">
-        <option value="fol">الأعلى متابعةً</option>
-        <option value="fola">الأقل متابعةً</option>
-        <option value="name">أبجديًا</option>
-      </select>
-    </div>
+    <div class="frow"><span class="flabel">الدولة</span><div id="f-country"></div></div>
   </div>
 
   <div class="meta"><div class="count"><b id="shown">0</b> مؤثر ضمن النتائج</div></div>
