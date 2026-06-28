@@ -349,20 +349,22 @@ function stripHtml(c){
   let vids=(c.videos||[]).filter(v=>v && (v.url||v.thumb));
   const seen={}; vids=vids.filter(v=>{ const k=(v.url||'')+'|'+(v.thumb||''); if(seen[k]) return false; seen[k]=1; return true; });
   const bigPlay='<span class="playbig"><svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M8 5v14l11-7z"/></svg></span>';
+  // قائمة لينكات مرشّحة: top_video_url الأول، بعدين الفيديوهات، بعدين البروفايل
+  const cand=[c.top_video_url, ...vids.map(v=>v.url), c.url].filter(Boolean);
+  const pickBy=(fn)=>{ for(const u of cand){ if(fn(u)) return u; } return ''; };
 
-  // إنستجرام + ريلز -> عرض تلقائي (embed يحمّل لما يظهر)
+  // إنستجرام + ريلز -> عرض تلقائي للبوست/الريل
   if(c.platform==='instagram'){
-    const first=vids.find(v=>igCode(v.url))||vids[0];
-    const ic=igCode(first&&first.url);
+    const u=pickBy(u=>igCode(u)); const ic=igCode(u);
     if(ic){
       const srcU='https://www.instagram.com/'+ic.kind+'/'+ic.code+'/embed';
       const lbl=ic.kind==='reel'?'الريل':'المنشور';
       return '<div class="media embedhost ig" data-embed-src="'+esc(srcU)+'"><div class="poster" onclick="loadEmbed(this.parentNode)" style="background:'+p.g+'">'+bigPlay+'<span class="ptxt">عرض '+lbl+'</span></div></div>';
     }
   }
-  // تيك توك -> عرض تلقائي
+  // تيك توك -> عرض تلقائي للفيديو
   if(c.platform==='tiktok'){
-    let vid=ttVidId(c.url); if(!vid){ for(const v of vids){ vid=ttVidId(v.url); if(vid) break; } }
+    const u=pickBy(u=>ttVidId(u)); const vid=ttVidId(u);
     if(vid){
       const srcU='https://www.tiktok.com/embed/v2/'+vid;
       return '<div class="media embedhost tt" data-embed-src="'+esc(srcU)+'"><div class="poster" onclick="loadEmbed(this.parentNode)" style="background:'+p.g+'">'+bigPlay+'<span class="ptxt">عرض فيديو تيك توك</span></div></div>';
@@ -370,10 +372,11 @@ function stripHtml(c){
   }
   // يوتيوب -> صورة الفيديو لو فيه id، وإلا صورة القناة
   if(c.platform==='youtube'){
-    let id=ytThumbId(c.url); if(!id){ for(const v of vids){ id=ytThumbId(v.url); if(id) break; } }
+    const u=pickBy(u=>ytThumbId(u)); const id=ytThumbId(u);
     if(id){
       const t='https://i.ytimg.com/vi/'+id+'/hqdefault.jpg';
-      return '<div class="media yt" onclick="openVideo(\''+esc(c.url)+'\',\'youtube\')"><img class="cover" src="'+esc(t)+'" loading="lazy" onerror="this.remove()"><div class="ovl"></div>'+bigPlay+'<span class="mlabel">▶ فيديو يوتيوب</span></div>';
+      const open=u||c.url;
+      return '<div class="media yt" onclick="openVideo(\''+esc(open)+'\',\'youtube\')"><img class="cover" src="'+esc(t)+'" loading="lazy" onerror="this.remove()"><div class="ovl"></div>'+bigPlay+'<span class="mlabel">▶ فيديو يوتيوب</span></div>';
     }
     const avc=c.avatar_url? '<img class="ytav" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" onerror="this.remove()">' : '';
     return '<div class="media ytchan" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')" style="background:'+p.g+'">'+avc+'<div class="ovl soft"></div>'+bigPlay+'<span class="mlabel">قناة يوتيوب</span></div>';
@@ -382,8 +385,9 @@ function stripHtml(c){
   if(c.platform==='snapchat'){
     return '<div class="media snap" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')" style="background:'+p.g+'"><span class="ghost">\uD83D\uDC7B</span><span class="mlabel dark">افتح سناب</span></div>';
   }
-  // افتراضي
-  return '<div class="media fb" onclick="openVideo(\''+esc(c.url)+'\',\''+c.platform+'\')" style="background:'+p.g+'">'+bigPlay+'<span class="mlabel">'+p.ar+'</span></div>';
+  // افتراضي: لو فيه أي لينك فيديو افتحه، وإلا البروفايل
+  const fbUrl=(c.top_video_url||c.url);
+  return '<div class="media fb" onclick="openVideo(\''+esc(fbUrl)+'\',\''+c.platform+'\')" style="background:'+p.g+'">'+bigPlay+'<span class="mlabel">'+p.ar+'</span></div>';
 }
 
 function contactRow(c){
@@ -556,6 +560,7 @@ function parseGviz(text){
       url:o.profile_url||"#",
       avatar_url:o.avatar_url||"",
       videos:Array.isArray(vids)?vids:[],
+      top_video_url:o.top_video_url||"",
       email:o.email||"", whatsapp:o.whatsapp||"", phone:o.phone||"",
       links:o.links_bio||"", language:o.language||""
     });
