@@ -225,31 +225,97 @@
     .grid .card.in .av,.media .cover,.embedhost .embedframe,.media .playbig,.grid .card.in .name,.grid .card.in .fol{animation:none!important}
   }
 
+
+  /* ===== Clean media (poster, no caption) ===== */
+  .media.shot{position:relative;height:360px;overflow:hidden;display:grid;place-items:center;cursor:pointer}
+  .media.shot .cover{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1}
+  /* ===== Other social platforms chips ===== */
+  .others{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:9px 0 2px}
+  .others .olbl{font-size:11px;color:var(--muted);font-weight:700;margin-inline-end:2px}
+  .ochip{font-size:11.5px;font-weight:800;color:#fff;background:var(--oc,#6b6b76);padding:4px 11px;border-radius:999px;display:inline-flex;align-items:center;gap:4px;transition:transform .15s,filter .15s,box-shadow .15s;box-shadow:0 3px 9px rgba(0,0,0,.16)}
+  .ochip:hover{transform:translateY(-2px);filter:brightness(1.08);box-shadow:0 6px 16px rgba(0,0,0,.24)}
+  /* ===== Theme toggle button ===== */
+  .themebtn{flex-shrink:0;width:42px;height:42px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font-size:18px;cursor:pointer;transition:transform .18s,border-color .18s,box-shadow .18s;display:grid;place-items:center}
+  .themebtn:hover{transform:translateY(-2px) rotate(-8deg);border-color:var(--brand-2);box-shadow:0 8px 20px rgba(75,35,201,.25)}
+  /* ===== Animated background ===== */
+  .bgfx{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+  .wrap,footer{position:relative;z-index:1}
+  .bgfx .blob{position:absolute;border-radius:50%;filter:blur(72px);opacity:.45;will-change:transform;animation:drift 24s ease-in-out infinite}
+  .bgfx .b1{width:48vw;height:48vw;background:radial-gradient(circle,#7C4DFF,transparent 68%);top:-12vw;inset-inline-start:-8vw}
+  .bgfx .b2{width:42vw;height:42vw;background:radial-gradient(circle,#FF6A4D,transparent 68%);bottom:-14vw;inset-inline-end:-6vw;animation-delay:-8s}
+  .bgfx .b3{width:38vw;height:38vw;background:radial-gradient(circle,#21C7C7,transparent 68%);top:42%;inset-inline-start:52%;animation-delay:-15s}
+  @keyframes drift{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(5vw,7vh) scale(1.12)}66%{transform:translate(-4vw,-5vh) scale(.92)}}
+
+  /* ===== DARK THEME ===== */
+  body.dark{
+    --bg:#0C0B14; --surface:#16141F; --ink:#F3F2FA; --muted:#9A98AC;
+    --brand-soft:#221947; --line:#2A2740;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 10px 30px rgba(0,0,0,.5);
+    --shadow-lg:0 16px 48px rgba(0,0,0,.6);
+  }
+  body.dark header{background:rgba(12,11,20,.82)}
+  body.dark .pill{background:var(--surface);color:var(--ink)}
+  body.dark select.sortsel{background:var(--surface);color:var(--ink)}
+  body.dark .search input{background:var(--surface)}
+  body.dark .stat,body.dark .filters,body.dark .card{background:var(--surface)}
+  body.dark .bgfx .blob{opacity:.3}
+  body.dark .body{background:var(--surface)}
+  body.dark .av::after{box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+  html{transition:background .35s} body{transition:background .35s,color .35s}
+
+  @media (prefers-reduced-motion:reduce){ .bgfx .blob{animation:none} }
+
+
+  /* ===== Pro polish ===== */
+  .brand h1{background:linear-gradient(135deg,var(--brand),var(--brand-2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .hero h2{letter-spacing:-1px}
+  .hero .tag{border:1px solid color-mix(in srgb, var(--brand) 22%, transparent)}
+  .stat{position:relative;overflow:hidden}
+  .stat::after{content:"";position:absolute;inset-inline-end:-20px;top:-20px;width:60px;height:60px;border-radius:50%;background:radial-gradient(circle,var(--brand-soft),transparent 70%);opacity:.7}
+  .stat .v{background:linear-gradient(135deg,var(--ink),var(--brand));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  /* refined cards */
+  .grid .card{border:1px solid var(--line);border-radius:20px;overflow:hidden;background:var(--surface);box-shadow:var(--shadow);transition:opacity .6s cubic-bezier(.2,.7,.2,1),transform .4s cubic-bezier(.2,.7,.2,1),box-shadow .25s,border-color .25s}
+  .grid .card:hover{border-color:color-mix(in srgb,var(--brand-2) 40%,var(--line))}
+  .pchip{position:absolute;top:-30px;inset-inline-end:16px;z-index:7;font-size:11.5px;font-weight:800;color:#fff;padding:6px 12px;border-radius:999px;box-shadow:0 6px 16px rgba(0,0,0,.22);backdrop-filter:blur(2px)}
+  .name{font-weight:800;letter-spacing:-.2px;margin-top:6px}
+  .btn.primary{background:linear-gradient(135deg,var(--brand),var(--brand-2));border:none;box-shadow:0 8px 20px rgba(75,35,201,.3)}
+  .btn.primary:hover{filter:brightness(1.06);transform:translateY(-1px)}
+  /* header logo subtle shine */
+  .logo{position:relative;overflow:hidden}
+  .logo::after{content:"";position:absolute;top:-50%;inset-inline-start:-60%;width:40%;height:200%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);transform:rotate(20deg);animation:shine 5s ease-in-out infinite}
+  @keyframes shine{0%,70%{inset-inline-start:-60%}100%{inset-inline-start:140%}}
+  /* filters glassy */
+  .filters{backdrop-filter:blur(8px)}
+  body.dark .filters{background:color-mix(in srgb,var(--surface) 88%,transparent)}
+  @media (prefers-reduced-motion:reduce){ .logo::after{animation:none} }
+
 </style>
 </head>
 <body>
+<div class="bgfx" aria-hidden="true"><span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span></div>
 
 <header>
   <div class="bar">
     <div class="brand">
       <div class="logo">A</div>
-      <div><h1>Adltix</h1><div class="sub">دليل المؤثرين</div></div>
+      <div><h1>Adltix</h1><div class="sub">منصة اكتشاف المؤثرين</div></div>
     </div>
     <div class="search">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-      <input id="q" type="search" placeholder="ابحث باسم المؤثر أو الحساب…">
+      <input id="q" type="search" placeholder="ابحث باسم المؤثر أو اسم الحساب…">
     </div>
-    <button class="introbtn" onclick="replaySplash()">▶ شاهد الفيديو</button>
-    <div class="live"><span class="dot"></span> بيانات حيّة</div>
+    <button class="introbtn" onclick="replaySplash()">▶ جولة تعريفية</button>
+    <button class="themebtn" id="themebtn" onclick="toggleTheme()" title="تبديل الوضع (أبيض/أسود)">🌙</button>
+    <div class="live"><span class="dot"></span> تحديث مباشر</div>
   </div>
 </header>
 
 <div class="wrap">
   <div class="hero">
     <div>
-      <span class="tag">الإمارات · السعودية · الكويت</span>
-      <h2>مؤثرون حقيقيون،<br><b>جاهزون لحملتك</b></h2>
-      <p>كل مؤثر اكتشفناه أوتوماتيك من 5 منصات، مع متابعينه ومحتواه — اضغط على أي فيديو لتشغيله هنا.</p>
+      <span class="tag">الخليج العربي · مؤثرون موثّقون</span>
+      <h2>مؤثرون مختارون بعناية،<br><b>جاهزون لحملتك القادمة</b></h2>
+      <p>قاعدة بيانات منسّقة لأبرز صنّاع المحتوى في الخليج عبر مختلف المنصات — مع المتابعين، المحتوى، ووسائل التواصل المباشر. اضغط أي محتوى لمعاينته فورًا.</p>
     </div>
     <div class="stats" id="stats"></div>
   </div>
@@ -267,20 +333,28 @@
         <option value="50-100">50K – 100K</option>
         <option value="100-500">100K – 500K</option>
       </select>
+      <span class="flabel" style="width:auto">وسيلة التواصل</span>
+      <select id="f-contact" class="sortsel">
+        <option value="all">كل المؤثرين</option>
+        <option value="email">بريد إلكتروني متاح</option>
+        <option value="whatsapp">واتساب متاح</option>
+        <option value="both">بريد + واتساب</option>
+        <option value="none">بدون بيانات تواصل</option>
+      </select>
       <select id="sort" class="sortsel">
-        <option value="fol">الأكثر متابعين</option>
-        <option value="fola">الأقل متابعين</option>
-        <option value="name">الاسم</option>
+        <option value="fol">الأعلى متابعةً</option>
+        <option value="fola">الأقل متابعةً</option>
+        <option value="name">أبجديًا</option>
       </select>
     </div>
   </div>
 
-  <div class="meta"><div class="count">عرض <b id="shown">0</b> مؤثر</div></div>
+  <div class="meta"><div class="count"><b id="shown">0</b> مؤثر ضمن النتائج</div></div>
   <div class="grid" id="grid"></div>
   <div class="empty" id="empty" style="display:none">
     <div class="ei"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4B23C9" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></div>
-    <h3>مفيش نتائج بالفلتر ده</h3>
-    <p>جرّب تغيّر المجال أو المنصة أو توسّع نطاق المتابعين.</p>
+    <h3>لا توجد نتائج مطابقة</h3>
+    <p>جرّب تعديل المجال أو المنصة أو توسيع نطاق المتابعين أو وسيلة التواصل.</p>
   </div>
 </div>
 
@@ -292,7 +366,7 @@
   </div>
 </div>
 
-<footer>Adltix — دليل المؤثرين · يُحدَّث أوتوماتيك من Google Sheet</footer>
+<footer>Adltix · منصة اكتشاف المؤثرين في الخليج — قاعدة بيانات محدّثة باستمرار</footer>
 
 <script>
 const SHEET_ID = "1SZpJPbpmkZ6OAvpfLaiREX5BmpbiyMiP4IEaFOO7KHM";
@@ -317,7 +391,7 @@ const PLAT = {
   snapchat:{ar:"سناب",c:"#111",g:"linear-gradient(135deg,#FFFC00,#FFC400)"}
 };
 const NICHE_AR = {fashion:"فاشن",moms:"أمهات",luxury:"لاكشري",sports:"رياضة"};
-const state = {niche:"all", platform:"all", country:"all", fol:"all", sort:"fol", q:""};
+const state = {niche:"all", platform:"all", country:"all", fol:"all", contact:"all", sort:"fol", q:""};
 
 function fmt(n){ if(n==null) return "—"; n=Number(n); if(!n) return "—"; if(n>=1e6) return (n/1e6).toFixed(1).replace(/\.0$/,"")+"M"; if(n>=1e3) return (n/1e3).toFixed(1).replace(/\.0$/,"")+"K"; return ""+n; }
 function initial(h){ return (h||"?").replace(/[@_.]/g,"").charAt(0).toUpperCase(); }
@@ -355,6 +429,7 @@ function applyFilters(){
   if(state.country==="__other__") r=r.filter(c=>["السعودية","الإمارات","الكويت"].indexOf(c.country)===-1);
   else if(state.country!=="all") r=r.filter(c=>c.country===state.country);
   if(state.fol!=="all"){ const [a,b]=state.fol.split("-").map(Number); r=r.filter(c=>c.followers>=a*1000 && c.followers<b*1000); }
+  if(state.contact && state.contact!=="all"){ r=r.filter(c=>{ const e=!!(c.email&&String(c.email).trim()); const w=!!((c.whatsapp&&String(c.whatsapp).trim())||(c.phone&&String(c.phone).trim())); if(state.contact==="email")return e; if(state.contact==="whatsapp")return w; if(state.contact==="both")return e&&w; if(state.contact==="none")return !e&&!w; return true; }); }
   if(state.q){ const q=state.q.toLowerCase(); r=r.filter(c=>(c.handle||"").toLowerCase().includes(q)); }
   if(state.sort==="fol") r.sort((a,b)=>(b.followers||0)-(a.followers||0));
   if(state.sort==="fola") r.sort((a,b)=>(a.followers||0)-(b.followers||0));
@@ -371,45 +446,44 @@ function stripHtml(c){
   let vids=(c.videos||[]).filter(v=>v && (v.url||v.thumb));
   const seen={}; vids=vids.filter(v=>{ const k=(v.url||'')+'|'+(v.thumb||''); if(seen[k]) return false; seen[k]=1; return true; });
   const bigPlay='<span class="playbig"><svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M8 5v14l11-7z"/></svg></span>';
-  // قائمة لينكات مرشّحة: top_video_url الأول، بعدين الفيديوهات، بعدين البروفايل
   const cand=[c.top_video_url, ...vids.map(v=>v.url), c.url].filter(Boolean);
   const pickBy=(fn)=>{ for(const u of cand){ if(fn(u)) return u; } return ''; };
 
-  // إنستجرام + ريلز -> عرض تلقائي للبوست/الريل
+  // إنستجرام: صورة المنشور نضيفة (من غير كلام) + تشغيل يفتح الفيديو
   if(c.platform==='instagram'){
     const u=pickBy(u=>igCode(u)); const ic=igCode(u);
     if(ic){
-      const srcU='https://www.instagram.com/'+ic.kind+'/'+ic.code+'/embed';
-      const lbl=ic.kind==='reel'?'الريل':'المنشور';
-      return '<div class="media embedhost ig" data-embed-src="'+esc(srcU)+'"><div class="poster" onclick="loadEmbed(this.parentNode)" style="background:'+p.g+'">'+bigPlay+'<span class="ptxt">عرض '+lbl+'</span></div></div>';
+      const img='https://www.instagram.com/p/'+ic.code+'/media/?size=l';
+      return '<div class="media shot" style="background:'+p.g+'" onclick="openVideo(\''+esc(u)+'\',\'instagram\')"><img class="cover" src="'+esc(img)+'" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()"><div class="ovl"></div>'+bigPlay+'<span class="mlabel">▶ تشغيل</span></div>';
     }
   }
-  // تيك توك -> عرض تلقائي للفيديو
+  // تيك توك: صورة الفيديو (cover) لو متوفرة، وإلا مربع بلون المنصة — والتشغيل يفتح الفيديو
   if(c.platform==='tiktok'){
-    const u=pickBy(u=>ttVidId(u)); const vid=ttVidId(u);
-    if(vid){
-      const srcU='https://www.tiktok.com/embed/v2/'+vid;
-      return '<div class="media embedhost tt" data-embed-src="'+esc(srcU)+'"><div class="poster" onclick="loadEmbed(this.parentNode)" style="background:'+p.g+'">'+bigPlay+'<span class="ptxt">عرض فيديو تيك توك</span></div></div>';
+    const u=pickBy(u=>ttVidId(u))||c.top_video_url||c.url;
+    const thumb=(vids.find(v=>v.thumb)||{}).thumb||'';
+    if(thumb){
+      return '<div class="media shot" style="background:'+p.g+'" onclick="openVideo(\''+esc(u)+'\',\'tiktok\')"><img class="cover" src="'+esc(thumb)+'" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()"><div class="ovl"></div>'+bigPlay+'<span class="mlabel">▶ تشغيل</span></div>';
+    }
+    if(ttVidId(u)){
+      return '<div class="media shot" style="background:'+p.g+'" onclick="openVideo(\''+esc(u)+'\',\'tiktok\')"><div class="ovl soft"></div>'+bigPlay+'<span class="mlabel">▶ فيديو تيك توك</span></div>';
     }
   }
-  // يوتيوب -> صورة الفيديو لو فيه id، وإلا صورة القناة
+  // يوتيوب: صورة الفيديو لو فيه id، وإلا صورة القناة
   if(c.platform==='youtube'){
     const u=pickBy(u=>ytThumbId(u)); const id=ytThumbId(u);
     if(id){
       const t='https://i.ytimg.com/vi/'+id+'/hqdefault.jpg';
-      const open=u||c.url;
-      return '<div class="media yt" onclick="openVideo(\''+esc(open)+'\',\'youtube\')"><img class="cover" src="'+esc(t)+'" loading="lazy" onerror="this.remove()"><div class="ovl"></div>'+bigPlay+'<span class="mlabel">▶ فيديو يوتيوب</span></div>';
+      return '<div class="media shot" style="background:'+p.g+'" onclick="openVideo(\''+esc(u||c.url)+'\',\'youtube\')"><img class="cover" src="'+esc(t)+'" loading="lazy" onerror="this.remove()"><div class="ovl"></div>'+bigPlay+'<span class="mlabel">▶ فيديو يوتيوب</span></div>';
     }
     const avc=c.avatar_url? '<img class="ytav" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" onerror="this.remove()">' : '';
-    return '<div class="media ytchan" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')" style="background:'+p.g+'">'+avc+'<div class="ovl soft"></div>'+bigPlay+'<span class="mlabel">قناة يوتيوب</span></div>';
+    return '<div class="media ytchan" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')">'+avc+'<div class="ovl soft"></div>'+bigPlay+'<span class="mlabel">قناة يوتيوب</span></div>';
   }
   // سناب
   if(c.platform==='snapchat'){
-    return '<div class="media snap" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')" style="background:'+p.g+'"><span class="ghost">\uD83D\uDC7B</span><span class="mlabel dark">افتح سناب</span></div>';
+    return '<div class="media snap" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="ghost">\uD83D\uDC7B</span><span class="mlabel dark">افتح سناب</span></div>';
   }
-  // افتراضي: لو فيه أي لينك فيديو افتحه، وإلا البروفايل
   const fbUrl=(c.top_video_url||c.url);
-  return '<div class="media fb" onclick="openVideo(\''+esc(fbUrl)+'\',\''+c.platform+'\')" style="background:'+p.g+'">'+bigPlay+'<span class="mlabel">'+p.ar+'</span></div>';
+  return '<div class="media fb" style="background:'+p.g+'" onclick="openVideo(\''+esc(fbUrl)+'\',\''+c.platform+'\')">'+bigPlay+'<span class="mlabel">'+p.ar+'</span></div>';
 }
 
 function contactRow(c){
@@ -444,7 +518,7 @@ function contactRow(c){
   if(c.language){ const L=c.language==="ar"?"عربي":(c.language==="en"?"English":(String(c.language).indexOf("+")>=0?"عربي + EN":c.language)); meta.push('<span class="d lg">\uD83C\uDF10 '+esc(L)+'</span>'); }
 
   if(!rows.length && !meta.length){
-    return '<div class="contact"><a class="d acc" href="'+esc(c.url)+'" target="_blank" rel="noopener">\uD83D\uDCE9 راسل عبر الحساب</a></div>';
+    return '<div class="contact"><a class="d acc" href="'+esc(c.url)+'" target="_blank" rel="noopener">\uD83D\uDCE9 تواصل عبر الحساب</a></div>';
   }
   let html='<div class="contact">';
   if(rows.length) html+='<div class="clist">'+rows.join("")+'</div>';
@@ -456,6 +530,30 @@ function contactRow(c){
 function copyTxt(txt, el){
   try{ navigator.clipboard && navigator.clipboard.writeText(txt); }catch(e){}
   if(el){ const o=el.textContent; el.textContent="\u2713"; setTimeout(()=>{el.textContent=o;},1000); }
+}
+function otherChips(c){
+  if(!c.other) return '';
+  const parts=String(c.other).split(/[\n,|;]+/).map(s=>s.trim()).filter(Boolean);
+  const seen={}; const chips=[];
+  for(let part of parts){
+    let url='', plat='', label='';
+    const low=part.toLowerCase();
+    if(/instagram\.com/.test(low)||/^insta|^ig[:@]/.test(low)){plat='instagram';label='انستجرام';}
+    else if(/tiktok\.com|tiktok|^tt[:@]/.test(low)){plat='tiktok';label='تيك توك';}
+    else if(/youtube\.com|youtu\.be|^yt[:@]/.test(low)){plat='youtube';label='يوتيوب';}
+    else if(/snapchat\.com|snap/.test(low)){plat='snapchat';label='سناب';}
+    else if(/twitter\.com|x\.com|^x[:@]|^tw[:@]/.test(low)){plat='x';label='تويتر';}
+    else if(/t\.me|telegram/.test(low)){plat='tg';label='تيليجرام';}
+    else if(/facebook\.com|fb\.com|^fb[:@]/.test(low)){plat='fb';label='فيسبوك';}
+    if(/https?:\/\//i.test(part)){ url=part; }
+    else { const h=part.replace(/^@/,'').replace(/^[a-z]+[:@]/i,'').replace(/^https?:\/\//,'');
+      if(plat==='instagram')url='https://instagram.com/'+h; else if(plat==='tiktok')url='https://www.tiktok.com/@'+h.replace(/^@/,''); else if(plat==='youtube')url='https://youtube.com/'+h; else if(plat==='snapchat')url='https://www.snapchat.com/add/'+h; else if(plat==='x')url='https://x.com/'+h; else if(plat==='tg')url='https://t.me/'+h; else if(plat==='fb')url='https://facebook.com/'+h; else url=(/\./.test(part)?('https://'+part.replace(/^https?:\/\//,'')):'#'); }
+    if(!plat){plat='link';label='رابط';}
+    const key=plat+'|'+url; if(seen[key])continue; seen[key]=1;
+    const col=(PLAT[plat]&&PLAT[plat].c)||'#6b6b76';
+    chips.push('<a class="ochip" href="'+esc(url)+'" target="_blank" rel="noopener" style="--oc:'+col+'">'+esc(label)+'</a>');
+  }
+  return chips.length? '<div class="others"><span class="olbl">منصات أخرى:</span>'+chips.join('')+'</div>':'';
 }
 function card(c){
   const p=PLAT[c.platform]||PLAT.instagram;
@@ -469,9 +567,10 @@ function card(c){
       '<div class="loc">📍 '+(c.country||"الخليج")+'</div>'+
       '<div class="fol"><span class="big num">'+fmt(c.followers)+'</span><span class="lbl">متابع</span></div>'+
       '<div class="tags"><span class="t">'+(NICHE_AR[c.niche]||c.niche||"")+'</span><span class="t co">'+(c.country||"الخليج")+'</span></div>'+
+      otherChips(c)+
       contactRow(c)+
       '<div class="actions">'+
-        '<a class="btn primary" href="'+esc(c.url)+'" target="_blank" rel="noopener">زيارة الحساب</a>'+
+        '<a class="btn primary" href="'+esc(c.url)+'" target="_blank" rel="noopener">زيارة الحساب الرسمي</a>'+
         '<button class="btn ghost" title="نسخ الحساب" onclick="navigator.clipboard&&navigator.clipboard.writeText(\'@'+esc(c.handle)+'\')">⧉</button>'+
       '</div>'+
     '</div></div>';
@@ -509,10 +608,10 @@ function render(){
 function renderStats(){
   const data=clean(CREATORS);
   document.getElementById("stats").innerHTML=
-    '<div class="stat"><div class="v num">'+data.length+'</div><div class="l">مؤثر</div></div>'+
-    '<div class="stat"><div class="v num">'+new Set(data.map(c=>c.platform)).size+'</div><div class="l">منصات</div></div>'+
-    '<div class="stat"><div class="v num">'+new Set(data.map(c=>c.niche)).size+'</div><div class="l">مجالات</div></div>'+
-    '<div class="stat"><div class="v num">3</div><div class="l">دول</div></div>';
+    '<div class="stat"><div class="v num">'+data.length.toLocaleString("en")+'</div><div class="l">مؤثر موثّق</div></div>'+
+    '<div class="stat"><div class="v num">'+new Set(data.map(c=>c.platform)).size+'</div><div class="l">منصات تواصل</div></div>'+
+    '<div class="stat"><div class="v num">'+new Set(data.map(c=>c.niche)).size+'</div><div class="l">مجالات تسويق</div></div>'+
+    '<div class="stat"><div class="v num">'+data.filter(c=>c.email||c.whatsapp||c.phone).length.toLocaleString("en")+'</div><div class="l">وسيلة تواصل مباشرة</div></div>';
 }
 
 /* ===== تشغيل الفيديو داخل الموقع ===== */
@@ -550,6 +649,7 @@ document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeModal(); });
 document.getElementById("q").addEventListener("input",e=>{state.q=e.target.value;render();});
 document.getElementById("f-fol").addEventListener("change",e=>{state.fol=e.target.value;render();});
 document.getElementById("sort").addEventListener("change",e=>{state.sort=e.target.value;render();});
+document.getElementById("f-contact").addEventListener("change",e=>{state.contact=e.target.value;render();});
 
 function gvizUrl(tab){
   return "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/gviz/tq?tqx=out:json&sheet="+encodeURIComponent(tab)+"&_="+Date.now();
@@ -583,6 +683,7 @@ function parseGviz(text){
       avatar_url:o.avatar_url||"",
       videos:Array.isArray(vids)?vids:[],
       top_video_url:o.top_video_url||"",
+      other:o.other_platforms||"",
       email:o.email||"", whatsapp:o.whatsapp||"", phone:o.phone||"",
       links:o.links_bio||"", language:o.language||""
     });
@@ -602,6 +703,12 @@ async function boot(){
   buildAllPills(); renderStats(); render();
 }
 boot();
+
+/* ===== Theme (light/dark) ===== */
+function applyTheme(t){ document.body.classList.toggle('dark', t==='dark'); var b=document.getElementById('themebtn'); if(b) b.textContent=(t==='dark'?'\u2600\uFE0F':'\uD83C\uDF19'); try{ localStorage.setItem('adltix_theme',t); }catch(e){} }
+function toggleTheme(){ applyTheme(document.body.classList.contains('dark')?'light':'dark'); }
+(function(){ var t='light'; try{ t=localStorage.getItem('adltix_theme')||'light'; }catch(e){} applyTheme(t); })();
+
 </script>
 <div class="splash" id="splash">
   <video id="introVideo" src="intro.mp4" autoplay muted playsinline preload="auto"></video>
