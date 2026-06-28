@@ -708,28 +708,42 @@ function copyTxt(txt, el){
   if(el){ const o=el.textContent; el.textContent="\u2713"; setTimeout(()=>{el.textContent=o;},1000); }
 }
 function otherChips(c){
-  if(!c.other) return '';
-  const parts=String(c.other).split(/[\n,|;]+/).map(s=>s.trim()).filter(Boolean);
+  const raw=[];
+  if(c.other) raw.push(...String(c.other).split(/[\n,|;]+/));
+  if(c.links) raw.push(...String(c.links).split(/[\n,|;]+/));
+  const parts=raw.map(s=>s.trim()).filter(Boolean);
   const seen={}; const chips=[];
   for(let part of parts){
     let url='', plat='', label='';
     const low=part.toLowerCase();
     if(/instagram\.com/.test(low)||/^insta|^ig[:@]/.test(low)){plat='instagram';label='انستجرام';}
-    else if(/tiktok\.com|tiktok|^tt[:@]/.test(low)){plat='tiktok';label='تيك توك';}
+    else if(/tiktok\.com|^tiktok|^tt[:@]/.test(low)){plat='tiktok';label='تيك توك';}
     else if(/youtube\.com|youtu\.be|^yt[:@]/.test(low)){plat='youtube';label='يوتيوب';}
-    else if(/snapchat\.com|snap/.test(low)){plat='snapchat';label='سناب';}
+    else if(/snapchat\.com|^snap/.test(low)){plat='snapchat';label='سناب';}
     else if(/twitter\.com|x\.com|^x[:@]|^tw[:@]/.test(low)){plat='x';label='تويتر';}
     else if(/t\.me|telegram/.test(low)){plat='tg';label='تيليجرام';}
     else if(/facebook\.com|fb\.com|^fb[:@]/.test(low)){plat='fb';label='فيسبوك';}
-    if(/https?:\/\//i.test(part)){ url=part; }
-    else { const h=part.replace(/^@/,'').replace(/^[a-z]+[:@]/i,'').replace(/^https?:\/\//,'');
-      if(plat==='instagram')url='https://instagram.com/'+h; else if(plat==='tiktok')url='https://www.tiktok.com/@'+h.replace(/^@/,''); else if(plat==='youtube')url='https://youtube.com/'+h; else if(plat==='snapchat')url='https://www.snapchat.com/add/'+h; else if(plat==='x')url='https://x.com/'+h; else if(plat==='tg')url='https://t.me/'+h; else if(plat==='fb')url='https://facebook.com/'+h; else url=(/\./.test(part)?('https://'+part.replace(/^https?:\/\//,'')):'#'); }
-    if(!plat){plat='link';label='رابط';}
-    const key=plat+'|'+url; if(seen[key])continue; seen[key]=1;
-    const col=(PLAT[plat]&&PLAT[plat].c)||'#6b6b76';
+    // build a REAL url (never '#')
+    if(/^https?:\/\//i.test(part)){ url=part; }
+    else if(plat){ const h=part.replace(/^@/,'').replace(/^[a-z]+[:@]/i,'').replace(/^https?:\/\//,'').replace(/\/+$/,'');
+      if(plat==='instagram')url='https://instagram.com/'+h.replace(/^@/,'');
+      else if(plat==='tiktok')url='https://www.tiktok.com/@'+h.replace(/^@/,'');
+      else if(plat==='youtube')url='https://youtube.com/'+h;
+      else if(plat==='snapchat')url='https://www.snapchat.com/add/'+h;
+      else if(plat==='x')url='https://x.com/'+h.replace(/^@/,'');
+      else if(plat==='tg')url='https://t.me/'+h.replace(/^@/,'');
+      else if(plat==='fb')url='https://facebook.com/'+h;
+    }
+    else if(/^[\w.-]+\.[a-z]{2,}(\/|$)/i.test(part)){ url='https://'+part.replace(/^https?:\/\//,''); }
+    if(!url) continue;                       // ملوش لينك صح -> مايظهرش (مفيش "رابط" ولا reload)
+    if(!label){                              // مش منصة معروفة -> اكتب اسم الموقع بدل "رابط"
+      try{ const host=new URL(url).hostname.replace(/^www\./,''); label=host; }catch(e){ continue; }
+    }
+    const key=(plat||'link')+'|'+url; if(seen[key]) continue; seen[key]=1;
+    const col=(PLAT[plat]&&PLAT[plat].c)||'#5b6470';
     chips.push('<a class="ochip" href="'+esc(url)+'" target="_blank" rel="noopener" style="--oc:'+col+'">'+esc(label)+'</a>');
   }
-  return chips.length? '<div class="others"><span class="olbl">منصات أخرى:</span>'+chips.join('')+'</div>':'';
+  return chips.length? '<div class="others"><span class="olbl">روابط أخرى:</span>'+chips.join('')+'</div>':'';
 }
 function card(c){
   const p=PLAT[c.platform]||PLAT.instagram;
