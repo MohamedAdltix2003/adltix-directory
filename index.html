@@ -739,6 +739,7 @@ function otherChips(c){
     if(!label){                              // مش منصة معروفة -> اكتب اسم الموقع بدل "رابط"
       try{ const host=new URL(url).hostname.replace(/^www\./,''); label=host; }catch(e){ continue; }
     }
+    if(plat && plat===c.platform) continue;            // متكتبش نفس منصة الكارت تاني
     const key=(plat||'link')+'|'+url; if(seen[key]) continue; seen[key]=1;
     const col=(PLAT[plat]&&PLAT[plat].c)||'#5b6470';
     chips.push('<a class="ochip" href="'+esc(url)+'" target="_blank" rel="noopener" style="--oc:'+col+'">'+esc(label)+'</a>');
