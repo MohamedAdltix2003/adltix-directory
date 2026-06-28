@@ -79,9 +79,11 @@
   .tile .vlabel{position:absolute;z-index:2;bottom:6px;inset-inline-start:7px;font-size:10.5px;font-weight:700;color:#fff;background:rgba(0,0,0,.5);padding:2px 7px;border-radius:6px;backdrop-filter:blur(2px)}
   .tile .more{position:absolute;z-index:2;top:6px;inset-inline-end:7px;font-size:11px;font-weight:800;color:#fff;background:rgba(75,35,201,.88);padding:2px 9px;border-radius:8px}
 
-  .body{padding:14px 16px 16px;position:relative}
-  .av{position:absolute;top:-26px;inset-inline-start:16px;width:54px;height:54px;border-radius:15px;border:3px solid #fff;display:grid;place-items:center;color:#fff;font-weight:800;font-size:21px;box-shadow:0 4px 12px rgba(0,0,0,.12);background-size:cover;background-position:center;overflow:hidden}
+  .body{padding:14px 16px 16px;position:relative;z-index:6;background:var(--surface);border-radius:18px 18px 0 0;margin-top:-14px}
+  .av{position:absolute;top:-30px;inset-inline-start:16px;width:60px;height:60px;border-radius:16px;border:3px solid #fff;display:grid;place-items:center;color:#fff;font-weight:800;font-size:22px;box-shadow:0 8px 20px rgba(0,0,0,.22);background-size:cover;background-position:center;overflow:hidden;z-index:8;transition:transform .25s, box-shadow .25s}
   .av img{width:100%;height:100%;object-fit:cover}
+  .card:hover .av{transform:translateY(-2px) scale(1.06);box-shadow:0 12px 26px rgba(0,0,0,.3)}
+  .av::after{content:'';position:absolute;inset:0;border-radius:13px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.5)}
   .pchip{position:absolute;top:12px;inset-inline-end:16px;font-size:11px;font-weight:700;color:#fff;padding:4px 10px;border-radius:8px;display:inline-flex;align-items:center;gap:5px}
   .name{margin-top:34px;font-size:16.5px;font-weight:800;letter-spacing:-.3px;display:flex;align-items:center;gap:6px;word-break:break-all}
   .loc{font-size:12.5px;color:var(--muted);font-weight:600;margin-top:1px}
@@ -201,6 +203,26 @@
     .grid .card{opacity:1!important;transform:none!important}
     .media .cover{transition:none!important}
     .hero .tag,.hero h2,.hero p,.stats .stat{animation:none!important}
+  }
+
+
+  /* ===== Avatar + richer motion polish ===== */
+  @keyframes popIn{0%{opacity:0;transform:translateY(8px) scale(.8)}60%{transform:translateY(-2px) scale(1.04)}100%{opacity:1;transform:none}}
+  .grid .card.in .av{animation:popIn .5s .15s both}
+  @keyframes mediaFade{from{opacity:0}to{opacity:1}}
+  .media .cover{animation:mediaFade .6s both}
+  .embedhost .embedframe{animation:mediaFade .5s both}
+  @keyframes softPulse{0%,100%{box-shadow:0 10px 30px rgba(0,0,0,.35)}50%{box-shadow:0 10px 40px rgba(124,77,255,.55)}}
+  .media .playbig{animation:softPulse 2.4s ease-in-out infinite}
+  .media:hover .playbig{animation:none}
+  /* name + followers gentle rise on reveal */
+  .grid .card.in .name{animation:floatUp .5s .2s both}
+  .grid .card.in .fol{animation:floatUp .5s .26s both}
+  /* pchip pop */
+  .pchip{transition:transform .2s}
+  .card:hover .pchip{transform:scale(1.05)}
+  @media (prefers-reduced-motion:reduce){
+    .grid .card.in .av,.media .cover,.embedhost .embedframe,.media .playbig,.grid .card.in .name,.grid .card.in .fol{animation:none!important}
   }
 
 </style>
