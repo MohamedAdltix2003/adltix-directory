@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#EEEDF4; --surface:#FFFFFF; --ink:#16151F; --muted:#797889;
+    --bg:#ECE9F6; --bg2:#F3EDF0; --surface:#FFFFFF; --ink:#16151F; --muted:#797889;
     --brand:#4B23C9; --brand-2:#7C4DFF; --brand-soft:#ECE7FF;
     --accent:#FF6A4D; --line:#E7E4F1; --ok:#15A05A;
     --ig:#E1306C; --tt:#111; --yt:#FF0000; --x:#111; --snap:#FFC400;
@@ -18,7 +18,7 @@
     --r:18px;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:"Tajawal",sans-serif;background:var(--bg);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased}
+  body{font-family:"Tajawal",sans-serif;background:linear-gradient(165deg,var(--bg),var(--bg2));background-attachment:fixed;color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh}
   .num{font-family:"Space Grotesk","Tajawal",sans-serif;font-feature-settings:"tnum"}
   a{color:inherit;text-decoration:none}
   img{display:block;max-width:100%}
@@ -346,6 +346,39 @@
   .btn.primary:hover{filter:brightness(1.07);transform:translateY(-1px)}
   .btn.ghost{background:transparent;border:1.5px solid var(--line);color:var(--muted);flex:0 0 48px;font-size:16px}
   .btn.ghost:hover{border-color:var(--brand);color:var(--brand)}
+
+
+  /* ============ FINAL CLEAN OVERRIDES ============ */
+  /* Filters: NOT sticky anymore (was covering cards) */
+  .filters{position:static !important;top:auto !important}
+
+  /* Card header: avatar BESIDE name, fully inside body, NO overlap with media/name */
+  .media.shot,.media.ytchan,.media.snap,.media.fb{height:330px}
+  .body{padding:16px !important;margin-top:0 !important;border-radius:0 !important}
+  .chead{display:flex;align-items:center;gap:12px;margin-top:0 !important;margin-bottom:13px;position:relative;z-index:2}
+  .av{width:54px !important;height:54px !important;border-radius:15px !important;border:2px solid var(--line) !important;box-shadow:0 4px 12px rgba(0,0,0,.12) !important;flex-shrink:0}
+  .card:hover .av{transform:none !important;box-shadow:0 6px 16px rgba(0,0,0,.16) !important}
+  .av img{border-radius:13px}
+  .av::after{display:none}
+  .cmeta{flex:1;min-width:0}
+  .name{margin:0;font-size:15.5px;font-weight:800}
+  .loc{margin-top:2px}
+  .pchip{align-self:center;margin-bottom:0}
+
+  /* Card surface: soft, not flat */
+  .grid .card{border-radius:20px;background:var(--surface);border:1px solid var(--line);box-shadow:0 2px 6px rgba(30,20,70,.05),0 14px 34px rgba(40,20,90,.07)}
+
+  /* Header: solid translucent that matches new bg */
+  header{background:color-mix(in srgb,var(--bg) 80%,transparent)}
+  body.dark header{background:rgba(12,11,20,.82)}
+
+  /* keep animated blobs subtle so text stays readable */
+  .bgfx .blob{opacity:.30}
+  body.dark .bgfx .blob{opacity:.26}
+
+  @media (max-width:640px){
+    .media.shot,.media.ytchan,.media.snap,.media.fb{height:300px}
+  }
 
 </style>
 </head>
