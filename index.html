@@ -414,6 +414,29 @@
 
   @media (max-width:640px){ .media{height:320px} }
 
+
+  /* ============ FINAL: clean contact buttons ============ */
+  .contact2{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  .cbtn2{flex:1 1 0;min-width:80px;text-align:center;font-family:inherit;font-weight:800;font-size:13px;padding:11px 10px;border-radius:12px;color:#fff;transition:.15s;border:none;cursor:pointer}
+  .cbtn2.wa{background:#22C35E}
+  .cbtn2.ph{background:#0A84FF}
+  .cbtn2.em{background:linear-gradient(135deg,var(--brand),var(--brand-2))}
+  .cbtn2.acc{background:transparent;border:1.5px solid var(--line);color:var(--muted);flex:1 1 100%}
+  .cbtn2:hover{filter:brightness(1.06);transform:translateY(-1px);box-shadow:0 6px 16px rgba(0,0,0,.16)}
+
+  /* ============ FINAL: clean filters (not sticky) ============ */
+  .filters{position:static !important;top:auto !important;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px !important;box-shadow:var(--shadow);margin-bottom:24px;display:block !important}
+  .frow{display:flex !important;align-items:center;gap:8px;flex-wrap:wrap;padding:0 !important}
+  .frow + .frow{margin-top:13px !important;padding-top:13px !important;border-top:1px solid var(--line) !important}
+  .flabel{font-size:12px !important;font-weight:800 !important;color:var(--muted) !important;min-width:54px}
+  .pill{border:1.5px solid var(--line) !important;background:transparent !important;color:var(--ink) !important;font-family:inherit;font-weight:700;font-size:13px;padding:8px 15px !important;border-radius:11px !important;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:7px}
+  .pill:hover{border-color:var(--brand-2) !important;color:var(--brand) !important;background:var(--brand-soft) !important}
+  .pill.on{background:var(--brand) !important;border-color:var(--brand) !important;color:#fff !important;box-shadow:0 6px 14px rgba(75,35,201,.28)}
+  .spacer{flex:1}
+  select.sortsel{appearance:none;-webkit-appearance:none;border:1.5px solid var(--line);background:var(--surface) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='3'><path d='M6 9l6 6 6-6'/></svg>") no-repeat left 12px center;border-radius:11px;padding:9px 14px 9px 32px;font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;color:var(--ink);transition:.15s}
+  select.sortsel:hover{border-color:var(--brand-2)}
+  select.sortsel:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+
 </style>
 </head>
 <body>
@@ -610,49 +633,16 @@ function stripHtml(c){
 }
 
 function contactRow(c){
-  const rows=[];
   const wa = c.whatsapp ? String(c.whatsapp).trim() : "";
   const ph = c.phone ? String(c.phone).trim() : "";
   const waNum = wa.replace(/[^\d]/g,"");
   const phNum = ph.replace(/[^\d]/g,"");
-  // واتساب — فقط لو فيه عمود واتساب
-  if(waNum){
-    const link = wa.indexOf("http")===0 ? wa : ("https://wa.me/"+waNum);
-    rows.push(
-      '<div class="crow">'+
-        '<span class="cic wa">\uD83D\uDCAC</span>'+
-        '<span class="cval" dir="ltr">'+esc("+"+waNum)+'</span>'+
-        '<a class="cbtn wa" href="'+esc(link)+'" target="_blank" rel="noopener" title="فتح واتساب">واتساب</a>'+
-        '<button class="cbtn ic" title="نسخ" onclick="copyTxt(\''+esc(waNum)+'\',this)">\u29C9</button>'+
-      '</div>'
-    );
-  }
-  // رقم هاتف للاتصال — فقط لو موجود ومختلف عن رقم الواتساب
-  if(phNum && phNum!==waNum){
-    rows.push(
-      '<div class="crow">'+
-        '<span class="cic ph">\uD83D\uDCDE</span>'+
-        '<span class="cval" dir="ltr">'+esc("+"+phNum)+'</span>'+
-        '<a class="cbtn ph" href="tel:+'+esc(phNum)+'" title="اتصال">اتصال</a>'+
-        '<button class="cbtn ic" title="نسخ" onclick="copyTxt(\''+esc(phNum)+'\',this)">\u29C9</button>'+
-      '</div>'
-    );
-  }
-  // إيميل
-  if(c.email){
-    rows.push(
-      '<div class="crow">'+
-        '<span class="cic em">\u2709\uFE0F</span>'+
-        '<span class="cval" dir="ltr">'+esc(c.email)+'</span>'+
-        '<a class="cbtn em" href="mailto:'+esc(c.email)+'" title="إرسال بريد">بريد</a>'+
-        '<button class="cbtn ic" title="نسخ" onclick="copyTxt(\''+esc(c.email)+'\',this)">\u29C9</button>'+
-      '</div>'
-    );
-  }
-  if(!rows.length){
-    return '<div class="contact"><a class="d acc" href="'+esc(c.url)+'" target="_blank" rel="noopener">\uD83D\uDCE9 تواصل عبر الحساب</a></div>';
-  }
-  return '<div class="contact"><div class="clist">'+rows.join("")+'</div></div>';
+  const btns=[];
+  if(waNum){ const link = wa.indexOf("http")===0 ? wa : ("https://wa.me/"+waNum); btns.push('<a class="cbtn2 wa" title="'+esc("+"+waNum)+'" href="'+esc(link)+'" target="_blank" rel="noopener">واتساب</a>'); }
+  if(phNum && phNum!==waNum){ btns.push('<a class="cbtn2 ph" title="'+esc("+"+phNum)+'" href="tel:+'+esc(phNum)+'">اتصال</a>'); }
+  if(c.email){ btns.push('<a class="cbtn2 em" title="'+esc(c.email)+'" href="mailto:'+esc(c.email)+'">بريد</a>'); }
+  if(!btns.length){ return '<a class="cbtn2 acc" href="'+esc(c.url)+'" target="_blank" rel="noopener">تواصل عبر الحساب</a>'; }
+  return '<div class="contact2">'+btns.join("")+'</div>';
 }
 function copyTxt(txt, el){
   try{ navigator.clipboard && navigator.clipboard.writeText(txt); }catch(e){}
@@ -724,7 +714,7 @@ function observeCards(){
   cards.forEach(el=>_revealObs.observe(el));
   if(_embedObs) _embedObs.disconnect();
   _embedObs=new IntersectionObserver((es)=>{ es.forEach(e=>{ if(e.isIntersecting){ loadEmbed(e.target); _embedObs.unobserve(e.target);} }); },{rootMargin:'250px 0px'});
-  document.querySelectorAll('.embedhost').forEach(el=>_embedObs.observe(el));
+  document.querySelectorAll('[data-embed-src]').forEach(el=>_embedObs.observe(el));
 }
 function render(){
   const r=applyFilters();
