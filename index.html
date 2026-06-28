@@ -736,6 +736,7 @@ function linksChips(c){
     if(/^https?:\/\//i.test(part)){ url=part; }
     else if(/^[\w.-]+\.[a-z]{2,}(\/|$)/i.test(part)){ url='https://'+part.replace(/^https?:\/\//,''); }
     if(!url) continue;
+    if(plat && plat===c.platform) continue;   // نفس منصة الكارت -> متتطبعش
     if(!label){ try{ label=new URL(url).hostname.replace(/^www\./,''); }catch(e){ continue; } }
     const key=url; if(seen[key]) continue; seen[key]=1;
     const col=(PLAT[plat]&&PLAT[plat].c)||'#5b6470';
