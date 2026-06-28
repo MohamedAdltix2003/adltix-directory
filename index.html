@@ -380,6 +380,40 @@
     .media.shot,.media.ytchan,.media.snap,.media.fb{height:300px}
   }
 
+
+  /* ============ MEDIA: cropped real embeds (no caption) ============ */
+  .media{position:relative;height:340px;overflow:hidden;display:grid;place-items:center;cursor:pointer;background:#0b0a14}
+  .media.embed{display:block}
+  .media.embed .poster{position:absolute;inset:0;display:grid;place-items:center;z-index:2}
+  .media.embed .embedframe{position:absolute;left:50%;transform:translateX(-50%);border:0;width:100%;z-index:1;background:#fff}
+  .media.embed.ig .embedframe{top:-54px;height:680px}
+  .media.embed.tt .embedframe{top:-2px;height:760px}
+  .media.shot .cover{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1}
+  .media .ovl{position:absolute;inset:0;z-index:2;background:linear-gradient(180deg,rgba(0,0,0,.02),rgba(0,0,0,.34))}
+  .media .ovl.soft{background:rgba(0,0,0,.18)}
+  .media .ytcover{object-fit:contain;padding:42px;background:transparent}
+  .media .playbig{position:relative;z-index:3;width:58px;height:58px;border-radius:50%;background:rgba(255,255,255,.94);display:grid;place-items:center;color:var(--brand);box-shadow:0 10px 28px rgba(0,0,0,.32)}
+  .media:hover .playbig{transform:scale(1.1)}
+  .media .mlabel{position:absolute;z-index:4;bottom:12px;inset-inline-start:14px;color:#fff;font-weight:800;font-size:12px;background:rgba(0,0,0,.34);padding:5px 11px;border-radius:9px;backdrop-filter:blur(3px)}
+  .media .mlabel.dark{color:#1a1a1a;background:rgba(255,255,255,.65)}
+  .media.snap .ghost{font-size:62px;position:relative;z-index:3}
+
+  /* ============ CARD: clean professional, NO avatar ============ */
+  .body{padding:16px 16px 18px !important;margin-top:0 !important;border-radius:0 !important;display:flex;flex-direction:column}
+  .chead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 12px !important}
+  .cmeta{flex:1;min-width:0}
+  .name{margin:0;font-size:16px;font-weight:800;letter-spacing:-.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:ltr;text-align:start}
+  .loc{margin-top:3px;font-size:12.5px;color:var(--muted);font-weight:600}
+  .pchip{position:static;align-self:center;margin:0;font-size:11px;font-weight:800;color:#fff;padding:5px 12px;border-radius:999px;box-shadow:0 4px 12px rgba(0,0,0,.18);flex-shrink:0}
+  .fol{display:flex;align-items:baseline;gap:8px;margin:2px 0 13px}
+  .fol .big{font-size:27px;font-weight:800;letter-spacing:-.6px}
+  .fol .lbl{font-size:12.5px;color:var(--muted);font-weight:600}
+  .fol .nichetag{margin-inline-start:auto;font-size:11.5px;font-weight:800;padding:4px 12px;border-radius:999px;background:var(--brand-soft);color:var(--brand)}
+  .grid .card{border-radius:20px;background:var(--surface);border:1px solid var(--line);box-shadow:0 2px 6px rgba(30,20,70,.05),0 14px 34px rgba(40,20,90,.07);overflow:hidden}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px}
+
+  @media (max-width:640px){ .media{height:320px} }
+
 </style>
 </head>
 <body>
@@ -540,34 +574,32 @@ function stripHtml(c){
   const cand=[c.top_video_url, ...vids.map(v=>v.url), c.url].filter(Boolean);
   const pickBy=(fn)=>{ for(const u of cand){ if(fn(u)) return u; } return ''; };
 
-  // إنستجرام: صورة المنشور نضيفة (من غير كلام) + تشغيل يفتح الفيديو
+  // إنستجرام + ريلز: الفيديو الحقيقي (embed) مقصوص عشان يبان المحتوى بس من غير كلام
   if(c.platform==='instagram'){
     const u=pickBy(u=>igCode(u)); const ic=igCode(u);
     if(ic){
-      const img='https://www.instagram.com/p/'+ic.code+'/media/?size=l';
-      return '<div class="media shot" style="background:'+p.g+'" onclick="openVideo(\''+esc(u)+'\',\'instagram\')"><img class="cover" src="'+esc(img)+'" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()"><div class="ovl"></div>'+bigPlay+'<span class="mlabel">▶ تشغيل</span></div>';
+      const srcU='https://www.instagram.com/'+ic.kind+'/'+ic.code+'/embed/captioned';
+      return '<div class="media embed ig" data-embed-src="'+esc('https://www.instagram.com/'+ic.kind+'/'+ic.code+'/embed')+'"><div class="poster" onclick="loadEmbed(this.parentNode)" style="background:'+p.g+'">'+bigPlay+'</div></div>';
     }
   }
-  // تيك توك: صورة الفيديو (cover) لو متوفرة، وإلا مربع بلون المنصة — والتشغيل يفتح الفيديو
+  // تيك توك: الفيديو الحقيقي مقصوص
   if(c.platform==='tiktok'){
-    const u=pickBy(u=>ttVidId(u))||c.top_video_url||c.url;
-    const thumb=(vids.find(v=>v.thumb)||{}).thumb||'';
-    if(thumb){
-      return '<div class="media shot" style="background:'+p.g+'" onclick="openVideo(\''+esc(u)+'\',\'tiktok\')"><img class="cover" src="'+esc(thumb)+'" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()"><div class="ovl"></div>'+bigPlay+'<span class="mlabel">▶ تشغيل</span></div>';
-    }
-    if(ttVidId(u)){
-      return '<div class="media shot" style="background:'+p.g+'" onclick="openVideo(\''+esc(u)+'\',\'tiktok\')"><div class="ovl soft"></div>'+bigPlay+'<span class="mlabel">▶ فيديو تيك توك</span></div>';
+    const u=pickBy(u=>ttVidId(u)); const vid=ttVidId(u);
+    if(vid){
+      return '<div class="media embed tt" data-embed-src="'+esc('https://www.tiktok.com/embed/v2/'+vid)+'"><div class="poster" onclick="loadEmbed(this.parentNode)" style="background:'+p.g+'">'+bigPlay+'</div></div>';
     }
   }
-  // يوتيوب: صورة الفيديو لو فيه id، وإلا صورة القناة
+  // يوتيوب: صورة الفيديو (بتشتغل) أو صورة القناة، والضغط يفتح الفيديو
   if(c.platform==='youtube'){
     const u=pickBy(u=>ytThumbId(u)); const id=ytThumbId(u);
     if(id){
       const t='https://i.ytimg.com/vi/'+id+'/hqdefault.jpg';
-      return '<div class="media shot" style="background:'+p.g+'" onclick="openVideo(\''+esc(u||c.url)+'\',\'youtube\')"><img class="cover" src="'+esc(t)+'" loading="lazy" onerror="this.remove()"><div class="ovl"></div>'+bigPlay+'<span class="mlabel">▶ فيديو يوتيوب</span></div>';
+      return '<div class="media shot" style="background:'+p.g+'" onclick="openVideo(\''+esc(u||c.url)+'\',\'youtube\')"><img class="cover" src="'+esc(t)+'" loading="lazy" onerror="this.remove()"><div class="ovl"></div>'+bigPlay+'</div>';
     }
-    const avc=c.avatar_url? '<img class="ytav" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" onerror="this.remove()">' : '';
-    return '<div class="media ytchan" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')">'+avc+'<div class="ovl soft"></div>'+bigPlay+'<span class="mlabel">قناة يوتيوب</span></div>';
+    if(c.avatar_url){
+      return '<div class="media shot yt" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover ytcover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" onerror="this.remove()"><div class="ovl soft"></div>'+bigPlay+'<span class="mlabel">قناة يوتيوب</span></div>';
+    }
+    return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')">'+bigPlay+'<span class="mlabel">يوتيوب</span></div>';
   }
   // سناب
   if(c.platform==='snapchat'){
@@ -652,20 +684,17 @@ function otherChips(c){
 }
 function card(c){
   const p=PLAT[c.platform]||PLAT.instagram;
-  const av = c.avatar_url? '<img src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" onerror="this.style.display=\'none\';this.parentNode.textContent=\''+esc(initialChar(c.handle))+'\'">' : esc(initialChar(c.handle));
   return '<div class="card">'+
     stripHtml(c)+
     '<div class="body">'+
       '<div class="chead">'+
-        '<div class="av" style="background:'+avColor(c.handle)+'">'+av+'</div>'+
         '<div class="cmeta">'+
           '<div class="name">@'+esc(c.handle)+'</div>'+
           '<div class="loc">\uD83D\uDCCD '+esc(c.country||"الخليج")+'</div>'+
         '</div>'+
         '<span class="pchip" style="background:'+p.c+'">'+p.ar+'</span>'+
       '</div>'+
-      '<div class="fol"><span class="big num">'+fmt(c.followers)+'</span><span class="lbl">متابع</span></div>'+
-      '<div class="tags"><span class="t">'+(NICHE_AR[c.niche]||c.niche||"")+'</span><span class="t co">'+esc(c.country||"الخليج")+'</span></div>'+
+      '<div class="fol"><span class="big num">'+fmt(c.followers)+'</span><span class="lbl">متابع</span><span class="nichetag">'+(NICHE_AR[c.niche]||c.niche||"")+'</span></div>'+
       otherChips(c)+
       contactRow(c)+
       '<div class="actions">'+
