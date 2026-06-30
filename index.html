@@ -670,7 +670,7 @@ function applyFilters(){
   return r;
 }
 
-function igCode(u){ const m=String(u||'').match(/\/(p|reel|tv)\/([^/?#]+)/); return m?{kind:m[1],code:m[2]}:null; }
+function igCode(u){ const m=String(u||'').match(/\/(reel|reels|tv)\/([^/?#]+)/); return m?{kind:(m[1]==='reels'?'reel':m[1]),code:m[2]}:null; }
 function ytThumbId(u){ try{ return (typeof ytId==='function')?ytId(u):''; }catch(e){ return ''; } }
 function ttVidId(u){ const m=String(u||'').match(/\/video\/(\d+)/); return m?m[1]:''; }
 
@@ -686,9 +686,12 @@ function stripHtml(c){
   if(c.platform==='instagram'){
     const u=pickBy(u=>igCode(u)); const ic=igCode(u);
     if(ic){
-      const srcU='https://www.instagram.com/'+ic.kind+'/'+ic.code+'/embed/captioned';
       return '<div class="media embed ig" data-embed-src="'+esc('https://www.instagram.com/'+ic.kind+'/'+ic.code+'/embed')+'"><div class="poster" onclick="loadEmbed(this.parentNode)" style="background:'+p.g+'">'+bigPlay+'</div></div>';
     }
+    if(c.avatar_url){
+      return '<div class="media shot" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel">انستجرام</span></div>';
+    }
+    return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="mlabel">انستجرام</span></div>';
   }
   // تيك توك: الفيديو الحقيقي مقصوص
   if(c.platform==='tiktok'){
@@ -696,6 +699,10 @@ function stripHtml(c){
     if(vid){
       return '<div class="media embed tt" data-embed-src="'+esc('https://www.tiktok.com/embed/v2/'+vid)+'"><div class="poster" onclick="loadEmbed(this.parentNode)" style="background:'+p.g+'">'+bigPlay+'</div></div>';
     }
+    if(c.avatar_url){
+      return '<div class="media shot" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel">تيك توك</span></div>';
+    }
+    return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="mlabel">تيك توك</span></div>';
   }
   // يوتيوب: صورة الفيديو (بتشتغل) أو صورة القناة، والضغط يفتح الفيديو
   if(c.platform==='youtube'){
@@ -713,8 +720,10 @@ function stripHtml(c){
   if(c.platform==='snapchat'){
     return '<div class="media snap" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="ghost">\uD83D\uDC7B</span><span class="mlabel dark">افتح سناب</span></div>';
   }
-  const fbUrl=(c.top_video_url||c.url);
-  return '<div class="media fb" style="background:'+p.g+'" onclick="openVideo(\''+esc(fbUrl)+'\',\''+c.platform+'\')">'+bigPlay+'<span class="mlabel">'+p.ar+'</span></div>';
+  if(c.avatar_url){
+    return '<div class="media shot" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel">'+p.ar+'</span></div>';
+  }
+  return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="mlabel">'+p.ar+'</span></div>';
 }
 
 function contactRow(c){
