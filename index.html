@@ -572,7 +572,7 @@
   </div>
 
   <div class="meta"><div class="count"><b id="shown">0</b> مؤثر ضمن النتائج</div></div>
-  <div id="capnote" style="display:none;margin:0 0 10px;padding:9px 14px;border-radius:12px;background:var(--brand-soft);color:var(--brand);font-weight:700;font-size:13px">يتم عرض أول 400 نتيجة فقط — استخدم الفلاتر لتضييق النتائج. (إجمالي المطابق ظاهر بالأعلى)</div>
+  
   <div class="grid" id="grid"></div>
   <div class="empty" id="empty" style="display:none">
     <div class="ei"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4B23C9" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></div>
@@ -614,7 +614,7 @@ const PLAT = {
   x:{ar:"تويتر",c:"#111",g:"linear-gradient(135deg,#1d1d1f,#3a3a3d)"},
   snapchat:{ar:"سناب",c:"#111",g:"linear-gradient(135deg,#FFFC00,#FFC400)"}
 };
-const NICHE_AR = {fashion:"فاشن",luxury:"لاكشري",moms:"عائلة وأمومة",sports:"رياضة ولياقة",food:"طعام وطبخ",gaming:"جيمنج",business:"أعمال",tech:"تقنية",travel:"سفر",entertainment:"ترفيه",other:"أخرى"};
+const NICHE_AR = {fashion:"فاشن",luxury:"لاكشري",moms:"عائلة وأمومة",sports:"رياضة ولياقة",food:"طعام وطبخ",gaming:"جيمنج",business:"أعمال",tech:"تقنية",entertainment:"ترفيه",other:"أخرى"};
 const COUNTRY_SYN={"السعودية":["السعودية","السعوديه","الرياض","جدة","جده","مكة","مكه","المدينة","المدينه","الدمام","الخبر","saudi","ksa"],"الإمارات":["الإمارات","الامارات","دبي","أبوظبي","ابوظبي","الشارقة","الشارقه","عجمان","العين","uae","dubai","emirat"],"الكويت":["الكويت","kuwait"],"قطر":["قطر","الدوحة","الدوحه","qatar","doha"],"مصر":["مصر","القاهرة","القاهره","الإسكندرية","الاسكندرية","الجيزة","الجيزه","egypt","cairo"],"المغرب":["المغرب","مغرب","الدار البيضاء","الرباط","مراكش","طنجة","morocco","casablanca","rabat"]};
 const COUNTRY_ORDER=["السعودية","الإمارات","الكويت","قطر","مصر","المغرب"];
 function countryBucket(loc){ loc=String(loc||"").toLowerCase(); for(const n of COUNTRY_ORDER){ const syn=COUNTRY_SYN[n]||[n]; if(syn.some(x=>loc.indexOf(String(x).toLowerCase())!==-1)) return n; } return "__other__"; }
@@ -639,7 +639,7 @@ function buildPills(id, items, key){
   });
 }
 function buildAllPills(){
-  buildPills("f-niche",[{v:"all",l:"الكل"},{v:"fashion",l:"فاشن"},{v:"luxury",l:"لاكشري"},{v:"moms",l:"عائلة وأمومة"},{v:"sports",l:"رياضة ولياقة"},{v:"food",l:"طعام وطبخ"},{v:"gaming",l:"جيمنج"},{v:"business",l:"أعمال"},{v:"tech",l:"تقنية"},{v:"travel",l:"سفر"},{v:"entertainment",l:"ترفيه"},{v:"other",l:"أخرى"}],"niche");
+  buildPills("f-niche",[{v:"all",l:"الكل"},{v:"fashion",l:"فاشن"},{v:"luxury",l:"لاكشري"},{v:"moms",l:"عائلة وأمومة"},{v:"sports",l:"رياضة ولياقة"},{v:"food",l:"طعام وطبخ"},{v:"gaming",l:"جيمنج"},{v:"business",l:"أعمال"},{v:"tech",l:"تقنية"},{v:"entertainment",l:"ترفيه"},{v:"other",l:"أخرى"}],"niche");
   buildPills("f-platform",[{v:"all",l:"الكل"},{v:"instagram",l:"انستجرام",dot:PLAT.instagram.c},{v:"tiktok",l:"تيك توك",dot:"#25F4EE"},{v:"youtube",l:"يوتيوب",dot:PLAT.youtube.c},{v:"x",l:"تويتر",dot:"#555"},{v:"snapchat",l:"سناب",dot:PLAT.snapchat.c}],"platform");
   const data=clean(CREATORS);
   const bc={}; data.forEach(c=>{ const b=countryBucket(c.country); bc[b]=(bc[b]||0)+1; });
@@ -799,14 +799,9 @@ function linksChips(c){
   return chips.length? '<div class="others links"><span class="olbl">روابط أخرى:</span>'+chips.join('')+'</div>':'';
 }
 function metricsRow(c){
-  const er=String(c.engagement||"").trim();
   const pi=prioInfo(c.priority);
-  let h='<div class="metrics">';
-  h+='<span class="metric"><span class="mk">معدل التفاعل</span><span class="mv">'+(er?esc(er.replace(/%$/,""))+'%':'—')+'</span></span>';
-  if(pi) h+='<span class="metric prio" style="--pc:'+pi.c+'"><span class="mk">الأولوية</span><span class="mv">'+pi.l+'</span></span>';
-  else h+='<span class="metric"><span class="mk">الأولوية</span><span class="mv">—</span></span>';
-  h+='</div>';
-  return h;
+  if(!pi) return "";
+  return '<div class="metrics"><span class="metric prio" style="--pc:'+pi.c+'"><span class="mk">الأولوية</span><span class="mv">'+pi.l+'</span></span></div>';
 }
 function card(c){
   const p=PLAT[c.platform]||PLAT.instagram;
@@ -844,26 +839,43 @@ function loadEmbed(host){
   host.innerHTML=''; host.appendChild(f);
 }
 let _revealObs=null, _embedObs=null;
-function observeCards(){
-  const cards=document.querySelectorAll('.card');
-  cards.forEach((el,i)=>{ el.style.transitionDelay=(Math.min(i,10)*45)+'ms'; });
-  if(_revealObs) _revealObs.disconnect();
+function ensureObs(){
+  if(_revealObs) return;
   _revealObs=new IntersectionObserver((es)=>{ es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); _revealObs.unobserve(e.target);} }); },{threshold:.08});
-  cards.forEach(el=>_revealObs.observe(el));
-  if(_embedObs) _embedObs.disconnect();
-  _embedObs=new IntersectionObserver((es)=>{ es.forEach(e=>{ if(e.isIntersecting){ loadEmbed(e.target); _embedObs.unobserve(e.target);} }); },{rootMargin:'250px 0px'});
-  document.querySelectorAll('[data-embed-src]').forEach(el=>_embedObs.observe(el));
+  _embedObs=new IntersectionObserver((es)=>{ es.forEach(e=>{ if(e.isIntersecting){ loadEmbed(e.target); _embedObs.unobserve(e.target);} }); },{rootMargin:'300px 0px'});
+}
+function observeNew(els){
+  ensureObs();
+  els.forEach((el,i)=>{ el.style.transitionDelay=(Math.min(i,8)*40)+'ms'; _revealObs.observe(el); el.querySelectorAll('[data-embed-src]').forEach(h=>_embedObs.observe(h)); });
+}
+let _list=[], _rendered=0; const PAGE_SIZE=48;
+function appendMore(){
+  if(_rendered>=_list.length) return;
+  const grid=document.getElementById("grid");
+  const next=_list.slice(_rendered, _rendered+PAGE_SIZE);
+  const tmp=document.createElement('div'); tmp.innerHTML=next.map(card).join("");
+  const added=Array.from(tmp.children);
+  added.forEach(el=>grid.appendChild(el));
+  _rendered+=next.length;
+  observeNew(added);
 }
 function render(){
-  const r=applyFilters();
-  const list=r.slice(0, RENDER_CAP);
-  document.getElementById("grid").innerHTML=list.map(card).join("");
-  document.getElementById("shown").textContent=r.length;
-  var cn=document.getElementById("capnote"); if(cn) cn.style.display=(r.length>RENDER_CAP)?"block":"none";
-  document.getElementById("empty").style.display=r.length?"none":"block";
-  document.getElementById("grid").style.display=r.length?"grid":"none";
-  observeCards();
+  _list=applyFilters(); _rendered=0;
+  const grid=document.getElementById("grid");
+  grid.innerHTML="";
+  document.getElementById("shown").textContent=_list.length;
+  document.getElementById("empty").style.display=_list.length?"none":"block";
+  grid.style.display=_list.length?"grid":"none";
+  appendMore();
 }
+let _scrollTied=false;
+function tieScroll(){
+  if(_scrollTied) return; _scrollTied=true;
+  window.addEventListener('scroll', ()=>{
+    if((window.innerHeight+window.scrollY) >= (document.body.offsetHeight-900)) appendMore();
+  }, {passive:true});
+}
+tieScroll();
 function renderStats(){
   const data=clean(CREATORS);
   document.getElementById("stats").innerHTML=
