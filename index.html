@@ -409,6 +409,13 @@
   .fol .big{font-size:27px;font-weight:800;letter-spacing:-.6px}
   .fol .lbl{font-size:12.5px;color:var(--muted);font-weight:600}
   .fol .nichetag{margin-inline-start:auto;font-size:11.5px;font-weight:800;padding:4px 12px;border-radius:999px;background:var(--brand-soft);color:var(--brand)}
+  .metrics{display:flex;gap:8px;margin:0 0 12px;flex-wrap:wrap}
+  .metric{display:flex;flex-direction:column;gap:1px;padding:6px 12px;border-radius:12px;background:rgba(0,0,0,.04);min-width:0}
+  body.dark .metric{background:rgba(255,255,255,.06)}
+  .metric .mk{font-size:10.5px;color:var(--muted);font-weight:700}
+  .metric .mv{font-size:14px;font-weight:900;color:var(--ink)}
+  .metric.prio .mv{color:var(--pc)}
+  .metric.prio{box-shadow:inset 0 0 0 1.5px var(--pc)}
   .grid .card{border-radius:20px;background:var(--surface);border:1px solid var(--line);box-shadow:0 2px 6px rgba(30,20,70,.05),0 14px 34px rgba(40,20,90,.07);overflow:hidden}
   .grid{grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px}
 
@@ -533,10 +540,13 @@
       <span class="spacer"></span>
       <div class="fctl"><span class="ftiny">المتابعين</span>
         <select id="f-fol" class="sortsel">
-          <option value="all">الكل (8K+)</option>
-          <option value="8-50">8K – 50K</option>
+          <option value="all">كل المتابعين</option>
+          <option value="0-10">أقل من 10K</option>
+          <option value="10-50">10K – 50K</option>
           <option value="50-100">50K – 100K</option>
           <option value="100-500">100K – 500K</option>
+          <option value="500-1000">500K – 1M</option>
+          <option value="1000-100000">أكثر من 1M</option>
         </select>
       </div>
       <div class="fctl"><span class="ftiny">وسيلة التواصل</span>
@@ -562,6 +572,7 @@
   </div>
 
   <div class="meta"><div class="count"><b id="shown">0</b> مؤثر ضمن النتائج</div></div>
+  <div id="capnote" style="display:none;margin:0 0 10px;padding:9px 14px;border-radius:12px;background:var(--brand-soft);color:var(--brand);font-weight:700;font-size:13px">يتم عرض أول 400 نتيجة فقط — استخدم الفلاتر لتضييق النتائج. (إجمالي المطابق ظاهر بالأعلى)</div>
   <div class="grid" id="grid"></div>
   <div class="empty" id="empty" style="display:none">
     <div class="ei"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4B23C9" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></div>
@@ -582,8 +593,9 @@
 
 <script>
 const SHEET_ID = "1SZpJPbpmkZ6OAvpfLaiREX5BmpbiyMiP4IEaFOO7KHM";
-const SHEET_TABS = ["fashion","moms","luxury","sports"];
-const MIN_FOLLOWERS = 8000;
+const SHEET_TABS = ["👗 Fashion & Style","✨ Luxury & Lifestyle","👨‍👩‍👧 Family & Parenting","⚽ Sports & Fitness","🍳 Food & Cooking","🎮 Gaming","💼 Business","📱 Tech","😂 Entertainment","🔖 Other Niches"];
+const MIN_FOLLOWERS = 0;
+const RENDER_CAP = 400;
 
 let CREATORS = [
   {handle:"list_roma", platform:"instagram", followers:343109, niche:"fashion", country:"الخليج", url:"https://www.instagram.com/list_roma", videos:[]},
@@ -602,7 +614,10 @@ const PLAT = {
   x:{ar:"تويتر",c:"#111",g:"linear-gradient(135deg,#1d1d1f,#3a3a3d)"},
   snapchat:{ar:"سناب",c:"#111",g:"linear-gradient(135deg,#FFFC00,#FFC400)"}
 };
-const NICHE_AR = {fashion:"فاشن",moms:"أمهات",luxury:"لاكشري",sports:"رياضة"};
+const NICHE_AR = {fashion:"فاشن",luxury:"لاكشري",moms:"عائلة وأمومة",sports:"رياضة ولياقة",food:"طعام وطبخ",gaming:"جيمنج",business:"أعمال",tech:"تقنية",travel:"سفر",entertainment:"ترفيه",other:"أخرى"};
+const COUNTRY_SYN={"السعودية":["السعودية","السعوديه","الرياض","جدة","جده","مكة","المدينة","الدمام","الخبر"],"الإمارات":["الإمارات","الامارات","دبي","أبوظبي","ابوظبي","الشارقة","الشارقه","عجمان","العين"],"الكويت":["الكويت"],"مصر":["مصر","القاهرة","القاهره","الإسكندرية","الاسكندرية","الجيزة","الجيزه"],"المغرب":["المغرب","الدار البيضاء","الرباط","مراكش","طنجة"]};
+function matchCountry(loc,name){ loc=String(loc||""); const syn=COUNTRY_SYN[name]||[name]; return syn.some(x=>loc.indexOf(x)!==-1); }
+function prioInfo(p){ p=String(p||"").trim().toLowerCase(); if(p==="high"||p==="عالي"||p==="1") return {l:"High",c:"#16a34a"}; if(p==="medium"||p==="متوسط"||p==="2") return {l:"Medium",c:"#f59e0b"}; if(p==="low"||p==="منخفض"||p==="3") return {l:"Low",c:"#9ca3af"}; return null; }
 const state = {niche:"all", platform:"all", country:"all", fol:"all", contact:"all", sort:"fol", q:""};
 
 function fmt(n){ if(n==null) return "—"; n=Number(n); if(!n) return "—"; if(n>=1e6) return (n/1e6).toFixed(1).replace(/\.0$/,"")+"M"; if(n>=1e3) return (n/1e3).toFixed(1).replace(/\.0$/,"")+"K"; return ""+n; }
@@ -622,15 +637,20 @@ function buildPills(id, items, key){
   });
 }
 function buildAllPills(){
-  buildPills("f-niche",[{v:"all",l:"الكل"},{v:"fashion",l:"فاشن"},{v:"moms",l:"أمهات"},{v:"luxury",l:"لاكشري"},{v:"sports",l:"رياضة"}],"niche");
+  buildPills("f-niche",[{v:"all",l:"الكل"},{v:"fashion",l:"فاشن"},{v:"luxury",l:"لاكشري"},{v:"moms",l:"عائلة وأمومة"},{v:"sports",l:"رياضة ولياقة"},{v:"food",l:"طعام وطبخ"},{v:"gaming",l:"جيمنج"},{v:"business",l:"أعمال"},{v:"tech",l:"تقنية"},{v:"travel",l:"سفر"},{v:"entertainment",l:"ترفيه"},{v:"other",l:"أخرى"}],"niche");
   buildPills("f-platform",[{v:"all",l:"الكل"},{v:"instagram",l:"انستجرام",dot:PLAT.instagram.c},{v:"tiktok",l:"تيك توك",dot:"#25F4EE"},{v:"youtube",l:"يوتيوب",dot:PLAT.youtube.c},{v:"x",l:"تويتر",dot:"#555"},{v:"snapchat",l:"سناب",dot:PLAT.snapchat.c}],"platform");
-  const data=clean(CREATORS); const cc=(n)=>data.filter(c=>c.country===n).length;
+  const data=clean(CREATORS);
+  const COUNTRIES=["السعودية","الإمارات","الكويت","مصر","المغرب"];
+  const cc=(n)=>data.filter(c=>matchCountry(c.country,n)).length;
+  const othersN=data.filter(c=>!COUNTRIES.some(n=>matchCountry(c.country,n))).length;
   buildPills("f-country",[
     {v:"all",l:"كل الدول ("+data.length+")"},
     {v:"السعودية",l:"🇸🇦 السعودية ("+cc("السعودية")+")"},
     {v:"الإمارات",l:"🇦🇪 الإمارات ("+cc("الإمارات")+")"},
     {v:"الكويت",l:"🇰🇼 الكويت ("+cc("الكويت")+")"},
-    {v:"__other__",l:"🌍 دول أخرى ("+data.filter(c=>["السعودية","الإمارات","الكويت"].indexOf(c.country)===-1).length+")"}
+    {v:"مصر",l:"🇪🇬 مصر ("+cc("مصر")+")"},
+    {v:"المغرب",l:"🇲🇦 المغرب ("+cc("المغرب")+")"},
+    {v:"__other__",l:"🌍 دول أخرى ("+othersN+")"}
   ],"country");
 }
 
@@ -638,8 +658,8 @@ function applyFilters(){
   let r=clean(CREATORS).slice();
   if(state.niche!=="all") r=r.filter(c=>c.niche===state.niche);
   if(state.platform!=="all") r=r.filter(c=>c.platform===state.platform);
-  if(state.country==="__other__") r=r.filter(c=>["السعودية","الإمارات","الكويت"].indexOf(c.country)===-1);
-  else if(state.country!=="all") r=r.filter(c=>c.country===state.country);
+  if(state.country==="__other__"){ const CS=["السعودية","الإمارات","الكويت","مصر","المغرب"]; r=r.filter(c=>!CS.some(n=>matchCountry(c.country,n))); }
+  else if(state.country!=="all") r=r.filter(c=>matchCountry(c.country,state.country));
   if(state.fol!=="all"){ const [a,b]=state.fol.split("-").map(Number); r=r.filter(c=>c.followers>=a*1000 && c.followers<b*1000); }
   if(state.contact && state.contact!=="all"){ r=r.filter(c=>{ const e=!!(c.email&&String(c.email).trim()); const w=!!((c.whatsapp&&String(c.whatsapp).trim())||(c.phone&&String(c.phone).trim())); if(state.contact==="email")return e; if(state.contact==="whatsapp")return w; if(state.contact==="both")return e&&w; if(state.contact==="none")return !e&&!w; return true; }); }
   if(state.q){ const q=state.q.toLowerCase(); r=r.filter(c=>(c.handle||"").toLowerCase().includes(q)); }
@@ -712,37 +732,71 @@ function copyTxt(txt, el){
   try{ navigator.clipboard && navigator.clipboard.writeText(txt); }catch(e){}
   if(el){ const o=el.textContent; el.textContent="\u2713"; setTimeout(()=>{el.textContent=o;},1000); }
 }
+function otherPlatformLinks(c){
+  const map=[
+    {plat:'instagram',label:'انستجرام',url:c.igUrl},
+    {plat:'tiktok',label:'تيك توك',url:c.ttUrl},
+    {plat:'youtube',label:'يوتيوب',url:c.ytUrl},
+    {plat:'snapchat',label:'سناب',url:c.scUrl},
+    {plat:'x',label:'تويتر',url:c.twUrl},
+    {plat:'fb',label:'فيسبوك',url:c.fbUrl}
+  ];
+  const out=[];
+  for(const m of map){
+    let u=String(m.url||'').trim(); if(!u) continue;
+    if(!/^https?:\/\//i.test(u)){ if(/^[\w.-]+\.[a-z]{2,}/i.test(u)) u='https://'+u.replace(/^\/+/,''); else continue; }
+    if(m.plat===c.platform) continue;          // المنصة الرئيسية -> مش هنا
+    out.push({plat:m.plat,label:m.label,url:u});
+  }
+  return out;
+}
 function otherText(c){
-  if(!c.other) return '';
-  const parts=String(c.other).split(/[\n,|;]+/).map(s=>s.trim()).filter(Boolean);
-  if(!parts.length) return '';
-  const chips=parts.map(p=>'<span class="ochip txt">'+esc(p)+'</span>').join('');
+  const names=otherPlatformLinks(c).map(l=>l.label);
+  if(c.other){ String(c.other).split(/[\n,|;]+/).map(s=>s.trim()).filter(Boolean).forEach(p=>{ if(names.indexOf(p)===-1) names.push(p); }); }
+  if(!names.length) return '';
+  const chips=names.map(n=>'<span class="ochip txt">'+esc(n)+'</span>').join('');
   return '<div class="others"><span class="olbl">منصات أخرى:</span>'+chips+'</div>';
 }
 function linksChips(c){
-  if(!c.links) return '';
-  const parts=String(c.links).split(/[\n,|;]+/).map(s=>s.trim()).filter(Boolean);
   const seen={}; const chips=[];
-  for(let part of parts){
-    let url='', plat='', label='';
-    const low=part.toLowerCase();
-    if(/instagram\.com/.test(low)){plat='instagram';label='انستجرام';}
-    else if(/tiktok\.com/.test(low)){plat='tiktok';label='تيك توك';}
-    else if(/youtube\.com|youtu\.be/.test(low)){plat='youtube';label='يوتيوب';}
-    else if(/snapchat\.com/.test(low)){plat='snapchat';label='سناب';}
-    else if(/twitter\.com|x\.com/.test(low)){plat='x';label='تويتر';}
-    else if(/t\.me|telegram/.test(low)){plat='tg';label='تيليجرام';}
-    else if(/facebook\.com|fb\.com/.test(low)){plat='fb';label='فيسبوك';}
-    if(/^https?:\/\//i.test(part)){ url=part; }
-    else if(/^[\w.-]+\.[a-z]{2,}(\/|$)/i.test(part)){ url='https://'+part.replace(/^https?:\/\//,''); }
-    if(!url) continue;
-    if(plat && plat===c.platform) continue;   // نفس منصة الكارت -> متتطبعش
-    if(!label){ try{ label=new URL(url).hostname.replace(/^www\./,''); }catch(e){ continue; } }
-    const key=url; if(seen[key]) continue; seen[key]=1;
-    const col=(PLAT[plat]&&PLAT[plat].c)||'#5b6470';
-    chips.push('<a class="ochip" href="'+esc(url)+'" target="_blank" rel="noopener" style="--oc:'+col+'">'+esc(label)+'</a>');
+  otherPlatformLinks(c).forEach(l=>{
+    if(seen[l.url]) return; seen[l.url]=1;
+    const col=(PLAT[l.plat]&&PLAT[l.plat].c)||'#5b6470';
+    chips.push('<a class="ochip" href="'+esc(l.url)+'" target="_blank" rel="noopener" style="--oc:'+col+'">'+esc(l.label)+'</a>');
+  });
+  if(c.links){
+    const parts=String(c.links).split(/[\n,|;]+/).map(s=>s.trim()).filter(Boolean);
+    for(let part of parts){
+      let url='', plat='', label='';
+      const low=part.toLowerCase();
+      if(/instagram\.com/.test(low)){plat='instagram';label='انستجرام';}
+      else if(/tiktok\.com/.test(low)){plat='tiktok';label='تيك توك';}
+      else if(/youtube\.com|youtu\.be/.test(low)){plat='youtube';label='يوتيوب';}
+      else if(/snapchat\.com/.test(low)){plat='snapchat';label='سناب';}
+      else if(/twitter\.com|x\.com/.test(low)){plat='x';label='تويتر';}
+      else if(/t\.me|telegram/.test(low)){plat='tg';label='تيليجرام';}
+      else if(/facebook\.com|fb\.com/.test(low)){plat='fb';label='فيسبوك';}
+      if(/^https?:\/\//i.test(part)){ url=part; }
+      else if(/^[\w.-]+\.[a-z]{2,}(\/|$)/i.test(part)){ url='https://'+part.replace(/^https?:\/\//,''); }
+      if(!url) continue;
+      if(plat && plat===c.platform) continue;
+      if(!label){ try{ label=new URL(url).hostname.replace(/^www\./,''); }catch(e){ continue; } }
+      if(seen[url]) continue; seen[url]=1;
+      const col=(PLAT[plat]&&PLAT[plat].c)||'#5b6470';
+      chips.push('<a class="ochip" href="'+esc(url)+'" target="_blank" rel="noopener" style="--oc:'+col+'">'+esc(label)+'</a>');
+    }
   }
   return chips.length? '<div class="others links"><span class="olbl">روابط أخرى:</span>'+chips.join('')+'</div>':'';
+}
+function metricsRow(c){
+  const er=String(c.engagement||"").trim();
+  const pi=prioInfo(c.priority);
+  if(!er && !pi) return "";
+  let h='<div class="metrics">';
+  if(er) h+='<span class="metric"><span class="mk">معدل التفاعل</span><span class="mv">'+esc(er.replace(/%$/,""))+'%</span></span>';
+  if(pi) h+='<span class="metric prio" style="--pc:'+pi.c+'"><span class="mk">الأولوية</span><span class="mv">'+pi.l+'</span></span>';
+  h+='</div>';
+  return h;
 }
 function card(c){
   const p=PLAT[c.platform]||PLAT.instagram;
@@ -757,6 +811,7 @@ function card(c){
         '<span class="pchip" style="background:'+p.c+'">'+p.ar+'</span>'+
       '</div>'+
       '<div class="fol"><span class="big num">'+fmt(c.followers)+'</span><span class="lbl">متابع</span><span class="nichetag">'+(NICHE_AR[c.niche]||c.niche||"")+'</span></div>'+
+      metricsRow(c)+
       otherText(c)+
       linksChips(c)+
       contactRow(c)+
@@ -791,8 +846,10 @@ function observeCards(){
 }
 function render(){
   const r=applyFilters();
-  document.getElementById("grid").innerHTML=r.map(card).join("");
+  const list=r.slice(0, RENDER_CAP);
+  document.getElementById("grid").innerHTML=list.map(card).join("");
   document.getElementById("shown").textContent=r.length;
+  var cn=document.getElementById("capnote"); if(cn) cn.style.display=(r.length>RENDER_CAP)?"block":"none";
   document.getElementById("empty").style.display=r.length?"none":"block";
   document.getElementById("grid").style.display=r.length?"grid":"none";
   observeCards();
@@ -869,7 +926,7 @@ function parseGviz(text){
       handle:String(o.handle||"").replace(/^@/,""),
       platform:o.platform||"",
       followers:Number(o.followers)||0,
-      niche:o.niche||"",
+      niche:String(o.niche||"").toLowerCase(),
       country:o.location||"الخليج",
       url:o.profile_url||"#",
       avatar_url:o.avatar_url||"",
@@ -877,7 +934,9 @@ function parseGviz(text){
       top_video_url:o.top_video_url||"",
       other:o.other_platforms||"",
       email:o.email||"", whatsapp:o.whatsapp||"", phone:o.phone||"",
-      links:o.links_bio||"", language:o.language||""
+      links:o.links_bio||"", language:o.language||"",
+      priority:o.priority||"", engagement:o.engagement_rate||"",
+      igUrl:o.instagram_url||"", ttUrl:o.tiktok_url||"", scUrl:o.snapchat_url||"", twUrl:o.twitter_url||"", ytUrl:o.youtube_url||"", fbUrl:o.facebook_url||""
     });
   }
   return out;
