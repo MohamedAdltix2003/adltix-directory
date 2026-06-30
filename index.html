@@ -615,8 +615,10 @@ const PLAT = {
   snapchat:{ar:"سناب",c:"#111",g:"linear-gradient(135deg,#FFFC00,#FFC400)"}
 };
 const NICHE_AR = {fashion:"فاشن",luxury:"لاكشري",moms:"عائلة وأمومة",sports:"رياضة ولياقة",food:"طعام وطبخ",gaming:"جيمنج",business:"أعمال",tech:"تقنية",travel:"سفر",entertainment:"ترفيه",other:"أخرى"};
-const COUNTRY_SYN={"السعودية":["السعودية","السعوديه","الرياض","جدة","جده","مكة","المدينة","الدمام","الخبر"],"الإمارات":["الإمارات","الامارات","دبي","أبوظبي","ابوظبي","الشارقة","الشارقه","عجمان","العين"],"الكويت":["الكويت"],"مصر":["مصر","القاهرة","القاهره","الإسكندرية","الاسكندرية","الجيزة","الجيزه"],"المغرب":["المغرب","الدار البيضاء","الرباط","مراكش","طنجة"]};
-function matchCountry(loc,name){ loc=String(loc||""); const syn=COUNTRY_SYN[name]||[name]; return syn.some(x=>loc.indexOf(x)!==-1); }
+const COUNTRY_SYN={"السعودية":["السعودية","السعوديه","الرياض","جدة","جده","مكة","مكه","المدينة","المدينه","الدمام","الخبر","saudi","ksa"],"الإمارات":["الإمارات","الامارات","دبي","أبوظبي","ابوظبي","الشارقة","الشارقه","عجمان","العين","uae","dubai","emirat"],"الكويت":["الكويت","kuwait"],"قطر":["قطر","الدوحة","الدوحه","qatar","doha"],"مصر":["مصر","القاهرة","القاهره","الإسكندرية","الاسكندرية","الجيزة","الجيزه","egypt","cairo"],"المغرب":["المغرب","مغرب","الدار البيضاء","الرباط","مراكش","طنجة","morocco","casablanca","rabat"]};
+const COUNTRY_ORDER=["السعودية","الإمارات","الكويت","قطر","مصر","المغرب"];
+function countryBucket(loc){ loc=String(loc||"").toLowerCase(); for(const n of COUNTRY_ORDER){ const syn=COUNTRY_SYN[n]||[n]; if(syn.some(x=>loc.indexOf(String(x).toLowerCase())!==-1)) return n; } return "__other__"; }
+function matchCountry(loc,name){ return countryBucket(loc)===name; }
 function prioInfo(p){ p=String(p||"").trim().toLowerCase(); if(p==="high"||p==="عالي"||p==="1") return {l:"High",c:"#16a34a"}; if(p==="medium"||p==="متوسط"||p==="2") return {l:"Medium",c:"#f59e0b"}; if(p==="low"||p==="منخفض"||p==="3") return {l:"Low",c:"#9ca3af"}; return null; }
 const state = {niche:"all", platform:"all", country:"all", fol:"all", contact:"all", sort:"fol", q:""};
 
@@ -640,17 +642,17 @@ function buildAllPills(){
   buildPills("f-niche",[{v:"all",l:"الكل"},{v:"fashion",l:"فاشن"},{v:"luxury",l:"لاكشري"},{v:"moms",l:"عائلة وأمومة"},{v:"sports",l:"رياضة ولياقة"},{v:"food",l:"طعام وطبخ"},{v:"gaming",l:"جيمنج"},{v:"business",l:"أعمال"},{v:"tech",l:"تقنية"},{v:"travel",l:"سفر"},{v:"entertainment",l:"ترفيه"},{v:"other",l:"أخرى"}],"niche");
   buildPills("f-platform",[{v:"all",l:"الكل"},{v:"instagram",l:"انستجرام",dot:PLAT.instagram.c},{v:"tiktok",l:"تيك توك",dot:"#25F4EE"},{v:"youtube",l:"يوتيوب",dot:PLAT.youtube.c},{v:"x",l:"تويتر",dot:"#555"},{v:"snapchat",l:"سناب",dot:PLAT.snapchat.c}],"platform");
   const data=clean(CREATORS);
-  const COUNTRIES=["السعودية","الإمارات","الكويت","مصر","المغرب"];
-  const cc=(n)=>data.filter(c=>matchCountry(c.country,n)).length;
-  const othersN=data.filter(c=>!COUNTRIES.some(n=>matchCountry(c.country,n))).length;
+  const bc={}; data.forEach(c=>{ const b=countryBucket(c.country); bc[b]=(bc[b]||0)+1; });
+  const cc=(n)=>bc[n]||0;
   buildPills("f-country",[
     {v:"all",l:"كل الدول ("+data.length+")"},
     {v:"السعودية",l:"🇸🇦 السعودية ("+cc("السعودية")+")"},
     {v:"الإمارات",l:"🇦🇪 الإمارات ("+cc("الإمارات")+")"},
     {v:"الكويت",l:"🇰🇼 الكويت ("+cc("الكويت")+")"},
+    {v:"قطر",l:"🇶🇦 قطر ("+cc("قطر")+")"},
     {v:"مصر",l:"🇪🇬 مصر ("+cc("مصر")+")"},
     {v:"المغرب",l:"🇲🇦 المغرب ("+cc("المغرب")+")"},
-    {v:"__other__",l:"🌍 دول أخرى ("+othersN+")"}
+    {v:"__other__",l:"🌍 دول أخرى ("+cc("__other__")+")"}
   ],"country");
 }
 
@@ -658,8 +660,7 @@ function applyFilters(){
   let r=clean(CREATORS).slice();
   if(state.niche!=="all") r=r.filter(c=>c.niche===state.niche);
   if(state.platform!=="all") r=r.filter(c=>c.platform===state.platform);
-  if(state.country==="__other__"){ const CS=["السعودية","الإمارات","الكويت","مصر","المغرب"]; r=r.filter(c=>!CS.some(n=>matchCountry(c.country,n))); }
-  else if(state.country!=="all") r=r.filter(c=>matchCountry(c.country,state.country));
+  if(state.country!=="all") r=r.filter(c=>countryBucket(c.country)===state.country);
   if(state.fol!=="all"){ const [a,b]=state.fol.split("-").map(Number); r=r.filter(c=>c.followers>=a*1000 && c.followers<b*1000); }
   if(state.contact && state.contact!=="all"){ r=r.filter(c=>{ const e=!!(c.email&&String(c.email).trim()); const w=!!((c.whatsapp&&String(c.whatsapp).trim())||(c.phone&&String(c.phone).trim())); if(state.contact==="email")return e; if(state.contact==="whatsapp")return w; if(state.contact==="both")return e&&w; if(state.contact==="none")return !e&&!w; return true; }); }
   if(state.q){ const q=state.q.toLowerCase(); r=r.filter(c=>(c.handle||"").toLowerCase().includes(q)); }
@@ -791,10 +792,10 @@ function linksChips(c){
 function metricsRow(c){
   const er=String(c.engagement||"").trim();
   const pi=prioInfo(c.priority);
-  if(!er && !pi) return "";
   let h='<div class="metrics">';
-  if(er) h+='<span class="metric"><span class="mk">معدل التفاعل</span><span class="mv">'+esc(er.replace(/%$/,""))+'%</span></span>';
+  h+='<span class="metric"><span class="mk">معدل التفاعل</span><span class="mv">'+(er?esc(er.replace(/%$/,""))+'%':'—')+'</span></span>';
   if(pi) h+='<span class="metric prio" style="--pc:'+pi.c+'"><span class="mk">الأولوية</span><span class="mv">'+pi.l+'</span></span>';
+  else h+='<span class="metric"><span class="mk">الأولوية</span><span class="mv">—</span></span>';
   h+='</div>';
   return h;
 }
