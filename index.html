@@ -670,7 +670,7 @@ function applyFilters(){
   return r;
 }
 
-function igCode(u){ const m=String(u||'').match(/\/(reel|reels|tv)\/([^/?#]+)/); return m?{kind:(m[1]==='reels'?'reel':m[1]),code:m[2]}:null; }
+function igCode(u){ const m=String(u||'').match(/\/(p|reel|reels|tv)\/([^/?#]+)/); return m?{kind:(m[1]==='reels'?'reel':m[1]),code:m[2]}:null; }
 function ytThumbId(u){ try{ return (typeof ytId==='function')?ytId(u):''; }catch(e){ return ''; } }
 function ttVidId(u){ const m=String(u||'').match(/\/video\/(\d+)/); return m?m[1]:''; }
 
