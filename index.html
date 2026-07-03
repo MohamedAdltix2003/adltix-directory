@@ -803,14 +803,9 @@ function linksChips(c){
   return chips.length? '<div class="others links"><span class="olbl">روابط أخرى:</span>'+chips.join('')+'</div>':'';
 }
 function metricsRow(c){
-  const er=String(c.engagement||"").trim();
   const pi=prioInfo(c.priority);
-  if(!er && !pi) return "";
-  let h='<div class="metrics">';
-  if(er) h+='<span class="metric"><span class="mk">معدل التفاعل</span><span class="mv">'+esc(er.replace(/%$/,""))+'%</span></span>';
-  if(pi) h+='<span class="metric prio" style="--pc:'+pi.c+'"><span class="mk">الأولوية</span><span class="mv">'+pi.l+'</span></span>';
-  h+='</div>';
-  return h;
+  if(!pi) return "";
+  return '<div class="metrics"><span class="metric prio" style="--pc:'+pi.c+'"><span class="mk">الأولوية</span><span class="mv">'+pi.l+'</span></span></div>';
 }
 function card(c){
   const p=PLAT[c.platform]||PLAT.instagram;
