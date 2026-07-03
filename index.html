@@ -855,12 +855,16 @@ let _revealObs=null, _embedObs=null;
 function ensureObs(){
   if(_revealObs) return;
   _revealObs=new IntersectionObserver((es)=>{ es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); _revealObs.unobserve(e.target);} }); },{threshold:.08});
-  _embedObs=new IntersectionObserver((es)=>{ es.forEach(e=>{ if(e.isIntersecting){ loadEmbed(e.target); _embedObs.unobserve(e.target);} }); },{rootMargin:'700px 0px'});
+  _embedObs=new IntersectionObserver((es)=>{ es.forEach(e=>{ if(e.isIntersecting){ loadEmbed(e.target); _embedObs.unobserve(e.target);} }); },{rootMargin:'450px 0px'});
 }
 function observeNew(els){
   ensureObs();
-  // الفيديو مايتحملش تلقائي (خفة وسرعة) — يتحمّل بس لما تدوس عليه
-  els.forEach((el,i)=>{ el.style.transitionDelay=(Math.min(i,8)*40)+'ms'; _revealObs.observe(el); });
+  els.forEach((el,i)=>{
+    el.style.transitionDelay=(Math.min(i,8)*40)+'ms';
+    _revealObs.observe(el);
+    // الفيديو يتحمّل ويشتغل تلقائي أول ما يقرب من الشاشة
+    el.querySelectorAll('[data-embed-src]').forEach(h=>_embedObs.observe(h));
+  });
 }
 let _list=[], _rendered=0; const PAGE_SIZE=60;
 function appendMore(){
