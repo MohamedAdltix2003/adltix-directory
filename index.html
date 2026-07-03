@@ -186,9 +186,18 @@
   .media.snap .ghost{font-size:64px;position:relative;z-index:3;filter:drop-shadow(0 6px 14px rgba(0,0,0,.25))}
 
   /* ===== Card entrance + hover ===== */
-  .grid .card{opacity:0;transform:translateY(20px) scale(.985);transition:opacity .6s cubic-bezier(.2,.7,.2,1), transform .4s cubic-bezier(.2,.7,.2,1), box-shadow .25s}
+  .grid .card{opacity:0;transform:translateY(20px) scale(.985);transition:opacity .6s cubic-bezier(.2,.7,.2,1), transform .4s cubic-bezier(.2,.7,.2,1), box-shadow .25s;content-visibility:auto;contain-intrinsic-size:0 560px}
   .grid .card.in{opacity:1;transform:none}
   .grid .card:hover{transform:translateY(-6px);box-shadow:var(--shadow-lg)}
+  /* Skeleton loading */
+  .skel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)}
+  .skel-media{height:360px}
+  .skel-media,.skel-line{background:linear-gradient(100deg,rgba(0,0,0,.055) 30%,rgba(0,0,0,.02) 50%,rgba(0,0,0,.055) 70%);background-size:200% 100%;animation:shine 1.25s linear infinite}
+  .skel-body{padding:16px;display:flex;flex-direction:column;gap:11px}
+  .skel-line{height:12px;border-radius:7px}
+  .skel-line.w70{width:70%}.skel-line.w45{width:45%}.skel-line.w90{width:90%}
+  @keyframes shine{to{background-position:-200% 0}}
+  body.dark .skel-media,body.dark .skel-line{background:linear-gradient(100deg,rgba(255,255,255,.06) 30%,rgba(255,255,255,.11) 50%,rgba(255,255,255,.06) 70%);background-size:200% 100%}
 
   /* ===== Hero / header entrance ===== */
   @keyframes floatUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
@@ -693,7 +702,7 @@ function stripHtml(c){
       return '<div class="media embed ig" data-embed-src="'+esc('https://www.instagram.com/'+ic.kind+'/'+ic.code+'/embed')+'"><div class="poster" onclick="loadEmbed(this.parentNode)" style="background:'+p.g+'">'+bigPlay+'</div></div>';
     }
     if(c.avatar_url){
-      return '<div class="media shot" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel">انستجرام</span></div>';
+      return '<div class="media shot" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel">انستجرام</span></div>';
     }
     return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="mlabel">انستجرام</span></div>';
   }
@@ -704,7 +713,7 @@ function stripHtml(c){
       return '<div class="media embed tt" data-embed-src="'+esc('https://www.tiktok.com/embed/v2/'+vid)+'"><div class="poster" onclick="loadEmbed(this.parentNode)" style="background:'+p.g+'">'+bigPlay+'</div></div>';
     }
     if(c.avatar_url){
-      return '<div class="media shot" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel">تيك توك</span></div>';
+      return '<div class="media shot" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel">تيك توك</span></div>';
     }
     return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="mlabel">تيك توك</span></div>';
   }
@@ -716,7 +725,7 @@ function stripHtml(c){
       return '<div class="media shot" style="background:'+p.g+'" onclick="openVideo(\''+esc(u||c.url)+'\',\'youtube\')"><img class="cover" src="'+esc(t)+'" loading="lazy" onerror="this.remove()"><div class="ovl"></div>'+bigPlay+'</div>';
     }
     if(c.avatar_url){
-      return '<div class="media shot yt" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover ytcover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" onerror="this.remove()"><div class="ovl soft"></div>'+bigPlay+'<span class="mlabel">قناة يوتيوب</span></div>';
+      return '<div class="media shot yt" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover ytcover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div>'+bigPlay+'<span class="mlabel">قناة يوتيوب</span></div>';
     }
     return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')">'+bigPlay+'<span class="mlabel">يوتيوب</span></div>';
   }
@@ -725,7 +734,7 @@ function stripHtml(c){
     return '<div class="media snap" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="ghost">\uD83D\uDC7B</span><span class="mlabel dark">افتح سناب</span></div>';
   }
   if(c.avatar_url){
-    return '<div class="media shot" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel">'+p.ar+'</span></div>';
+    return '<div class="media shot" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel">'+p.ar+'</span></div>';
   }
   return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="mlabel">'+p.ar+'</span></div>';
 }
@@ -846,13 +855,14 @@ let _revealObs=null, _embedObs=null;
 function ensureObs(){
   if(_revealObs) return;
   _revealObs=new IntersectionObserver((es)=>{ es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); _revealObs.unobserve(e.target);} }); },{threshold:.08});
-  _embedObs=new IntersectionObserver((es)=>{ es.forEach(e=>{ if(e.isIntersecting){ loadEmbed(e.target); _embedObs.unobserve(e.target);} }); },{rootMargin:'300px 0px'});
+  _embedObs=new IntersectionObserver((es)=>{ es.forEach(e=>{ if(e.isIntersecting){ loadEmbed(e.target); _embedObs.unobserve(e.target);} }); },{rootMargin:'700px 0px'});
 }
 function observeNew(els){
   ensureObs();
-  els.forEach((el,i)=>{ el.style.transitionDelay=(Math.min(i,8)*40)+'ms'; _revealObs.observe(el); el.querySelectorAll('[data-embed-src]').forEach(h=>_embedObs.observe(h)); });
+  // الفيديو مايتحملش تلقائي (خفة وسرعة) — يتحمّل بس لما تدوس عليه
+  els.forEach((el,i)=>{ el.style.transitionDelay=(Math.min(i,8)*40)+'ms'; _revealObs.observe(el); });
 }
-let _list=[], _rendered=0; const PAGE_SIZE=48;
+let _list=[], _rendered=0; const PAGE_SIZE=60;
 function appendMore(){
   if(_rendered>=_list.length) return;
   const grid=document.getElementById("grid");
@@ -967,17 +977,25 @@ function parseGviz(text){
   }
   return out;
 }
-async function boot(){
-  try{
-    const results=await Promise.all(SHEET_TABS.map(async tab=>{
-      try{ const res=await fetch(gvizUrl(tab)); const txt=await res.text(); return parseGviz(txt); }
-      catch(e){ console.log("tab failed",tab,e); return []; }
-    }));
-    const all=[]; results.forEach(a=>all.push(...a));
-    const filtered=all.filter(c=>c.platform==="snapchat"?true:c.followers>=MIN_FOLLOWERS);
-    if(filtered.length) CREATORS=filtered;
-  }catch(e){ console.log("using embedded data:",e); }
+function showSkeleton(){
+  const g=document.getElementById("grid"); if(!g) return;
+  let h=""; for(let i=0;i<8;i++) h+='<div class="skel"><div class="skel-media"></div><div class="skel-body"><div class="skel-line w70"></div><div class="skel-line w45"></div><div class="skel-line w90"></div></div></div>';
+  g.innerHTML=h; g.style.display="grid";
+}
+function applyData(all){
+  const filtered=all.filter(c=>c.platform==="snapchat"?true:c.followers>=MIN_FOLLOWERS);
+  if(filtered.length) CREATORS=filtered;
   buildAllPills(); renderStats(); render();
+}
+async function boot(){
+  showSkeleton();
+  const tasks=SHEET_TABS.map(tab=>fetch(gvizUrl(tab)).then(r=>r.text()).then(parseGviz).catch(e=>{console.log("tab failed",tab,e);return [];}));
+  let all=[], shownFirst=false;
+  tasks.forEach(t=>t.then(rows=>{
+    if(rows&&rows.length){ all=all.concat(rows); if(!shownFirst){ shownFirst=true; applyData(all); } }
+  }));
+  await Promise.allSettled(tasks);
+  applyData(all);   // العرض النهائي بكل البيانات
 }
 boot();
 
