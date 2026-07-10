@@ -351,15 +351,7 @@ const SHEET_TABS = ["👗 Fashion & Style","✨ Luxury & Lifestyle","👨‍👩
 const MIN_FOLLOWERS = 0;
 const RENDER_CAP = 400;
 
-let CREATORS = [
-  {handle:"list_roma", platform:"instagram", followers:343109, niche:"fashion", country:"الخليج", url:"https://www.instagram.com/list_roma", videos:[]},
-  {handle:"fashion.sa_", platform:"instagram", followers:128577, niche:"fashion", country:"السعودية", url:"https://www.instagram.com/fashion.sa_", videos:[]},
-  {handle:"biancanera.ksa", platform:"instagram", followers:115367, niche:"fashion", country:"السعودية", url:"https://www.instagram.com/biancanera.ksa", videos:[]},
-  {handle:"dubaifashionuae", platform:"tiktok", followers:56200, niche:"fashion", country:"الإمارات", url:"https://www.tiktok.com/@dubaifashionuae", videos:[]},
-  {handle:"reveriecoutureofficial", platform:"instagram", followers:23469, niche:"fashion", country:"الخليج", url:"https://www.instagram.com/reveriecoutureofficial", videos:[]},
-  {handle:"qutunii", platform:"instagram", followers:12184, niche:"fashion", country:"الخليج", url:"https://www.instagram.com/qutunii", videos:[]},
-  {handle:"najlaalharthi_111", platform:"instagram", followers:10415, niche:"fashion", country:"السعودية", url:"https://www.instagram.com/najlaalharthi_111", videos:[]}
-];
+let CREATORS = [];
 
 const PLAT = {
   instagram:{ar:"انستجرام",c:"#E1306C",g:"linear-gradient(135deg,#F58529,#DD2A7B,#8134AF)"},
@@ -386,34 +378,25 @@ function getTodayDate() {
   return { y, m, day, iso: `${y}-${m}-${day}`, us: `${m}/${day}/${y}`, dm: `${day}/${m}/${y}` };
 }
 
-// ===== دالة متطورة للتعرف على التاريخ بكل الصيغ =====
 function parseDiscoveredAt(val) {
   if (!val) return null;
   const s = String(val).trim();
   if (!s) return null;
   
-  // محاولة كل الصيغ الممكنة
-  // 2026-07-10
   let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
   if (m) return { y: parseInt(m[1]), m: parseInt(m[2]), d: parseInt(m[3]) };
   
-  // 2026/07/10
   m = s.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
   if (m) return { y: parseInt(m[1]), m: parseInt(m[2]), d: parseInt(m[3]) };
   
-  // 7/10/2026 أو 10/7/2026
   m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (m) {
     let a = parseInt(m[1]), b = parseInt(m[2]), y = parseInt(m[3]);
-    // لو الرقم الأول > 12 يبقى هو اليوم
     if (a > 12) return { y, m: b, d: a };
-    // لو الرقم التاني > 12 يبقى هو اليوم
     if (b > 12) return { y, m: a, d: b };
-    // لو الاتنين <= 12، نعتبرها M/D/Y (أمريكي)
     return { y, m: a, d: b };
   }
   
-  // 10-7-2026 أو 7-10-2026
   m = s.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
   if (m) {
     let a = parseInt(m[1]), b = parseInt(m[2]), y = parseInt(m[3]);
@@ -422,7 +405,6 @@ function parseDiscoveredAt(val) {
     return { y, m: a, d: b };
   }
   
-  // 10.7.2026
   m = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
   if (m) {
     let a = parseInt(m[1]), b = parseInt(m[2]), y = parseInt(m[3]);
@@ -547,7 +529,6 @@ function igCode(u){ const m=String(u||'').match(/\/(p|reel|reels|tv)\/([^/?#]+)/
 function ytThumbId(u){ try{ return (typeof ytId==='function')?ytId(u):''; }catch(e){ return ''; } }
 function ttVidId(u){ const m=String(u||'').match(/\/video\/(\d+)/); return m?m[1]:''; }
 
-// ===== فيديوهات سناب شات =====
 function isSnapVideoUrl(url) {
   if (!url) return false;
   const u = String(url).toLowerCase();
@@ -559,7 +540,6 @@ function isSnapVideoUrl(url) {
 function snapVideoHtml(videoUrl, p) {
   if (!videoUrl) return null;
   const u = String(videoUrl);
-  // لو الرابط من سناب شات أو فيديو مباشر
   if (isSnapVideoUrl(u)) {
     return `<div class="media snap-vid" onclick="openSnapVideo('${esc(u)}')">
       <video src="${esc(u)}" muted playsinline preload="metadata" poster="" onloadeddata="this.poster=''" onclick="event.stopPropagation(); this.paused?this.play():this.pause();"></video>
@@ -572,11 +552,9 @@ function snapVideoHtml(videoUrl, p) {
   return null;
 }
 
-// ===== فيديوهات انستجرام (فقط الفيديو، بدون الحساب) =====
 function instagramEmbedVideo(url) {
   const ic = igCode(url);
   if (!ic) return null;
-  // نستخدم embed ولكن نضيف class عشان نخفي العناصر الإضافية
   return `<div class="media embed ig" data-embed-src="${esc('https://www.instagram.com/'+ic.kind+'/'+ic.code+'/embed')}">
     <div class="poster" onclick="loadEmbed(this.parentNode)" style="background:linear-gradient(135deg,#F58529,#DD2A7B,#8134AF)">
       <span class="playbig"><svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M8 5v14l11-7z"/></svg></span>
@@ -592,7 +570,6 @@ function stripHtml(c){
   const pickBy=(fn)=>{ for(const u of cand){ if(fn(u)) return u; } return ''; };
   const bigPlay='<span class="playbig"><svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M8 5v14l11-7z"/></svg></span>';
 
-  // ===== سناب شات =====
   if(c.platform==='snapchat'){
     if (c.top_video_url && isSnapVideoUrl(c.top_video_url)) {
       const snapVid = snapVideoHtml(c.top_video_url, p);
@@ -604,9 +581,7 @@ function stripHtml(c){
     return '<div class="media snap" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="ghost">\uD83D\uDC7B</span><span class="mlabel dark">افتح سناب</span></div>';
   }
 
-  // ===== انستجرام - فيديو فقط =====
   if(c.platform==='instagram'){
-    // نجيب الفيديو من top_video_url أو من url
     const vidUrl = c.top_video_url || c.url;
     const embed = instagramEmbedVideo(vidUrl);
     if (embed) return embed;
@@ -617,7 +592,6 @@ function stripHtml(c){
     return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="mlabel">انستجرام</span></div>';
   }
 
-  // ===== تيك توك =====
   if(c.platform==='tiktok'){
     const u=pickBy(u=>ttVidId(u)); const vid=ttVidId(u);
     if(vid){
@@ -629,7 +603,6 @@ function stripHtml(c){
     return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="mlabel">تيك توك</span></div>';
   }
 
-  // ===== يوتيوب =====
   if(c.platform==='youtube'){
     const u=pickBy(u=>ytThumbId(u)); const id=ytThumbId(u);
     if(id){
@@ -653,6 +626,11 @@ function openSnapVideo(url) {
   const body = document.getElementById("modalBody");
   const title = document.getElementById("modalTitle");
   title.textContent = "فيديو سناب شات";
+  // لو الرابط مش فيديو مباشر، نفتحه في تاب جديد
+  if (!String(url).match(/\.(mp4|mov|webm|m4v|3gp)$/i)) {
+    window.open(url, '_blank');
+    return;
+  }
   body.innerHTML = `<video src="${esc(url)}" controls autoplay style="width:100%;max-height:70vh;border-radius:14px;background:#000;"></video>`;
   document.getElementById("modal").style.display="flex";
 }
@@ -902,21 +880,67 @@ function showSkeleton(){
   let h=""; for(let i=0;i<8;i++) h+='<div class="skel"><div class="skel-media"></div><div class="skel-body"><div class="skel-line w70"></div><div class="skel-line w45"></div><div class="skel-line w90"></div></div></div>';
   g.innerHTML=h; g.style.display="grid";
 }
-function applyData(all){
-  const filtered=all.filter(c=>c.platform==="snapchat"?true:c.followers>=MIN_FOLLOWERS);
-  if(filtered.length) CREATORS=filtered;
-  buildAllPills(); renderStats(); updateTodayBar(); render();
+
+// ===== دمج البيانات وإزالة التكرارات =====
+function mergeData(allData) {
+  const map = new Map();
+  for (const item of allData) {
+    const key = item.handle + '|' + item.platform;
+    if (!map.has(key) || (map.get(key).followers || 0) < (item.followers || 0)) {
+      map.set(key, item);
+    }
+  }
+  return Array.from(map.values());
 }
+
+function applyData(all){
+  // دمج البيانات وإزالة التكرارات
+  const merged = mergeData(all);
+  const filtered = merged.filter(c => c.platform==="snapchat" ? true : (c.followers || 0) >= MIN_FOLLOWERS);
+  if(filtered.length) {
+    CREATORS = filtered;
+    console.log('✅ تم تحميل ' + CREATORS.length + ' مؤثر فريد');
+  } else {
+    // بيانات افتراضية في حالة عدم وجود بيانات
+    CREATORS = [
+      {handle:"list_roma", platform:"instagram", followers:343109, niche:"fashion", country:"الخليج", url:"https://www.instagram.com/list_roma", videos:[]},
+      {handle:"fashion.sa_", platform:"instagram", followers:128577, niche:"fashion", country:"السعودية", url:"https://www.instagram.com/fashion.sa_", videos:[]},
+      {handle:"biancanera.ksa", platform:"instagram", followers:115367, niche:"fashion", country:"السعودية", url:"https://www.instagram.com/biancanera.ksa", videos:[]},
+      {handle:"dubaifashionuae", platform:"tiktok", followers:56200, niche:"fashion", country:"الإمارات", url:"https://www.tiktok.com/@dubaifashionuae", videos:[]}
+    ];
+  }
+  buildAllPills(); 
+  renderStats(); 
+  updateTodayBar(); 
+  render();
+}
+
 async function boot(){
   showSkeleton();
-  const tasks=SHEET_TABS.map(tab=>fetch(gvizUrl(tab)).then(r=>r.text()).then(parseGviz).catch(e=>{console.log("tab failed",tab,e);return [];}));
-  let all=[], shownFirst=false;
-  tasks.forEach(t=>t.then(rows=>{
-    if(rows&&rows.length){ all=all.concat(rows); if(!shownFirst){ shownFirst=true; applyData(all); } }
+  const tasks = SHEET_TABS.map(tab => 
+    fetch(gvizUrl(tab))
+      .then(r => r.text())
+      .then(parseGviz)
+      .catch(e => { console.log("tab failed", tab, e); return []; })
+  );
+  
+  let all = [];
+  let shownFirst = false;
+  
+  tasks.forEach(t => t.then(rows => {
+    if (rows && rows.length) {
+      all = all.concat(rows);
+      if (!shownFirst) {
+        shownFirst = true;
+        applyData(all);
+      }
+    }
   }));
+  
   await Promise.allSettled(tasks);
   applyData(all);
 }
+
 boot();
 
 function applyTheme(t){ document.body.classList.toggle('dark', t==='dark'); var b=document.getElementById('themebtn'); if(b) b.textContent=(t==='dark'?'\u2600\uFE0F':'\uD83C\uDF19'); try{ localStorage.setItem('adltix_theme',t); }catch(e){} }
