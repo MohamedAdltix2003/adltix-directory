@@ -422,11 +422,7 @@ function isTodayDiscovered(discoveredAt) {
 }
 
 function getTodayCreators() {
-  const today = getTodayDate();
-  return CREATORS.filter(c => {
-    const parsed = parseDiscoveredAt(c.discovered_at);
-    return parsed && parsed.y === today.y && parsed.m === parseInt(today.m) && parsed.d === parseInt(today.day);
-  });
+  return CREATORS.filter(c => isTodayDiscovered(c.discovered_at));
 }
 
 function updateTodayBar() {
@@ -559,7 +555,7 @@ function stripHtml(c){
   const pickBy=(fn)=>{ for(const u of cand){ if(fn(u)) return u; } return ''; };
   const bigPlay='<span class="playbig"><svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M8 5v14l11-7z"/></svg></span>';
 
-  // سناب شات
+  // سناب شات - فيديو يظهر جوا الكارد
   if(c.platform==='snapchat'){
     if (c.top_video_url && isSnapVideoUrl(c.top_video_url)) {
       const snapVid = snapVideoHtml(c.top_video_url, p);
@@ -863,7 +859,7 @@ function showSkeleton(){
   g.innerHTML=h; g.style.display="grid";
 }
 
-// ===== دمج وإزالة التكرارات =====
+// ===== دمج وإزالة التكرارات مع طباعة العدد في Console =====
 function mergeAndDeduplicate(allData) {
   const map = new Map();
   for (const item of allData) {
@@ -872,19 +868,21 @@ function mergeAndDeduplicate(allData) {
       map.set(key, item);
     }
   }
-  return Array.from(map.values());
+  const result = Array.from(map.values());
+  console.log('📊 إجمالي المؤثرين الفريدين بعد إزالة التكرارات:', result.length);
+  return result;
 }
 
 function applyData(allData){
   // دمج البيانات وإزالة التكرارات
   const merged = mergeAndDeduplicate(allData);
-  // فلترة البيانات (سناب شات مينفعش يتفلتر بالمتابعين)
   const filtered = merged.filter(c => c.platform==="snapchat" ? true : (c.followers || 0) >= MIN_FOLLOWERS);
   
   if(filtered.length) {
     CREATORS = filtered;
     console.log('✅ تم تحميل ' + CREATORS.length + ' مؤثر فريد');
-    console.log('📅 عدد مؤثرين اليوم: ' + getTodayCreators().length);
+    const todayCount = getTodayCreators().length;
+    console.log('📅 عدد مؤثرين اليوم (' + getTodayDate().day + '/' + getTodayDate().m + '/' + getTodayDate().y + '): ' + todayCount);
   } else {
     // بيانات افتراضية
     CREATORS = [
