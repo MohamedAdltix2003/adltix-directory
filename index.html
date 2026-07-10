@@ -523,18 +523,9 @@
   .scrape-btn .badge{background:rgba(255,255,255,.3);padding:2px 10px;border-radius:999px;font-size:12px}
   .scrape-drop{display:none;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;margin-top:12px;box-shadow:var(--shadow-lg)}
   .scrape-drop.show{display:block}
-  .scrape-drop .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-top:12px}
-  .scrape-drop .mini-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow);transition:.15s}
-  .scrape-drop .mini-card:hover{transform:translateY(-2px);border-color:var(--brand-2)}
-  .scrape-drop .mini-av{width:40px;height:40px;border-radius:10px;background:var(--brand-soft);display:grid;place-items:center;font-weight:800;font-size:16px;color:var(--brand);flex-shrink:0;background-size:cover;background-position:center;overflow:hidden;border:2px solid var(--line)}
-  .scrape-drop .mini-av img{width:100%;height:100%;object-fit:cover}
-  .scrape-drop .mini-info{flex:1;min-width:0}
-  .scrape-drop .mini-info .mh{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .scrape-drop .mini-info .mp{font-size:11px;color:var(--muted)}
-  .scrape-drop .mini-info .mf{font-size:12px;font-weight:700;color:var(--brand)}
-  .scrape-drop .mini-link{color:var(--brand);font-weight:700;font-size:12px;text-decoration:none;white-space:nowrap}
-  .scrape-drop .mini-link:hover{text-decoration:underline}
-  .scrape-drop-header{display:flex;justify-content:space-between;align-items:center}
+  .scrape-drop .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px;margin-top:12px}
+  .scrape-drop .card{opacity:1!important;transform:none!important}
+  .scrape-drop-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
   .scrape-drop-header h4{font-size:16px;font-weight:800;color:var(--ink)}
   .scrape-drop-header .close-scrape{background:transparent;border:none;font-size:22px;cursor:pointer;color:var(--muted);padding:0 6px}
   .scrape-drop-header .close-scrape:hover{color:var(--ink)}
@@ -577,13 +568,13 @@
     <span style="font-size:12px;color:var(--muted);font-weight:600">آخر تحديث: <span id="scrapeDate">اليوم</span></span>
   </div>
 
-  <!-- دروب داون لعرض الملفات -->
+  <!-- دروب داون لعرض البروفايلات -->
   <div class="scrape-drop" id="scrapeDrop">
     <div class="scrape-drop-header">
-      <h4>📁 الملفات الممسوحة اليوم</h4>
+      <h4>📁 البروفايلات الممسوحة اليوم</h4>
       <button class="close-scrape" id="closeScrape">✕</button>
     </div>
-    <div id="scrapeList"><p style="color:var(--muted);font-size:14px">لا توجد ملفات ممسوحة اليوم</p></div>
+    <div id="scrapeList"><p style="color:var(--muted);font-size:14px">لا توجد ملفات ممسوحة اليوم (0)</p></div>
   </div>
 
   <div class="filters">
@@ -649,96 +640,14 @@ const SHEET_TABS = ["👗 Fashion & Style","✨ Luxury & Lifestyle","👨‍👩
 const MIN_FOLLOWERS = 0;
 const RENDER_CAP = 400;
 
-// ===== بيانات الملفات الممسوحة (محاكاة من العمود discovered_at) =====
-let scrapedProfiles = [];
-
-function generateScrapedData() {
-  const today = new Date().toISOString().slice(0,10);
-  // نختار عشوائيًا 5-12 بروفايل من الكريتورز الحاليين باعتبارهم ممسوحين اليوم
-  const shuffled = [...CREATORS].sort(() => Math.random() - 0.5);
-  const count = Math.floor(Math.random() * 8) + 4; // 4-12
-  const selected = shuffled.slice(0, count);
-  scrapedProfiles = selected.map(c => ({
-    ...c,
-    discovered_at: today,
-    // إضافات محاكاة
-    full_name: c.handle + ' influencer',
-    status: 'active'
-  }));
-  // نضيف بعض البروفايلات الوهمية عشان يكون العدد متنوع
-  if (scrapedProfiles.length < 3) {
-    scrapedProfiles.push({handle:'sara_style', platform:'instagram', followers:23400, niche:'fashion', country:'السعودية', url:'https://instagram.com/sara_style', discovered_at:today});
-    scrapedProfiles.push({handle:'ahmed_fit', platform:'tiktok', followers:8700, niche:'sports', country:'الإمارات', url:'https://tiktok.com/@ahmed_fit', discovered_at:today});
-  }
-  updateScrapeUI();
-}
-
-function updateScrapeUI() {
-  const badge = document.getElementById('scrapeCountBadge');
-  const dateEl = document.getElementById('scrapeDate');
-  const listEl = document.getElementById('scrapeList');
-  if (badge) badge.textContent = scrapedProfiles.length;
-  if (dateEl) dateEl.textContent = new Date().toLocaleDateString('ar-EG');
-  if (listEl) {
-    if (scrapedProfiles.length === 0) {
-      listEl.innerHTML = '<p style="color:var(--muted);font-size:14px">لا توجد ملفات ممسوحة اليوم</p>';
-      return;
-    }
-    let html = '<div class="grid">';
-    scrapedProfiles.forEach(p => {
-      const initial = (p.handle || '?').charAt(0).toUpperCase();
-      const avStyle = `background:${avColor(p.handle)};`;
-      html += `
-        <div class="mini-card">
-          <div class="mini-av" style="${avStyle}">${initial}</div>
-          <div class="mini-info">
-            <div class="mh">@${p.handle}</div>
-            <div class="mp">${p.platform} · ${p.niche || 'عام'}</div>
-            <div class="mf">${fmt(p.followers)} متابع</div>
-          </div>
-          <a href="${p.url}" target="_blank" class="mini-link">زيارة</a>
-        </div>
-      `;
-    });
-    html += '</div>';
-    listEl.innerHTML = html;
-  }
-}
-
-// ===== زر Scraping =====
-document.addEventListener('DOMContentLoaded', function() {
-  const btn = document.getElementById('scrapeToggleBtn');
-  const drop = document.getElementById('scrapeDrop');
-  const closeBtn = document.getElementById('closeScrape');
-  if (btn) btn.addEventListener('click', function(e) {
-    e.stopPropagation();
-    drop.classList.toggle('show');
-  });
-  if (closeBtn) closeBtn.addEventListener('click', function() {
-    drop.classList.remove('show');
-  });
-  document.addEventListener('click', function(e) {
-    if (drop && !drop.contains(e.target) && e.target !== btn) {
-      drop.classList.remove('show');
-    }
-  });
-  // توليد بيانات اليوم
-  generateScrapedData();
-  // تحديث كل ساعة مثلاً (محاكاة)
-  setInterval(() => {
-    generateScrapedData();
-  }, 3600000);
-});
-
-// ===== باقي الكود الأصلي مع تعديلات طفيفة =====
 let CREATORS = [
-  {handle:"list_roma", platform:"instagram", followers:343109, niche:"fashion", country:"الخليج", url:"https://www.instagram.com/list_roma", videos:[]},
-  {handle:"fashion.sa_", platform:"instagram", followers:128577, niche:"fashion", country:"السعودية", url:"https://www.instagram.com/fashion.sa_", videos:[]},
-  {handle:"biancanera.ksa", platform:"instagram", followers:115367, niche:"fashion", country:"السعودية", url:"https://www.instagram.com/biancanera.ksa", videos:[]},
-  {handle:"dubaifashionuae", platform:"tiktok", followers:56200, niche:"fashion", country:"الإمارات", url:"https://www.tiktok.com/@dubaifashionuae", videos:[]},
-  {handle:"reveriecoutureofficial", platform:"instagram", followers:23469, niche:"fashion", country:"الخليج", url:"https://www.instagram.com/reveriecoutureofficial", videos:[]},
-  {handle:"qutunii", platform:"instagram", followers:12184, niche:"fashion", country:"الخليج", url:"https://www.instagram.com/qutunii", videos:[]},
-  {handle:"najlaalharthi_111", platform:"instagram", followers:10415, niche:"fashion", country:"السعودية", url:"https://www.instagram.com/najlaalharthi_111", videos:[]}
+  {handle:"list_roma", platform:"instagram", followers:343109, niche:"fashion", country:"الخليج", url:"https://www.instagram.com/list_roma", videos:[], discovered_at:"2026-07-10"},
+  {handle:"fashion.sa_", platform:"instagram", followers:128577, niche:"fashion", country:"السعودية", url:"https://www.instagram.com/fashion.sa_", videos:[], discovered_at:"2026-07-10"},
+  {handle:"biancanera.ksa", platform:"instagram", followers:115367, niche:"fashion", country:"السعودية", url:"https://www.instagram.com/biancanera.ksa", videos:[], discovered_at:"2026-07-10"},
+  {handle:"dubaifashionuae", platform:"tiktok", followers:56200, niche:"fashion", country:"الإمارات", url:"https://www.tiktok.com/@dubaifashionuae", videos:[], discovered_at:"2026-07-09"},
+  {handle:"reveriecoutureofficial", platform:"instagram", followers:23469, niche:"fashion", country:"الخليج", url:"https://www.instagram.com/reveriecoutureofficial", videos:[], discovered_at:"2026-07-10"},
+  {handle:"qutunii", platform:"instagram", followers:12184, niche:"fashion", country:"الخليج", url:"https://www.instagram.com/qutunii", videos:[], discovered_at:"2026-07-08"},
+  {handle:"najlaalharthi_111", platform:"instagram", followers:10415, niche:"fashion", country:"السعودية", url:"https://www.instagram.com/najlaalharthi_111", videos:[], discovered_at:"2026-07-10"}
 ];
 
 const PLAT = {
@@ -802,6 +711,40 @@ function applyFilters(){
   if(state.sort==="fola") r.sort((a,b)=>(a.followers||0)-(b.followers||0));
   if(state.sort==="name") r.sort((a,b)=>(a.handle||"").localeCompare(b.handle||""));
   return r;
+}
+
+// ===== دالة لجلب بروفايلات اليوم بناءً على discovered_at =====
+function getTodayScrapedProfiles() {
+  const today = new Date().toISOString().slice(0,10);
+  const all = clean(CREATORS);
+  return all.filter(c => {
+    const d = c.discovered_at || c['discovered_at'] || '';
+    return d && d.slice(0,10) === today;
+  });
+}
+
+// ===== تحديث واجهة الـ Scraping =====
+function updateScrapeUI() {
+  const todayProfiles = getTodayScrapedProfiles();
+  const badge = document.getElementById('scrapeCountBadge');
+  const dateEl = document.getElementById('scrapeDate');
+  const listEl = document.getElementById('scrapeList');
+  
+  if (badge) badge.textContent = todayProfiles.length;
+  if (dateEl) dateEl.textContent = new Date().toLocaleDateString('ar-EG');
+  
+  if (listEl) {
+    if (todayProfiles.length === 0) {
+      listEl.innerHTML = '<p style="color:var(--muted);font-size:14px">لا توجد ملفات ممسوحة اليوم (0)</p>';
+      return;
+    }
+    let html = '<div class="grid">';
+    todayProfiles.forEach(p => {
+      html += card(p);
+    });
+    html += '</div>';
+    listEl.innerHTML = html;
+  }
 }
 
 function igCode(u){ const m=String(u||'').match(/\/(p|reel|reels|tv)\/([^/?#]+)/); return m?{kind:(m[1]==='reels'?'reel':m[1]),code:m[2]}:null; }
@@ -1089,7 +1032,8 @@ function parseGviz(text){
       email:o.email||"", whatsapp:o.whatsapp||"", phone:o.phone||"",
       links:o.links_bio||"", language:o.language||"",
       priority:o.priority||"", engagement:o.engagement_rate||"",
-      igUrl:o.instagram_url||"", ttUrl:o.tiktok_url||"", scUrl:o.snapchat_url||"", twUrl:o.twitter_url||"", ytUrl:o.youtube_url||"", fbUrl:o.facebook_url||""
+      igUrl:o.instagram_url||"", ttUrl:o.tiktok_url||"", scUrl:o.snapchat_url||"", twUrl:o.twitter_url||"", ytUrl:o.youtube_url||"", fbUrl:o.facebook_url||"",
+      discovered_at:o.discovered_at||""
     });
   }
   return out;
@@ -1103,8 +1047,8 @@ function applyData(all){
   const filtered=all.filter(c=>c.platform==="snapchat"?true:c.followers>=MIN_FOLLOWERS);
   if(filtered.length) CREATORS=filtered;
   buildAllPills(); renderStats(); render();
-  // تحديث الـ Scraped profiles بناءً على الكريتورز الجديدة
-  generateScrapedData();
+  // تحديث الـ Scraped profiles بناءً على discovered_at الفعلي
+  updateScrapeUI();
 }
 async function boot(){
   showSkeleton();
@@ -1117,6 +1061,29 @@ async function boot(){
   applyData(all);
 }
 boot();
+
+// ===== زر Scraping =====
+document.addEventListener('DOMContentLoaded', function() {
+  const btn = document.getElementById('scrapeToggleBtn');
+  const drop = document.getElementById('scrapeDrop');
+  const closeBtn = document.getElementById('closeScrape');
+  if (btn) btn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    drop.classList.toggle('show');
+  });
+  if (closeBtn) closeBtn.addEventListener('click', function() {
+    drop.classList.remove('show');
+  });
+  document.addEventListener('click', function(e) {
+    if (drop && !drop.contains(e.target) && e.target !== btn) {
+      drop.classList.remove('show');
+    }
+  });
+  // تحديث كل ساعة
+  setInterval(() => {
+    updateScrapeUI();
+  }, 3600000);
+});
 
 function applyTheme(t){ document.body.classList.toggle('dark', t==='dark'); var b=document.getElementById('themebtn'); if(b) b.textContent=(t==='dark'?'\u2600\uFE0F':'\uD83C\uDF19'); try{ localStorage.setItem('adltix_theme',t); }catch(e){} }
 function toggleTheme(){ applyTheme(document.body.classList.contains('dark')?'light':'dark'); }
