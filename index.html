@@ -129,7 +129,6 @@
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
   :focus-visible{outline:3px solid var(--brand-2);outline-offset:2px}
 
-  /* Splash intro (full screen) */
   .splash{position:fixed;inset:0;z-index:300;background:#0B0A14;display:flex;align-items:center;justify-content:center;flex-direction:column;transition:opacity .6s ease}
   .splash.hide{opacity:0;pointer-events:none}
   .splash video{width:100%;height:100%;object-fit:contain;position:absolute;inset:0;background:#0B0A14}
@@ -185,11 +184,9 @@
   .media .ytav{width:118px;height:118px;border-radius:50%;border:4px solid rgba(255,255,255,.9);object-fit:cover;position:relative;z-index:3;box-shadow:0 12px 32px rgba(0,0,0,.4)}
   .media.snap .ghost{font-size:64px;position:relative;z-index:3;filter:drop-shadow(0 6px 14px rgba(0,0,0,.25))}
 
-  /* ===== Card entrance + hover ===== */
   .grid .card{opacity:0;transform:translateY(20px) scale(.985);transition:opacity .6s cubic-bezier(.2,.7,.2,1), transform .4s cubic-bezier(.2,.7,.2,1), box-shadow .25s;content-visibility:auto;contain-intrinsic-size:0 560px}
   .grid .card.in{opacity:1;transform:none}
   .grid .card:hover{transform:translateY(-6px);box-shadow:var(--shadow-lg)}
-  /* Skeleton loading */
   .skel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)}
   .skel-media{height:360px}
   .skel-media,.skel-line{background:linear-gradient(100deg,rgba(0,0,0,.055) 30%,rgba(0,0,0,.02) 50%,rgba(0,0,0,.055) 70%);background-size:200% 100%;animation:shine 1.25s linear infinite}
@@ -199,7 +196,6 @@
   @keyframes shine{to{background-position:-200% 0}}
   body.dark .skel-media,body.dark .skel-line{background:linear-gradient(100deg,rgba(255,255,255,.06) 30%,rgba(255,255,255,.11) 50%,rgba(255,255,255,.06) 70%);background-size:200% 100%}
 
-  /* ===== Hero / header entrance ===== */
   @keyframes floatUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
   .hero .tag{animation:floatUp .6s .05s both}
   .hero h2{animation:floatUp .6s .12s both}
@@ -219,8 +215,6 @@
     .hero .tag,.hero h2,.hero p,.stats .stat,.logo{animation:none!important}
   }
 
-
-  /* ===== Avatar + richer motion polish ===== */
   @keyframes popIn{0%{opacity:0;transform:translateY(8px) scale(.8)}60%{transform:translateY(-2px) scale(1.04)}100%{opacity:1;transform:none}}
   .grid .card.in .av{animation:popIn .5s .15s both}
   @keyframes mediaFade{from{opacity:0}to{opacity:1}}
@@ -229,29 +223,22 @@
   @keyframes softPulse{0%,100%{box-shadow:0 10px 30px rgba(0,0,0,.35)}50%{box-shadow:0 10px 40px rgba(124,77,255,.55)}}
   .media .playbig{animation:softPulse 2.4s ease-in-out infinite}
   .media:hover .playbig{animation:none}
-  /* name + followers gentle rise on reveal */
   .grid .card.in .name{animation:floatUp .5s .2s both}
   .grid .card.in .fol{animation:floatUp .5s .26s both}
-  /* pchip pop */
   .pchip{transition:transform .2s}
   .card:hover .pchip{transform:scale(1.05)}
   @media (prefers-reduced-motion:reduce){
     .grid .card.in .av,.media .cover,.embedhost .embedframe,.media .playbig,.grid .card.in .name,.grid .card.in .fol{animation:none!important}
   }
 
-
-  /* ===== Clean media (poster, no caption) ===== */
   .media.shot{position:relative;height:360px;overflow:hidden;display:grid;place-items:center;cursor:pointer}
   .media.shot .cover{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1}
-  /* ===== Other social platforms chips ===== */
   .others{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:9px 0 2px}
   .others .olbl{font-size:11px;color:var(--muted);font-weight:700;margin-inline-end:2px}
   .ochip{font-size:11.5px;font-weight:800;color:#fff;background:var(--oc,#6b6b76);padding:4px 11px;border-radius:999px;display:inline-flex;align-items:center;gap:4px;transition:transform .15s,filter .15s,box-shadow .15s;box-shadow:0 3px 9px rgba(0,0,0,.16)}
   .ochip:hover{transform:translateY(-2px);filter:brightness(1.08);box-shadow:0 6px 16px rgba(0,0,0,.24)}
-  /* ===== Theme toggle button ===== */
   .themebtn{flex-shrink:0;width:42px;height:42px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font-size:18px;cursor:pointer;transition:transform .18s,border-color .18s,box-shadow .18s;display:grid;place-items:center}
   .themebtn:hover{transform:translateY(-2px) rotate(-8deg);border-color:var(--brand-2);box-shadow:0 8px 20px rgba(75,35,201,.25)}
-  /* ===== Animated background ===== */
   .bgfx{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
   .wrap,footer{position:relative;z-index:1}
   .bgfx .blob{position:absolute;border-radius:50%;filter:blur(72px);opacity:.45;will-change:transform;animation:drift 24s ease-in-out infinite}
@@ -260,7 +247,6 @@
   .bgfx .b3{width:38vw;height:38vw;background:radial-gradient(circle,#21C7C7,transparent 68%);top:42%;inset-inline-start:52%;animation-delay:-15s}
   @keyframes drift{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(5vw,7vh) scale(1.12)}66%{transform:translate(-4vw,-5vh) scale(.92)}}
 
-  /* ===== DARK THEME ===== */
   body.dark{
     --bg:#0C0B14; --surface:#16141F; --ink:#F3F2FA; --muted:#9A98AC;
     --brand-soft:#221947; --line:#2A2740;
@@ -279,32 +265,25 @@
 
   @media (prefers-reduced-motion:reduce){ .bgfx .blob{animation:none} }
 
-
-  /* ===== Pro polish ===== */
   .brand h1{background:linear-gradient(135deg,var(--brand),var(--brand-2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
   .hero h2{letter-spacing:-1px}
   .hero .tag{border:1px solid color-mix(in srgb, var(--brand) 22%, transparent)}
   .stat{position:relative;overflow:hidden}
   .stat::after{content:"";position:absolute;inset-inline-end:-20px;top:-20px;width:60px;height:60px;border-radius:50%;background:radial-gradient(circle,var(--brand-soft),transparent 70%);opacity:.7}
   .stat .v{background:linear-gradient(135deg,var(--ink),var(--brand));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
-  /* refined cards */
   .grid .card{border:1px solid var(--line);border-radius:20px;overflow:hidden;background:var(--surface);box-shadow:var(--shadow);transition:opacity .6s cubic-bezier(.2,.7,.2,1),transform .4s cubic-bezier(.2,.7,.2,1),box-shadow .25s,border-color .25s}
   .grid .card:hover{border-color:color-mix(in srgb,var(--brand-2) 40%,var(--line))}
   .pchip{position:absolute;top:-30px;inset-inline-end:16px;z-index:7;font-size:11.5px;font-weight:800;color:#fff;padding:6px 12px;border-radius:999px;box-shadow:0 6px 16px rgba(0,0,0,.22);backdrop-filter:blur(2px)}
   .name{font-weight:800;letter-spacing:-.2px;margin-top:6px}
   .btn.primary{background:linear-gradient(135deg,var(--brand),var(--brand-2));border:none;box-shadow:0 8px 20px rgba(75,35,201,.3)}
   .btn.primary:hover{filter:brightness(1.06);transform:translateY(-1px)}
-  /* header logo subtle shine */
   .logo{position:relative;overflow:hidden}
   .logo::after{content:"";position:absolute;top:-50%;inset-inline-start:-60%;width:40%;height:200%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);transform:rotate(20deg);animation:shine 5s ease-in-out infinite}
   @keyframes shine{0%,70%{inset-inline-start:-60%}100%{inset-inline-start:140%}}
-  /* filters glassy */
   .filters{backdrop-filter:blur(8px)}
   body.dark .filters{background:color-mix(in srgb,var(--surface) 88%,transparent)}
   @media (prefers-reduced-motion:reduce){ .logo::after{animation:none} }
 
-
-  /* ================= REDESIGN: filters ================= */
   .filters{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:6px;box-shadow:var(--shadow);margin-bottom:26px;position:sticky;top:74px;z-index:30;display:flex;flex-direction:column;gap:2px;overflow:hidden}
   .frow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:9px 12px}
   .frow + .frow{margin-top:0;border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent);padding-top:11px}
@@ -320,7 +299,6 @@
   .fctl{display:inline-flex;align-items:center;gap:7px}
   .fctl .ftiny{font-size:11px;font-weight:800;color:var(--muted)}
 
-  /* ================= REDESIGN: card header ================= */
   .body{padding:16px;position:relative;z-index:6;background:var(--surface);display:flex;flex-direction:column}
   .chead{display:flex;align-items:flex-end;gap:11px;margin-top:-46px;margin-bottom:12px;position:relative;z-index:7}
   .av{width:66px;height:66px;border-radius:18px;border:3px solid var(--surface);display:grid;place-items:center;color:#fff;font-weight:800;font-size:24px;box-shadow:0 10px 24px rgba(0,0,0,.28);background-size:cover;background-position:center;overflow:hidden;flex-shrink:0;transition:transform .25s, box-shadow .25s}
@@ -337,7 +315,6 @@
   .t{font-size:11.5px;font-weight:700;padding:4px 11px;border-radius:999px;background:var(--brand-soft);color:var(--brand)}
   .t.co{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
 
-  /* ================= REDESIGN: contact rows ================= */
   .contact{margin-top:6px}
   .clist{display:flex;flex-direction:column;gap:7px}
   .crow{display:flex;align-items:center;gap:8px;background:color-mix(in srgb,var(--line) 30%,transparent);border:1px solid var(--line);border-radius:12px;padding:7px 9px}
@@ -353,7 +330,6 @@
   .contact .acc{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:var(--muted);background:color-mix(in srgb,var(--line) 30%,transparent);border:1px solid var(--line);border-radius:11px;padding:9px 13px;width:100%;justify-content:center}
   .contact .acc:hover{color:var(--brand);border-color:var(--brand)}
 
-  /* actions */
   .actions{display:flex;gap:8px;margin-top:13px}
   .btn{flex:1;text-align:center;font-family:inherit;font-weight:800;font-size:13.5px;padding:12px;border-radius:13px;cursor:pointer;border:none;transition:.16s}
   .btn.primary{background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#fff;box-shadow:0 8px 20px rgba(75,35,201,.3)}
@@ -361,12 +337,7 @@
   .btn.ghost{background:transparent;border:1.5px solid var(--line);color:var(--muted);flex:0 0 48px;font-size:16px}
   .btn.ghost:hover{border-color:var(--brand);color:var(--brand)}
 
-
-  /* ============ FINAL CLEAN OVERRIDES ============ */
-  /* Filters: NOT sticky anymore (was covering cards) */
   .filters{position:static !important;top:auto !important}
-
-  /* Card header: avatar BESIDE name, fully inside body, NO overlap with media/name */
   .media.shot,.media.ytchan,.media.snap,.media.fb{height:330px}
   .body{padding:16px !important;margin-top:0 !important;border-radius:0 !important}
   .chead{display:flex;align-items:center;gap:12px;margin-top:0 !important;margin-bottom:13px;position:relative;z-index:2}
@@ -378,24 +349,13 @@
   .name{margin:0;font-size:15.5px;font-weight:800}
   .loc{margin-top:2px}
   .pchip{align-self:center;margin-bottom:0}
-
-  /* Card surface: soft, not flat */
   .grid .card{border-radius:20px;background:var(--surface);border:1px solid var(--line);box-shadow:0 2px 6px rgba(30,20,70,.05),0 14px 34px rgba(40,20,90,.07)}
-
-  /* Header: solid translucent that matches new bg */
   header{background:color-mix(in srgb,var(--bg) 80%,transparent)}
   body.dark header{background:rgba(12,11,20,.82)}
-
-  /* keep animated blobs subtle so text stays readable */
   .bgfx .blob{opacity:.30}
   body.dark .bgfx .blob{opacity:.26}
+  @media (max-width:640px){.media.shot,.media.ytchan,.media.snap,.media.fb{height:300px}}
 
-  @media (max-width:640px){
-    .media.shot,.media.ytchan,.media.snap,.media.fb{height:300px}
-  }
-
-
-  /* ============ MEDIA: cropped real embeds (no caption) ============ */
   .media{position:relative;height:340px;overflow:hidden;display:grid;place-items:center;cursor:pointer;background:#0b0a14}
   .media.embed{display:block}
   .media.embed .poster{position:absolute;inset:0;display:grid;place-items:center;z-index:2}
@@ -412,7 +372,6 @@
   .media .mlabel.dark{color:#1a1a1a;background:rgba(255,255,255,.65)}
   .media.snap .ghost{font-size:62px;position:relative;z-index:3}
 
-  /* ============ CARD: clean professional, NO avatar ============ */
   .body{padding:16px 16px 18px !important;margin-top:0 !important;border-radius:0 !important;display:flex;flex-direction:column}
   .chead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 12px !important}
   .cmeta{flex:1;min-width:0}
@@ -432,11 +391,8 @@
   .metric.prio{box-shadow:inset 0 0 0 1.5px var(--pc)}
   .grid .card{border-radius:20px;background:var(--surface);border:1px solid var(--line);box-shadow:0 2px 6px rgba(30,20,70,.05),0 14px 34px rgba(40,20,90,.07);overflow:hidden}
   .grid{grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px}
-
   @media (max-width:640px){ .media{height:320px} }
 
-
-  /* ============ FINAL: clean contact buttons ============ */
   .contact2{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
   .cbtn2{flex:1 1 0;min-width:80px;text-align:center;font-family:inherit;font-weight:800;font-size:13px;padding:11px 10px;border-radius:12px;color:#fff;transition:.15s;border:none;cursor:pointer}
   .cbtn2.wa{background:#22C35E}
@@ -445,7 +401,6 @@
   .cbtn2.acc{background:transparent;border:1.5px solid var(--line);color:var(--muted);flex:1 1 100%}
   .cbtn2:hover{filter:brightness(1.06);transform:translateY(-1px);box-shadow:0 6px 16px rgba(0,0,0,.16)}
 
-  /* ============ FINAL: clean filters (not sticky) ============ */
   .filters{position:static !important;top:auto !important;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px !important;box-shadow:var(--shadow);margin-bottom:24px;display:block !important}
   .frow{display:flex !important;align-items:center;gap:8px;flex-wrap:wrap;padding:0 !important}
   .frow + .frow{margin-top:13px !important;padding-top:13px !important;border-top:1px solid var(--line) !important}
@@ -458,8 +413,6 @@
   select.sortsel:hover{border-color:var(--brand-2)}
   select.sortsel:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
 
-
-  /* ============ FINAL: pro filter toolbar ============ */
   .filters .ftop{align-items:center}
   .ftitle{font-size:14px;font-weight:900;color:var(--ink);letter-spacing:-.2px;display:inline-flex;align-items:center;gap:8px}
   .ftitle::before{content:"";width:18px;height:18px;border-radius:6px;background:linear-gradient(135deg,var(--brand),var(--brand-2));box-shadow:0 4px 10px rgba(75,35,201,.35)}
@@ -469,28 +422,17 @@
   .filters .ftop + .frow{border-top:1px solid var(--line) !important;margin-top:14px !important;padding-top:14px !important}
   @media (max-width:720px){ .ftop{flex-wrap:wrap} .fctl{flex:1 1 auto} }
 
-  /* ============ FINAL: richer animated background ============ */
   .bgfx .b4{width:32vw;height:32vw;background:radial-gradient(circle,#FFB23E,transparent 68%);bottom:8%;inset-inline-start:6%;animation:drift 30s ease-in-out infinite;animation-delay:-20s;opacity:.22}
-  .bgfx .mesh{position:absolute;inset:-20%;background:
-     radial-gradient(40% 40% at 20% 30%, color-mix(in srgb,var(--brand) 16%,transparent), transparent 60%),
-     radial-gradient(35% 35% at 80% 70%, color-mix(in srgb,var(--accent) 14%,transparent), transparent 60%);
-     filter:blur(30px);animation:spin 60s linear infinite;transform-origin:center}
+  .bgfx .mesh{position:absolute;inset:-20%;background:radial-gradient(40% 40% at 20% 30%, color-mix(in srgb,var(--brand) 16%,transparent), transparent 60%),radial-gradient(35% 35% at 80% 70%, color-mix(in srgb,var(--accent) 14%,transparent), transparent 60%);filter:blur(30px);animation:spin 60s linear infinite;transform-origin:center}
   @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
   body.dark .bgfx .mesh{opacity:.5}
   @media (prefers-reduced-motion:reduce){ .bgfx .mesh{animation:none} }
 
-
-  /* ============ Background: visible professional motion ============ */
   .bgfx .blob{opacity:.4}
   body.dark .bgfx .blob{opacity:.34}
-  /* moving subtle grid */
-  .bgfx .gridfx{position:absolute;inset:-2px;background-image:
-     linear-gradient(color-mix(in srgb,var(--brand) 9%,transparent) 1px,transparent 1px),
-     linear-gradient(90deg,color-mix(in srgb,var(--brand) 9%,transparent) 1px,transparent 1px);
-     background-size:46px 46px;mask-image:radial-gradient(circle at 50% 35%,#000,transparent 78%);-webkit-mask-image:radial-gradient(circle at 50% 35%,#000,transparent 78%);animation:gridmove 18s linear infinite;opacity:.55}
+  .bgfx .gridfx{position:absolute;inset:-2px;background-image:linear-gradient(color-mix(in srgb,var(--brand) 9%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--brand) 9%,transparent) 1px,transparent 1px);background-size:46px 46px;mask-image:radial-gradient(circle at 50% 35%,#000,transparent 78%);-webkit-mask-image:radial-gradient(circle at 50% 35%,#000,transparent 78%);animation:gridmove 18s linear infinite;opacity:.55}
   body.dark .bgfx .gridfx{opacity:.4}
   @keyframes gridmove{from{background-position:0 0,0 0}to{background-position:46px 46px,46px 46px}}
-  /* floating particles */
   .bgfx .parts{position:absolute;inset:0}
   .bgfx .pt{position:absolute;border-radius:50%;background:linear-gradient(135deg,var(--brand-2),var(--accent));opacity:.5;filter:blur(.4px);animation:floatPt linear infinite}
   @keyframes floatPt{0%{transform:translateY(20px) translateX(0) scale(.7);opacity:0}10%{opacity:.55}90%{opacity:.5}100%{transform:translateY(-110vh) translateX(40px) scale(1);opacity:0}}
@@ -512,12 +454,10 @@
   .bgfx .pt:nth-child(16){left:95%;width:9px;height:9px;animation-duration:36s;animation-delay:-16s}
   @media (prefers-reduced-motion:reduce){ .bgfx .gridfx,.bgfx .pt{animation:none} .bgfx .pt{opacity:.3} }
 
-
   .ochip.txt{background:color-mix(in srgb,var(--line) 40%,transparent);color:var(--ink);cursor:default;box-shadow:none}
   .ochip.txt:hover{transform:none;filter:none;box-shadow:none}
   .others.links .ochip{cursor:pointer}
 
-  /* ===== زر Scraping اليومي ===== */
   .scrape-btn{background:linear-gradient(135deg,#ff6a4d,#f5452b);color:#fff;border:none;padding:10px 24px;border-radius:999px;font-family:inherit;font-weight:800;font-size:13.5px;cursor:pointer;transition:.2s;display:inline-flex;align-items:center;gap:8px;box-shadow:0 6px 16px rgba(255,106,77,.3)}
   .scrape-btn:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(255,106,77,.45)}
   .scrape-btn .badge{background:rgba(255,255,255,.3);padding:2px 10px;border-radius:999px;font-size:12px}
@@ -529,6 +469,17 @@
   .scrape-drop-header h4{font-size:16px;font-weight:800;color:var(--ink)}
   .scrape-drop-header .close-scrape{background:transparent;border:none;font-size:22px;cursor:pointer;color:var(--muted);padding:0 6px}
   .scrape-drop-header .close-scrape:hover{color:var(--ink)}
+
+  /* ===== فيديو داخل الكارد ===== */
+  .media.video-wrapper{position:relative;height:340px;overflow:hidden;background:#0a0a0a;display:block}
+  .media.video-wrapper video{width:100%;height:100%;object-fit:cover}
+  .media.video-wrapper .play-overlay{position:absolute;inset:0;display:grid;place-items:center;z-index:2;cursor:pointer;background:rgba(0,0,0,.25);transition:.3s}
+  .media.video-wrapper .play-overlay:hover{background:rgba(0,0,0,.1)}
+  .media.video-wrapper .play-overlay .playbig{width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.92);display:grid;place-items:center;color:var(--brand);box-shadow:0 8px 28px rgba(0,0,0,.4);transition:.25s}
+  .media.video-wrapper .play-overlay:hover .playbig{transform:scale(1.12)}
+  .media.video-wrapper .play-overlay .playbig svg{margin-inline-start:3px}
+  .media.video-wrapper .mlabel{position:absolute;z-index:3;bottom:12px;inset-inline-start:14px;color:#fff;font-weight:800;font-size:12px;background:rgba(0,0,0,.4);padding:4px 12px;border-radius:8px;backdrop-filter:blur(4px)}
+  .media.video-wrapper .video-duration{position:absolute;z-index:3;bottom:12px;inset-inline-end:14px;color:#fff;font-weight:700;font-size:11px;background:rgba(0,0,0,.5);padding:2px 8px;border-radius:5px}
 </style>
 </head>
 <body>
@@ -559,7 +510,6 @@
     <div class="stats" id="stats"></div>
   </div>
 
-  <!-- زر Scraping اليومي + العداد -->
   <div style="margin-bottom:18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
     <button class="scrape-btn" id="scrapeToggleBtn">
       📊 Scraping اليوم
@@ -568,7 +518,6 @@
     <span style="font-size:12px;color:var(--muted);font-weight:600">آخر تحديث: <span id="scrapeDate">اليوم</span></span>
   </div>
 
-  <!-- دروب داون لعرض البروفايلات -->
   <div class="scrape-drop" id="scrapeDrop">
     <div class="scrape-drop-header">
       <h4>📁 البروفايلات الممسوحة اليوم</h4>
@@ -638,17 +587,8 @@
 const SHEET_ID = "1SZpJPbpmkZ6OAvpfLaiREX5BmpbiyMiP4IEaFOO7KHM";
 const SHEET_TABS = ["👗 Fashion & Style","✨ Luxury & Lifestyle","👨‍👩‍👧 Family & Parenting","⚽ Sports & Fitness","🍳 Food & Cooking","🎮 Gaming","💼 Business","📱 Tech","😂 Entertainment","🔖 Other Niches"];
 const MIN_FOLLOWERS = 0;
-const RENDER_CAP = 400;
 
-let CREATORS = [
-  {handle:"list_roma", platform:"instagram", followers:343109, niche:"fashion", country:"الخليج", url:"https://www.instagram.com/list_roma", videos:[], discovered_at:"2026-07-10"},
-  {handle:"fashion.sa_", platform:"instagram", followers:128577, niche:"fashion", country:"السعودية", url:"https://www.instagram.com/fashion.sa_", videos:[], discovered_at:"7/10/2026"},
-  {handle:"biancanera.ksa", platform:"instagram", followers:115367, niche:"fashion", country:"السعودية", url:"https://www.instagram.com/biancanera.ksa", videos:[], discovered_at:"10/07/2026"},
-  {handle:"dubaifashionuae", platform:"tiktok", followers:56200, niche:"fashion", country:"الإمارات", url:"https://www.tiktok.com/@dubaifashionuae", videos:[], discovered_at:"2026/07/09"},
-  {handle:"reveriecoutureofficial", platform:"instagram", followers:23469, niche:"fashion", country:"الخليج", url:"https://www.instagram.com/reveriecoutureofficial", videos:[], discovered_at:"July 10, 2026"},
-  {handle:"qutunii", platform:"instagram", followers:12184, niche:"fashion", country:"الخليج", url:"https://www.instagram.com/qutunii", videos:[], discovered_at:"2026-07-08"},
-  {handle:"najlaalharthi_111", platform:"instagram", followers:10415, niche:"fashion", country:"السعودية", url:"https://www.instagram.com/najlaalharthi_111", videos:[], discovered_at:"10 July 2026"}
-];
+let CREATORS = [];
 
 const PLAT = {
   instagram:{ar:"انستجرام",c:"#E1306C",g:"linear-gradient(135deg,#F58529,#DD2A7B,#8134AF)"},
@@ -661,12 +601,10 @@ const NICHE_AR = {fashion:"فاشن",luxury:"لاكشري",moms:"عائلة وأ
 const COUNTRY_SYN={"السعودية":["السعودية","السعوديه","الرياض","جدة","جده","مكة","مكه","المدينة","المدينه","الدمام","الخبر","saudi","ksa"],"الإمارات":["الإمارات","الامارات","دبي","أبوظبي","ابوظبي","الشارقة","الشارقه","عجمان","العين","uae","dubai","emirat"],"الكويت":["الكويت","kuwait"],"قطر":["قطر","الدوحة","الدوحه","qatar","doha"],"مصر":["مصر","القاهرة","القاهره","الإسكندرية","الاسكندرية","الجيزة","الجيزه","egypt","cairo"],"المغرب":["المغرب","مغرب","الدار البيضاء","الرباط","مراكش","طنجة","morocco","casablanca","rabat"]};
 const COUNTRY_ORDER=["السعودية","الإمارات","الكويت","قطر","مصر","المغرب"];
 function countryBucket(loc){ loc=String(loc||"").toLowerCase(); for(const n of COUNTRY_ORDER){ const syn=COUNTRY_SYN[n]||[n]; if(syn.some(x=>loc.indexOf(String(x).toLowerCase())!==-1)) return n; } return "__other__"; }
-function matchCountry(loc,name){ return countryBucket(loc)===name; }
 function prioInfo(p){ p=String(p||"").trim().toLowerCase(); if(p==="high"||p==="عالي"||p==="1") return {l:"High",c:"#B8860B"}; if(p==="medium"||p==="متوسط"||p==="2") return {l:"Medium",c:"#f59e0b"}; if(p==="low"||p==="منخفض"||p==="3") return {l:"Low",c:"#9ca3af"}; return null; }
 const state = {niche:"all", platform:"all", country:"all", fol:"all", contact:"all", sort:"fol", q:""};
 
 function fmt(n){ if(n==null) return "—"; n=Number(n); if(!n) return "—"; if(n>=1e6) return (n/1e6).toFixed(1).replace(/\.0$/,"")+"M"; if(n>=1e3) return (n/1e3).toFixed(1).replace(/\.0$/,"")+"K"; return ""+n; }
-function initial(h){ return (h||"?").replace(/[@_.]/g,"").charAt(0).toUpperCase(); }
 function avColor(h){ const c=["#4B23C9","#E1306C","#0EA5A4","#F5A623","#7C4DFF","#FF6A4D","#2563EB"]; let s=0; for(const ch of (h||"")) s+=ch.charCodeAt(0); return c[s%c.length]; }
 function esc(s){ return String(s||"").replace(/'/g,"\\'").replace(/"/g,"&quot;"); }
 function clean(list){ return list.filter(c=> c && (Number(c.followers)>=MIN_FOLLOWERS || c.platform==="snapchat")); }
@@ -717,43 +655,23 @@ function applyFilters(){
 function normalizeDate(dateStr) {
   if (!dateStr) return null;
   dateStr = String(dateStr).trim();
-  
-  // YYYY-MM-DD
-  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-    return dateStr;
-  }
-  
-  // YYYY/MM/DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
   if (/^\d{4}\/\d{2}\/\d{2}$/.test(dateStr)) {
     const parts = dateStr.split('/');
     return parts[0] + '-' + parts[1].padStart(2,'0') + '-' + parts[2].padStart(2,'0');
   }
-  
-  // DD-MM-YYYY أو DD/MM/YYYY
   let m = dateStr.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})$/);
   if (m) {
-    if (parseInt(m[1]) > 12) {
-      return m[3] + '-' + m[2].padStart(2,'0') + '-' + m[1].padStart(2,'0');
-    }
-    if (parseInt(m[2]) > 12) {
-      return m[3] + '-' + m[1].padStart(2,'0') + '-' + m[2].padStart(2,'0');
-    }
+    if (parseInt(m[1]) > 12) return m[3] + '-' + m[2].padStart(2,'0') + '-' + m[1].padStart(2,'0');
+    if (parseInt(m[2]) > 12) return m[3] + '-' + m[1].padStart(2,'0') + '-' + m[2].padStart(2,'0');
     return m[3] + '-' + m[1].padStart(2,'0') + '-' + m[2].padStart(2,'0');
   }
-  
-  // M/D/YYYY أو D/M/YYYY
   m = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (m) {
-    if (parseInt(m[1]) > 12) {
-      return m[3] + '-' + m[2].padStart(2,'0') + '-' + m[1].padStart(2,'0');
-    }
-    if (parseInt(m[2]) > 12) {
-      return m[3] + '-' + m[1].padStart(2,'0') + '-' + m[2].padStart(2,'0');
-    }
+    if (parseInt(m[1]) > 12) return m[3] + '-' + m[2].padStart(2,'0') + '-' + m[1].padStart(2,'0');
+    if (parseInt(m[2]) > 12) return m[3] + '-' + m[1].padStart(2,'0') + '-' + m[2].padStart(2,'0');
     return m[3] + '-' + m[1].padStart(2,'0') + '-' + m[2].padStart(2,'0');
   }
-  
-  // استخدام Date() لأي شكل تاني (July 10, 2026, 10 July 2026, etc)
   try {
     const d = new Date(dateStr);
     if (!isNaN(d.getTime())) {
@@ -763,11 +681,10 @@ function normalizeDate(dateStr) {
       return y + '-' + mo + '-' + da;
     }
   } catch(e) {}
-  
   return null;
 }
 
-// ===== دالة لجلب بروفايلات اليوم (بتدعم كل أشكال التواريخ) =====
+// ===== دالة لجلب بروفايلات اليوم =====
 function getTodayScrapedProfiles() {
   const today = new Date().toISOString().slice(0,10);
   const all = clean(CREATORS);
@@ -785,40 +702,97 @@ function updateScrapeUI() {
   const badge = document.getElementById('scrapeCountBadge');
   const dateEl = document.getElementById('scrapeDate');
   const listEl = document.getElementById('scrapeList');
-  
   if (badge) badge.textContent = todayProfiles.length;
   if (dateEl) dateEl.textContent = new Date().toLocaleDateString('ar-EG');
-  
   if (listEl) {
     if (todayProfiles.length === 0) {
       listEl.innerHTML = '<p style="color:var(--muted);font-size:14px">لا توجد ملفات ممسوحة اليوم (0)</p>';
       return;
     }
     let html = '<div class="grid">';
-    todayProfiles.forEach(p => {
-      html += card(p);
-    });
+    todayProfiles.forEach(p => { html += card(p); });
     html += '</div>';
     listEl.innerHTML = html;
   }
 }
 
-function igCode(u){ const m=String(u||'').match(/\/(p|reel|reels|tv)\/([^/?#]+)/); return m?{kind:(m[1]==='reels'?'reel':m[1]),code:m[2]}:null; }
-function ytThumbId(u){ try{ return (typeof ytId==='function')?ytId(u):''; }catch(e){ return ''; } }
-function ttVidId(u){ const m=String(u||'').match(/\/video\/(\d+)/); return m?m[1]:''; }
+// ===== دالة لتشغيل الفيديو =====
+function playVideo(videoEl) {
+  const wrapper = videoEl.closest('.video-wrapper');
+  const overlay = wrapper.querySelector('.play-overlay');
+  if (overlay) overlay.style.display = 'none';
+  videoEl.controls = true;
+  videoEl.play();
+}
+
+// ===== دالة لعرض الفيديو من top_video_url =====
+function renderVideoFromUrl(url, platform) {
+  if (!url) return null;
+  const p = PLAT[platform] || PLAT.instagram;
+  
+  // يوتيوب
+  if (url.includes('youtube.com') || url.includes('youtu.be')) {
+    let vid = url.match(/[?&]v=([^&]+)/) || url.match(/youtu\.be\/([^?]+)/) || url.match(/\/shorts\/([^?\/]+)/);
+    vid = vid ? vid[1] : null;
+    if (vid) {
+      return '<div class="media video-wrapper" onclick="this.querySelector(\'video\').play();this.querySelector(\'.play-overlay\').style.display=\'none\'"><video src="https://www.youtube.com/embed/'+vid+'?autoplay=1&controls=1" style="width:100%;height:100%;object-fit:cover" controls></video><div class="play-overlay"><span class="playbig"><svg viewBox="0 0 24 24" fill="currentColor" width="26" height="26"><path d="M8 5v14l11-7z"/></svg></span></div><span class="mlabel">يوتيوب</span></div>';
+    }
+  }
+  
+  // تيك توك
+  if (url.includes('tiktok.com')) {
+    let vid = url.match(/\/video\/(\d+)/);
+    vid = vid ? vid[1] : null;
+    if (vid) {
+      return '<div class="media video-wrapper" onclick="this.querySelector(\'video\').play();this.querySelector(\'.play-overlay\').style.display=\'none\'"><video src="https://www.tiktok.com/embed/v2/'+vid+'" style="width:100%;height:100%;object-fit:cover" controls></video><div class="play-overlay"><span class="playbig"><svg viewBox="0 0 24 24" fill="currentColor" width="26" height="26"><path d="M8 5v14l11-7z"/></svg></span></div><span class="mlabel">تيك توك</span></div>';
+    }
+  }
+  
+  // انستجرام
+  if (url.includes('instagram.com')) {
+    let m = url.match(/\/(p|reel|reels|tv)\/([^/?#]+)/);
+    if (m) {
+      return '<div class="media video-wrapper" onclick="this.querySelector(\'video\').play();this.querySelector(\'.play-overlay\').style.display=\'none\'"><video src="https://www.instagram.com/'+m[1]+'/'+m[2]+'/embed" style="width:100%;height:100%;object-fit:cover" controls></video><div class="play-overlay"><span class="playbig"><svg viewBox="0 0 24 24" fill="currentColor" width="26" height="26"><path d="M8 5v14l11-7z"/></svg></span></div><span class="mlabel">انستجرام</span></div>';
+    }
+  }
+  
+  // فيديو مباشر (mp4, webm, etc)
+  if (url.match(/\.(mp4|webm|mov|avi|mkv)$/i)) {
+    return '<div class="media video-wrapper" onclick="this.querySelector(\'video\').play();this.querySelector(\'.play-overlay\').style.display=\'none\'"><video src="'+url+'" style="width:100%;height:100%;object-fit:cover" controls></video><div class="play-overlay"><span class="playbig"><svg viewBox="0 0 24 24" fill="currentColor" width="26" height="26"><path d="M8 5v14l11-7z"/></svg></span></div><span class="mlabel">فيديو</span></div>';
+  }
+  
+  return null;
+}
 
 function stripHtml(c){
   const p=PLAT[c.platform]||PLAT.instagram;
+  
+  // ===== أولاً: التحقق من وجود top_video_url =====
+  if (c.top_video_url) {
+    const videoHtml = renderVideoFromUrl(c.top_video_url, c.platform);
+    if (videoHtml) return videoHtml;
+  }
+  
+  // ===== ثانياً: الفيديوهات من array videos =====
   let vids=(c.videos||[]).filter(v=>v && (v.url||v.thumb));
   const seen={}; vids=vids.filter(v=>{ const k=(v.url||'')+'|'+(v.thumb||''); if(seen[k]) return false; seen[k]=1; return true; });
   const bigPlay='<span class="playbig"><svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M8 5v14l11-7z"/></svg></span>';
   const cand=[c.top_video_url, ...vids.map(v=>v.url), c.url].filter(Boolean);
   const pickBy=(fn)=>{ for(const u of cand){ if(fn(u)) return u; } return ''; };
 
+  // ===== ثالثاً: محاولة عرض فيديو من vids =====
+  for (const vid of vids) {
+    if (vid.url) {
+      const vHtml = renderVideoFromUrl(vid.url, c.platform);
+      if (vHtml) return vHtml;
+    }
+  }
+
+  // ===== رابعاً: المنصات المعتادة =====
   if(c.platform==='instagram'){
-    const u=pickBy(u=>igCode(u)); const ic=igCode(u);
-    if(ic){
-      return '<div class="media embed ig" data-embed-src="'+esc('https://www.instagram.com/'+ic.kind+'/'+ic.code+'/embed')+'"><div class="poster" onclick="loadEmbed(this.parentNode)" style="background:'+p.g+'">'+bigPlay+'</div></div>';
+    const u=pickBy(u=>u.includes('instagram.com')); 
+    if(u && u.includes('/p/') || u.includes('/reel/')) {
+      return '<div class="media embed ig" data-embed-src="'+esc(u+'/embed')+'"><div class="poster" onclick="loadEmbed(this.parentNode)" style="background:'+p.g+'">'+bigPlay+'</div></div>';
     }
     if(c.avatar_url){
       return '<div class="media shot" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel">انستجرام</span></div>';
@@ -826,21 +800,12 @@ function stripHtml(c){
     return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="mlabel">انستجرام</span></div>';
   }
   if(c.platform==='tiktok'){
-    const u=pickBy(u=>ttVidId(u)); const vid=ttVidId(u);
-    if(vid){
-      return '<div class="media embed tt" data-embed-src="'+esc('https://www.tiktok.com/embed/v2/'+vid)+'"><div class="poster" onclick="loadEmbed(this.parentNode)" style="background:'+p.g+'">'+bigPlay+'</div></div>';
-    }
     if(c.avatar_url){
       return '<div class="media shot" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel">تيك توك</span></div>';
     }
     return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="mlabel">تيك توك</span></div>';
   }
   if(c.platform==='youtube'){
-    const u=pickBy(u=>ytThumbId(u)); const id=ytThumbId(u);
-    if(id){
-      const t='https://i.ytimg.com/vi/'+id+'/hqdefault.jpg';
-      return '<div class="media shot" style="background:'+p.g+'" onclick="openVideo(\''+esc(u||c.url)+'\',\'youtube\')"><img class="cover" src="'+esc(t)+'" loading="lazy" onerror="this.remove()"><div class="ovl"></div>'+bigPlay+'</div>';
-    }
     if(c.avatar_url){
       return '<div class="media shot yt" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover ytcover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div>'+bigPlay+'<span class="mlabel">قناة يوتيوب</span></div>';
     }
@@ -1016,12 +981,6 @@ function renderStats(){
     '<div class="stat"><div class="v num">'+data.filter(c=>c.email||c.whatsapp||c.phone).length.toLocaleString("en")+'</div><div class="l">وسيلة تواصل مباشرة</div></div>';
 }
 
-function reloadScript(src, cb){
-  document.querySelectorAll('script[data-embed="'+src+'"]').forEach(s=>s.remove());
-  const s=document.createElement('script'); s.src=src; s.async=true; s.setAttribute('data-embed',src);
-  s.onload=()=>{ if(cb) cb(); }; document.body.appendChild(s);
-}
-function ytId(u){ const m=u.match(/[?&]v=([^&]+)/)||u.match(/youtu\.be\/([^?]+)/)||u.match(/\/shorts\/([^?\/]+)/); return m?m[1]:null; }
 function openVideo(url, platform){
   if(!url || url==="#") return;
   const body=document.getElementById("modalBody");
@@ -1035,9 +994,10 @@ function openVideo(url, platform){
     title.textContent="منشور إنستجرام";
     body.innerHTML='<blockquote class="instagram-media" data-instgrm-permalink="'+url+'" data-instgrm-version="14" style="margin:0 auto;max-width:540px;width:100%"></blockquote>';
     reloadScript("https://www.instagram.com/embed.js", ()=>{ if(window.instgrm&&window.instgrm.Embeds) window.instgrm.Embeds.process(); });
-  } else if(platform==="youtube" && ytId(url)){
+  } else if(platform==="youtube" && url.match(/[?&]v=([^&]+)/)){
+    const vid = url.match(/[?&]v=([^&]+)/)[1];
     title.textContent="فيديو يوتيوب";
-    body.innerHTML='<iframe src="https://www.youtube.com/embed/'+ytId(url)+'" allow="autoplay; encrypted-media" allowfullscreen></iframe>';
+    body.innerHTML='<iframe src="https://www.youtube.com/embed/'+vid+'" allow="autoplay; encrypted-media" allowfullscreen></iframe>';
   } else {
     window.open(url,"_blank"); return;
   }
@@ -1103,7 +1063,6 @@ function applyData(all){
   const filtered=all.filter(c=>c.platform==="snapchat"?true:c.followers>=MIN_FOLLOWERS);
   if(filtered.length) CREATORS=filtered;
   buildAllPills(); renderStats(); render();
-  // تحديث الـ Scraped profiles بناءً على discovered_at الفعلي
   updateScrapeUI();
 }
 async function boot(){
@@ -1118,7 +1077,6 @@ async function boot(){
 }
 boot();
 
-// ===== زر Scraping =====
 document.addEventListener('DOMContentLoaded', function() {
   const btn = document.getElementById('scrapeToggleBtn');
   const drop = document.getElementById('scrapeDrop');
@@ -1135,10 +1093,7 @@ document.addEventListener('DOMContentLoaded', function() {
       drop.classList.remove('show');
     }
   });
-  // تحديث كل ساعة
-  setInterval(() => {
-    updateScrapeUI();
-  }, 3600000);
+  setInterval(() => { updateScrapeUI(); }, 3600000);
 });
 
 function applyTheme(t){ document.body.classList.toggle('dark', t==='dark'); var b=document.getElementById('themebtn'); if(b) b.textContent=(t==='dark'?'\u2600\uFE0F':'\uD83C\uDF19'); try{ localStorage.setItem('adltix_theme',t); }catch(e){} }
