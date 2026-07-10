@@ -93,10 +93,19 @@
 
   .media{position:relative;height:340px;overflow:hidden;display:grid;place-items:center;cursor:pointer;background:#0b0a14}
   .media.embed{display:block}
-  .media.embed .poster{position:absolute;inset:0;display:grid;place-items:center;z-index:2}
+  .media.embed .poster{position:absolute;inset:0;display:grid;place-items:center;z-index:2;background:rgba(0,0,0,.3);transition:background .2s}
+  .media.embed .poster:hover{background:rgba(0,0,0,.5)}
   .media.embed .embedframe{position:absolute;left:50%;transform:translateX(-50%);border:0;width:100%;z-index:1;background:#fff}
   .media.embed.ig .embedframe{top:-54px;height:680px}
   .media.embed.tt .embedframe{top:-2px;height:760px}
+  
+  /* سناب شات فيديو */
+  .media.snap-vid{background:#0b0a14;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+  .media.snap-vid video{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;z-index:1;background:#000}
+  .media.snap-vid .playbig{position:absolute;z-index:3;width:58px;height:58px;border-radius:50%;background:rgba(255,255,255,.94);display:grid;place-items:center;color:var(--brand);box-shadow:0 10px 28px rgba(0,0,0,.32);cursor:pointer;transition:transform .2s}
+  .media.snap-vid:hover .playbig{transform:scale(1.1)}
+  .media.snap-vid .mlabel{position:absolute;z-index:4;bottom:12px;inset-inline-start:14px;color:#fff;font-weight:800;font-size:12px;background:rgba(0,0,0,.5);padding:5px 11px;border-radius:9px;backdrop-filter:blur(3px)}
+  
   .media.shot .cover{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1}
   .media .ovl{position:absolute;inset:0;z-index:2;background:linear-gradient(180deg,rgba(0,0,0,.02),rgba(0,0,0,.34))}
   .media .ovl.soft{background:rgba(0,0,0,.18)}
@@ -107,12 +116,6 @@
   .media.snap .ghost{font-size:62px;position:relative;z-index:3}
   .media.shot.yt .cover.ytcover{object-fit:contain;padding:42px;background:transparent}
   .media.fb{display:grid;place-items:center;background:var(--line)}
-  /* سناب شات فيديو مباشر */
-  .media.snap-vid{background:#0b0a14;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
-  .media.snap-vid video{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;z-index:1;background:#000}
-  .media.snap-vid .playbig{position:absolute;z-index:3;width:58px;height:58px;border-radius:50%;background:rgba(255,255,255,.94);display:grid;place-items:center;color:var(--brand);box-shadow:0 10px 28px rgba(0,0,0,.32);cursor:pointer;transition:transform .2s}
-  .media.snap-vid:hover .playbig{transform:scale(1.1)}
-  .media.snap-vid .mlabel{position:absolute;z-index:4;bottom:12px;inset-inline-start:14px;color:#fff;font-weight:800;font-size:12px;background:rgba(0,0,0,.5);padding:5px 11px;border-radius:9px;backdrop-filter:blur(3px)}
 
   .body{padding:16px 16px 18px !important;margin-top:0 !important;border-radius:0 !important;display:flex;flex-direction:column}
   .chead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 12px !important}
@@ -383,18 +386,34 @@ function getTodayDate() {
   return { y, m, day, iso: `${y}-${m}-${day}`, us: `${m}/${day}/${y}`, dm: `${day}/${m}/${y}` };
 }
 
+// ===== دالة متطورة للتعرف على التاريخ بكل الصيغ =====
 function parseDiscoveredAt(val) {
   if (!val) return null;
   const s = String(val).trim();
-  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!s) return null;
+  
+  // محاولة كل الصيغ الممكنة
+  // 2026-07-10
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
   if (m) return { y: parseInt(m[1]), m: parseInt(m[2]), d: parseInt(m[3]) };
+  
+  // 2026/07/10
+  m = s.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
+  if (m) return { y: parseInt(m[1]), m: parseInt(m[2]), d: parseInt(m[3]) };
+  
+  // 7/10/2026 أو 10/7/2026
   m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (m) {
     let a = parseInt(m[1]), b = parseInt(m[2]), y = parseInt(m[3]);
+    // لو الرقم الأول > 12 يبقى هو اليوم
     if (a > 12) return { y, m: b, d: a };
+    // لو الرقم التاني > 12 يبقى هو اليوم
     if (b > 12) return { y, m: a, d: b };
+    // لو الاتنين <= 12، نعتبرها M/D/Y (أمريكي)
     return { y, m: a, d: b };
   }
+  
+  // 10-7-2026 أو 7-10-2026
   m = s.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
   if (m) {
     let a = parseInt(m[1]), b = parseInt(m[2]), y = parseInt(m[3]);
@@ -402,7 +421,22 @@ function parseDiscoveredAt(val) {
     if (b > 12) return { y, m: a, d: b };
     return { y, m: a, d: b };
   }
+  
+  // 10.7.2026
+  m = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  if (m) {
+    let a = parseInt(m[1]), b = parseInt(m[2]), y = parseInt(m[3]);
+    if (a > 12) return { y, m: b, d: a };
+    if (b > 12) return { y, m: a, d: b };
+    return { y, m: a, d: b };
+  }
+  
   return null;
+}
+
+function isSameDate(date1, date2) {
+  if (!date1 || !date2) return false;
+  return date1.y === date2.y && date1.m === date2.m && date1.d === date2.d;
 }
 
 function isTodayDiscovered(discoveredAt) {
@@ -413,7 +447,11 @@ function isTodayDiscovered(discoveredAt) {
 }
 
 function getTodayCreators() {
-  return CREATORS.filter(c => isTodayDiscovered(c.discovered_at));
+  const today = getTodayDate();
+  return CREATORS.filter(c => {
+    const parsed = parseDiscoveredAt(c.discovered_at);
+    return parsed && isSameDate(parsed, { y: today.y, m: parseInt(today.m), d: parseInt(today.day) });
+  });
 }
 
 function updateTodayBar() {
@@ -509,14 +547,23 @@ function igCode(u){ const m=String(u||'').match(/\/(p|reel|reels|tv)\/([^/?#]+)/
 function ytThumbId(u){ try{ return (typeof ytId==='function')?ytId(u):''; }catch(e){ return ''; } }
 function ttVidId(u){ const m=String(u||'').match(/\/video\/(\d+)/); return m?m[1]:''; }
 
-// ===== دالة جديدة لعرض فيديوهات سناب شات =====
+// ===== فيديوهات سناب شات =====
+function isSnapVideoUrl(url) {
+  if (!url) return false;
+  const u = String(url).toLowerCase();
+  return u.includes('snapchat.com') || 
+         u.match(/\.(mp4|mov|webm|m4v|3gp)$/i) ||
+         u.match(/snapchat/i);
+}
+
 function snapVideoHtml(videoUrl, p) {
   if (!videoUrl) return null;
-  // لو الرابط من سناب شات مباشر
-  if (videoUrl.includes('snapchat.com') || videoUrl.match(/\.(mp4|mov|webm)/i)) {
-    return `<div class="media snap-vid" onclick="openSnapVideo('${esc(videoUrl)}')">
-      <video src="${esc(videoUrl)}" muted playsinline preload="metadata" poster="" onloadeddata="this.poster=''" onclick="event.stopPropagation(); this.paused?this.play():this.pause();"></video>
-      <div class="playbig" onclick="event.stopPropagation(); openSnapVideo('${esc(videoUrl)}')">
+  const u = String(videoUrl);
+  // لو الرابط من سناب شات أو فيديو مباشر
+  if (isSnapVideoUrl(u)) {
+    return `<div class="media snap-vid" onclick="openSnapVideo('${esc(u)}')">
+      <video src="${esc(u)}" muted playsinline preload="metadata" poster="" onloadeddata="this.poster=''" onclick="event.stopPropagation(); this.paused?this.play():this.pause();"></video>
+      <div class="playbig" onclick="event.stopPropagation(); openSnapVideo('${esc(u)}')">
         <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M8 5v14l11-7z"/></svg>
       </div>
       <span class="mlabel">سناب شات</span>
@@ -525,39 +572,52 @@ function snapVideoHtml(videoUrl, p) {
   return null;
 }
 
+// ===== فيديوهات انستجرام (فقط الفيديو، بدون الحساب) =====
+function instagramEmbedVideo(url) {
+  const ic = igCode(url);
+  if (!ic) return null;
+  // نستخدم embed ولكن نضيف class عشان نخفي العناصر الإضافية
+  return `<div class="media embed ig" data-embed-src="${esc('https://www.instagram.com/'+ic.kind+'/'+ic.code+'/embed')}">
+    <div class="poster" onclick="loadEmbed(this.parentNode)" style="background:linear-gradient(135deg,#F58529,#DD2A7B,#8134AF)">
+      <span class="playbig"><svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M8 5v14l11-7z"/></svg></span>
+    </div>
+  </div>`;
+}
+
 function stripHtml(c){
   const p=PLAT[c.platform]||PLAT.instagram;
   let vids=(c.videos||[]).filter(v=>v && (v.url||v.thumb));
   const seen={}; vids=vids.filter(v=>{ const k=(v.url||'')+'|'+(v.thumb||''); if(seen[k]) return false; seen[k]=1; return true; });
-  const bigPlay='<span class="playbig"><svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M8 5v14l11-7z"/></svg></span>';
   const cand=[c.top_video_url, ...vids.map(v=>v.url), c.url].filter(Boolean);
   const pickBy=(fn)=>{ for(const u of cand){ if(fn(u)) return u; } return ''; };
+  const bigPlay='<span class="playbig"><svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M8 5v14l11-7z"/></svg></span>';
 
   // ===== سناب شات =====
   if(c.platform==='snapchat'){
-    // أولاً نحاول نعرض الفيديو مباشرة
-    if (c.top_video_url) {
+    if (c.top_video_url && isSnapVideoUrl(c.top_video_url)) {
       const snapVid = snapVideoHtml(c.top_video_url, p);
       if (snapVid) return snapVid;
     }
-    // لو مفيش فيديو، نعرض الصورة أو الأيقونة
     if(c.avatar_url){
       return '<div class="media shot snap" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel dark">سناب شات</span></div>';
     }
     return '<div class="media snap" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="ghost">\uD83D\uDC7B</span><span class="mlabel dark">افتح سناب</span></div>';
   }
 
-  // باقي المنصات زي قبل
+  // ===== انستجرام - فيديو فقط =====
   if(c.platform==='instagram'){
-    const u=pickBy(u=>igCode(u)); const ic=igCode(u);
-    if(ic){
-      return '<div class="media embed ig" data-embed-src="'+esc('https://www.instagram.com/'+ic.kind+'/'+ic.code+'/embed')+'"><div class="poster" onclick="loadEmbed(this.parentNode)" style="background:'+p.g+'">'+bigPlay+'</div></div>';
-    }
+    // نجيب الفيديو من top_video_url أو من url
+    const vidUrl = c.top_video_url || c.url;
+    const embed = instagramEmbedVideo(vidUrl);
+    if (embed) return embed;
+    
     if(c.avatar_url){
       return '<div class="media shot" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel">انستجرام</span></div>';
     }
     return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="mlabel">انستجرام</span></div>';
   }
+
+  // ===== تيك توك =====
   if(c.platform==='tiktok'){
     const u=pickBy(u=>ttVidId(u)); const vid=ttVidId(u);
     if(vid){
@@ -568,6 +628,8 @@ function stripHtml(c){
     }
     return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="mlabel">تيك توك</span></div>';
   }
+
+  // ===== يوتيوب =====
   if(c.platform==='youtube'){
     const u=pickBy(u=>ytThumbId(u)); const id=ytThumbId(u);
     if(id){
@@ -579,13 +641,13 @@ function stripHtml(c){
     }
     return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')">'+bigPlay+'<span class="mlabel">يوتيوب</span></div>';
   }
+
   if(c.avatar_url){
     return '<div class="media shot" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel">'+p.ar+'</span></div>';
   }
   return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="mlabel">'+p.ar+'</span></div>';
 }
 
-// ===== دالة تشغيل فيديو سناب في المودال =====
 function openSnapVideo(url) {
   if (!url) return;
   const body = document.getElementById("modalBody");
