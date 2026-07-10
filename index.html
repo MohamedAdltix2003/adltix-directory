@@ -642,12 +642,12 @@ const RENDER_CAP = 400;
 
 let CREATORS = [
   {handle:"list_roma", platform:"instagram", followers:343109, niche:"fashion", country:"الخليج", url:"https://www.instagram.com/list_roma", videos:[], discovered_at:"2026-07-10"},
-  {handle:"fashion.sa_", platform:"instagram", followers:128577, niche:"fashion", country:"السعودية", url:"https://www.instagram.com/fashion.sa_", videos:[], discovered_at:"2026-07-10"},
-  {handle:"biancanera.ksa", platform:"instagram", followers:115367, niche:"fashion", country:"السعودية", url:"https://www.instagram.com/biancanera.ksa", videos:[], discovered_at:"2026-07-10"},
-  {handle:"dubaifashionuae", platform:"tiktok", followers:56200, niche:"fashion", country:"الإمارات", url:"https://www.tiktok.com/@dubaifashionuae", videos:[], discovered_at:"2026-07-09"},
-  {handle:"reveriecoutureofficial", platform:"instagram", followers:23469, niche:"fashion", country:"الخليج", url:"https://www.instagram.com/reveriecoutureofficial", videos:[], discovered_at:"2026-07-10"},
+  {handle:"fashion.sa_", platform:"instagram", followers:128577, niche:"fashion", country:"السعودية", url:"https://www.instagram.com/fashion.sa_", videos:[], discovered_at:"7/10/2026"},
+  {handle:"biancanera.ksa", platform:"instagram", followers:115367, niche:"fashion", country:"السعودية", url:"https://www.instagram.com/biancanera.ksa", videos:[], discovered_at:"10/07/2026"},
+  {handle:"dubaifashionuae", platform:"tiktok", followers:56200, niche:"fashion", country:"الإمارات", url:"https://www.tiktok.com/@dubaifashionuae", videos:[], discovered_at:"2026/07/09"},
+  {handle:"reveriecoutureofficial", platform:"instagram", followers:23469, niche:"fashion", country:"الخليج", url:"https://www.instagram.com/reveriecoutureofficial", videos:[], discovered_at:"July 10, 2026"},
   {handle:"qutunii", platform:"instagram", followers:12184, niche:"fashion", country:"الخليج", url:"https://www.instagram.com/qutunii", videos:[], discovered_at:"2026-07-08"},
-  {handle:"najlaalharthi_111", platform:"instagram", followers:10415, niche:"fashion", country:"السعودية", url:"https://www.instagram.com/najlaalharthi_111", videos:[], discovered_at:"2026-07-10"}
+  {handle:"najlaalharthi_111", platform:"instagram", followers:10415, niche:"fashion", country:"السعودية", url:"https://www.instagram.com/najlaalharthi_111", videos:[], discovered_at:"10 July 2026"}
 ];
 
 const PLAT = {
@@ -713,13 +713,69 @@ function applyFilters(){
   return r;
 }
 
-// ===== دالة لجلب بروفايلات اليوم بناءً على discovered_at =====
+// ===== دالة لتوحيد التوقيت لأي شكل تاريخ =====
+function normalizeDate(dateStr) {
+  if (!dateStr) return null;
+  dateStr = String(dateStr).trim();
+  
+  // YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    return dateStr;
+  }
+  
+  // YYYY/MM/DD
+  if (/^\d{4}\/\d{2}\/\d{2}$/.test(dateStr)) {
+    const parts = dateStr.split('/');
+    return parts[0] + '-' + parts[1].padStart(2,'0') + '-' + parts[2].padStart(2,'0');
+  }
+  
+  // DD-MM-YYYY أو DD/MM/YYYY
+  let m = dateStr.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})$/);
+  if (m) {
+    if (parseInt(m[1]) > 12) {
+      return m[3] + '-' + m[2].padStart(2,'0') + '-' + m[1].padStart(2,'0');
+    }
+    if (parseInt(m[2]) > 12) {
+      return m[3] + '-' + m[1].padStart(2,'0') + '-' + m[2].padStart(2,'0');
+    }
+    return m[3] + '-' + m[1].padStart(2,'0') + '-' + m[2].padStart(2,'0');
+  }
+  
+  // M/D/YYYY أو D/M/YYYY
+  m = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m) {
+    if (parseInt(m[1]) > 12) {
+      return m[3] + '-' + m[2].padStart(2,'0') + '-' + m[1].padStart(2,'0');
+    }
+    if (parseInt(m[2]) > 12) {
+      return m[3] + '-' + m[1].padStart(2,'0') + '-' + m[2].padStart(2,'0');
+    }
+    return m[3] + '-' + m[1].padStart(2,'0') + '-' + m[2].padStart(2,'0');
+  }
+  
+  // استخدام Date() لأي شكل تاني (July 10, 2026, 10 July 2026, etc)
+  try {
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) {
+      const y = d.getFullYear();
+      const mo = String(d.getMonth() + 1).padStart(2, '0');
+      const da = String(d.getDate()).padStart(2, '0');
+      return y + '-' + mo + '-' + da;
+    }
+  } catch(e) {}
+  
+  return null;
+}
+
+// ===== دالة لجلب بروفايلات اليوم (بتدعم كل أشكال التواريخ) =====
 function getTodayScrapedProfiles() {
   const today = new Date().toISOString().slice(0,10);
   const all = clean(CREATORS);
   return all.filter(c => {
     const d = c.discovered_at || c['discovered_at'] || '';
-    return d && d.slice(0,10) === today;
+    if (!d) return false;
+    const normalized = normalizeDate(d);
+    return normalized && normalized === today;
   });
 }
 
