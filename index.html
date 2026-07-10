@@ -67,7 +67,6 @@
   .filters .ftop + .frow{border-top:1px solid var(--line) !important;margin-top:14px !important;padding-top:14px !important}
   @media (max-width:720px){ .ftop{flex-wrap:wrap} .fctl{flex:1 1 auto} }
 
-  /* ===== TODAY SCRAPE BUTTON ===== */
   .today-bar{display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 18px;box-shadow:var(--shadow)}
   .today-btn{background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#fff;border:none;border-radius:13px;padding:12px 28px;font-family:inherit;font-weight:800;font-size:15px;cursor:pointer;transition:.18s;display:inline-flex;align-items:center;gap:10px;box-shadow:0 8px 22px rgba(75,35,201,.28);flex-shrink:0}
   .today-btn:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(75,35,201,.4)}
@@ -92,7 +91,6 @@
   .card:hover::after{opacity:1;transform:scaleX(1)}
   .card{position:relative}
 
-  /* ===== Media styles ===== */
   .media{position:relative;height:340px;overflow:hidden;display:grid;place-items:center;cursor:pointer;background:#0b0a14}
   .media.embed{display:block}
   .media.embed .poster{position:absolute;inset:0;display:grid;place-items:center;z-index:2}
@@ -109,8 +107,13 @@
   .media.snap .ghost{font-size:62px;position:relative;z-index:3}
   .media.shot.yt .cover.ytcover{object-fit:contain;padding:42px;background:transparent}
   .media.fb{display:grid;place-items:center;background:var(--line)}
+  /* سناب شات فيديو مباشر */
+  .media.snap-vid{background:#0b0a14;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+  .media.snap-vid video{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;z-index:1;background:#000}
+  .media.snap-vid .playbig{position:absolute;z-index:3;width:58px;height:58px;border-radius:50%;background:rgba(255,255,255,.94);display:grid;place-items:center;color:var(--brand);box-shadow:0 10px 28px rgba(0,0,0,.32);cursor:pointer;transition:transform .2s}
+  .media.snap-vid:hover .playbig{transform:scale(1.1)}
+  .media.snap-vid .mlabel{position:absolute;z-index:4;bottom:12px;inset-inline-start:14px;color:#fff;font-weight:800;font-size:12px;background:rgba(0,0,0,.5);padding:5px 11px;border-radius:9px;backdrop-filter:blur(3px)}
 
-  /* ===== Card body ===== */
   .body{padding:16px 16px 18px !important;margin-top:0 !important;border-radius:0 !important;display:flex;flex-direction:column}
   .chead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 12px !important}
   .cmeta{flex:1;min-width:0}
@@ -163,6 +166,7 @@
   .modal h4{font-size:16px;font-weight:800;margin-bottom:14px;padding-inline-end:46px}
   .modal .embed{min-height:240px;display:grid;place-items:center;color:var(--muted)}
   .modal iframe{border-radius:14px;border:none;width:100%;aspect-ratio:16/9}
+  .modal video{width:100%;max-height:70vh;border-radius:14px;background:#000}
 
   .themebtn{flex-shrink:0;width:42px;height:42px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font-size:18px;cursor:pointer;transition:transform .18s,border-color .18s,box-shadow .18s;display:grid;place-items:center}
   .themebtn:hover{transform:translateY(-2px) rotate(-8deg);border-color:var(--brand-2);box-shadow:0 8px 20px rgba(75,35,201,.25)}
@@ -215,6 +219,7 @@
   body.dark .today-btn{background:linear-gradient(135deg,var(--brand),var(--brand-2))}
   body.dark .today-reset{background:transparent;color:var(--muted)}
   body.dark .today-reset:hover{color:var(--brand);border-color:var(--brand)}
+  body.dark .media.snap-vid{background:#000}
 
   header{background:color-mix(in srgb,var(--bg) 80%,transparent)}
   .brand h1{background:linear-gradient(135deg,var(--brand),var(--brand-2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
@@ -268,7 +273,6 @@
     <div class="stats" id="stats"></div>
   </div>
 
-  <!-- ===== TODAY SCRAPE BAR ===== -->
   <div class="today-bar" id="todayBar">
     <button class="today-btn" id="todayBtn" onclick="toggleTodayFilter()">
       <span>📊</span> Scraping اليوم
@@ -359,7 +363,7 @@ const PLAT = {
   tiktok:{ar:"تيك توك",c:"#111",g:"linear-gradient(135deg,#25F4EE,#111,#FE2C55)"},
   youtube:{ar:"يوتيوب",c:"#FF0000",g:"linear-gradient(135deg,#FF0000,#c4302b)"},
   x:{ar:"تويتر",c:"#111",g:"linear-gradient(135deg,#1d1d1f,#3a3a3d)"},
-  snapchat:{ar:"سناب",c:"#111",g:"linear-gradient(135deg,#FFFC00,#FFC400)"}
+  snapchat:{ar:"سناب",c:"#FFC400",g:"linear-gradient(135deg,#FFFC00,#FFC400)"}
 };
 const NICHE_AR = {fashion:"فاشن",luxury:"لاكشري",moms:"عائلة وأمومة",sports:"رياضة ولياقة",food:"طعام وطبخ",gaming:"جيمنج",business:"أعمال",tech:"تقنية",entertainment:"ترفيه",other:"أخرى"};
 const COUNTRY_SYN={"السعودية":["السعودية","السعوديه","الرياض","جدة","جده","مكة","مكه","المدينة","المدينه","الدمام","الخبر","saudi","ksa"],"الإمارات":["الإمارات","الامارات","دبي","أبوظبي","ابوظبي","الشارقة","الشارقه","عجمان","العين","uae","dubai","emirat"],"الكويت":["الكويت","kuwait"],"قطر":["قطر","الدوحة","الدوحه","qatar","doha"],"مصر":["مصر","القاهرة","القاهره","الإسكندرية","الاسكندرية","الجيزة","الجيزه","egypt","cairo"],"المغرب":["المغرب","مغرب","الدار البيضاء","الرباط","مراكش","طنجة","morocco","casablanca","rabat"]};
@@ -368,7 +372,6 @@ function countryBucket(loc){ loc=String(loc||"").toLowerCase(); for(const n of C
 function matchCountry(loc,name){ return countryBucket(loc)===name; }
 function prioInfo(p){ p=String(p||"").trim().toLowerCase(); if(p==="high"||p==="عالي"||p==="1") return {l:"High",c:"#B8860B"}; if(p==="medium"||p==="متوسط"||p==="2") return {l:"Medium",c:"#f59e0b"}; if(p==="low"||p==="منخفض"||p==="3") return {l:"Low",c:"#9ca3af"}; return null; }
 
-// ===== TODAY SCRAPING STATE =====
 let todayFilterActive = false;
 let todayData = [];
 
@@ -383,22 +386,15 @@ function getTodayDate() {
 function parseDiscoveredAt(val) {
   if (!val) return null;
   const s = String(val).trim();
-  // محاولة كل الصيغ الممكنة
-  // 2026-07-10
   let m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (m) return { y: parseInt(m[1]), m: parseInt(m[2]), d: parseInt(m[3]) };
-  // 7/10/2026 أو 10/7/2026
   m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (m) {
     let a = parseInt(m[1]), b = parseInt(m[2]), y = parseInt(m[3]);
-    // لو الرقم الأول > 12 يبقى هو اليوم
     if (a > 12) return { y, m: b, d: a };
-    // لو الرقم التاني > 12 يبقى هو اليوم
     if (b > 12) return { y, m: a, d: b };
-    // لو مش واضح، نعتبر الصيغة M/D/Y (زي الأمريكي)
     return { y, m: a, d: b };
   }
-  // 10-7-2026
   m = s.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
   if (m) {
     let a = parseInt(m[1]), b = parseInt(m[2]), y = parseInt(m[3]);
@@ -442,7 +438,6 @@ function updateTodayBar() {
 function toggleTodayFilter() {
   todayFilterActive = !todayFilterActive;
   if (todayFilterActive) {
-    // حفظ البيانات الحالية مؤقتاً
     todayData = getTodayCreators();
   }
   updateTodayBar();
@@ -457,11 +452,9 @@ function resetTodayFilter() {
   }
 }
 
-// تعديل دالة applyFilters لتشمل فلتر اليوم
 function applyFilters(){
   let r = clean(CREATORS).slice();
   
-  // فلتر اليوم
   if (todayFilterActive) {
     r = r.filter(c => isTodayDiscovered(c.discovered_at));
   }
@@ -516,6 +509,22 @@ function igCode(u){ const m=String(u||'').match(/\/(p|reel|reels|tv)\/([^/?#]+)/
 function ytThumbId(u){ try{ return (typeof ytId==='function')?ytId(u):''; }catch(e){ return ''; } }
 function ttVidId(u){ const m=String(u||'').match(/\/video\/(\d+)/); return m?m[1]:''; }
 
+// ===== دالة جديدة لعرض فيديوهات سناب شات =====
+function snapVideoHtml(videoUrl, p) {
+  if (!videoUrl) return null;
+  // لو الرابط من سناب شات مباشر
+  if (videoUrl.includes('snapchat.com') || videoUrl.match(/\.(mp4|mov|webm)/i)) {
+    return `<div class="media snap-vid" onclick="openSnapVideo('${esc(videoUrl)}')">
+      <video src="${esc(videoUrl)}" muted playsinline preload="metadata" poster="" onloadeddata="this.poster=''" onclick="event.stopPropagation(); this.paused?this.play():this.pause();"></video>
+      <div class="playbig" onclick="event.stopPropagation(); openSnapVideo('${esc(videoUrl)}')">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M8 5v14l11-7z"/></svg>
+      </div>
+      <span class="mlabel">سناب شات</span>
+    </div>`;
+  }
+  return null;
+}
+
 function stripHtml(c){
   const p=PLAT[c.platform]||PLAT.instagram;
   let vids=(c.videos||[]).filter(v=>v && (v.url||v.thumb));
@@ -524,6 +533,21 @@ function stripHtml(c){
   const cand=[c.top_video_url, ...vids.map(v=>v.url), c.url].filter(Boolean);
   const pickBy=(fn)=>{ for(const u of cand){ if(fn(u)) return u; } return ''; };
 
+  // ===== سناب شات =====
+  if(c.platform==='snapchat'){
+    // أولاً نحاول نعرض الفيديو مباشرة
+    if (c.top_video_url) {
+      const snapVid = snapVideoHtml(c.top_video_url, p);
+      if (snapVid) return snapVid;
+    }
+    // لو مفيش فيديو، نعرض الصورة أو الأيقونة
+    if(c.avatar_url){
+      return '<div class="media shot snap" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel dark">سناب شات</span></div>';
+    }
+    return '<div class="media snap" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="ghost">\uD83D\uDC7B</span><span class="mlabel dark">افتح سناب</span></div>';
+  }
+
+  // باقي المنصات زي قبل
   if(c.platform==='instagram'){
     const u=pickBy(u=>igCode(u)); const ic=igCode(u);
     if(ic){
@@ -555,13 +579,20 @@ function stripHtml(c){
     }
     return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')">'+bigPlay+'<span class="mlabel">يوتيوب</span></div>';
   }
-  if(c.platform==='snapchat'){
-    return '<div class="media snap" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="ghost">\uD83D\uDC7B</span><span class="mlabel dark">افتح سناب</span></div>';
-  }
   if(c.avatar_url){
     return '<div class="media shot" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel">'+p.ar+'</span></div>';
   }
   return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="mlabel">'+p.ar+'</span></div>';
+}
+
+// ===== دالة تشغيل فيديو سناب في المودال =====
+function openSnapVideo(url) {
+  if (!url) return;
+  const body = document.getElementById("modalBody");
+  const title = document.getElementById("modalTitle");
+  title.textContent = "فيديو سناب شات";
+  body.innerHTML = `<video src="${esc(url)}" controls autoplay style="width:100%;max-height:70vh;border-radius:14px;background:#000;"></video>`;
+  document.getElementById("modal").style.display="flex";
 }
 
 function contactRow(c){
@@ -799,7 +830,7 @@ function parseGviz(text){
       links:o.links_bio||"", language:o.language||"",
       priority:o.priority||"", engagement:o.engagement_rate||"",
       igUrl:o.instagram_url||"", ttUrl:o.tiktok_url||"", scUrl:o.snapchat_url||"", twUrl:o.twitter_url||"", ytUrl:o.youtube_url||"", fbUrl:o.facebook_url||"",
-      discovered_at:o.discovered_at||""   // <--- إضافة الحقل الجديد
+      discovered_at:o.discovered_at||""
     });
   }
   return out;
