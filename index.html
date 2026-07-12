@@ -271,7 +271,7 @@
     <div>
       <span class="tag">الخليج العربي · مؤثرون موثّقون</span>
       <h2>مؤثرون مختارون بعناية،<br><b>جاهزون لحملتك القادمة</b></h2>
-      <p>قاعدة بيانات منسّقة لأبرز صنّاع المحتوى في الخليج عبر مختلف المنصات — مع المتابعين، المحتوى، ووسائل التواصل المباشر. اضغط أي محتوى لمعاينته فورًا.</p>
+      <p>قاعدة بيانات منسّقة لأبرز صنّاع المحتوى في الخليج عبر مختلف المنصات — مع المتابعين، المحتوى، ووسائل التواصل المباشرة. اضغط أي محتوى لمعاينته فورًا.</p>
     </div>
     <div class="stats" id="stats"></div>
   </div>
@@ -368,9 +368,9 @@ function prioInfo(p){ p=String(p||"").trim().toLowerCase(); if(p==="high"||p==="
 
 let todayFilterActive = false;
 
-// نحسب "انهاردة" بتوقيت الخليج (نفس توقيت الـ Apps Script اللي بيكتب discovered_at)
-// عشان لو حد فتح الموقع من بلد بتوقيت مختلف، ميحصلش اختلاف في عدّ اليوم قرب منتصف الليل
-const APP_TIMEZONE = 'Asia/Dubai';
+// ======================================================
+// 🇪🇬 CHANGE: التاريخ يتحسب بتوقيت مصر الرسمي
+const APP_TIMEZONE = 'Africa/Cairo';
 
 function getTodayDate() {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -378,16 +378,14 @@ function getTodayDate() {
   }).formatToParts(new Date());
   const map = {};
   parts.forEach(p => { map[p.type] = p.value; });
-  return { y: parseInt(map.year), m: map.month, day: map.day };
+  return { y: parseInt(map.year), m: map.month, d: parseInt(map.day) };
 }
 
 function parseDiscoveredAt(val) {
   if (val === null || val === undefined) return null;
-  // بنشيل المسافات العادية + المسافات الغريبة (non-breaking space) اللي أحيانًا بتيجي من نسخ ولصق في الشيت
   let s = String(val).replace(/\u00A0/g, ' ').trim();
   if (!s) return null;
 
-  // صيغة gviz الخام للتواريخ: Date(2026,6,12) -- الشهر هنا يبدأ من صفر (يوليو = 6)
   let m = s.match(/^Date\((\d{4}),\s*(\d{1,2}),\s*(\d{1,2})/i);
   if (m) return { y: parseInt(m[1]), m: parseInt(m[2]) + 1, d: parseInt(m[3]) };
 
@@ -421,17 +419,15 @@ function parseDiscoveredAt(val) {
     return { y, m: a, d: b };
   }
 
-  // احتياطي أخير: رقم تسلسلي (Google Sheets serial date، يوم 0 = 30 ديسمبر 1899)
   if (/^\d+(\.\d+)?$/.test(s)) {
     const serial = parseFloat(s);
-    if (serial > 20000 && serial < 80000) { // نطاق منطقي لتواريخ 1954-2119 تقريبًا
+    if (serial > 20000 && serial < 80000) {
       const epoch = Date.UTC(1899, 11, 30);
       const dt = new Date(epoch + Math.round(serial) * 86400000);
       return { y: dt.getUTCFullYear(), m: dt.getUTCMonth() + 1, d: dt.getUTCDate() };
     }
   }
 
-  // احتياطي أخير جدًا: نخلي المتصفح نفسه يحاول يفهم النص (ISO مع وقت، أو صيغ تانية)
   const parsedNative = new Date(s);
   if (!isNaN(parsedNative.getTime())) {
     return { y: parsedNative.getFullYear(), m: parsedNative.getMonth() + 1, d: parsedNative.getDate() };
@@ -444,7 +440,7 @@ function isTodayDiscovered(discoveredAt) {
   const parsed = parseDiscoveredAt(discoveredAt);
   if (!parsed) return false;
   const today = getTodayDate();
-  return parsed.y === today.y && parsed.m === parseInt(today.m) && parsed.d === parseInt(today.day);
+  return parsed.y === today.y && parsed.m === parseInt(today.m) && parsed.d === parseInt(today.d);
 }
 
 function getTodayCreators() {
@@ -457,7 +453,7 @@ function updateTodayBar() {
   const count = todayCreators.length;
   
   document.getElementById('todayBadge').textContent = count;
-  document.getElementById('todayDateText').textContent = `${today.day}/${today.m}/${today.y}`;
+  document.getElementById('todayDateText').textContent = `${today.d}/${today.m}/${today.y}`;
   document.getElementById('todayCountText').textContent = count;
   
   const btn = document.getElementById('todayBtn');
@@ -581,7 +577,6 @@ function stripHtml(c){
   const pickBy=(fn)=>{ for(const u of cand){ if(fn(u)) return u; } return ''; };
   const bigPlay='<span class="playbig"><svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M8 5v14l11-7z"/></svg></span>';
 
-  // سناب شات - فيديو يظهر جوا الكارد
   if(c.platform==='snapchat'){
     if (c.top_video_url && isSnapVideoUrl(c.top_video_url)) {
       const snapVid = snapVideoHtml(c.top_video_url, p);
@@ -593,7 +588,6 @@ function stripHtml(c){
     return '<div class="media snap" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="ghost">\uD83D\uDC7B</span><span class="mlabel dark">افتح سناب</span></div>';
   }
 
-  // انستجرام
   if(c.platform==='instagram'){
     const vidUrl = c.top_video_url || c.url;
     const embed = instagramEmbedVideo(vidUrl);
@@ -605,7 +599,6 @@ function stripHtml(c){
     return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="mlabel">انستجرام</span></div>';
   }
 
-  // تيك توك
   if(c.platform==='tiktok'){
     const u=pickBy(u=>ttVidId(u)); const vid=ttVidId(u);
     if(vid){
@@ -617,7 +610,6 @@ function stripHtml(c){
     return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="mlabel">تيك توك</span></div>';
   }
 
-  // يوتيوب
   if(c.platform==='youtube'){
     const u=pickBy(u=>ytId(u)); const id=ytId(u);
     if(id){
@@ -857,13 +849,11 @@ function parseGviz(text, tabName){
     for(let i=0;i<labels.length;i++){
       const cell=r.c[i];
       o[labels[i]] = cell && cell.v!=null ? cell.v : "";
-      // نخزن كمان النص المنسّق زي ما هو ظاهر في الشيت (مهم جدًا لأعمدة التاريخ)
       o[labels[i]+"__f"] = cell && cell.f!=null ? cell.f : "";
     }
     if(!o.handle) continue;
     let vids=[];
     try{ vids=o.videos?JSON.parse(o.videos):[]; }catch(_){ vids=[]; }
-    // بعض السكريبتات كانت ممكن تكتب تاريخ الاكتشاف تحت اسم عمود مختلف حسب الـ tab/السكريبت
     const dateCandidates = ['discovered_at','scraped_at','date_added','added_at','created_at','date_discovered','discovery_date'];
     let discovered_at = "";
     for (const key of dateCandidates) {
@@ -910,11 +900,8 @@ function mergeAndDeduplicate(allData) {
       continue;
     }
     const existing = map.get(key);
-    // نختار النسخة اللي عندها متابعين أعلى كأساس (بيانات أدق)
     const base = (item.followers || 0) > (existing.followers || 0) ? item : existing;
     const other = base === item ? existing : item;
-    // بس تاريخ الاكتشاف (discovered_at) لازم ياخد أحدث تاريخ موجود بين النسختين
-    // عشان لو اتسحب النهاردة في تاب وكان موجود قبل كده بمتابعين أعلى في تاب تاني، تاريخ النهاردة مايضيعش
     const baseDate = parseDiscoveredAt(base.discovered_at);
     const otherDate = parseDiscoveredAt(other.discovered_at);
     const baseTime = baseDate ? Date.UTC(baseDate.y, baseDate.m - 1, baseDate.d) : -Infinity;
@@ -928,7 +915,6 @@ function mergeAndDeduplicate(allData) {
 }
 
 function applyData(allData){
-  // دمج البيانات وإزالة التكرارات
   const merged = mergeAndDeduplicate(allData);
   const filtered = merged.filter(c => c.platform==="snapchat" ? true : (c.followers || 0) >= MIN_FOLLOWERS);
   
@@ -936,8 +922,7 @@ function applyData(allData){
     CREATORS = filtered;
     console.log('✅ تم تحميل ' + CREATORS.length + ' مؤثر فريد');
     const todayCreators = getTodayCreators();
-    console.log('📅 عدد مؤثرين اليوم (' + getTodayDate().day + '/' + getTodayDate().m + '/' + getTodayDate().y + '): ' + todayCreators.length);
-    // ملخص تفصيلي: كام واحد من انهاردة جه من كل تاب
+    console.log('📅 عدد مؤثرين اليوم (' + getTodayDate().d + '/' + getTodayDate().m + '/' + getTodayDate().y + '): ' + todayCreators.length);
     const byTab = {};
     todayCreators.forEach(c => { byTab[c._tab||'(غير معروف)'] = (byTab[c._tab||'(غير معروف)']||0) + 1; });
     console.log('📁 تفصيل مؤثرين اليوم حسب التاب:', byTab);
@@ -946,7 +931,6 @@ function applyData(allData){
       console.warn('⚠️ فيه ' + unparsed.length + ' صف عندهم discovered_at بس اتفشل تحليله، أمثلة:', unparsed.slice(0,5).map(c => c.handle + ' => ' + JSON.stringify(c.discovered_at)));
     }
   } else {
-    // بيانات افتراضية
     CREATORS = [
       {handle:"list_roma", platform:"instagram", followers:343109, niche:"fashion", country:"الخليج", url:"https://www.instagram.com/list_roma", videos:[], discovered_at:""},
       {handle:"fashion.sa_", platform:"instagram", followers:128577, niche:"fashion", country:"السعودية", url:"https://www.instagram.com/fashion.sa_", videos:[], discovered_at:""},
