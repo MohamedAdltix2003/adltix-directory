@@ -368,20 +368,30 @@ function prioInfo(p){ p=String(p||"").trim().toLowerCase(); if(p==="high"||p==="
 
 let todayFilterActive = false;
 
+// نحسب "انهاردة" بتوقيت الخليج (نفس توقيت الـ Apps Script اللي بيكتب discovered_at)
+// عشان لو حد فتح الموقع من بلد بتوقيت مختلف، ميحصلش اختلاف في عدّ اليوم قرب منتصف الليل
+const APP_TIMEZONE = 'Asia/Dubai';
+
 function getTodayDate() {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return { y, m, day };
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: APP_TIMEZONE, year: 'numeric', month: '2-digit', day: '2-digit'
+  }).formatToParts(new Date());
+  const map = {};
+  parts.forEach(p => { map[p.type] = p.value; });
+  return { y: parseInt(map.year), m: map.month, day: map.day };
 }
 
 function parseDiscoveredAt(val) {
-  if (!val) return null;
-  const s = String(val).trim();
+  if (val === null || val === undefined) return null;
+  // بنشيل المسافات العادية + المسافات الغريبة (non-breaking space) اللي أحيانًا بتيجي من نسخ ولصق في الشيت
+  let s = String(val).replace(/\u00A0/g, ' ').trim();
   if (!s) return null;
-  
-  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+
+  // صيغة gviz الخام للتواريخ: Date(2026,6,12) -- الشهر هنا يبدأ من صفر (يوليو = 6)
+  let m = s.match(/^Date\((\d{4}),\s*(\d{1,2}),\s*(\d{1,2})/i);
+  if (m) return { y: parseInt(m[1]), m: parseInt(m[2]) + 1, d: parseInt(m[3]) };
+
+  m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
   if (m) return { y: parseInt(m[1]), m: parseInt(m[2]), d: parseInt(m[3]) };
   
   m = s.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
@@ -409,6 +419,22 @@ function parseDiscoveredAt(val) {
     if (a > 12) return { y, m: b, d: a };
     if (b > 12) return { y, m: a, d: b };
     return { y, m: a, d: b };
+  }
+
+  // احتياطي أخير: رقم تسلسلي (Google Sheets serial date، يوم 0 = 30 ديسمبر 1899)
+  if (/^\d+(\.\d+)?$/.test(s)) {
+    const serial = parseFloat(s);
+    if (serial > 20000 && serial < 80000) { // نطاق منطقي لتواريخ 1954-2119 تقريبًا
+      const epoch = Date.UTC(1899, 11, 30);
+      const dt = new Date(epoch + Math.round(serial) * 86400000);
+      return { y: dt.getUTCFullYear(), m: dt.getUTCMonth() + 1, d: dt.getUTCDate() };
+    }
+  }
+
+  // احتياطي أخير جدًا: نخلي المتصفح نفسه يحاول يفهم النص (ISO مع وقت، أو صيغ تانية)
+  const parsedNative = new Date(s);
+  if (!isNaN(parsedNative.getTime())) {
+    return { y: parsedNative.getFullYear(), m: parsedNative.getMonth() + 1, d: parsedNative.getDate() };
   }
   
   return null;
@@ -518,8 +544,8 @@ function isSnapVideoUrl(url) {
   if (!url) return false;
   const u = String(url).toLowerCase();
   return u.includes('snapchat.com') || 
-         u.match(/\.(mp4|mov|webm|m4v|3gp)$/i) ||
-         u.match(/snapchat/i);
+         /\.(mp4|mov|webm|m4v|3gp)(\?.*)?$/i.test(u) ||
+         u.includes('snapchat');
 }
 
 function snapVideoHtml(videoUrl, p) {
@@ -813,7 +839,7 @@ document.getElementById("f-contact").addEventListener("change",e=>{state.contact
 function gvizUrl(tab){
   return "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/gviz/tq?tqx=out:json&sheet="+encodeURIComponent(tab)+"&_="+Date.now();
 }
-function parseGviz(text){
+function parseGviz(text, tabName){
   const s=text.indexOf("{"), e=text.lastIndexOf("}");
   if(s<0||e<0) return [];
   const json=JSON.parse(text.substring(s,e+1));
@@ -828,10 +854,24 @@ function parseGviz(text){
   for(const r of rows){
     if(!r||!r.c) continue;
     const o={};
-    for(let i=0;i<labels.length;i++){ const cell=r.c[i]; o[labels[i]]=cell&&cell.v!=null?cell.v:""; }
+    for(let i=0;i<labels.length;i++){
+      const cell=r.c[i];
+      o[labels[i]] = cell && cell.v!=null ? cell.v : "";
+      // نخزن كمان النص المنسّق زي ما هو ظاهر في الشيت (مهم جدًا لأعمدة التاريخ)
+      o[labels[i]+"__f"] = cell && cell.f!=null ? cell.f : "";
+    }
     if(!o.handle) continue;
     let vids=[];
     try{ vids=o.videos?JSON.parse(o.videos):[]; }catch(_){ vids=[]; }
+    // بعض السكريبتات كانت ممكن تكتب تاريخ الاكتشاف تحت اسم عمود مختلف حسب الـ tab/السكريبت
+    const dateCandidates = ['discovered_at','scraped_at','date_added','added_at','created_at','date_discovered','discovery_date'];
+    let discovered_at = "";
+    for (const key of dateCandidates) {
+      const fVal = o[key+"__f"] && String(o[key+"__f"]).trim();
+      const rVal = o[key] && String(o[key]).trim();
+      if (fVal) { discovered_at = o[key+"__f"]; break; }
+      if (rVal) { discovered_at = o[key]; break; }
+    }
     out.push({
       handle:String(o.handle||"").replace(/^@/,""),
       platform:o.platform||"",
@@ -847,7 +887,8 @@ function parseGviz(text){
       links:o.links_bio||"", language:o.language||"",
       priority:o.priority||"", engagement:o.engagement_rate||"",
       igUrl:o.instagram_url||"", ttUrl:o.tiktok_url||"", scUrl:o.snapchat_url||"", twUrl:o.twitter_url||"", ytUrl:o.youtube_url||"", fbUrl:o.facebook_url||"",
-      discovered_at:o.discovered_at||""
+      discovered_at:discovered_at,
+      _tab: tabName||""
     });
   }
   return out;
@@ -863,13 +904,26 @@ function showSkeleton(){
 function mergeAndDeduplicate(allData) {
   const map = new Map();
   for (const item of allData) {
-    const key = item.handle + '|' + item.platform;
-    if (!map.has(key) || (map.get(key).followers || 0) < (item.followers || 0)) {
+    const key = item.handle.toLowerCase() + '|' + item.platform;
+    if (!map.has(key)) {
       map.set(key, item);
+      continue;
     }
+    const existing = map.get(key);
+    // نختار النسخة اللي عندها متابعين أعلى كأساس (بيانات أدق)
+    const base = (item.followers || 0) > (existing.followers || 0) ? item : existing;
+    const other = base === item ? existing : item;
+    // بس تاريخ الاكتشاف (discovered_at) لازم ياخد أحدث تاريخ موجود بين النسختين
+    // عشان لو اتسحب النهاردة في تاب وكان موجود قبل كده بمتابعين أعلى في تاب تاني، تاريخ النهاردة مايضيعش
+    const baseDate = parseDiscoveredAt(base.discovered_at);
+    const otherDate = parseDiscoveredAt(other.discovered_at);
+    const baseTime = baseDate ? Date.UTC(baseDate.y, baseDate.m - 1, baseDate.d) : -Infinity;
+    const otherTime = otherDate ? Date.UTC(otherDate.y, otherDate.m - 1, otherDate.d) : -Infinity;
+    const merged = otherTime > baseTime ? { ...base, discovered_at: other.discovered_at } : base;
+    map.set(key, merged);
   }
   const result = Array.from(map.values());
-  console.log('📊 إجمالي المؤثرين الفريدين بعد إزالة التكرارات:', result.length);
+  console.log('📊 إجمالي المؤثرين الفريدين بعد إزالة التكرارات:', result.length, '(من أصل', allData.length, 'صف قبل الدمج)');
   return result;
 }
 
@@ -881,8 +935,16 @@ function applyData(allData){
   if(filtered.length) {
     CREATORS = filtered;
     console.log('✅ تم تحميل ' + CREATORS.length + ' مؤثر فريد');
-    const todayCount = getTodayCreators().length;
-    console.log('📅 عدد مؤثرين اليوم (' + getTodayDate().day + '/' + getTodayDate().m + '/' + getTodayDate().y + '): ' + todayCount);
+    const todayCreators = getTodayCreators();
+    console.log('📅 عدد مؤثرين اليوم (' + getTodayDate().day + '/' + getTodayDate().m + '/' + getTodayDate().y + '): ' + todayCreators.length);
+    // ملخص تفصيلي: كام واحد من انهاردة جه من كل تاب
+    const byTab = {};
+    todayCreators.forEach(c => { byTab[c._tab||'(غير معروف)'] = (byTab[c._tab||'(غير معروف)']||0) + 1; });
+    console.log('📁 تفصيل مؤثرين اليوم حسب التاب:', byTab);
+    const unparsed = CREATORS.filter(c => c.discovered_at && !parseDiscoveredAt(c.discovered_at));
+    if (unparsed.length) {
+      console.warn('⚠️ فيه ' + unparsed.length + ' صف عندهم discovered_at بس اتفشل تحليله، أمثلة:', unparsed.slice(0,5).map(c => c.handle + ' => ' + JSON.stringify(c.discovered_at)));
+    }
   } else {
     // بيانات افتراضية
     CREATORS = [
@@ -909,8 +971,9 @@ async function boot(){
   const tasks = SHEET_TABS.map(tab => 
     fetch(gvizUrl(tab))
       .then(r => r.text())
-      .then(parseGviz)
-      .catch(e => { console.log("tab failed", tab, e); return []; })
+      .then(text => parseGviz(text, tab))
+      .then(rows => { console.log('📁 تاب "'+tab+'": '+rows.length+' صف'); return rows; })
+      .catch(e => { console.warn('⚠️ فشل تحميل تاب "'+tab+'"', e); return []; })
   );
   
   let all = [];
