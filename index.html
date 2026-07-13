@@ -98,13 +98,6 @@
   .media.embed .embedframe{position:absolute;left:50%;transform:translateX(-50%);border:0;width:100%;z-index:1;background:#fff}
   .media.embed.ig .embedframe{top:-54px;height:680px}
   .media.embed.tt .embedframe{top:-2px;height:760px}
-
-  /* سناب شات فيديو */
-  .media.snap-vid{background:#0b0a14;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
-  .media.snap-vid video{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;z-index:1;background:#000;pointer-events:none}
-  .media.snap-vid .playbig{position:absolute;z-index:3;width:58px;height:58px;border-radius:50%;background:rgba(255,255,255,.94);display:grid;place-items:center;color:var(--brand);box-shadow:0 10px 28px rgba(0,0,0,.32);cursor:pointer;transition:transform .2s}
-  .media.snap-vid:hover .playbig{transform:scale(1.1)}
-  .media.snap-vid .mlabel{position:absolute;z-index:4;bottom:12px;inset-inline-start:14px;color:#fff;font-weight:800;font-size:12px;background:rgba(0,0,0,.5);padding:5px 11px;border-radius:9px;backdrop-filter:blur(3px)}
   
   .media.shot .cover{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1}
   .media .ovl{position:absolute;inset:0;z-index:2;background:linear-gradient(180deg,rgba(0,0,0,.02),rgba(0,0,0,.34))}
@@ -222,7 +215,6 @@
   body.dark .today-btn{background:linear-gradient(135deg,var(--brand),var(--brand-2))}
   body.dark .today-reset{background:transparent;color:var(--muted)}
   body.dark .today-reset:hover{color:var(--brand);border-color:var(--brand)}
-  body.dark .media.snap-vid{background:#000}
 
   header{background:color-mix(in srgb,var(--bg) 80%,transparent)}
   .brand h1{background:linear-gradient(135deg,var(--brand),var(--brand-2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
@@ -296,7 +288,7 @@
         <select id="f-fol" class="sortsel">
           <option value="all">كل المتابعين</option>
           <option value="0-7">أقل من 7000</option>
-          <option value="7-10">7000 – 10000</option>
+          <option value="7-10">7k – 10K</option>
           <option value="10-50">10K – 50K</option>
           <option value="50-100">50K – 100K</option>
           <option value="100-500">100K – 500K</option>
@@ -549,12 +541,10 @@ function snapVideoHtml(videoUrl, p) {
   if (!videoUrl) return null;
   const u = String(videoUrl);
   if (isSnapVideoUrl(u)) {
-    return `<div class="media snap-vid" onclick="openSnapVideo('${esc(u)}')">
-      <video src="${esc(u)}" muted playsinline preload="metadata" poster="" onloadeddata="this.poster=''" onclick="event.stopPropagation();"></video>
-      <div class="playbig" onclick="event.stopPropagation(); openSnapVideo('${esc(u)}')">
-        <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M8 5v14l11-7z"/></svg>
-      </div>
-      <span class="mlabel">سناب شات</span>
+    // عرض صورة الحساب أو رمز السناب، وعند الضغط يفتح الرابط
+    return `<div class="media snap" style="background:${p.g}" onclick="window.open('${esc(u)}', '_blank')">
+      <span class="ghost">\uD83D\uDC7B</span>
+      <span class="mlabel dark">سناب شات</span>
     </div>`;
   }
   return null;
@@ -583,12 +573,11 @@ function stripHtml(c){
 
   // ========== SNAPCHAT ==========
   if(c.platform==='snapchat'){
-    // حاول عرض فيديو السناب مباشرة
+    // عرض صورة أو رمز السناب، والضغط يفتح الرابط في تبويب جديد
     if (c.top_video_url && isSnapVideoUrl(c.top_video_url)) {
       const snapVid = snapVideoHtml(c.top_video_url, p);
       if (snapVid) return snapVid;
     }
-    // لو مفيش فيديو، اعرض صورة أو رمز
     if(c.avatar_url){
       return '<div class="media shot snap" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel dark">سناب شات</span></div>';
     }
@@ -609,7 +598,6 @@ function stripHtml(c){
 
   // ========== TIKTOK ==========
   if(c.platform==='tiktok'){
-    // عرض الفيديو بدون تعليقات أو أزرار
     const u = pickBy(u => ttVidId(u));
     const vid = ttVidId(u);
     if (vid) {
@@ -619,7 +607,6 @@ function stripHtml(c){
         </div>
       </div>`;
     }
-    // لو مفيش فيديو، اعرض الصورة
     if(c.avatar_url){
       return '<div class="media shot" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel">تيك توك</span></div>';
     }
@@ -648,11 +635,8 @@ function stripHtml(c){
 
 function openSnapVideo(url) {
   if (!url) return;
-  const body = document.getElementById("modalBody");
-  const title = document.getElementById("modalTitle");
-  title.textContent = "فيديو سناب شات";
-  body.innerHTML = `<video src="${esc(url)}" controls autoplay style="width:100%;max-height:70vh;border-radius:14px;background:#000;"></video>`;
-  document.getElementById("modal").style.display="flex";
+  // فتح الرابط في تبويب جديد
+  window.open(url, '_blank');
 }
 
 function contactRow(c){
