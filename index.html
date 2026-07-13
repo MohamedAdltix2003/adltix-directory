@@ -98,7 +98,7 @@
   .media.embed .embedframe{position:absolute;left:50%;transform:translateX(-50%);border:0;width:100%;z-index:1;background:#fff}
   .media.embed.ig .embedframe{top:-54px;height:680px}
   .media.embed.tt .embedframe{top:-2px;height:760px}
-  
+
   /* سناب شات فيديو */
   .media.snap-vid{background:#0b0a14;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
   .media.snap-vid video{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;z-index:1;background:#000;pointer-events:none}
@@ -295,7 +295,8 @@
       <div class="fctl"><span class="ftiny">المتابعين</span>
         <select id="f-fol" class="sortsel">
           <option value="all">كل المتابعين</option>
-          <option value="0-10">أقل من 10K</option>
+          <option value="0-7">أقل من 7000</option>
+          <option value="7-10">7000 – 10000</option>
           <option value="10-50">10K – 50K</option>
           <option value="50-100">50K – 100K</option>
           <option value="100-500">100K – 500K</option>
@@ -569,6 +570,9 @@ function instagramEmbedVideo(url) {
   </div>`;
 }
 
+// ======================================================
+// =========== FUNCTION TO STRIP HTML ===================
+// ======================================================
 function stripHtml(c){
   const p=PLAT[c.platform]||PLAT.instagram;
   let vids=(c.videos||[]).filter(v=>v && (v.url||v.thumb));
@@ -577,17 +581,21 @@ function stripHtml(c){
   const pickBy=(fn)=>{ for(const u of cand){ if(fn(u)) return u; } return ''; };
   const bigPlay='<span class="playbig"><svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M8 5v14l11-7z"/></svg></span>';
 
+  // ========== SNAPCHAT ==========
   if(c.platform==='snapchat'){
+    // حاول عرض فيديو السناب مباشرة
     if (c.top_video_url && isSnapVideoUrl(c.top_video_url)) {
       const snapVid = snapVideoHtml(c.top_video_url, p);
       if (snapVid) return snapVid;
     }
+    // لو مفيش فيديو، اعرض صورة أو رمز
     if(c.avatar_url){
       return '<div class="media shot snap" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel dark">سناب شات</span></div>';
     }
     return '<div class="media snap" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="ghost">\uD83D\uDC7B</span><span class="mlabel dark">افتح سناب</span></div>';
   }
 
+  // ========== INSTAGRAM ==========
   if(c.platform==='instagram'){
     const vidUrl = c.top_video_url || c.url;
     const embed = instagramEmbedVideo(vidUrl);
@@ -599,17 +607,26 @@ function stripHtml(c){
     return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="mlabel">انستجرام</span></div>';
   }
 
+  // ========== TIKTOK ==========
   if(c.platform==='tiktok'){
-    const u=pickBy(u=>ttVidId(u)); const vid=ttVidId(u);
-    if(vid){
-      return '<div class="media embed tt" data-embed-src="'+esc('https://www.tiktok.com/embed/v2/'+vid)+'"><div class="poster" onclick="loadEmbed(this.parentNode)" style="background:'+p.g+'">'+bigPlay+'</div></div>';
+    // عرض الفيديو بدون تعليقات أو أزرار
+    const u = pickBy(u => ttVidId(u));
+    const vid = ttVidId(u);
+    if (vid) {
+      return `<div class="media embed tt" data-embed-src="${esc('https://www.tiktok.com/embed/v2/' + vid)}">
+        <div class="poster" onclick="loadEmbed(this.parentNode)" style="background:${p.g}">
+          ${bigPlay}
+        </div>
+      </div>`;
     }
+    // لو مفيش فيديو، اعرض الصورة
     if(c.avatar_url){
       return '<div class="media shot" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel">تيك توك</span></div>';
     }
     return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="mlabel">تيك توك</span></div>';
   }
 
+  // ========== YOUTUBE ==========
   if(c.platform==='youtube'){
     const u=pickBy(u=>ytId(u)); const id=ytId(u);
     if(id){
@@ -622,6 +639,7 @@ function stripHtml(c){
     return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')">'+bigPlay+'<span class="mlabel">يوتيوب</span></div>';
   }
 
+  // ========== DEFAULT ==========
   if(c.avatar_url){
     return '<div class="media shot" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel">'+p.ar+'</span></div>';
   }
