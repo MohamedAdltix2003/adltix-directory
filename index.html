@@ -225,6 +225,29 @@
   .cf-yes.move{background:#7c3aed}
   .cf-yes.ok{background:#16a34a}
 
+  /* ===== Scraping view banner ===== */
+  .scrape-banner{background:linear-gradient(135deg,var(--brand-soft),rgba(201,162,75,.12));border:1px solid var(--brand-soft);border-radius:16px;padding:14px 18px;margin-bottom:16px;animation:slideDown .35s cubic-bezier(.2,.7,.2,1)}
+  @keyframes slideDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+  .sb-inner{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .sb-icon{font-size:22px}
+  .sb-text{display:flex;flex-direction:column;gap:2px;flex:1;min-width:140px}
+  .sb-text b{font-size:14.5px;color:var(--ink)}
+  .sb-text span{font-size:12px;color:var(--muted)}
+  .sb-close{background:var(--surface);border:1px solid var(--line);color:var(--ink);font-family:inherit;font-weight:700;font-size:12.5px;padding:8px 14px;border-radius:11px;cursor:pointer;white-space:nowrap;transition:background .15s}
+  .sb-close:hover{background:var(--brand);color:#fff;border-color:var(--brand)}
+
+  /* ===== Scraping Today button ===== */
+  .scrape-btn{margin-top:14px;display:inline-flex;align-items:center;gap:9px;background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#fff;border:none;font-family:'Space Grotesk',inherit;font-weight:700;font-size:13px;letter-spacing:.2px;padding:10px 16px 10px 10px;border-radius:14px;cursor:pointer;box-shadow:0 8px 22px rgba(75,35,201,.35);transition:transform .18s, box-shadow .18s, filter .18s;position:relative;overflow:hidden}
+  .scrape-btn:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(75,35,201,.45);filter:brightness(1.06)}
+  .scrape-btn:active{transform:translateY(0) scale(.97)}
+  .scrape-btn.active{background:linear-gradient(135deg,var(--gold),var(--gold-2));box-shadow:0 8px 22px rgba(201,162,75,.4)}
+  .scrape-btn .sb-pulse{width:8px;height:8px;border-radius:50%;background:#fff;flex-shrink:0;position:relative}
+  .scrape-btn .sb-pulse::after{content:"";position:absolute;inset:-5px;border-radius:50%;background:#fff;opacity:.55;animation:sbPulse 1.6s ease-out infinite}
+  @keyframes sbPulse{0%{transform:scale(.4);opacity:.6}70%{transform:scale(2.2);opacity:0}100%{transform:scale(2.2);opacity:0}}
+  .scrape-btn .sb-count{background:rgba(255,255,255,.25);min-width:22px;height:22px;padding:0 6px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;font-family:'Space Grotesk',inherit;transition:transform .25s cubic-bezier(.34,1.56,.64,1)}
+  .scrape-btn .sb-count.bump{animation:sbBump .35s cubic-bezier(.34,1.56,.64,1)}
+  @keyframes sbBump{0%{transform:scale(1)}40%{transform:scale(1.35)}100%{transform:scale(1)}}
+
   /* Skeleton loading */
   .skel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)}
   .skel-media{height:360px}
@@ -579,6 +602,7 @@
       <span class="tag">الخليج العربي · مؤثرون موثّقون</span>
       <h2>مؤثرون مختارون بعناية،<br><b>جاهزون لحملتك القادمة</b></h2>
       <p>قاعدة بيانات منسّقة لأبرز صنّاع المحتوى في الخليج عبر مختلف المنصات — مع المتابعين، المحتوى، ووسائل التواصل المباشر. اضغط أي محتوى لمعاينته فورًا.</p>
+      <button id="scrapeToggleBtn" class="scrape-btn" onclick="toggleScrapingView()"><span class="sb-pulse"></span><span class="sb-label">📊 Scraping Today</span><span id="scrapeCount" class="sb-count">0</span></button>
     </div>
     <div class="stats" id="stats"></div>
   </div>
@@ -619,6 +643,16 @@
     <div class="frow"><span class="flabel">الدولة</span><div id="f-country"></div></div>
   </div>
 
+  <div id="scrapeBanner" class="scrape-banner" style="display:none">
+    <div class="sb-inner">
+      <span class="sb-icon">📊</span>
+      <div class="sb-text">
+        <b>سكرابينج اليوم</b>
+        <span id="sb-date"></span>
+      </div>
+      <button class="sb-close" onclick="toggleScrapingView()">✕ رجوع لكل المؤثرين</button>
+    </div>
+  </div>
   <div class="meta"><div class="count"><b id="shown">0</b> مؤثر ضمن النتائج</div></div>
   
   <div class="grid" id="grid"></div>
@@ -707,6 +741,7 @@ function buildAllPills(){
 
 function applyFilters(){
   let r=clean(CREATORS).slice();
+  if(scrapingMode){ const today=cairoTodayStr(); r=r.filter(c=>c.discoveredAt===today); }
   if(state.niche!=="all") r=r.filter(c=>c.niche===state.niche);
   if(state.platform!=="all") r=r.filter(c=>c.platform===state.platform);
   if(state.country!=="all") r=r.filter(c=>countryBucket(c.country)===state.country);
@@ -870,7 +905,7 @@ function card(c){
       '<div class="chead">'+
         '<div class="cmeta">'+
           '<div class="name">@'+esc(c.handle)+'</div>'+
-          '<div class="loc">\uD83D\uDCCD '+esc(c.country||"الخليج")+'</div>'+
+          '<div class="loc">\uD83D\uDCCD '+esc(c.country||"الخليج")+(scrapingMode&&c.discoveredAt?'  ·  \uD83D\uDD52 '+esc(c.discoveredAt):'')+'</div>'+
         '</div>'+
         '<span class="pchip" style="background:'+p.c+'">'+p.ar+'</span>'+
       '</div>'+
@@ -894,6 +929,43 @@ function card(c){
       '</div>') : '')+
     '</div></div>';
 }
+/* ===================== Scraping-today view ===================== */
+let scrapingMode=false;
+function cairoTodayStr(){
+  try{ return new Intl.DateTimeFormat('en-CA',{timeZone:'Africa/Cairo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()); }
+  catch(e){ return new Date().toISOString().slice(0,10); }
+}
+function cairoNowLabel(){
+  try{ return new Intl.DateTimeFormat('ar-EG',{timeZone:'Africa/Cairo',weekday:'long',year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date()); }
+  catch(e){ return new Date().toLocaleString(); }
+}
+function todayScrapedCount(){
+  const today=cairoTodayStr();
+  return CREATORS.filter(c=>c.discoveredAt===today).length;
+}
+function updateScrapeCount(){
+  const el=document.getElementById('scrapeCount'); if(!el) return;
+  const n=todayScrapedCount();
+  if(el.textContent!==String(n)){ el.textContent=n; el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
+}
+function toggleScrapingView(){
+  scrapingMode=!scrapingMode;
+  const btn=document.getElementById('scrapeToggleBtn');
+  const label=btn.querySelector('.sb-label');
+  const banner=document.getElementById('scrapeBanner');
+  const dateEl=document.getElementById('sb-date');
+  btn.classList.toggle('active',scrapingMode);
+  if(scrapingMode){
+    label.textContent='📊 Show All';
+    banner.style.display='';
+    dateEl.textContent=cairoNowLabel()+' (بتوقيت القاهرة)';
+  }else{
+    label.textContent='📊 Scraping Today';
+    banner.style.display='none';
+  }
+  render();
+}
+
 /* ===================== Admin Actions (Delete / Archive / Change niche / Approve) ===================== */
 function showConfirm(title, msg, yesLabel, yesClass){
   return new Promise(resolve=>{
@@ -1109,6 +1181,7 @@ function parseGviz(text){
     try{ vids=o.videos?JSON.parse(o.videos):[]; }catch(_){ vids=[]; }
     out.push({
       uid:String(o.uid||"").toLowerCase(),
+      discoveredAt:String(o.discovered_at||"").trim(),
       handle:String(o.handle||"").replace(/^@/,""),
       platform:o.platform||"",
       followers:Number(o.followers)||0,
@@ -1135,7 +1208,7 @@ function showSkeleton(){
 function applyData(all){
   const filtered=all.filter(c=>c.platform==="snapchat"?true:c.followers>=MIN_FOLLOWERS);
   if(filtered.length) CREATORS=filtered;
-  buildAllPills(); renderStats(); render();
+  buildAllPills(); renderStats(); render(); updateScrapeCount();
 }
 async function boot(){
   showSkeleton();
