@@ -1160,6 +1160,26 @@ document.getElementById("f-contact").addEventListener("change",e=>{state.contact
 function gvizUrl(tab){
   return "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/gviz/tq?tqx=out:json&sheet="+encodeURIComponent(tab)+"&_="+Date.now();
 }
+function normalizeSheetDate(v){
+  if(v==null) return "";
+  // صيغة gviz للتاريخ الحقيقي: Date(2026,6,19) أو Date(2026,6,19,0,0,0)
+  if(typeof v==="string"){
+    const m=v.match(/^Date\((\d+),(\d+),(\d+)/);
+    if(m){ const y=m[1], mo=String(Number(m[2])+1).padStart(2,"0"), d=String(Number(m[3])).padStart(2,"0"); return y+"-"+mo+"-"+d; }
+    const t=v.trim();
+    // صيغة ISO/نص عادي بالفعل مثل 2026-07-19 أو فيها وقت 2026-07-19T..
+    const iso=t.match(/^(\d{4}-\d{2}-\d{2})/);
+    if(iso) return iso[1];
+    // صيغة m/d/yyyy أو d/m/yyyy الشائعة من Sheets
+    const slash=t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if(slash){ const mo=slash[1].padStart(2,"0"), d=slash[2].padStart(2,"0"); return slash[3]+"-"+mo+"-"+d; }
+    return t;
+  }
+  if(v instanceof Date && !isNaN(v)){
+    return v.getFullYear()+"-"+String(v.getMonth()+1).padStart(2,"0")+"-"+String(v.getDate()).padStart(2,"0");
+  }
+  return String(v).trim();
+}
 function parseGviz(text){
   const s=text.indexOf("{"), e=text.lastIndexOf("}");
   if(s<0||e<0) return [];
@@ -1181,7 +1201,7 @@ function parseGviz(text){
     try{ vids=o.videos?JSON.parse(o.videos):[]; }catch(_){ vids=[]; }
     out.push({
       uid:String(o.uid||"").toLowerCase(),
-      discoveredAt:String(o.discovered_at||"").trim(),
+      discoveredAt:normalizeSheetDate(o.discovered_at),
       handle:String(o.handle||"").replace(/^@/,""),
       platform:o.platform||"",
       followers:Number(o.followers)||0,
