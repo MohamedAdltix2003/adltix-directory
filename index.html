@@ -1065,18 +1065,25 @@ function logout(){ clearSession(); location.reload(); }
 async function startApp(){
   if(SESSION.role==='staff'){
     document.getElementById('addLeadFab').style.display='';
-    // فلترة سيرفر-سايد: بس عملاء الموظفة دي
-    try{
-      const res=await fetch(API_BASE+'?action=myLeads&token='+encodeURIComponent(SESSION.token));
-      const j=await res.json();
-      if(j.ok && j.result && j.result.leads){
-        CREATORS=j.result.leads.map(mapRawToCard);
-        buildAllPills(); renderStats(); render(); updateScrapeCount();
-        return;
-      }
-    }catch(e){ console.log('myLeads failed',e); }
+    const cached=readCache();
+    if(cached && cached.length){ applyData(cached); refreshMyLeads(); return; }
+    showSkeleton();
+    await refreshMyLeads();
+    return;
   }
   boot();   // أدمن/مدير: تحميل كل البيانات زي العادي
+}
+async function refreshMyLeads(){
+  try{
+    const res=await fetch(API_BASE+'?action=myLeads&token='+encodeURIComponent(SESSION.token));
+    const j=await res.json();
+    if(j.ok && j.result && j.result.leads){
+      const data=j.result.leads.map(mapRawToCard);
+      CREATORS=data;
+      buildAllPills(); renderStats(); render(); updateScrapeCount();
+      writeCache(data);
+    }
+  }catch(e){ console.log('myLeads failed',e); }
 }
 function mapRawToCard(o){
   let vids=[]; try{ vids=String(o.videos||"").split(",").map(v=>v.trim()).filter(Boolean); }catch(e){}
@@ -1231,7 +1238,7 @@ let _revealObs=null, _embedObs=null;
 function ensureObs(){
   if(_revealObs) return;
   _revealObs=new IntersectionObserver((es)=>{ es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); _revealObs.unobserve(e.target);} }); },{threshold:.08});
-  _embedObs=new IntersectionObserver((es)=>{ es.forEach(e=>{ if(e.isIntersecting){ loadEmbed(e.target); _embedObs.unobserve(e.target);} }); },{rootMargin:'450px 0px'});
+  _embedObs=new IntersectionObserver((es)=>{ es.forEach(e=>{ if(e.isIntersecting){ loadEmbed(e.target); _embedObs.unobserve(e.target);} }); },{rootMargin:'250px 0px'});
 }
 function observeNew(els){
   ensureObs();
@@ -1311,7 +1318,12 @@ function closeModal(){ document.getElementById("modal").style.display="none"; do
 document.getElementById("modal").addEventListener("click",e=>{ if(e.target.id==="modal") closeModal(); });
 document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeModal(); });
 
-document.getElementById("q").addEventListener("input",e=>{state.q=e.target.value;render();});
+let _searchDebounce;
+document.getElementById("q").addEventListener("input",e=>{
+  const v=e.target.value;
+  clearTimeout(_searchDebounce);
+  _searchDebounce=setTimeout(()=>{ state.q=v; render(); },220);
+});
 document.getElementById("f-fol").addEventListener("change",e=>{state.fol=e.target.value;render();});
 document.getElementById("sort").addEventListener("change",e=>{state.sort=e.target.value;render();});
 document.getElementById("f-contact").addEventListener("change",e=>{state.contact=e.target.value;render();});
@@ -1390,7 +1402,20 @@ function applyData(all){
   if(filtered.length) CREATORS=filtered;
   buildAllPills(); renderStats(); render(); updateScrapeCount();
 }
+const CACHE_KEY="adltix_cache_v1", CACHE_MS=5*60*1000;
+function readCache(){
+  try{
+    const raw=sessionStorage.getItem(CACHE_KEY); if(!raw) return null;
+    const obj=JSON.parse(raw);
+    if(Date.now()-obj.t>CACHE_MS) return null;
+    return obj.data;
+  }catch(e){ return null; }
+}
+function writeCache(data){ try{ sessionStorage.setItem(CACHE_KEY, JSON.stringify({t:Date.now(),data})); }catch(e){} }
+
 async function boot(){
+  const cached=readCache();
+  if(cached && cached.length){ applyData(cached); return; }
   showSkeleton();
   const tasks=SHEET_TABS.map(tab=>fetch(gvizUrl(tab)).then(r=>r.text()).then(parseGviz).catch(e=>{console.log("tab failed",tab,e);return [];}));
   let all=[], shownFirst=false;
@@ -1398,7 +1423,8 @@ async function boot(){
     if(rows&&rows.length){ all=all.concat(rows); if(!shownFirst){ shownFirst=true; applyData(all); } }
   }));
   await Promise.allSettled(tasks);
-  applyData(all);   // العرض النهائي بكل البيانات
+  applyData(all);
+  writeCache(all);
 }
 (function initAuth(){
   SESSION=loadSession();
