@@ -248,9 +248,9 @@
   .scrape-btn .sb-count.bump{animation:sbBump .35s cubic-bezier(.34,1.56,.64,1)}
   @keyframes sbBump{0%{transform:scale(1)}40%{transform:scale(1.35)}100%{transform:scale(1)}}
 
-  /* ===== Staff assignment ribbon (prominent, over media) ===== */
-  .staff-ribbon{position:absolute;top:12px;right:12px;z-index:11;display:flex;align-items:center;gap:7px;background:linear-gradient(135deg,#EC4899,#DB2777);color:#fff;font-size:14px;font-weight:800;padding:8px 14px;border-radius:14px;box-shadow:0 8px 22px rgba(219,39,119,.45),0 0 0 2px rgba(255,255,255,.25) inset;animation:popIn .4s cubic-bezier(.34,1.56,.64,1)}
-  .staff-ribbon .staff-emoji{font-size:17px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.2))}
+  /* ===== Staff assignment ribbon (full width, gold, prominent) ===== */
+  .staff-ribbon{width:100%;display:flex;align-items:center;justify-content:center;gap:9px;background:linear-gradient(135deg,var(--gold),var(--gold-2));color:#3a2c00;font-size:15px;font-weight:800;padding:11px 14px;border-radius:13px;margin:2px 0 4px;box-shadow:0 8px 20px rgba(201,162,75,.4),0 0 0 1px rgba(255,255,255,.35) inset;animation:popIn .4s cubic-bezier(.34,1.56,.64,1)}
+  .staff-ribbon .staff-emoji{font-size:19px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.15))}
   .staff-ribbon .staff-name{letter-spacing:.2px}
 
   /* Skeleton loading */
@@ -907,7 +907,6 @@ function card(c){
   const canAdmin = !!(c.uid && API_BASE && API_BASE.indexOf("http")===0);
   return '<div class="card"'+uidAttr+'>'+
     stripHtml(c)+
-    (c.assignedTo ? '<div class="staff-ribbon"><span class="staff-emoji">'+(STAFF_EMOJI[c.assignedTo]||'👤')+'</span><span class="staff-name">'+esc(c.assignedTo)+'</span></div>' : '')+
     '<div class="body">'+
       '<div class="chead">'+
         '<div class="cmeta">'+
@@ -916,6 +915,7 @@ function card(c){
         '</div>'+
         '<span class="pchip" style="background:'+p.c+'">'+p.ar+'</span>'+
       '</div>'+
+      (c.assignedTo ? '<div class="staff-ribbon"><span class="staff-emoji">'+(STAFF_EMOJI[c.assignedTo]||'👤')+'</span><span class="staff-name">مسؤولة عن المتابعة: '+esc(c.assignedTo)+'</span></div>' : '')+
       '<div class="fol"><span class="big num">'+fmt(c.followers)+'</span><span class="lbl">متابع</span><span class="nichetag">'+(NICHE_AR[c.niche]||c.niche||"")+'</span></div>'+
       metricsRow(c)+
       otherText(c)+
