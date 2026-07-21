@@ -272,6 +272,14 @@
   .lg-err{color:#dc2626;font-size:12.5px;margin-top:10px;min-height:16px}
   .lg-hint{margin-top:16px;font-size:11px;color:var(--muted)}
 
+  /* ===== Add Lead FAB ===== */
+  .add-fab{position:fixed;bottom:24px;left:24px;z-index:9000;background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;border:none;font-family:inherit;font-weight:800;font-size:14px;padding:14px 22px;border-radius:30px;cursor:pointer;box-shadow:0 12px 30px rgba(22,163,74,.45);transition:transform .18s,box-shadow .18s}
+  .add-fab:hover{transform:translateY(-3px) scale(1.03);box-shadow:0 16px 38px rgba(22,163,74,.55)}
+  .add-fab:active{transform:scale(.96)}
+  @media (max-width:640px){.add-fab{bottom:16px;left:16px;padding:13px 18px;font-size:13px}}
+  .new-card-flash{animation:newFlash 1.4s ease}
+  @keyframes newFlash{0%{box-shadow:0 0 0 4px #22c55e, var(--shadow-lg)}100%{box-shadow:var(--shadow-lg)}}
+
   /* Skeleton loading */
   .skel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)}
   .skel-media{height:360px}
@@ -603,6 +611,33 @@
 </style>
 </head>
 <body>
+<button id="addLeadFab" class="add-fab" style="display:none" onclick="openAddLeadModal()">+ ضيفي شخص</button>
+<div id="addLeadOverlay" class="cf-overlay">
+  <div class="cf-box" style="max-width:420px;text-align:right">
+    <div class="cf-title">إضافة مؤثر جديد</div>
+    <div class="cf-msg">الصقي لينك بروفايل إنستجرام أو تيك توك، واختاري المجال والدولة.</div>
+    <div class="lg-field"><label>لينك البروفايل</label><input id="al-link" type="text" placeholder="https://www.tiktok.com/@username"></div>
+    <div class="lg-field"><label>المجال</label>
+      <select id="al-niche" style="width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-family:inherit;font-size:14px">
+        <option value="fashion">فاشن</option><option value="luxury">لاكشري</option><option value="moms">عائلة وأمومة</option>
+        <option value="sports">رياضة ولياقة</option><option value="food">طعام وطبخ</option><option value="gaming">جيمنج</option>
+        <option value="business">أعمال</option><option value="tech">تقنية</option><option value="entertainment">ترفيه</option><option value="other">أخرى</option>
+      </select>
+    </div>
+    <div class="lg-field"><label>الدولة</label>
+      <select id="al-country" style="width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-family:inherit;font-size:14px">
+        <option value="SA">السعودية</option><option value="AE">الإمارات</option><option value="KW">الكويت</option>
+        <option value="QA">قطر</option><option value="BH">البحرين</option><option value="OM">عُمان</option>
+        <option value="EG">مصر</option><option value="MA">المغرب</option>
+      </select>
+    </div>
+    <div class="lg-err" id="al-err"></div>
+    <div class="cf-btns">
+      <button class="cf-cancel" onclick="closeAddLeadModal()">إلغاء</button>
+      <button class="cf-yes ok" id="al-submit" onclick="submitAddLead()">إضافة</button>
+    </div>
+  </div>
+</div>
 <div id="loginGate">
   <div class="lg-box">
     <div class="lg-logo"><img src="https://www.image2url.com/r2/default/images/1784674121200-8960a1dc-1274-453d-9821-2fc581d7076b.jpg" alt="Adltix" referrerpolicy="no-referrer"></div>
@@ -1029,6 +1064,7 @@ function logout(){ clearSession(); location.reload(); }
 
 async function startApp(){
   if(SESSION.role==='staff'){
+    document.getElementById('addLeadFab').style.display='';
     // فلترة سيرفر-سايد: بس عملاء الموظفة دي
     try{
       const res=await fetch(API_BASE+'?action=myLeads&token='+encodeURIComponent(SESSION.token));
@@ -1055,6 +1091,38 @@ function mapRawToCard(o){
     priority:o.priority||"", engagement:o.engagement_rate||"",
     igUrl:o.instagram_url||"", ttUrl:o.tiktok_url||"", scUrl:o.snapchat_url||"", twUrl:o.twitter_url||"", ytUrl:o.youtube_url||"", fbUrl:o.facebook_url||""
   };
+}
+
+/* ===================== Add Lead (manual, by staff) ===================== */
+function openAddLeadModal(){
+  document.getElementById('al-err').textContent='';
+  document.getElementById('al-link').value='';
+  const ov=document.getElementById('addLeadOverlay'); ov.style.display='flex'; requestAnimationFrame(()=>ov.classList.add('show'));
+}
+function closeAddLeadModal(){ const ov=document.getElementById('addLeadOverlay'); ov.classList.remove('show'); setTimeout(()=>ov.style.display='none',220); }
+async function submitAddLead(){
+  const link=document.getElementById('al-link').value.trim();
+  const niche=document.getElementById('al-niche').value;
+  const country=document.getElementById('al-country').value;
+  const errEl=document.getElementById('al-err'); errEl.textContent='';
+  if(!link){ errEl.textContent='الصقي لينك البروفايل الأول'; return; }
+  const btn=document.getElementById('al-submit'); btn.disabled=true; btn.textContent='بنضيفه...';
+  try{
+    const res=await callApi('addManualLead',{token:SESSION.token,link,niche,country});
+    btn.disabled=false; btn.textContent='إضافة';
+    if(res.duplicate){ errEl.textContent=res.message||'موجود بالفعل'; return; }
+    closeAddLeadModal();
+    const card=mapRawToCard(res.card);
+    CREATORS.unshift(card);
+    render(); updateScrapeCount();
+    setTimeout(()=>{
+      const el=document.querySelector('.card[data-uid="'+card.uid+'"]');
+      if(el){ el.classList.add('new-card-flash'); el.scrollIntoView({behavior:'smooth',block:'center'}); }
+    },100);
+    if(res.quotaExceeded){
+      alert('✅ اتضاف بالمعلومات الأساسية.\n⏳ رصيد Scrapingdog خلص — التفاصيل الكاملة (متابعين، صورة، بايو) هتتحدّث لما نحط API جديد.');
+    }
+  }catch(e){ btn.disabled=false; btn.textContent='إضافة'; errEl.textContent=e.message||'حصل خطأ'; }
 }
 
 /* ===================== Admin Actions (Delete / Archive / Change niche / Approve) ===================== */
