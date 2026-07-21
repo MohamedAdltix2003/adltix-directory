@@ -255,6 +255,23 @@
   .staff-ribbon .staff-emoji{font-size:19px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.15))}
   .staff-ribbon .staff-name{letter-spacing:.2px}
 
+  /* ===== Login gate ===== */
+  #loginGate{position:fixed;inset:0;background:linear-gradient(135deg,#1a0f3d,#2d1b5e);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px}
+  .lg-box{background:var(--surface);border-radius:22px;max-width:380px;width:100%;padding:36px 28px;box-shadow:0 30px 80px rgba(0,0,0,.4);text-align:center;animation:popIn .4s cubic-bezier(.34,1.56,.64,1)}
+  .lg-logo{width:84px;height:84px;border-radius:22px;margin:0 auto 18px;display:grid;place-items:center;overflow:hidden;background:#fff;box-shadow:0 12px 32px rgba(75,35,201,.35),0 0 0 4px rgba(124,77,255,.15);animation:logoFloat 3.2s ease-in-out infinite}
+  .lg-logo img{width:100%;height:100%;object-fit:contain;padding:8px;box-sizing:border-box}
+  @keyframes logoFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+  .lg-title{font-size:19px;font-weight:800;color:var(--ink);margin-bottom:6px}
+  .lg-sub{font-size:12.5px;color:var(--muted);margin-bottom:22px}
+  .lg-field{margin-bottom:12px;text-align:right}
+  .lg-field label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:5px}
+  .lg-field input{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-family:inherit;font-size:14px;box-sizing:border-box}
+  .lg-field input:focus{outline:none;border-color:var(--brand)}
+  .lg-btn{width:100%;padding:13px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#fff;font-family:inherit;font-weight:800;font-size:14.5px;cursor:pointer;margin-top:6px;transition:filter .15s,transform .15s}
+  .lg-btn:active{transform:scale(.97)}
+  .lg-err{color:#dc2626;font-size:12.5px;margin-top:10px;min-height:16px}
+  .lg-hint{margin-top:16px;font-size:11px;color:var(--muted)}
+
   /* Skeleton loading */
   .skel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)}
   .skel-media{height:360px}
@@ -586,6 +603,19 @@
 </style>
 </head>
 <body>
+<div id="loginGate">
+  <div class="lg-box">
+    <div class="lg-logo"><img src="https://www.image2url.com/r2/default/images/1784674121200-8960a1dc-1274-453d-9821-2fc581d7076b.jpg" alt="Adltix" referrerpolicy="no-referrer"></div>
+    <div class="lg-title">تسجيل الدخول</div>
+    <div class="lg-sub">Adltix Creator Platform</div>
+    <div class="lg-field"><label>اسم المستخدم</label><input id="lg-user" type="text" autocomplete="username"></div>
+    <div class="lg-field"><label>كلمة المرور</label><input id="lg-pass" type="password" autocomplete="current-password"></div>
+    <button class="lg-btn" onclick="doLogin()">دخول</button>
+    <div class="lg-err" id="lg-err"></div>
+    <div class="lg-hint">Adltix Team Only</div>
+  </div>
+</div>
+
 <div class="bgfx" aria-hidden="true"><span class="gridfx"></span><span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span><span class="blob b4"></span><span class="mesh"></span><div class="parts"><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span></div></div>
 
 <header>
@@ -599,6 +629,7 @@
       <input id="q" type="search" placeholder="ابحث باسم المؤثر أو اسم الحساب…">
     </div>
     <button class="themebtn" id="themebtn" onclick="toggleTheme()" title="تبديل الوضع (أبيض/أسود)">🌙</button>
+    <button class="themebtn" onclick="logout()" title="تسجيل الخروج">🚪</button>
     <div class="live"><span class="dot"></span> تحديث مباشر</div>
   </div>
 </header>
@@ -975,6 +1006,57 @@ function toggleScrapingView(){
   render();
 }
 
+/* ===================== Auth ===================== */
+let SESSION=null;   // {token, role, staffName}
+function loadSession(){ try{ const raw=sessionStorage.getItem('adltix_session'); return raw?JSON.parse(raw):null; }catch(e){ return null; } }
+function saveSession(s){ sessionStorage.setItem('adltix_session', JSON.stringify(s)); }
+function clearSession(){ sessionStorage.removeItem('adltix_session'); }
+
+async function doLogin(){
+  const user=document.getElementById('lg-user').value.trim();
+  const pass=document.getElementById('lg-pass').value;
+  const errEl=document.getElementById('lg-err');
+  errEl.textContent='';
+  if(!user||!pass){ errEl.textContent='اكتب اسم المستخدم وكلمة المرور'; return; }
+  try{
+    const result=await callApi('login',{username:user,password:pass});
+    SESSION=result; saveSession(result);
+    document.getElementById('loginGate').style.display='none';
+    startApp();
+  }catch(e){ errEl.textContent=e.message||'بيانات غلط'; }
+}
+function logout(){ clearSession(); location.reload(); }
+
+async function startApp(){
+  if(SESSION.role==='staff'){
+    // فلترة سيرفر-سايد: بس عملاء الموظفة دي
+    try{
+      const res=await fetch(API_BASE+'?action=myLeads&token='+encodeURIComponent(SESSION.token));
+      const j=await res.json();
+      if(j.ok && j.result && j.result.leads){
+        CREATORS=j.result.leads.map(mapRawToCard);
+        buildAllPills(); renderStats(); render(); updateScrapeCount();
+        return;
+      }
+    }catch(e){ console.log('myLeads failed',e); }
+  }
+  boot();   // أدمن/مدير: تحميل كل البيانات زي العادي
+}
+function mapRawToCard(o){
+  let vids=[]; try{ vids=String(o.videos||"").split(",").map(v=>v.trim()).filter(Boolean); }catch(e){}
+  return {
+    uid:String(o.uid||"").toLowerCase(), discoveredAt:normalizeSheetDate(o.discovered_at), assignedTo:String(o.assigned_to||"").trim(),
+    handle:String(o.handle||"").replace(/^@/,""), platform:o.platform||"",
+    followers:Number(o.followers)||0, niche:String(o.niche||"").toLowerCase(),
+    country:o.location||"الخليج", url:o.profile_url||"#", avatar_url:o.avatar_url||"",
+    videos:vids, top_video_url:o.top_video_url||"", other:o.other_platforms||"",
+    email:o.email||"", whatsapp:o.whatsapp||"", phone:o.phone||"",
+    links:o.links_bio||"", language:o.language||"",
+    priority:o.priority||"", engagement:o.engagement_rate||"",
+    igUrl:o.instagram_url||"", ttUrl:o.tiktok_url||"", scUrl:o.snapchat_url||"", twUrl:o.twitter_url||"", ytUrl:o.youtube_url||"", fbUrl:o.facebook_url||""
+  };
+}
+
 /* ===================== Admin Actions (Delete / Archive / Change niche / Approve) ===================== */
 function showConfirm(title, msg, yesLabel, yesClass){
   return new Promise(resolve=>{
@@ -1250,7 +1332,13 @@ async function boot(){
   await Promise.allSettled(tasks);
   applyData(all);   // العرض النهائي بكل البيانات
 }
-boot();
+(function initAuth(){
+  SESSION=loadSession();
+  if(SESSION && SESSION.token){
+    document.getElementById('loginGate').style.display='none';
+    startApp();
+  }
+})();
 
 /* ===== Theme (light/dark) ===== */
 function applyTheme(t){ document.body.classList.toggle('dark', t==='dark'); var b=document.getElementById('themebtn'); if(b) b.textContent=(t==='dark'?'\u2600\uFE0F':'\uD83C\uDF19'); try{ localStorage.setItem('adltix_theme',t); }catch(e){} }
