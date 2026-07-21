@@ -248,6 +248,11 @@
   .scrape-btn .sb-count.bump{animation:sbBump .35s cubic-bezier(.34,1.56,.64,1)}
   @keyframes sbBump{0%{transform:scale(1)}40%{transform:scale(1.35)}100%{transform:scale(1)}}
 
+  /* ===== Staff assignment badge ===== */
+  .staff-badge{display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,#FCE4EC,#F8BBD0);color:#AD1457;font-size:11px;font-weight:800;padding:5px 10px;border-radius:20px;margin-top:6px;width:fit-content;box-shadow:0 2px 8px rgba(173,20,87,.15)}
+  body.dark .staff-badge{background:linear-gradient(135deg,#4a1f33,#5c2740);color:#f8bbd0}
+  .staff-emoji{font-size:13px}
+
   /* Skeleton loading */
   .skel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)}
   .skel-media{height:360px}
@@ -698,6 +703,7 @@ const PLAT = {
   snapchat:{ar:"سناب",c:"#111",g:"linear-gradient(135deg,#FFFC00,#FFC400)"}
 };
 const NICHE_AR = {fashion:"فاشن",luxury:"لاكشري",moms:"عائلة وأمومة",sports:"رياضة ولياقة",food:"طعام وطبخ",gaming:"جيمنج",business:"أعمال",tech:"تقنية",entertainment:"ترفيه",other:"أخرى"};
+const STAFF_EMOJI = {Rahma:"🌸",Esraa:"🌺",Menna:"🌷",Kholod:"🌻",Faten:"🌹",Sally:"🌼"};
 const COUNTRY_SYN={"السعودية":["السعودية","السعوديه","الرياض","جدة","جده","مكة","مكه","المدينة","المدينه","الدمام","الخبر","saudi","ksa"],"الإمارات":["الإمارات","الامارات","دبي","أبوظبي","ابوظبي","الشارقة","الشارقه","عجمان","العين","uae","dubai","emirat"],"الكويت":["الكويت","kuwait"],"قطر":["قطر","الدوحة","الدوحه","qatar","doha"],"مصر":["مصر","القاهرة","القاهره","الإسكندرية","الاسكندرية","الجيزة","الجيزه","egypt","cairo"],"المغرب":["المغرب","مغرب","الدار البيضاء","الرباط","مراكش","طنجة","morocco","casablanca","rabat"]};
 const COUNTRY_ORDER=["السعودية","الإمارات","الكويت","قطر","مصر","المغرب"];
 function countryBucket(loc){ loc=String(loc||"").toLowerCase(); for(const n of COUNTRY_ORDER){ const syn=COUNTRY_SYN[n]||[n]; if(syn.some(x=>loc.indexOf(String(x).toLowerCase())!==-1)) return n; } return "__other__"; }
@@ -909,6 +915,7 @@ function card(c){
         '</div>'+
         '<span class="pchip" style="background:'+p.c+'">'+p.ar+'</span>'+
       '</div>'+
+      (c.assignedTo ? '<div class="staff-badge"><span class="staff-emoji">'+(STAFF_EMOJI[c.assignedTo]||'👤')+'</span><span>'+esc(c.assignedTo)+'</span></div>' : '')+
       '<div class="fol"><span class="big num">'+fmt(c.followers)+'</span><span class="lbl">متابع</span><span class="nichetag">'+(NICHE_AR[c.niche]||c.niche||"")+'</span></div>'+
       metricsRow(c)+
       otherText(c)+
@@ -1202,6 +1209,7 @@ function parseGviz(text){
     out.push({
       uid:String(o.uid||"").toLowerCase(),
       discoveredAt:normalizeSheetDate(o.discovered_at),
+      assignedTo:String(o.assigned_to||"").trim(),
       handle:String(o.handle||"").replace(/^@/,""),
       platform:o.platform||"",
       followers:Number(o.followers)||0,
