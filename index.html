@@ -1225,14 +1225,29 @@ async function onApprove(btn){
 function initialChar(h){ h=String(h||"").replace(/^@/,""); return (h[0]||"?").toUpperCase(); }
 
 /* ===== تحميل الفيديوهات تلقائياً + أنيميشن الكروت ===== */
-function loadEmbed(host){
-  if(!host || host.dataset.loaded) return;
-  const src=host.getAttribute('data-embed-src'); if(!src) return;
-  host.dataset.loaded='1';
+const _embedQueue=[]; let _embedActive=0; const EMBED_MAX_CONCURRENT=2;
+function _createIframe(host,src){
   const f=document.createElement('iframe');
   f.src=src; f.loading='lazy'; f.className='embedframe';
   f.setAttribute('scrolling','no'); f.setAttribute('allow','encrypted-media; clipboard-write'); f.setAttribute('allowfullscreen','');
   host.innerHTML=''; host.appendChild(f);
+  f.addEventListener('load',_embedDone,{once:true});
+  setTimeout(_embedDone,4000);   // فيديو ياخد وقت كتير -> حرر السلوت برضه
+}
+function _embedDone(){ _embedActive=Math.max(0,_embedActive-1); _pumpEmbedQueue(); }
+function _pumpEmbedQueue(){
+  while(_embedActive<EMBED_MAX_CONCURRENT && _embedQueue.length){
+    const {host,src}=_embedQueue.shift();
+    if(!host.isConnected || host.dataset.loaded==='skip') continue;
+    _embedActive++; _createIframe(host,src);
+  }
+}
+function loadEmbed(host){
+  if(!host || host.dataset.loaded) return;
+  const src=host.getAttribute('data-embed-src'); if(!src) return;
+  host.dataset.loaded='1';
+  _embedQueue.push({host,src});
+  requestAnimationFrame(_pumpEmbedQueue);
 }
 let _revealObs=null, _embedObs=null;
 function ensureObs(){
@@ -1249,7 +1264,7 @@ function observeNew(els){
     el.querySelectorAll('[data-embed-src]').forEach(h=>_embedObs.observe(h));
   });
 }
-let _list=[], _rendered=0; const PAGE_SIZE=60;
+let _list=[], _rendered=0; const PAGE_SIZE=24;
 function appendMore(){
   if(_rendered>=_list.length) return;
   const grid=document.getElementById("grid");
