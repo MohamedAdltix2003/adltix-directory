@@ -282,6 +282,28 @@
   .new-card-flash{animation:newFlash 1.4s ease}
   @keyframes newFlash{0%{box-shadow:0 0 0 4px #22c55e, var(--shadow-lg)}100%{box-shadow:var(--shadow-lg)}}
 
+  /* ===== CRM buttons (staff) ===== */
+  .crm-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .crm-chip{font-size:11px;font-weight:800;padding:5px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:4px}
+  .crm-chip.sent{background:#DBEAFE;color:#1D4ED8}
+  .crm-chip.followup{background:#FEF3C7;color:#B45309}
+  .crm-chip.subscribed{background:#DCFCE7;color:#15803D}
+  body.dark .crm-chip.sent{background:#1e3a5f;color:#93c5fd}
+  body.dark .crm-chip.followup{background:#4a3510;color:#fcd34d}
+  body.dark .crm-chip.subscribed{background:#14432a;color:#86efac}
+  .crm-actions{display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+  .crmbtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:11px 6px;border-radius:13px;border:none;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;color:#fff;transition:transform .15s,filter .15s;position:relative;overflow:hidden}
+  .crmbtn:active{transform:scale(.94)}
+  .crmbtn.sent{background:linear-gradient(135deg,#3B82F6,#2563EB)}
+  .crmbtn.followup{background:linear-gradient(135deg,#F59E0B,#D97706)}
+  .crmbtn.subscribed{background:linear-gradient(135deg,#22C55E,#16A34A)}
+  .crmbtn:hover{filter:brightness(1.08)}
+  .crmbtn[disabled]{opacity:.6;pointer-events:none}
+  .crmbtn.loading::after{content:"";position:absolute;inset:0;background:rgba(255,255,255,.25);animation:crmLoading 1s linear infinite}
+  @keyframes crmLoading{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+  .crmbtn.success{animation:crmSuccess .5s cubic-bezier(.34,1.56,.64,1)}
+  @keyframes crmSuccess{0%{transform:scale(1)}40%{transform:scale(1.15)}100%{transform:scale(1)}}
+
   /* Skeleton loading */
   .skel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)}
   .skel-media{height:360px}
@@ -640,6 +662,7 @@
     </div>
   </div>
 </div>
+<input type="file" id="crmFileInput" accept="image/*" capture="environment" style="display:none">
 <div id="loginGate">
   <div class="lg-box">
     <div class="lg-logo"><img src="https://www.image2url.com/r2/default/images/1784674121200-8960a1dc-1274-453d-9821-2fc581d7076b.jpg" alt="Adltix" referrerpolicy="no-referrer"></div>
@@ -991,10 +1014,12 @@ function card(c){
       otherText(c)+
       linksChips(c)+
       contactRow(c)+
+      crmStatusBadges(c)+
       '<div class="actions">'+
         '<a class="btn primary" href="'+esc(c.url)+'" target="_blank" rel="noopener">زيارة الحساب الرسمي</a>'+
         '<button class="btn ghost" title="نسخ الحساب" onclick="copyTxt(\'@'+esc(c.handle)+'\',this)">\u29C9</button>'+
       '</div>'+
+      (isStaffSession() ? crmActionsRow(c) :
       (canAdmin ? (
       '<div class="admin-actions">'+
         '<button class="aabtn ok" title="تأكيد ومتابعة" onclick="onApprove(this)">\u2705 تأكيد</button>'+
@@ -1003,8 +1028,26 @@ function card(c){
           '<option value="">نقل لمجال...</option>'+nicheOptions(c.niche)+
         '</select></div>'+
         '<button class="aabtn danger" title="حذف نهائي" onclick="onDelete(this)">\uD83D\uDDD1\uFE0F حذف</button>'+
-      '</div>') : '')+
+      '</div>') : ''))+
     '</div></div>';
+}
+function isStaffSession(){ return !!(SESSION && SESSION.role==='staff'); }
+function crmStatusBadges(c){
+  if(!isStaffSession()) return "";
+  const chips=[];
+  if(c.messageStatus==='sent') chips.push('<span class="crm-chip sent">\u2705 اتبعت</span>');
+  if((c.followupCount|0)>0) chips.push('<span class="crm-chip followup">\uD83D\uDD04 متابعة \u00d7'+c.followupCount+'</span>');
+  if(c.signupStatus==='subscribed') chips.push('<span class="crm-chip subscribed">\uD83C\uDF89 مشترك</span>');
+  if(!chips.length) return "";
+  return '<div class="crm-badges">'+chips.join('')+'</div>';
+}
+function crmActionsRow(c){
+  const u=esc(c.uid);
+  return '<div class="crm-actions">'+
+    '<button class="crmbtn sent" onclick="onCrmAction(this,\''+u+'\',\'sent\')">\uD83D\uDCE9 بعت</button>'+
+    '<button class="crmbtn followup" onclick="onCrmAction(this,\''+u+'\',\'followup\')">\uD83D\uDD04 متابعة</button>'+
+    '<button class="crmbtn subscribed" onclick="onCrmAction(this,\''+u+'\',\'subscribed\')">\uD83C\uDF89 اشترك</button>'+
+  '</div>';
 }
 /* ===================== Scraping-today view ===================== */
 let scrapingMode=false;
@@ -1098,7 +1141,8 @@ function mapRawToCard(o){
     email:o.email||"", whatsapp:o.whatsapp||"", phone:o.phone||"",
     links:o.links_bio||"", language:o.language||"",
     priority:o.priority||"", engagement:o.engagement_rate||"",
-    igUrl:o.instagram_url||"", ttUrl:o.tiktok_url||"", scUrl:o.snapchat_url||"", twUrl:o.twitter_url||"", ytUrl:o.youtube_url||"", fbUrl:o.facebook_url||""
+    igUrl:o.instagram_url||"", ttUrl:o.tiktok_url||"", scUrl:o.snapchat_url||"", twUrl:o.twitter_url||"", ytUrl:o.youtube_url||"", fbUrl:o.facebook_url||"",
+    messageStatus:String(o.message_status||"").toLowerCase(), followupCount:parseInt(o.followup_count,10)||0, signupStatus:String(o.signup_status||"").toLowerCase()
   };
 }
 
@@ -1132,6 +1176,69 @@ async function submitAddLead(){
       alert('✅ اتضاف بالمعلومات الأساسية.\n⏳ رصيد Scrapingdog خلص — التفاصيل الكاملة (متابعين، صورة، بايو) هتتحدّث لما نحط API جديد.');
     }
   }catch(e){ btn.disabled=false; btn.textContent='إضافة'; errEl.textContent=e.message||'حصل خطأ'; }
+}
+
+/* ===================== CRM Actions (staff): Sent / Follow-up / Subscribed ===================== */
+let _crmPending=null;   // {btn, uid, actionType}
+function fileToBase64(file){
+  return new Promise((resolve,reject)=>{
+    const r=new FileReader();
+    r.onload=()=>resolve(r.result);
+    r.onerror=reject;
+    r.readAsDataURL(file);
+  });
+}
+async function onCrmAction(btn,uid,actionType){
+  const needsShot = (actionType==='sent' || actionType==='subscribed');
+  const labels={sent:'إرسال الرسالة',followup:'متابعة',subscribed:'اشتراك'};
+  if(needsShot){
+    const ok=await showConfirm('تأكيد '+labels[actionType],'هترفعي سكرين شوت يثبت إنك '+(actionType==='sent'?'بعتيلها':'أكّدت اشتراكها')+'. جاهزة؟','اختيار الصورة','ok');
+    if(!ok) return;
+    _crmPending={btn,uid,actionType};
+    document.getElementById('crmFileInput').click();
+  }else{
+    const ok=await showConfirm('تأكيد المتابعة','هيتسجّل إنك تابعتي المؤثر ده. متأكدة؟','تأكيد','ok');
+    if(!ok) return;
+    await sendCrmAction(btn,uid,actionType,null);
+  }
+}
+document.getElementById('crmFileInput').addEventListener('change', async (e)=>{
+  const file=e.target.files[0]; e.target.value='';
+  if(!file || !_crmPending) return;
+  const {btn,uid,actionType}=_crmPending; _crmPending=null;
+  try{
+    const base64=await fileToBase64(file);
+    await sendCrmAction(btn,uid,actionType,base64);
+  }catch(err){ alert('حصل خطأ في قراءة الصورة'); }
+});
+async function sendCrmAction(btn,uid,actionType,imageBase64){
+  const row=btn.closest('.crm-actions');
+  row.querySelectorAll('.crmbtn').forEach(b=>b.disabled=true);
+  btn.classList.add('loading');
+  try{
+    const res=await callApi('logAction',{token:SESSION.token,uid,actionType,imageBase64});
+    btn.classList.remove('loading'); btn.classList.add('success');
+    const item=CREATORS.find(x=>x.uid===uid);
+    if(item){
+      if(actionType==='sent') item.messageStatus='sent';
+      if(actionType==='followup') item.followupCount=(item.followupCount||0)+1;
+      if(actionType==='subscribed') item.signupStatus='subscribed';
+    }
+    const cardEl=btn.closest('.card');
+    if(cardEl){
+      let badges=cardEl.querySelector('.crm-badges');
+      const html=crmStatusBadges(item||{});
+      if(html){
+        if(badges) badges.outerHTML=html;
+        else cardEl.querySelector('.crm-actions').insertAdjacentHTML('beforebegin',html);
+      }
+    }
+    setTimeout(()=>{ row.querySelectorAll('.crmbtn').forEach(b=>{b.disabled=false;b.classList.remove('success');}); },800);
+  }catch(e){
+    btn.classList.remove('loading');
+    row.querySelectorAll('.crmbtn').forEach(b=>b.disabled=false);
+    alert('حصل خطأ: '+e.message);
+  }
 }
 
 /* ===================== Admin Actions (Delete / Archive / Change niche / Approve) ===================== */
@@ -1404,6 +1511,7 @@ function parseGviz(text){
       email:o.email||"", whatsapp:o.whatsapp||"", phone:o.phone||"",
       links:o.links_bio||"", language:o.language||"",
       priority:o.priority||"", engagement:o.engagement_rate||"",
+      messageStatus:String(o.message_status||"").toLowerCase(), followupCount:parseInt(o.followup_count,10)||0, signupStatus:String(o.signup_status||"").toLowerCase(),
       igUrl:o.instagram_url||"", ttUrl:o.tiktok_url||"", scUrl:o.snapchat_url||"", twUrl:o.twitter_url||"", ytUrl:o.youtube_url||"", fbUrl:o.facebook_url||""
     });
   }
