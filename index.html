@@ -6,9 +6,10 @@
 <title>Adltix — دليل المؤثرين</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://docs.google.com">
+<link rel="dns-prefetch" href="https://docs.google.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Tajawal:wght@500;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
-  /* كل الـ CSS كما هو بدون تغيير - للحفاظ على التصميم */
   :root{
     --bg:#ECE9F6; --bg2:#F3EDF0; --surface:#FFFFFF; --ink:#16151F; --muted:#797889;
     --brand:#4B23C9; --brand-2:#7C4DFF; --brand-soft:#ECE7FF;
@@ -567,6 +568,7 @@
   .username-hint .domain{color:var(--brand);font-weight:700}
   .username-hint .at{color:var(--muted)}
 
+  /* ===== CSS لخيارين رفع الصورة ===== */
   .photo-options{display:flex;gap:10px;margin-bottom:12px}
   .photo-options button{flex:1;padding:10px;border-radius:11px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px}
   .photo-options button:hover{border-color:var(--brand);color:var(--brand);background:var(--brand-soft)}
@@ -575,28 +577,25 @@
 </head>
 <body>
 
-<!-- login gate -->
 <div id="loginGate">
   <div class="lg-box">
     <div class="lg-logo"><img src="https://www.image2url.com/r2/default/images/1784674121200-8960a1dc-1274-453d-9821-2fc581d7076b.jpg" alt="Adltix" referrerpolicy="no-referrer"></div>
     <div class="lg-title">تسجيل الدخول</div>
     <div class="lg-sub">Adltix Creator Platform</div>
-    <div class="lg-field"><label>اسم المستخدم</label><input id="lg-user" type="text" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()"></div>
-    <div class="lg-field"><label>كلمة المرور</label><input id="lg-pass" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="lg-field"><label>اسم المستخدم</label><input id="lg-user" type="text" autocomplete="username"></div>
+    <div class="lg-field"><label>كلمة المرور</label><input id="lg-pass" type="password" autocomplete="current-password"></div>
     <button class="lg-btn" onclick="doLogin()">دخول</button>
     <div class="lg-err" id="lg-err"></div>
     <div class="lg-hint">Adltix Team Only</div>
   </div>
 </div>
 
-<!-- FAB -->
 <button id="addLeadFab" class="add-fab" style="display:none" onclick="openAddLeadModal()">+ Add Influencer ⭐</button>
 
-<!-- Add Lead Modal -->
 <div id="addLeadOverlay" class="cf-overlay">
   <div class="cf-box" style="max-width:420px;text-align:right">
     <div class="cf-title">إضافة مؤثر جديد</div>
-    <div class="cf-msg">الصقي لينك بروفايل إنستجرام أو تيك توك</div>
+    <div class="cf-msg">الصقي لينك بروفايل إنستجرام أو تيك توك، واختاري المجال والدولة.</div>
     <div class="lg-field"><label>لينك البروفايل</label><input id="al-link" type="text" placeholder="https://www.tiktok.com/@username"></div>
     <div class="lg-field"><label>المجال</label>
       <select id="al-niche" style="width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-family:inherit;font-size:14px">
@@ -620,11 +619,10 @@
   </div>
 </div>
 
-<!-- Employee Modal -->
 <div id="employeeOverlay" class="cf-overlay">
   <div class="cf-box" style="max-width:440px;text-align:right">
     <div class="cf-title">👩‍💼 إضافة موظفة جديدة</div>
-    <div class="cf-msg">املأ البيانات التالية لإضافة موظفة جديدة</div>
+    <div class="cf-msg">املأ البيانات التالية لإضافة موظفة جديدة. سيتم توزيع الـ Leads عليها تلقائياً.</div>
     <div class="employee-form">
       <div class="form-row flex-2"><label>اسم المستخدم</label>
         <input id="emp-username" type="text" placeholder="sara" oninput="updateUsernameHint()">
@@ -639,23 +637,22 @@
           <option value="💐">💐</option><option value="🌿">🌿</option><option value="🦋">🦋</option>
         </select>
       </div>
+      <div class="form-row flex-1"><div class="form-hint">⚠️ بعد الإضافة، سيتم توزيع المؤثرين غير المعينين على جميع الموظفات بشكل متساوٍ.</div></div>
     </div>
     <div class="lg-err" id="emp-err"></div>
     <div class="cf-btns">
       <button class="cf-cancel" onclick="closeEmployeeModal()">إلغاء</button>
-      <button class="cf-yes ok" id="emp-submit" onclick="submitEmployee()">➕ إضافة</button>
+      <button class="cf-yes ok" id="emp-submit" onclick="submitEmployee()">➕ إضافة الموظفة</button>
     </div>
   </div>
 </div>
 
-<!-- CRM File Inputs -->
+<!-- ===== مدخلين لرفع الصورة: واحد للتصوير وواحد للمعرض ===== -->
 <input type="file" id="crmFileInput" accept="image/*" capture="environment" style="display:none">
 <input type="file" id="crmFileInputGallery" accept="image/*" style="display:none">
 
-<!-- Background -->
 <div class="bgfx" aria-hidden="true"><span class="gridfx"></span><span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span><span class="blob b4"></span><span class="mesh"></span><div class="parts"><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span></div></div>
 
-<!-- Header -->
 <header>
   <div class="bar">
     <div class="brand">
@@ -666,26 +663,25 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
       <input id="q" type="search" placeholder="ابحث باسم المؤثر أو اسم الحساب…">
     </div>
-    <button class="themebtn" id="themebtn" onclick="toggleTheme()" title="تبديل الوضع">🌙</button>
+    <button class="themebtn" id="themebtn" onclick="toggleTheme()" title="تبديل الوضع (أبيض/أسود)">🌙</button>
     <button class="themebtn" onclick="logout()" title="تسجيل الخروج">🚪</button>
     <div class="live"><span class="dot"></span> تحديث مباشر</div>
   </div>
 </header>
 
-<!-- Main Content -->
 <div class="wrap">
   <div class="hero">
     <div>
       <span class="tag">الخليج العربي · مؤثرون موثّقون</span>
       <h2>مؤثرون مختارون بعناية،<br><b>جاهزون لحملتك القادمة</b></h2>
-      <p>قاعدة بيانات منسّقة لأبرز صنّاع المحتوى في الخليج</p>
-      <button id="scrapeToggleBtn" class="scrape-btn" onclick="toggleScrapingView()"><span class="sb-pulse"></span><span class="sb-label">📊 اليوم</span><span id="scrapeCount" class="sb-count">0</span></button>
+      <p>قاعدة بيانات منسّقة لأبرز صنّاع المحتوى في الخليج عبر مختلف المنصات — مع المتابعين، المحتوى، ووسائل التواصل المباشر.</p>
+      <button id="scrapeToggleBtn" class="scrape-btn" onclick="toggleScrapingView()"><span class="sb-pulse"></span><span class="sb-label">📊 Scraping Today</span><span id="scrapeCount" class="sb-count">0</span></button>
     </div>
     <div class="stats" id="stats"></div>
   </div>
 
   <div id="adminToolbar" class="admin-toolbar" style="display:none">
-    <span class="label">⚙️ لوحة التحكم</span>
+    <span class="label">لوحة التحكم</span>
     <button class="admin-btn" onclick="openEmployeeModal()">➕ إضافة موظفة</button>
     <button class="admin-btn secondary" onclick="distributeLeads()">🔄 توزيع الـ Leads</button>
     <span class="spacer"></span>
@@ -698,7 +694,7 @@
       <span class="spacer"></span>
       <div class="fctl"><span class="ftiny">المتابعين</span>
         <select id="f-fol" class="sortsel">
-          <option value="all">الكل</option>
+          <option value="all">كل المتابعين</option>
           <option value="0-10">أقل من 10K</option>
           <option value="10-50">10K – 50K</option>
           <option value="50-100">50K – 100K</option>
@@ -708,17 +704,17 @@
       </div>
       <div class="fctl"><span class="ftiny">وسيلة التواصل</span>
         <select id="f-contact" class="sortsel">
-          <option value="all">الكل</option>
-          <option value="email">بريد</option>
-          <option value="whatsapp">واتساب</option>
+          <option value="all">كل المؤثرين</option>
+          <option value="email">بريد إلكتروني متاح</option>
+          <option value="whatsapp">واتساب متاح</option>
           <option value="both">بريد + واتساب</option>
-          <option value="none">بدون</option>
+          <option value="none">بدون بيانات تواصل</option>
         </select>
       </div>
       <div class="fctl"><span class="ftiny">الترتيب</span>
         <select id="sort" class="sortsel">
-          <option value="fol">الأعلى متابعة</option>
-          <option value="fola">الأقل متابعة</option>
+          <option value="fol">الأعلى متابعةً</option>
+          <option value="fola">الأقل متابعةً</option>
           <option value="name">أبجديًا</option>
         </select>
       </div>
@@ -735,21 +731,20 @@
         <b>سكرابينج اليوم</b>
         <span id="sb-date"></span>
       </div>
-      <button class="sb-close" onclick="toggleScrapingView()">✕ رجوع</button>
+      <button class="sb-close" onclick="toggleScrapingView()">✕ رجوع لكل المؤثرين</button>
     </div>
   </div>
 
-  <div class="meta"><div class="count"><b id="shown">0</b> مؤثر</div></div>
+  <div class="meta"><div class="count"><b id="shown">0</b> مؤثر ضمن النتائج</div></div>
   
   <div class="grid" id="grid"></div>
   <div class="empty" id="empty" style="display:none">
     <div class="ei"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4B23C9" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></div>
-    <h3>لا توجد نتائج</h3>
-    <p>جرّب تعديل الفلاتر</p>
+    <h3>لا توجد نتائج مطابقة</h3>
+    <p>جرّب تعديل المجال أو المنصة أو توسيع نطاق المتابعين أو وسيلة التواصل.</p>
   </div>
 </div>
 
-<!-- Modal -->
 <div class="modal" id="modal">
   <div class="sheet">
     <button class="x" onclick="closeModal()">×</button>
@@ -758,23 +753,26 @@
   </div>
 </div>
 
-<footer>Adltix · منصة اكتشاف المؤثرين في الخليج</footer>
+<footer>Adltix · منصة اكتشاف المؤثرين في الخليج — قاعدة بيانات محدّثة باستمرار</footer>
 
 <script>
 // ============================================================
-// 1. الجلسة
+// 1. تحميل الجلسة فوراً
 // ============================================================
 let SESSION = null;
 let CREATORS = [];
 let isLoading = false;
 let isRendering = false;
+let allLeadsLoaded = false;
 let _list = [];
 let _rendered = 0;
 const PAGE_SIZE = 24;
 
 try {
   const raw = sessionStorage.getItem('adltix_session');
-  if (raw) SESSION = JSON.parse(raw);
+  if (raw) {
+    SESSION = JSON.parse(raw);
+  }
 } catch(e) {}
 
 function isStaffSession() {
@@ -813,9 +811,6 @@ function fmt(n){ if(n==null) return "—"; n=Number(n); if(!n) return "—"; if(
 function esc(s){ return String(s||"").replace(/'/g,"\\'").replace(/"/g,"&quot;"); }
 function clean(list){ return list.filter(c=> c && (Number(c.followers)>=MIN_FOLLOWERS || c.platform==="snapchat")); }
 
-// ============================================================
-// 3. الفلاتر
-// ============================================================
 function buildPills(id, items, key){
   const box=document.getElementById(id); if(!box) return;
   box.innerHTML="";
@@ -827,21 +822,9 @@ function buildPills(id, items, key){
     box.appendChild(b);
   });
 }
-
 function buildAllPills(){
-  buildPills("f-niche",[
-    {v:"all",l:"الكل"},{v:"fashion",l:"فاشن"},{v:"luxury",l:"لاكشري"},
-    {v:"moms",l:"عائلة وأمومة"},{v:"sports",l:"رياضة"},{v:"food",l:"طعام"},
-    {v:"gaming",l:"جيمنج"},{v:"business",l:"أعمال"},{v:"tech",l:"تقنية"},
-    {v:"entertainment",l:"ترفيه"},{v:"other",l:"أخرى"}
-  ],"niche");
-  
-  buildPills("f-platform",[
-    {v:"all",l:"الكل"},{v:"instagram",l:"انستجرام",dot:PLAT.instagram.c},
-    {v:"tiktok",l:"تيك توك",dot:"#25F4EE"},{v:"youtube",l:"يوتيوب",dot:PLAT.youtube.c},
-    {v:"x",l:"تويتر",dot:"#555"},{v:"snapchat",l:"سناب",dot:PLAT.snapchat.c}
-  ],"platform");
-  
+  buildPills("f-niche",[{v:"all",l:"الكل"},{v:"fashion",l:"فاشن"},{v:"luxury",l:"لاكشري"},{v:"moms",l:"عائلة وأمومة"},{v:"sports",l:"رياضة ولياقة"},{v:"food",l:"طعام وطبخ"},{v:"gaming",l:"جيمنج"},{v:"business",l:"أعمال"},{v:"tech",l:"تقنية"},{v:"entertainment",l:"ترفيه"},{v:"other",l:"أخرى"}],"niche");
+  buildPills("f-platform",[{v:"all",l:"الكل"},{v:"instagram",l:"انستجرام",dot:PLAT.instagram.c},{v:"tiktok",l:"تيك توك",dot:"#25F4EE"},{v:"youtube",l:"يوتيوب",dot:PLAT.youtube.c},{v:"x",l:"تويتر",dot:"#555"},{v:"snapchat",l:"سناب",dot:PLAT.snapchat.c}],"platform");
   const data=clean(CREATORS);
   const bc={}; data.forEach(c=>{ const b=countryBucket(c.country); bc[b]=(bc[b]||0)+1; });
   const cc=(n)=>bc[n]||0;
@@ -853,7 +836,7 @@ function buildAllPills(){
     {v:"قطر",l:"🇶🇦 قطر ("+cc("قطر")+")"},
     {v:"مصر",l:"🇪🇬 مصر ("+cc("مصر")+")"},
     {v:"المغرب",l:"🇲🇦 المغرب ("+cc("المغرب")+")"},
-    {v:"__other__",l:"🌍 أخرى ("+cc("__other__")+")"}
+    {v:"__other__",l:"🌍 دول أخرى ("+cc("__other__")+")"}
   ],"country");
 }
 
@@ -867,17 +850,7 @@ function applyFilters(){
     const [a,b]=state.fol.split("-").map(Number);
     r=r.filter(c=> (c.platform==="snapchat" && !c.followers) || (c.followers>=a*1000 && c.followers<b*1000));
   }
-  if(state.contact && state.contact!=="all"){ 
-    r=r.filter(c=>{ 
-      const e=!!(c.email&&String(c.email).trim()); 
-      const w=!!((c.whatsapp&&String(c.whatsapp).trim())||(c.phone&&String(c.phone).trim())); 
-      if(state.contact==="email")return e; 
-      if(state.contact==="whatsapp")return w; 
-      if(state.contact==="both")return e&&w; 
-      if(state.contact==="none")return !e&&!w; 
-      return true; 
-    }); 
-  }
+  if(state.contact && state.contact!=="all"){ r=r.filter(c=>{ const e=!!(c.email&&String(c.email).trim()); const w=!!((c.whatsapp&&String(c.whatsapp).trim())||(c.phone&&String(c.phone).trim())); if(state.contact==="email")return e; if(state.contact==="whatsapp")return w; if(state.contact==="both")return e&&w; if(state.contact==="none")return !e&&!w; return true; }); }
   if(state.q){ const q=state.q.toLowerCase(); r=r.filter(c=>(c.handle||"").toLowerCase().includes(q)); }
   if(state.sort==="fol") r.sort((a,b)=>(b.followers||0)-(a.followers||0));
   if(state.sort==="fola") r.sort((a,b)=>(a.followers||0)-(b.followers||0));
@@ -885,11 +858,53 @@ function applyFilters(){
   return r;
 }
 
-// ============================================================
-// 4. عرض الكروت (مبسط وسريع)
-// ============================================================
+// ===== دوال الكارد =====
+function igCode(u){ const m=String(u||'').match(/\/(p|reel|reels|tv)\/([^/?#]+)/); return m?{kind:(m[1]==='reels'?'reel':m[1]),code:m[2]}:null; }
+function ttVidId(u){ const m=String(u||'').match(/\/video\/(\d+)/); return m?m[1]:''; }
+
 function stripHtml(c){
   const p=PLAT[c.platform]||PLAT.instagram;
+  let vids=(c.videos||[]).filter(v=>v && (v.url||v.thumb));
+  const seen={}; vids=vids.filter(v=>{ const k=(v.url||'')+'|'+(v.thumb||''); if(seen[k]) return false; seen[k]=1; return true; });
+  const bigPlay='<span class="playbig"><svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M8 5v14l11-7z"/></svg></span>';
+  const cand=[c.top_video_url, ...vids.map(v=>v.url), c.url].filter(Boolean);
+  const pickBy=(fn)=>{ for(const u of cand){ if(fn(u)) return u; } return ''; };
+
+  if(c.platform==='instagram'){
+    const u=pickBy(u=>igCode(u)); const ic=igCode(u);
+    if(ic){
+      return '<div class="media embed ig" data-embed-src="'+esc('https://www.instagram.com/'+ic.kind+'/'+ic.code+'/embed')+'"><div class="poster" onclick="loadEmbed(this.parentNode)" style="background:'+p.g+'">'+bigPlay+'</div></div>';
+    }
+    if(c.avatar_url){
+      return '<div class="media shot" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel">انستجرام</span></div>';
+    }
+    return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="mlabel">انستجرام</span></div>';
+  }
+  if(c.platform==='tiktok'){
+    const u=pickBy(u=>ttVidId(u)); const vid=ttVidId(u);
+    if(vid){
+      return '<div class="media embed tt" data-embed-src="'+esc('https://www.tiktok.com/embed/v2/'+vid)+'"><div class="poster" onclick="loadEmbed(this.parentNode)" style="background:'+p.g+'">'+bigPlay+'</div></div>';
+    }
+    if(c.avatar_url){
+      return '<div class="media shot" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel">تيك توك</span></div>';
+    }
+    return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="mlabel">تيك توك</span></div>';
+  }
+  if(c.platform==='youtube'){
+    const u=pickBy(u=>u.match(/[?&]v=([^&]+)/)||u.match(/youtu\.be\/([^?]+)/)||u.match(/\/shorts\/([^?\/]+)/)); 
+    const id = u ? (u.match(/[?&]v=([^&]+)/)||u.match(/youtu\.be\/([^?]+)/)||u.match(/\/shorts\/([^?\/]+)/)) : null;
+    if(id && id[1]){
+      const t='https://i.ytimg.com/vi/'+id[1]+'/hqdefault.jpg';
+      return '<div class="media shot" style="background:'+p.g+'" onclick="openVideo(\''+esc(u||c.url)+'\',\'youtube\')"><img class="cover" src="'+esc(t)+'" loading="lazy" onerror="this.remove()"><div class="ovl"></div>'+bigPlay+'</div>';
+    }
+    if(c.avatar_url){
+      return '<div class="media shot yt" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover ytcover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div>'+bigPlay+'<span class="mlabel">قناة يوتيوب</span></div>';
+    }
+    return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')">'+bigPlay+'<span class="mlabel">يوتيوب</span></div>';
+  }
+  if(c.platform==='snapchat'){
+    return '<div class="media snap" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="ghost">👻</span><span class="mlabel dark">افتح سناب</span></div>';
+  }
   if(c.avatar_url){
     return '<div class="media shot" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel">'+p.ar+'</span></div>';
   }
@@ -908,12 +923,10 @@ function contactRow(c){
   if(!btns.length){ return '<a class="cbtn2 acc" href="'+esc(c.url)+'" target="_blank" rel="noopener">تواصل عبر الحساب</a>'; }
   return '<div class="contact2">'+btns.join("")+'</div>';
 }
-
 function copyTxt(txt, el){
   try{ navigator.clipboard && navigator.clipboard.writeText(txt); }catch(e){}
   if(el){ const o=el.textContent; el.textContent="✓"; setTimeout(()=>{el.textContent=o;},1000); }
 }
-
 function otherPlatformLinks(c){
   const map=[
     {plat:'instagram',label:'انستجرام',url:c.igUrl},
@@ -932,7 +945,6 @@ function otherPlatformLinks(c){
   }
   return out;
 }
-
 function otherText(c){
   const names=otherPlatformLinks(c).map(l=>l.label);
   if(c.other){ String(c.other).split(/[\n,|;]+/).map(s=>s.trim()).filter(Boolean).forEach(p=>{ if(names.indexOf(p)===-1) names.push(p); }); }
@@ -940,7 +952,6 @@ function otherText(c){
   const chips=names.map(n=>'<span class="ochip txt">'+esc(n)+'</span>').join('');
   return '<div class="others"><span class="olbl">منصات أخرى:</span>'+chips+'</div>';
 }
-
 function linksChips(c){
   const seen={}; const chips=[];
   otherPlatformLinks(c).forEach(l=>{
@@ -972,13 +983,11 @@ function linksChips(c){
   }
   return chips.length? '<div class="others links"><span class="olbl">روابط أخرى:</span>'+chips.join('')+'</div>':'';
 }
-
 function metricsRow(c){
   const pi=prioInfo(c.priority);
   if(!pi) return "";
   return '<div class="metrics"><span class="metric prio" style="--pc:'+pi.c+'"><span class="mk">الأولوية</span><span class="mv">'+pi.l+'</span></span></div>';
 }
-
 function nicheOptions(current){
   let h="";
   for(const k in NICHE_AR){ h+='<option value="'+k+'"'+(k===current?" selected":"")+'>'+NICHE_AR[k]+'</option>'; }
@@ -1033,22 +1042,24 @@ function card(c){
   html += contactRow(c);
   html += crmStatusBadges(c);
   html += '<div class="actions">';
-  html += '<a class="btn primary" href="'+esc(c.url)+'" target="_blank" rel="noopener">زيارة الحساب</a>';
+  html += '<a class="btn primary" href="'+esc(c.url)+'" target="_blank" rel="noopener">زيارة الحساب الرسمي</a>';
   html += '<button class="btn ghost" title="نسخ الحساب" onclick="copyTxt(\'@'+esc(c.handle)+'\',this)">⧉</button>';
   html += '</div>';
   
+  // ===== الزراير الثلاثة للـ staff =====
   if (isStaff) {
     html += crmActionsRow(c);
   }
   
+  // ===== أزرار الإدارة (admin/manager) =====
   if (canAdmin && isAdminSession()) {
     html += '<div class="admin-actions">';
-    html += '<button class="aabtn ok" title="تأكيد" onclick="onApprove(this)">✅ تأكيد</button>';
-    html += '<button class="aabtn move" title="أرشفة" onclick="onMoveToNew(this)">📤 أرشفة</button>';
-    html += '<div class="niche-select-wrap"><select onchange="onChangeNiche(this)">';
+    html += '<button class="aabtn ok" title="تأكيد ومتابعة" onclick="onApprove(this)">✅ تأكيد</button>';
+    html += '<button class="aabtn move" title="نقل لشيت الأرشيف" onclick="onMoveToNew(this)">📤 أرشفة</button>';
+    html += '<div class="niche-select-wrap"><select onchange="onChangeNiche(this)" title="نقل لمجال آخر">';
     html += '<option value="">نقل لمجال...</option>'+nicheOptions(c.niche);
     html += '</select></div>';
-    html += '<button class="aabtn danger" title="حذف" onclick="onDelete(this)">🗑️ حذف</button>';
+    html += '<button class="aabtn danger" title="حذف نهائي" onclick="onDelete(this)">🗑️ حذف</button>';
     html += '</div>';
   }
   
@@ -1056,32 +1067,25 @@ function card(c){
   return html;
 }
 
-// ============================================================
-// 5. وظائف رئيسية
-// ============================================================
+// ===== Scraping =====
 let scrapingMode=false;
-
 function cairoTodayStr(){
   try{ return new Intl.DateTimeFormat('en-CA',{timeZone:'Africa/Cairo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()); }
   catch(e){ return new Date().toISOString().slice(0,10); }
 }
-
 function cairoNowLabel(){
   try{ return new Intl.DateTimeFormat('ar-EG',{timeZone:'Africa/Cairo',weekday:'long',year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date()); }
   catch(e){ return new Date().toLocaleString(); }
 }
-
 function todayScrapedCount(){
   const today=cairoTodayStr();
   return CREATORS.filter(c=>c.discoveredAt===today).length;
 }
-
 function updateScrapeCount(){
   const el=document.getElementById('scrapeCount'); if(!el) return;
   const n=todayScrapedCount();
   if(el.textContent!==String(n)){ el.textContent=n; el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
 }
-
 function toggleScrapingView(){
   scrapingMode=!scrapingMode;
   const btn=document.getElementById('scrapeToggleBtn');
@@ -1090,19 +1094,17 @@ function toggleScrapingView(){
   const dateEl=document.getElementById('sb-date');
   btn.classList.toggle('active',scrapingMode);
   if(scrapingMode){
-    label.textContent='📊 الكل';
+    label.textContent='📊 Show All';
     banner.style.display='';
     dateEl.textContent=cairoNowLabel()+' (بتوقيت القاهرة)';
   }else{
-    label.textContent='📊 اليوم';
+    label.textContent='📊 Scraping Today';
     banner.style.display='none';
   }
   render();
 }
 
-// ============================================================
-// 6. المصادقة
-// ============================================================
+// ===== Auth =====
 function loadSession(){ try{ const raw=sessionStorage.getItem('adltix_session'); return raw?JSON.parse(raw):null; }catch(e){ return null; } }
 function saveSession(s){ sessionStorage.setItem('adltix_session', JSON.stringify(s)); }
 function clearSession(){ sessionStorage.removeItem('adltix_session'); }
@@ -1120,7 +1122,6 @@ async function doLogin(){
     startApp();
   }catch(e){ errEl.textContent=e.message||'بيانات غلط'; }
 }
-
 function logout(){ clearSession(); location.reload(); }
 
 async function startApp(){
@@ -1128,32 +1129,36 @@ async function startApp(){
   
   const adminToolbar = document.getElementById('adminToolbar');
   const adminName = document.getElementById('adminName');
-  const fab = document.getElementById('addLeadFab');
   
   if(role==='admin' || role==='manager'){
     adminToolbar.style.display='flex';
     adminName.textContent = SESSION.staffName || SESSION.username || 'أدمن';
-    fab.style.display='none';
+    document.getElementById('addLeadFab').style.display='none';
     boot();
     return;
   }
   
   if(role==='staff'){
     adminToolbar.style.display='none';
-    fab.style.display='';
-    // تحميل سريع للموظف
-    await loadStaffLeads();
+    document.getElementById('addLeadFab').style.display='';
+    const cached=readCache();
+    if(cached && cached.length){ 
+      applyData(cached); 
+      refreshMyLeads(); 
+      return; 
+    }
+    showSkeleton();
+    await refreshMyLeads();
     return;
   }
   
   adminToolbar.style.display='none';
-  fab.style.display='none';
+  document.getElementById('addLeadFab').style.display='none';
   boot();
 }
 
-async function loadStaffLeads(){
+async function refreshMyLeads(){
   try{
-    showSkeleton();
     const res=await fetch(API_BASE+'?action=myLeads&token='+encodeURIComponent(SESSION.token));
     const j=await res.json();
     if(j.ok && j.result && j.result.leads){
@@ -1162,14 +1167,7 @@ async function loadStaffLeads(){
       buildAllPills(); renderStats(); render(); updateScrapeCount();
       writeCache(data);
     }
-  }catch(e){ 
-    console.log('loadStaffLeads failed',e);
-    const cached=readCache();
-    if(cached && cached.length){ 
-      CREATORS=cached;
-      buildAllPills(); renderStats(); render(); updateScrapeCount();
-    }
-  }
+  }catch(e){ console.log('myLeads failed',e); }
 }
 
 function mapRawToCard(o){
@@ -1188,24 +1186,20 @@ function mapRawToCard(o){
   };
 }
 
-// ============================================================
-// 7. إضافة مؤثر جديد
-// ============================================================
+// ===== Add Lead =====
 function openAddLeadModal(){
   document.getElementById('al-err').textContent='';
   document.getElementById('al-link').value='';
   const ov=document.getElementById('addLeadOverlay'); ov.style.display='flex'; requestAnimationFrame(()=>ov.classList.add('show'));
 }
-
 function closeAddLeadModal(){ const ov=document.getElementById('addLeadOverlay'); ov.classList.remove('show'); setTimeout(()=>ov.style.display='none',220); }
-
 async function submitAddLead(){
   const link=document.getElementById('al-link').value.trim();
   const niche=document.getElementById('al-niche').value;
   const country=document.getElementById('al-country').value;
   const errEl=document.getElementById('al-err'); errEl.textContent='';
-  if(!link){ errEl.textContent='الصقي لينك البروفايل'; return; }
-  const btn=document.getElementById('al-submit'); btn.disabled=true; btn.textContent='⏳...';
+  if(!link){ errEl.textContent='الصقي لينك البروفايل الأول'; return; }
+  const btn=document.getElementById('al-submit'); btn.disabled=true; btn.textContent='بنضيفه...';
   try{
     const res=await callApi('addManualLead',{token:SESSION.token,link,niche,country});
     btn.disabled=false; btn.textContent='إضافة';
@@ -1219,17 +1213,25 @@ async function submitAddLead(){
       if(el){ el.classList.add('new-card-flash'); el.scrollIntoView({behavior:'smooth',block:'center'}); }
     },100);
     if(res.quotaExceeded){
-      alert('✅ اتضاف بالمعلومات الأساسية.\n⏳ التفاصيل الكاملة هتتحدّث بعدين.');
+      alert('✅ اتضاف بالمعلومات الأساسية.\n⏳ رصيد Scrapingdog خلص — التفاصيل الكاملة (متابعين، صورة، بايو) هتتحدّث لما نحط API جديد.');
     }
   }catch(e){ btn.disabled=false; btn.textContent='إضافة'; errEl.textContent=e.message||'حصل خطأ'; }
 }
 
-// ============================================================
-// 8. إدارة الموظفين
-// ============================================================
+// ===== Employee Management =====
 function updateUsernameHint(){
   const val = document.getElementById('emp-username').value.trim() || 'sara';
   document.getElementById('emp-username-display').textContent = val;
+}
+
+async function checkUsernameExists(username){
+  try{
+    const res=await callApi('listEmployees',{token:SESSION.token});
+    if(res && Array.isArray(res)){
+      return res.some(emp => emp.name.toLowerCase() === username.toLowerCase());
+    }
+    return false;
+  }catch(e){ return false; }
 }
 
 function openEmployeeModal(){
@@ -1240,7 +1242,6 @@ function openEmployeeModal(){
   updateUsernameHint();
   const ov=document.getElementById('employeeOverlay'); ov.style.display='flex'; requestAnimationFrame(()=>ov.classList.add('show'));
 }
-
 function closeEmployeeModal(){ const ov=document.getElementById('employeeOverlay'); ov.classList.remove('show'); setTimeout(()=>ov.style.display='none',220); }
 
 async function submitEmployee(){
@@ -1252,36 +1253,42 @@ async function submitEmployee(){
   errEl.textContent='';
   
   if(!username){ errEl.textContent='اسم المستخدم مطلوب'; return; }
-  if(username.length<3){ errEl.textContent='أقل شيء 3 حروف'; return; }
-  if(!password || password.length<4){ errEl.textContent='كلمة المرور (4 حروف على الأقل)'; return; }
+  if(username.length<3){ errEl.textContent='اسم المستخدم أقل شيء 3 حروف'; return; }
+  if(!password || password.length<4){ errEl.textContent='كلمة المرور (أقل شيء 4 حروف)'; return; }
   if(!name){ errEl.textContent='الاسم الكامل مطلوب'; return; }
   
+  // Check if username exists
+  const exists = await checkUsernameExists(username);
+  if(exists){
+    errEl.textContent='⚠️ اسم المستخدم "'+username+'" موجود بالفعل! اختار اسم تاني.';
+    return;
+  }
+  
+  // الاسم الكامل للبريد الإلكتروني
   const fullEmail = username + '@adltix.com';
   
-  const btn=document.getElementById('emp-submit'); btn.disabled=true; btn.textContent='⏳...';
+  const btn=document.getElementById('emp-submit'); btn.disabled=true; btn.textContent='⏳ جاري الإضافة...';
   try{
     const res=await callApi('addEmployee',{token:SESSION.token,username:fullEmail,password,staffName:name,emoji});
-    btn.disabled=false; btn.textContent='✅ تم!';
-    setTimeout(()=>{ btn.textContent='➕ إضافة'; },2000);
+    btn.disabled=false; btn.textContent='✅ تمت الإضافة!';
+    setTimeout(()=>{ btn.textContent='➕ إضافة الموظفة'; },2000);
     closeEmployeeModal();
-    alert('✅ تم إضافة الموظفة '+name+' بنجاح!\n📧 البريد: '+fullEmail);
+    alert('✅ تم إضافة الموظفة '+name+' بنجاح!\n📧 البريد: '+fullEmail+'\nتم توزيع الـ Leads على جميع الموظفات.');
     boot();
-  }catch(e){ btn.disabled=false; btn.textContent='➕ إضافة'; errEl.textContent=e.message||'حصل خطأ'; }
+  }catch(e){ btn.disabled=false; btn.textContent='➕ إضافة الموظفة'; errEl.textContent=e.message||'حصل خطأ'; }
 }
 
 async function distributeLeads(){
-  if(!confirm('🔄 إعادة توزيع الـ Leads على الموظفات؟')) return;
+  if(!confirm('🔄 هل تريد إعادة توزيع جميع الـ Leads غير المعينة على الموظفات النشطات؟')) return;
   try{
     const res=await callApi('distributeLeads',{token:SESSION.token});
-    alert('✅ تم توزيع '+res.distributed+' مؤثر.\n'+
-      Object.entries(res.staffLeadCount).map(([k,v])=>k+': '+v).join('\n'));
+    alert('✅ تم توزيع '+res.distributed+' مؤثر على الموظفات.\n'+
+      Object.entries(res.staffLeadCount).map(([k,v])=>k+': '+v+' مؤثر').join('\n'));
     boot();
   }catch(e){ alert('حصل خطأ: '+e.message); }
 }
 
-// ============================================================
-// 9. CRM Actions مع خيارين للصورة
-// ============================================================
+// ===== CRM Actions مع خيارين للصورة =====
 let _crmPending=null;
 
 function fileToBase64(file){
@@ -1293,6 +1300,7 @@ function fileToBase64(file){
   });
 }
 
+// ===== دالة عرض خيارين للصورة =====
 function showPhotoOptions(title, msg){
   return new Promise(resolve=>{
     const ov=document.createElement('div'); ov.className='cf-overlay';
@@ -1334,10 +1342,12 @@ function showPhotoOptions(title, msg){
   });
 }
 
+// ===== دالة onCrmAction المعدلة =====
 async function onCrmAction(btn,uid,actionType){
   const needsShot = (actionType==='sent' || actionType==='subscribed');
   const labels={sent:'إرسال الرسالة',followup:'متابعة',subscribed:'اشتراك'};
   if(needsShot){
+    // عرض خيارين: تصوير أو معرض
     const choice = await showPhotoOptions('اختر طريقة رفع الصورة', 
       '📸 تصوير: التقط صورة الآن\n🖼️ معرض: اختر من صورك');
     
@@ -1352,13 +1362,15 @@ async function onCrmAction(btn,uid,actionType){
       input.removeAttribute('capture');
       input.click();
     }
+    // لو اختار إلغاء، ميعملش حاجة
   }else{
-    const ok=await showConfirm('تأكيد المتابعة','هيتسجّل إنك تابعتي المؤثر. متأكدة؟','تأكيد','ok');
+    const ok=await showConfirm('تأكيد المتابعة','هيتسجّل إنك تابعتي المؤثر ده. متأكدة؟','تأكيد','ok');
     if(!ok) return;
     await sendCrmAction(btn,uid,actionType,null);
   }
 }
 
+// ===== Event Listener للتصوير =====
 document.getElementById('crmFileInput').addEventListener('change', async (e)=>{
   const file=e.target.files[0]; e.target.value='';
   if(!file || !_crmPending) return;
@@ -1369,6 +1381,7 @@ document.getElementById('crmFileInput').addEventListener('change', async (e)=>{
   }catch(err){ alert('حصل خطأ في قراءة الصورة'); }
 });
 
+// ===== Event Listener للمعرض =====
 document.getElementById('crmFileInputGallery').addEventListener('change', async (e)=>{
   const file=e.target.files[0]; e.target.value='';
   if(!file || !_crmPending) return;
@@ -1410,9 +1423,7 @@ async function sendCrmAction(btn,uid,actionType,imageBase64){
   }
 }
 
-// ============================================================
-// 10. Admin Actions
-// ============================================================
+// ===== Admin Actions =====
 function showConfirm(title, msg, yesLabel, yesClass){
   return new Promise(resolve=>{
     const ov=document.createElement('div'); ov.className='cf-overlay';
@@ -1431,7 +1442,6 @@ function showConfirm(title, msg, yesLabel, yesClass){
     ov.querySelector('.cf-yes').onclick=()=>close(true);
   });
 }
-
 async function callApi(action,payload){
   if(!API_BASE || API_BASE.indexOf('http')!==0) throw new Error('API_BASE مش متظبط');
   try{
@@ -1443,13 +1453,11 @@ async function callApi(action,payload){
     throw new Error(e.message||'مشكلة في الاتصال');
   }
 }
-
 function findCardEl(btn){ return btn.closest('.card'); }
 function setBusy(cardEl,busy){ 
   if(!cardEl) return;
   cardEl.querySelectorAll('.aabtn,select').forEach(el=>{ el.disabled=busy; }); 
 }
-
 function removeCardAnimated(cardEl,uid){
   cardEl.classList.add('removing');
   setTimeout(()=>{
@@ -1464,29 +1472,27 @@ function removeCardAnimated(cardEl,uid){
 async function onDelete(btn){
   const cardEl=findCardEl(btn); if(!cardEl) return;
   const uid=cardEl.getAttribute('data-uid'); if(!uid) return;
-  const ok=await showConfirm('حذف نهائي؟','هيتشال المؤثر ده نهائياً. متأكد؟','حذف','danger');
+  const ok=await showConfirm('حذف نهائي؟','هيتشال المؤثر ده من الموقع ومن الشيت خالص ومش هيرجع تاني. متأكد؟','حذف نهائي','danger');
   if(!ok) return;
   setBusy(cardEl,true);
   try{ await callApi('delete',{uid}); removeCardAnimated(cardEl,uid); }
   catch(e){ alert('حصل خطأ: '+e.message); setBusy(cardEl,false); }
 }
-
 async function onMoveToNew(btn){
   const cardEl=findCardEl(btn); if(!cardEl) return;
   const uid=cardEl.getAttribute('data-uid'); if(!uid) return;
-  const ok=await showConfirm('نقل للأرشيف؟','هينتقل المؤثر للشيت الجديد. متأكد؟','نقل','move');
+  const ok=await showConfirm('نقل للأرشيف؟','هينتقل المؤثر ده للشيت الجديد، ويتشال من هنا أوتوماتيك. متأكد؟','نقل للأرشيف','move');
   if(!ok) return;
   setBusy(cardEl,true);
   try{ await callApi('moveToNew',{uid}); removeCardAnimated(cardEl,uid); }
   catch(e){ alert('حصل خطأ: '+e.message); setBusy(cardEl,false); }
 }
-
 async function onChangeNiche(sel){
   const niche=sel.value; if(!niche) return;
   const cardEl=findCardEl(sel); if(!cardEl){ sel.value=''; return; }
   const uid=cardEl.getAttribute('data-uid'); if(!uid){ sel.value=''; return; }
   const label=(NICHE_AR[niche]||niche);
-  const ok=await showConfirm('نقل المجال؟','هينقل المؤثر لمجال "'+label+'". متأكد؟','نقل','move');
+  const ok=await showConfirm('نقل المجال؟','هينقل المؤثر ده لمجال "'+label+'". متأكد؟','نقل المجال','move');
   if(!ok){ sel.value=''; return; }
   setBusy(cardEl,true);
   try{
@@ -1499,12 +1505,11 @@ async function onChangeNiche(sel){
     }
   }catch(e){ alert('حصل خطأ: '+e.message); setBusy(cardEl,false); sel.value=''; }
 }
-
 async function onApprove(btn){
   const cardEl=findCardEl(btn); if(!cardEl) return;
   const uid=cardEl.getAttribute('data-uid'); if(!uid) return;
   if(cardEl.classList.contains('approved')) return;
-  const ok=await showConfirm('تأكيد المؤثر؟','هيتحدد إنه "معانا" وهيتلوّن في الشيت.','تأكيد','ok');
+  const ok=await showConfirm('تأكيد المؤثر؟','هيتحدد إنه "معانا" وهيتلوّن في الشيت عشان تتابعه بسهولة.','تأكيد','ok');
   if(!ok) return;
   setBusy(cardEl,true);
   try{
@@ -1519,28 +1524,43 @@ async function onApprove(btn){
   }catch(e){ alert('حصل خطأ: '+e.message); setBusy(cardEl,false); }
 }
 
-// ============================================================
-// 11. عرض الكروت
-// ============================================================
-let _revealObs=null;
-
+// ===== Embed loading =====
+const _embedQueue=[]; let _embedActive=0; const EMBED_MAX_CONCURRENT=2;
+function _createIframe(host,src){
+  const f=document.createElement('iframe');
+  f.src=src; f.loading='lazy'; f.className='embedframe';
+  f.setAttribute('scrolling','no'); f.setAttribute('allow','encrypted-media; clipboard-write'); f.setAttribute('allowfullscreen','');
+  host.innerHTML=''; host.appendChild(f);
+  f.addEventListener('load',_embedDone,{once:true});
+  setTimeout(_embedDone,4000);
+}
+function _embedDone(){ _embedActive=Math.max(0,_embedActive-1); _pumpEmbedQueue(); }
+function _pumpEmbedQueue(){
+  while(_embedActive<EMBED_MAX_CONCURRENT && _embedQueue.length){
+    const {host,src}=_embedQueue.shift();
+    if(!host.isConnected || host.dataset.loaded==='skip') continue;
+    _embedActive++; _createIframe(host,src);
+  }
+}
+function loadEmbed(host){
+  if(!host || host.dataset.loaded) return;
+  const src=host.getAttribute('data-embed-src'); if(!src) return;
+  host.dataset.loaded='1';
+  _embedQueue.push({host,src});
+  requestAnimationFrame(_pumpEmbedQueue);
+}
+let _revealObs=null, _embedObs=null;
 function ensureObs(){
   if(_revealObs) return;
-  _revealObs=new IntersectionObserver((es)=>{ 
-    es.forEach(e=>{ 
-      if(e.isIntersecting){ 
-        e.target.classList.add('in'); 
-        _revealObs.unobserve(e.target);
-      } 
-    }); 
-  }, {threshold:.08});
+  _revealObs=new IntersectionObserver((es)=>{ es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); _revealObs.unobserve(e.target);} }); },{threshold:.08});
+  _embedObs=new IntersectionObserver((es)=>{ es.forEach(e=>{ if(e.isIntersecting){ loadEmbed(e.target); _embedObs.unobserve(e.target);} }); },{rootMargin:'250px 0px'});
 }
-
 function observeNew(els){
   ensureObs();
   els.forEach((el,i)=>{
     el.style.transitionDelay=(Math.min(i,8)*40)+'ms';
     _revealObs.observe(el);
+    el.querySelectorAll('[data-embed-src]').forEach(h=>_embedObs.observe(h));
   });
 }
 
@@ -1566,7 +1586,7 @@ function render(){
       document.getElementById("shown").textContent=_list.length;
       document.getElementById("empty").style.display=_list.length?"none":"block";
       grid.style.display=_list.length?"grid":"none";
-      if(_list.length) appendMore();
+      appendMore();
     }
   }catch(e){
     console.error('Render error:', e);
@@ -1587,27 +1607,48 @@ tieScroll();
 function renderStats(){
   const data=clean(CREATORS);
   document.getElementById("stats").innerHTML=
-    '<div class="stat"><div class="v num">'+data.length.toLocaleString("en")+'</div><div class="l">مؤثر</div></div>'+
-    '<div class="stat"><div class="v num">'+new Set(data.map(c=>c.platform)).size+'</div><div class="l">منصات</div></div>'+
-    '<div class="stat"><div class="v num">'+new Set(data.map(c=>c.niche)).size+'</div><div class="l">مجالات</div></div>'+
-    '<div class="stat"><div class="v num">'+data.filter(c=>c.email||c.whatsapp||c.phone).length.toLocaleString("en")+'</div><div class="l">تواصل مباشر</div></div>';
+    '<div class="stat"><div class="v num">'+data.length.toLocaleString("en")+'</div><div class="l">مؤثر موثّق</div></div>'+
+    '<div class="stat"><div class="v num">'+new Set(data.map(c=>c.platform)).size+'</div><div class="l">منصات تواصل</div></div>'+
+    '<div class="stat"><div class="v num">'+new Set(data.map(c=>c.niche)).size+'</div><div class="l">مجالات تسويق</div></div>'+
+    '<div class="stat"><div class="v num">'+data.filter(c=>c.email||c.whatsapp||c.phone).length.toLocaleString("en")+'</div><div class="l">وسيلة تواصل مباشرة</div></div>';
 }
 
-// ============================================================
-// 12. Video player (مبسط)
-// ============================================================
+// ===== Video player =====
+function reloadScript(src, cb){
+  document.querySelectorAll('script[data-embed="'+src+'"]').forEach(s=>s.remove());
+  const s=document.createElement('script'); s.src=src; s.async=true; s.setAttribute('data-embed',src);
+  s.onload=()=>{ if(cb) cb(); }; document.body.appendChild(s);
+}
 function openVideo(url, platform){
   if(!url || url==="#") return;
-  window.open(url,"_blank");
+  const body=document.getElementById("modalBody");
+  const title=document.getElementById("modalTitle");
+  body.innerHTML="";
+  if(platform==="tiktok"){
+    title.textContent="فيديو تيك توك";
+    body.innerHTML='<blockquote class="tiktok-embed" cite="'+url+'" style="max-width:540px;min-width:300px;margin:0 auto"><a href="'+url+'">عرض الفيديو</a></blockquote>';
+    reloadScript("https://www.tiktok.com/embed.js");
+  } else if(platform==="instagram"){
+    title.textContent="منشور إنستجرام";
+    body.innerHTML='<blockquote class="instagram-media" data-instgrm-permalink="'+url+'" data-instgrm-version="14" style="margin:0 auto;max-width:540px;width:100%"></blockquote>';
+    reloadScript("https://www.instagram.com/embed.js", ()=>{ if(window.instgrm&&window.instgrm.Embeds) window.instgrm.Embeds.process(); });
+  } else if(platform==="youtube"){
+    const id = url.match(/[?&]v=([^&]+)/)||url.match(/youtu\.be\/([^?]+)/)||url.match(/\/shorts\/([^?\/]+)/);
+    if(id){
+      title.textContent="فيديو يوتيوب";
+      body.innerHTML='<iframe src="https://www.youtube.com/embed/'+id[1]+'" allow="autoplay; encrypted-media" allowfullscreen></iframe>';
+    } else {
+      window.open(url,"_blank"); return;
+    }
+  } else {
+    window.open(url,"_blank"); return;
+  }
+  document.getElementById("modal").style.display="flex";
 }
-
 function closeModal(){ document.getElementById("modal").style.display="none"; document.getElementById("modalBody").innerHTML=""; }
 document.getElementById("modal").addEventListener("click",e=>{ if(e.target.id==="modal") closeModal(); });
 document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeModal(); });
 
-// ============================================================
-// 13. البحث والفلاتر
-// ============================================================
 let _searchDebounce;
 document.getElementById("q").addEventListener("input",e=>{
   const v=e.target.value;
@@ -1618,13 +1659,9 @@ document.getElementById("f-fol").addEventListener("change",e=>{state.fol=e.targe
 document.getElementById("sort").addEventListener("change",e=>{state.sort=e.target.value;render();});
 document.getElementById("f-contact").addEventListener("change",e=>{state.contact=e.target.value;render();});
 
-// ============================================================
-// 14. جلب البيانات من Google Sheets
-// ============================================================
 function gvizUrl(tab){
   return "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/gviz/tq?tqx=out:json&sheet="+encodeURIComponent(tab)+"&_="+Date.now();
 }
-
 function normalizeSheetDate(v){
   if(v==null) return "";
   if(typeof v==="string"){
@@ -1642,7 +1679,6 @@ function normalizeSheetDate(v){
   }
   return String(v).trim();
 }
-
 function parseGviz(text){
   const s=text.indexOf("{"), e=text.lastIndexOf("}");
   if(s<0||e<0) return [];
@@ -1690,21 +1726,17 @@ function parseGviz(text){
     return [];
   }
 }
-
 function showSkeleton(){
   const g=document.getElementById("grid"); if(!g) return;
   let h=""; for(let i=0;i<8;i++) h+='<div class="skel"><div class="skel-media"></div><div class="skel-body"><div class="skel-line w70"></div><div class="skel-line w45"></div><div class="skel-line w90"></div></div></div>';
   g.innerHTML=h; g.style.display="grid";
 }
-
 function applyData(all){
   const filtered=all.filter(c=>c.platform==="snapchat"?true:c.followers>=MIN_FOLLOWERS);
   if(filtered.length) CREATORS=filtered;
   buildAllPills(); renderStats(); render(); updateScrapeCount();
 }
-
 const CACHE_KEY="adltix_cache_v1", CACHE_MS=5*60*1000;
-
 function readCache(){
   try{
     const raw=sessionStorage.getItem(CACHE_KEY); if(!raw) return null;
@@ -1713,40 +1745,40 @@ function readCache(){
     return obj.data;
   }catch(e){ return null; }
 }
-
 function writeCache(data){ try{ sessionStorage.setItem(CACHE_KEY, JSON.stringify({t:Date.now(),data})); }catch(e){} }
 
-// ============================================================
-// 15. BOOT - سريع جداً
-// ============================================================
+function yieldToMain(){ return new Promise(r=>setTimeout(r,0)); }
+
+// ===== BOOT - FIXED (Load ALL leads first, videos later) =====
 async function boot() {
   if(isLoading) return;
   isLoading=true;
   
   try{
     const cached = readCache();
-    if (cached && cached.length) {
+    if (cached && cached.length && !allLeadsLoaded) {
       applyData(cached);
       updateUIForRole();
       isLoading=false;
-      // تحديث في الخلفية
+      // تحديث البيانات في الخلفية (مع الفيديوهات)
       refreshAllData();
       return;
     }
 
     showSkeleton();
     
-    // تحميل أول 3 أوراق فقط - سريع
-    const fetchPromises = SHEET_TABS.slice(0, 3).map(tab => 
+    // تحميل البيانات الأساسية أولاً (بدون فيديوهات)
+    const fetchPromises = SHEET_TABS.map(tab => 
       fetch(gvizUrl(tab))
         .then(r => r.text())
         .catch(() => null)
     );
     
-    const results = await Promise.all(fetchPromises);
+    // تحميل أول ورقتين بشكل فوري
+    const firstTwoResults = await Promise.all(fetchPromises.slice(0, 2));
     let all = [];
     
-    for (const txt of results) {
+    for (const txt of firstTwoResults) {
       if (txt) {
         const rows = parseGviz(txt);
         if (rows && rows.length) all = all.concat(rows);
@@ -1759,10 +1791,21 @@ async function boot() {
       writeCache(all);
     }
     
-    // تحميل الباقي في الخلفية
-    setTimeout(() => {
-      refreshAllData();
-    }, 500);
+    // تحميل باقي الأوراق في الخلفية
+    const restPromises = fetchPromises.slice(2);
+    const restResults = await Promise.all(restPromises);
+    
+    for (const txt of restResults) {
+      if (txt) {
+        const rows = parseGviz(txt);
+        if (rows && rows.length) all = all.concat(rows);
+      }
+    }
+    
+    allLeadsLoaded = true;
+    applyData(all);
+    writeCache(all);
+    updateUIForRole();
     
   }catch(e){
     console.error('Boot error:', e);
@@ -1787,6 +1830,7 @@ async function refreshAllData(){
       }
     }
     if(all.length > CREATORS.length){
+      allLeadsLoaded = true;
       applyData(all);
       writeCache(all);
     }
@@ -1802,9 +1846,7 @@ function updateUIForRole() {
   }
 }
 
-// ============================================================
-// 16. بدء التطبيق
-// ============================================================
+// بدء التطبيق
 (function initAuth(){
   SESSION = loadSession();
   if(SESSION && SESSION.token){
@@ -1813,13 +1855,12 @@ function updateUIForRole() {
   }
 })();
 
-// ============================================================
-// 17. Theme
-// ============================================================
+/* ===== Theme ===== */
 function applyTheme(t){ document.body.classList.toggle('dark', t==='dark'); var b=document.getElementById('themebtn'); if(b) b.textContent=(t==='dark'?'☀️':'🌙'); try{ localStorage.setItem('adltix_theme',t); }catch(e){} }
 function toggleTheme(){ applyTheme(document.body.classList.contains('dark')?'light':'dark'); }
 (function(){ var t='light'; try{ t=localStorage.getItem('adltix_theme')||'light'; }catch(e){} applyTheme(t); })();
 
 </script>
+
 </body>
 </html>
