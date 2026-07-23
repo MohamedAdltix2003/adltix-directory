@@ -565,6 +565,9 @@
   .employee-form .form-row.flex-2{flex:1 1 calc(50% - 10px);min-width:140px}
   .employee-form .form-row.flex-1{flex:1 1 100%}
   .employee-form .form-hint{font-size:11px;color:var(--muted);margin-top:-6px;margin-bottom:8px}
+  .username-hint{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px;margin-top:4px;font-weight:600}
+  .username-hint .domain{color:var(--brand);font-weight:700}
+  .username-hint .at{color:var(--muted)}
 </style>
 </head>
 <body>
@@ -616,7 +619,10 @@
     <div class="cf-title">👩‍💼 إضافة موظفة جديدة</div>
     <div class="cf-msg">املأ البيانات التالية لإضافة موظفة جديدة. سيتم توزيع الـ Leads عليها تلقائياً.</div>
     <div class="employee-form">
-      <div class="form-row flex-2"><label>اسم المستخدم</label><input id="emp-username" type="text" placeholder="مثال: sara"></div>
+      <div class="form-row flex-2"><label>اسم المستخدم</label>
+        <input id="emp-username" type="text" placeholder="sara" oninput="updateUsernameHint()">
+        <div class="username-hint"><span id="emp-username-display">sara</span><span class="at">@</span><span class="domain">adltix.com</span></div>
+      </div>
       <div class="form-row flex-2"><label>كلمة المرور</label><input id="emp-password" type="text" placeholder="كلمة مرور قوية"></div>
       <div class="form-row flex-2"><label>الاسم الكامل</label><input id="emp-name" type="text" placeholder="مثال: Sara Ahmed"></div>
       <div class="form-row flex-2"><label>الإيموجي</label>
@@ -744,23 +750,26 @@
 
 <script>
 // ============================================================
-// 1. تحميل الجلسة فوراً مع تأكيد
+// 1. تحميل الجلسة فوراً
 // ============================================================
 let SESSION = null;
+let CREATORS = [];
+let isLoading = false;
+let isRendering = false;
+let allLeadsLoaded = false;
+let _list = [];
+let _rendered = 0;
+const PAGE_SIZE = 24;
+
 try {
   const raw = sessionStorage.getItem('adltix_session');
   if (raw) {
     SESSION = JSON.parse(raw);
-    console.log('✅ SESSION loaded:', SESSION);
   }
-} catch(e) {
-  console.error('❌ Session parse error:', e);
-}
+} catch(e) {}
 
 function isStaffSession() {
-  const result = !!(SESSION && String(SESSION.role || '').trim().toLowerCase() === 'staff');
-  console.log('🔍 isStaffSession:', result);
-  return result;
+  return !!(SESSION && String(SESSION.role || '').trim().toLowerCase() === 'staff');
 }
 
 function isAdminSession() {
@@ -769,16 +778,12 @@ function isAdminSession() {
 }
 
 // ============================================================
-// 2. المتغيرات الأساسية
+// 2. البيانات الثابتة
 // ============================================================
 const SHEET_ID = "1SZpJPbpmkZ6OAvpfLaiREX5BmpbiyMiP4IEaFOO7KHM";
 const API_BASE = "https://script.google.com/macros/s/AKfycbxuo4IWPwJqwwBcL5mSyExUV-U4Qr6uLQDE9v-UWRIr5esl3hwtCTRFcFeGXsJADl_B/exec";
 const SHEET_TABS = ["👗 Fashion & Style","✨ Luxury & Lifestyle","👨‍👩‍👧 Family & Parenting","⚽ Sports & Fitness","🍳 Food & Cooking","🎮 Gaming","💼 Business","📱 Tech","😂 Entertainment","🔖 Other Niches"];
 const MIN_FOLLOWERS = 0;
-
-let CREATORS = [];
-let isLoading = false;
-let isRendering = false;
 
 const PLAT = {
   instagram:{ar:"انستجرام",c:"#E1306C",g:"linear-gradient(135deg,#F58529,#DD2A7B,#8134AF)"},
@@ -800,14 +805,13 @@ function esc(s){ return String(s||"").replace(/'/g,"\\'").replace(/"/g,"&quot;")
 function clean(list){ return list.filter(c=> c && (Number(c.followers)>=MIN_FOLLOWERS || c.platform==="snapchat")); }
 
 function buildPills(id, items, key){
-  const box=document.getElementById(id); 
-  if(!box) return;
+  const box=document.getElementById(id); if(!box) return;
   box.innerHTML="";
   items.forEach(it=>{
     const b=document.createElement("button");
     b.className="pill"+(state[key]===it.v?" on":"");
     b.innerHTML = it.dot? '<span class="pdot" style="background:'+it.dot+'"></span>'+it.l : it.l;
-    b.onclick=()=>{ state[key]=it.v; render(); buildAllPills(); };
+    b.onclick=()=>{ state[key]=it.v; render(); };
     box.appendChild(b);
   });
 }
@@ -847,6 +851,7 @@ function applyFilters(){
   return r;
 }
 
+// ===== دوال الكارد =====
 function igCode(u){ const m=String(u||'').match(/\/(p|reel|reels|tv)\/([^/?#]+)/); return m?{kind:(m[1]==='reels'?'reel':m[1]),code:m[2]}:null; }
 function ttVidId(u){ const m=String(u||'').match(/\/video\/(\d+)/); return m?m[1]:''; }
 
@@ -982,6 +987,26 @@ function nicheOptions(current){
   return h;
 }
 
+function crmStatusBadges(c){
+  if(!isStaffSession()) return "";
+  const chips=[];
+  if(c.messageStatus==='sent') chips.push('<span class="crm-chip sent">✅ اتبعت</span>');
+  if((c.followupCount|0)>0) chips.push('<span class="crm-chip followup">🔄 متابعة ×'+c.followupCount+'</span>');
+  if(c.signupStatus==='subscribed') chips.push('<span class="crm-chip subscribed">🎉 مشترك</span>');
+  if(!chips.length) return "";
+  return '<div class="crm-badges">'+chips.join('')+'</div>';
+}
+
+function crmActionsRow(c){
+  if (!c || !c.uid) return '';
+  const u = esc(c.uid);
+  return '<div class="crm-actions">'+
+    '<button class="crmbtn sent" onclick="onCrmAction(this,\''+u+'\',\'sent\')">📩 بعت</button>'+
+    '<button class="crmbtn followup" onclick="onCrmAction(this,\''+u+'\',\'followup\')">🔄 متابعة</button>'+
+    '<button class="crmbtn subscribed" onclick="onCrmAction(this,\''+u+'\',\'subscribed\')">🎉 اشترك</button>'+
+  '</div>';
+}
+
 function card(c){
   const p=PLAT[c.platform]||PLAT.instagram;
   const uidAttr = c.uid ? ' data-uid="'+esc(c.uid)+'"' : '';
@@ -1033,26 +1058,6 @@ function card(c){
   
   html += '</div></div>';
   return html;
-}
-
-function crmStatusBadges(c){
-  if(!isStaffSession()) return "";
-  const chips=[];
-  if(c.messageStatus==='sent') chips.push('<span class="crm-chip sent">✅ اتبعت</span>');
-  if((c.followupCount|0)>0) chips.push('<span class="crm-chip followup">🔄 متابعة ×'+c.followupCount+'</span>');
-  if(c.signupStatus==='subscribed') chips.push('<span class="crm-chip subscribed">🎉 مشترك</span>');
-  if(!chips.length) return "";
-  return '<div class="crm-badges">'+chips.join('')+'</div>';
-}
-
-function crmActionsRow(c){
-  if (!c || !c.uid) return '';
-  const u = esc(c.uid);
-  return '<div class="crm-actions">'+
-    '<button class="crmbtn sent" onclick="onCrmAction(this,\''+u+'\',\'sent\')">📩 بعت</button>'+
-    '<button class="crmbtn followup" onclick="onCrmAction(this,\''+u+'\',\'followup\')">🔄 متابعة</button>'+
-    '<button class="crmbtn subscribed" onclick="onCrmAction(this,\''+u+'\',\'subscribed\')">🎉 اشترك</button>'+
-  '</div>';
 }
 
 // ===== Scraping =====
@@ -1114,7 +1119,6 @@ function logout(){ clearSession(); location.reload(); }
 
 async function startApp(){
   const role=String((SESSION&&SESSION.role)||'').trim().toLowerCase();
-  console.log('🚀 startApp role:', role);
   
   const adminToolbar = document.getElementById('adminToolbar');
   const adminName = document.getElementById('adminName');
@@ -1208,11 +1212,27 @@ async function submitAddLead(){
 }
 
 // ===== Employee Management =====
+function updateUsernameHint(){
+  const val = document.getElementById('emp-username').value.trim() || 'sara';
+  document.getElementById('emp-username-display').textContent = val;
+}
+
+async function checkUsernameExists(username){
+  try{
+    const res=await callApi('listEmployees',{token:SESSION.token});
+    if(res && Array.isArray(res)){
+      return res.some(emp => emp.name.toLowerCase() === username.toLowerCase());
+    }
+    return false;
+  }catch(e){ return false; }
+}
+
 function openEmployeeModal(){
   document.getElementById('emp-err').textContent='';
   document.getElementById('emp-username').value='';
   document.getElementById('emp-password').value='';
   document.getElementById('emp-name').value='';
+  updateUsernameHint();
   const ov=document.getElementById('employeeOverlay'); ov.style.display='flex'; requestAnimationFrame(()=>ov.classList.add('show'));
 }
 function closeEmployeeModal(){ const ov=document.getElementById('employeeOverlay'); ov.classList.remove('show'); setTimeout(()=>ov.style.display='none',220); }
@@ -1226,16 +1246,27 @@ async function submitEmployee(){
   errEl.textContent='';
   
   if(!username){ errEl.textContent='اسم المستخدم مطلوب'; return; }
+  if(username.length<3){ errEl.textContent='اسم المستخدم أقل شيء 3 حروف'; return; }
   if(!password || password.length<4){ errEl.textContent='كلمة المرور (أقل شيء 4 حروف)'; return; }
   if(!name){ errEl.textContent='الاسم الكامل مطلوب'; return; }
   
+  // Check if username exists
+  const exists = await checkUsernameExists(username);
+  if(exists){
+    errEl.textContent='⚠️ اسم المستخدم "'+username+'" موجود بالفعل! اختار اسم تاني.';
+    return;
+  }
+  
+  // الاسم الكامل للبريد الإلكتروني
+  const fullEmail = username + '@adltix.com';
+  
   const btn=document.getElementById('emp-submit'); btn.disabled=true; btn.textContent='⏳ جاري الإضافة...';
   try{
-    const res=await callApi('addEmployee',{token:SESSION.token,username,password,staffName:name,emoji});
+    const res=await callApi('addEmployee',{token:SESSION.token,username:fullEmail,password,staffName:name,emoji});
     btn.disabled=false; btn.textContent='✅ تمت الإضافة!';
     setTimeout(()=>{ btn.textContent='➕ إضافة الموظفة'; },2000);
     closeEmployeeModal();
-    alert('✅ تم إضافة الموظفة '+name+' بنجاح!\nتم توزيع الـ Leads على جميع الموظفات.');
+    alert('✅ تم إضافة الموظفة '+name+' بنجاح!\n📧 البريد: '+fullEmail+'\nتم توزيع الـ Leads على جميع الموظفات.');
     boot();
   }catch(e){ btn.disabled=false; btn.textContent='➕ إضافة الموظفة'; errEl.textContent=e.message||'حصل خطأ'; }
 }
@@ -1454,7 +1485,7 @@ function observeNew(els){
     el.querySelectorAll('[data-embed-src]').forEach(h=>_embedObs.observe(h));
   });
 }
-let _list=[], _rendered=0; const PAGE_SIZE=24;
+
 function appendMore(){
   if(_rendered>=_list.length) return;
   const grid=document.getElementById("grid");
@@ -1465,6 +1496,7 @@ function appendMore(){
   _rendered+=next.length;
   observeNew(added);
 }
+
 function render(){
   if(isRendering) return;
   isRendering=true;
@@ -1484,6 +1516,7 @@ function render(){
     isRendering=false;
   }
 }
+
 let _scrollTied=false;
 function tieScroll(){
   if(_scrollTied) return; _scrollTied=true;
@@ -1492,6 +1525,7 @@ function tieScroll(){
   }, {passive:true});
 }
 tieScroll();
+
 function renderStats(){
   const data=clean(CREATORS);
   document.getElementById("stats").innerHTML=
@@ -1541,7 +1575,7 @@ let _searchDebounce;
 document.getElementById("q").addEventListener("input",e=>{
   const v=e.target.value;
   clearTimeout(_searchDebounce);
-  _searchDebounce=setTimeout(()=>{ state.q=v; render(); },220);
+  _searchDebounce=setTimeout(()=>{ state.q=v; render(); },200);
 });
 document.getElementById("f-fol").addEventListener("change",e=>{state.fol=e.target.value;render();});
 document.getElementById("sort").addEventListener("change",e=>{state.sort=e.target.value;render();});
@@ -1644,10 +1678,11 @@ async function boot() {
   
   try{
     const cached = readCache();
-    if (cached && cached.length) {
+    if (cached && cached.length && !allLeadsLoaded) {
       applyData(cached);
       updateUIForRole();
       isLoading=false;
+      refreshAllData();
       return;
     }
 
@@ -1682,6 +1717,7 @@ async function boot() {
       }
     }
     
+    allLeadsLoaded = true;
     applyData(all);
     writeCache(all);
     updateUIForRole();
@@ -1690,6 +1726,29 @@ async function boot() {
   }finally{
     isLoading=false;
   }
+}
+
+async function refreshAllData(){
+  try{
+    const fetchPromises = SHEET_TABS.map(tab => 
+      fetch(gvizUrl(tab))
+        .then(r => r.text())
+        .catch(() => null)
+    );
+    const results = await Promise.all(fetchPromises);
+    let all = [];
+    for (const txt of results) {
+      if (txt) {
+        const rows = parseGviz(txt);
+        if (rows && rows.length) all = all.concat(rows);
+      }
+    }
+    if(all.length > CREATORS.length){
+      allLeadsLoaded = true;
+      applyData(all);
+      writeCache(all);
+    }
+  }catch(e){}
 }
 
 function updateUIForRole() {
