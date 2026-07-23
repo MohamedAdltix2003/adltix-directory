@@ -1031,7 +1031,7 @@ function card(c){
       '</div>') : ''))+
     '</div></div>';
 }
-function isStaffSession(){ return !!(SESSION && SESSION.role==='staff'); }
+function isStaffSession(){ return !!(SESSION && String(SESSION.role||'').trim().toLowerCase()==='staff'); }
 function crmStatusBadges(c){
   if(!isStaffSession()) return "";
   const chips=[];
@@ -1108,7 +1108,8 @@ async function doLogin(){
 function logout(){ clearSession(); location.reload(); }
 
 async function startApp(){
-  if(SESSION.role==='staff'){
+  const role=String((SESSION&&SESSION.role)||'').trim().toLowerCase();
+  if(role==='staff'){
     document.getElementById('addLeadFab').style.display='';
     const cached=readCache();
     if(cached && cached.length){ applyData(cached); refreshMyLeads(); return; }
