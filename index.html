@@ -772,11 +772,27 @@
 <footer>Adltix · منصة اكتشاف المؤثرين في الخليج — قاعدة بيانات محدّثة باستمرار</footer>
 
 <script>
+// ============================================================
+// 1. تحميل الجلسة فوراً
+// ============================================================
+let SESSION = null;
+try {
+  const raw = sessionStorage.getItem('adltix_session');
+  if (raw) SESSION = JSON.parse(raw);
+} catch(e) {}
+
+// دالة مساعدة للتحقق من دور المستخدم
+function isStaffSession() {
+  return !!(SESSION && String(SESSION.role || '').trim().toLowerCase() === 'staff');
+}
+
+// ============================================================
+// 2. باقي الكود (نفسه لكن مع تعديلات السرعة)
+// ============================================================
 const SHEET_ID = "1SZpJPbpmkZ6OAvpfLaiREX5BmpbiyMiP4IEaFOO7KHM";
 const API_BASE = "https://script.google.com/macros/s/AKfycbxuo4IWPwJqwwBcL5mSyExUV-U4Qr6uLQDE9v-UWRIr5esl3hwtCTRFcFeGXsJADl_B/exec";
 const SHEET_TABS = ["👗 Fashion & Style","✨ Luxury & Lifestyle","👨‍👩‍👧 Family & Parenting","⚽ Sports & Fitness","🍳 Food & Cooking","🎮 Gaming","💼 Business","📱 Tech","😂 Entertainment","🔖 Other Niches"];
 const MIN_FOLLOWERS = 0;
-const RENDER_CAP = 400;
 
 let CREATORS = [
   {handle:"list_roma", platform:"instagram", followers:343109, niche:"fashion", country:"الخليج", url:"https://www.instagram.com/list_roma", videos:[]},
@@ -1029,11 +1045,6 @@ function card(c){
     '</div></div>';
 }
 
-// ===== دالة مساعدة للتحقق من دور المستخدم =====
-function isStaffSession() {
-  return !!(SESSION && String(SESSION.role || '').trim().toLowerCase() === 'staff');
-}
-
 function crmStatusBadges(c){
   if(!isStaffSession()) return "";
   const chips=[];
@@ -1089,7 +1100,6 @@ function toggleScrapingView(){
 }
 
 /* ===================== Auth ===================== */
-let SESSION=null;   // {token, role, staffName}
 function loadSession(){ try{ const raw=sessionStorage.getItem('adltix_session'); return raw?JSON.parse(raw):null; }catch(e){ return null; } }
 function saveSession(s){ sessionStorage.setItem('adltix_session', JSON.stringify(s)); }
 function clearSession(){ sessionStorage.removeItem('adltix_session'); }
@@ -1119,7 +1129,7 @@ async function startApp(){
     await refreshMyLeads();
     return;
   }
-  boot();   // أدمن/مدير: تحميل كل البيانات زي العادي
+  boot();
 }
 async function refreshMyLeads(){
   try{
@@ -1149,7 +1159,7 @@ function mapRawToCard(o){
   };
 }
 
-/* ===================== Add Lead (manual, by staff) ===================== */
+/* ===================== Add Lead ===================== */
 function openAddLeadModal(){
   document.getElementById('al-err').textContent='';
   document.getElementById('al-link').value='';
@@ -1181,8 +1191,8 @@ async function submitAddLead(){
   }catch(e){ btn.disabled=false; btn.textContent='إضافة'; errEl.textContent=e.message||'حصل خطأ'; }
 }
 
-/* ===================== CRM Actions (staff): Sent / Follow-up / Subscribed ===================== */
-let _crmPending=null;   // {btn, uid, actionType}
+/* ===================== CRM Actions ===================== */
+let _crmPending=null;
 function fileToBase64(file){
   return new Promise((resolve,reject)=>{
     const r=new FileReader();
@@ -1244,7 +1254,7 @@ async function sendCrmAction(btn,uid,actionType,imageBase64){
   }
 }
 
-/* ===================== Admin Actions (Delete / Archive / Change niche / Approve) ===================== */
+/* ===================== Admin Actions ===================== */
 function showConfirm(title, msg, yesLabel, yesClass){
   return new Promise(resolve=>{
     const ov=document.createElement('div'); ov.className='cf-overlay';
@@ -1336,7 +1346,7 @@ async function onApprove(btn){
 
 function initialChar(h){ h=String(h||"").replace(/^@/,""); return (h[0]||"?").toUpperCase(); }
 
-/* ===== تحميل الفيديوهات تلقائياً + أنيميشن الكروت ===== */
+/* ===== Embed loading ===== */
 const _embedQueue=[]; let _embedActive=0; const EMBED_MAX_CONCURRENT=2;
 function _createIframe(host,src){
   const f=document.createElement('iframe');
@@ -1412,7 +1422,7 @@ function renderStats(){
     '<div class="stat"><div class="v num">'+data.filter(c=>c.email||c.whatsapp||c.phone).length.toLocaleString("en")+'</div><div class="l">وسيلة تواصل مباشرة</div></div>';
 }
 
-/* ===== تشغيل الفيديو داخل الموقع ===== */
+/* ===== Video player ===== */
 function reloadScript(src, cb){
   document.querySelectorAll('script[data-embed="'+src+'"]').forEach(s=>s.remove());
   const s=document.createElement('script'); s.src=src; s.async=true; s.setAttribute('data-embed',src);
@@ -1539,7 +1549,7 @@ function writeCache(data){ try{ sessionStorage.setItem(CACHE_KEY, JSON.stringify
 
 function yieldToMain(){ return new Promise(r=>setTimeout(r,0)); }
 
-// ===== BOOT: تحميل سريع جداً (متوازي) =====
+// ===== BOOT: سريع جداً (متوازي) =====
 async function boot() {
   const cached = readCache();
   if (cached && cached.length) {
@@ -1559,9 +1569,9 @@ async function boot() {
 
   let all = [];
   
-  // نستنى أول 3 تابات عشان نعرضهم بسرعة
-  const firstThree = await Promise.all(fetchPromises.slice(0, 3));
-  for (const txt of firstThree) {
+  // أول 2 تابات نعرضهم بسرعة
+  const firstTwo = await Promise.all(fetchPromises.slice(0, 2));
+  for (const txt of firstTwo) {
     if (txt) {
       const rows = parseGviz(txt);
       if (rows && rows.length) all = all.concat(rows);
@@ -1572,8 +1582,8 @@ async function boot() {
     updateUIForRole();
   }
 
-  // نكمل بقية التابات في الخلفية
-  const restPromises = fetchPromises.slice(3);
+  // باقي التابات في الخلفية
+  const restPromises = fetchPromises.slice(2);
   const restResults = await Promise.all(restPromises);
   for (const txt of restResults) {
     if (txt) {
@@ -1587,7 +1597,6 @@ async function boot() {
   updateUIForRole();
 }
 
-// تحديث واجهة المستخدم بناءً على الدور
 function updateUIForRole() {
   const fab = document.getElementById('addLeadFab');
   if (isStaffSession()) {
@@ -1597,11 +1606,14 @@ function updateUIForRole() {
   }
 }
 
+// بدء التطبيق
 (function initAuth(){
-  SESSION=loadSession();
+  SESSION = loadSession();
   if(SESSION && SESSION.token){
     document.getElementById('loginGate').style.display='none';
     startApp();
+  } else {
+    // إذا مفيش جلسة، نخليها زي ما هي
   }
 })();
 
