@@ -753,6 +753,71 @@
 
 <script>
 // ============================================================
+// ALL CONSTANTS DECLARED FIRST - NO TDZ ISSUES
+// ============================================================
+
+// --- API & Sheet Configuration ---
+const SHEET_ID = "1SZpJPbpmkZ6OAvpfLaiREX5BmpbiyMiP4IEaFOO7KHM";
+const API_BASE = "https://script.google.com/macros/s/AKfycbxuo4IWPwJqwwBcL5mSyExUV-U4Qr6uLQDE9v-UWRIr5esl3hwtCTRFcFeGXsJADl_B/exec";
+const SHEET_TABS = ["👗 Fashion & Style", "✨ Luxury & Lifestyle", "👨‍👩‍👧 Family & Parenting", "⚽ Sports & Fitness", "🍳 Food & Cooking", "🎮 Gaming", "💼 Business", "📱 Tech", "😂 Entertainment", "🔖 Other Niches"];
+const MIN_FOLLOWERS = 0;
+
+// --- Platform Config ---
+const PLAT = {
+  instagram: { ar: "انستجرام", c: "#E1306C", g: "linear-gradient(135deg,#F58529,#DD2A7B,#8134AF)" },
+  tiktok: { ar: "تيك توك", c: "#111", g: "linear-gradient(135deg,#25F4EE,#111,#FE2C55)" },
+  youtube: { ar: "يوتيوب", c: "#FF0000", g: "linear-gradient(135deg,#FF0000,#c4302b)" },
+  x: { ar: "تويتر", c: "#111", g: "linear-gradient(135deg,#1d1d1f,#3a3a3d)" },
+  snapchat: { ar: "سناب", c: "#111", g: "linear-gradient(135deg,#FFFC00,#FFC400)" }
+};
+
+// --- Niche Mapping ---
+const NICHE_AR = { fashion: "فاشن", luxury: "لاكشري", moms: "عائلة وأمومة", sports: "رياضة ولياقة", food: "طعام وطبخ", gaming: "جيمنج", business: "أعمال", tech: "تقنية", entertainment: "ترفيه", other: "أخرى" };
+
+// --- Staff Emojis ---
+const STAFF_EMOJI = { Rahma: "🌸", Esraa: "🌺", Menna: "🌷", Kholod: "🌻", Faten: "🌹", Sally: "🌼" };
+
+// --- Country Synonyms ---
+const COUNTRY_SYN = {
+  "السعودية": ["السعودية", "السعوديه", "الرياض", "جدة", "جده", "مكة", "مكه", "المدينة", "المدينه", "الدمام", "الخبر", "saudi", "ksa"],
+  "الإمارات": ["الإمارات", "الامارات", "دبي", "أبوظبي", "ابوظبي", "الشارقة", "الشارقه", "عجمان", "العين", "uae", "dubai", "emirat"],
+  "الكويت": ["الكويت", "kuwait"],
+  "قطر": ["قطر", "الدوحة", "الدوحه", "qatar", "doha"],
+  "مصر": ["مصر", "القاهرة", "القاهره", "الإسكندرية", "الاسكندرية", "الجيزة", "الجيزه", "egypt", "cairo"],
+  "المغرب": ["المغرب", "مغرب", "الدار البيضاء", "الرباط", "مراكش", "طنجة", "morocco", "casablanca", "rabat"]
+};
+const COUNTRY_ORDER = ["السعودية", "الإمارات", "الكويت", "قطر", "مصر", "المغرب"];
+
+// --- Cache ---
+const CACHE_KEY = "adltix_cache_v1";
+const CACHE_MS = 5 * 60 * 1000;
+
+// --- State ---
+const state = { niche: "all", platform: "all", country: "all", fol: "all", contact: "all", sort: "fol", q: "" };
+let scrapingMode = false;
+let SESSION = null;
+let CREATORS = [];
+let isLoading = false;
+let isRendering = false;
+let allLeadsLoaded = false;
+let _list = [];
+let _rendered = 0;
+const PAGE_SIZE = 24;
+let _virtualList = null;
+let _creatorStore = null;
+let _requestCache = null;
+let _scrollThrottled = null;
+let _cachedScrapeCount = -1;
+let _cachedParseResult = null;
+let _cachedParseKey = null;
+let _cacheWriteTimer = null;
+let _searchController = null;
+let _searchDebounceTimer = null;
+const _debounceCleanup = new Map();
+let _renderObserver = null;
+let _embedObserver = null;
+
+// ============================================================
 // PERFORMANCE OPTIMIZED VERSION - All optimizations applied
 // ============================================================
 
@@ -1491,28 +1556,7 @@ function cardOptimized(c) {
   return parts.join('');
 }
 
-// --- 11. GLOBAL STATE ---
-let SESSION = null;
-let CREATORS = [];
-let isLoading = false;
-let isRendering = false;
-let allLeadsLoaded = false;
-let _list = [];
-let _rendered = 0;
-const PAGE_SIZE = 24;
-let _virtualList = null;
-let _creatorStore = null;
-let _requestCache = new RequestCache();
-let _scrollThrottled = null;
-let _cachedScrapeCount = -1;
-let _cachedParseResult = null;
-let _cachedParseKey = null;
-let _cacheWriteTimer = null;
-let _searchController = null;
-let _searchDebounceTimer = null;
-const _debounceCleanup = new Map();
-
-// --- 12. REUSABLE CONFIRM MODAL ---
+// --- 11. REUSABLE CONFIRM MODAL ---
 let _confirmModal = null;
 
 function showConfirmOptimized(title, msg, yesLabel, yesClass) {
@@ -1579,7 +1623,7 @@ function showConfirmOptimized(title, msg, yesLabel, yesClass) {
   });
 }
 
-// --- 13. OPTIMIZED PILL BUILDING ---
+// --- 12. OPTIMIZED PILL BUILDING ---
 const _pillCacheMap = new Map();
 
 function buildPillsOptimized(id, items, key) {
@@ -1623,7 +1667,7 @@ function buildPillsOptimized(id, items, key) {
   }
 }
 
-// --- 14. OPTIMIZED STATS ---
+// --- 13. OPTIMIZED STATS ---
 function renderStatsOptimized() {
   const store = _creatorStore;
   if (!store) return;
@@ -1638,7 +1682,7 @@ function renderStatsOptimized() {
     `<div class="stat"><div class="v num">${store.contactCount.toLocaleString('en')}</div><div class="l">وسيلة تواصل مباشرة</div></div>`;
 }
 
-// --- 15. OPTIMIZED FILTER ---
+// --- 14. OPTIMIZED FILTER ---
 function applyFiltersOptimized() {
   if (!_creatorStore) return [];
   
@@ -1662,7 +1706,7 @@ function applyFiltersOptimized() {
   return result;
 }
 
-// --- 16. OPTIMIZED RENDER ---
+// --- 15. OPTIMIZED RENDER ---
 function renderOptimized() {
   if (isRendering) return;
   isRendering = true;
@@ -1724,7 +1768,7 @@ function renderOptimized() {
   });
 }
 
-// --- 17. OPTIMIZED BOOT ---
+// --- 16. OPTIMIZED BOOT ---
 async function bootOptimized() {
   if (isLoading) return;
   isLoading = true;
@@ -1869,14 +1913,14 @@ function updateScrapeCountOptimized() {
   }
 }
 
-// --- 18. SCROLL OPTIMIZATION ---
+// --- 17. SCROLL OPTIMIZATION ---
 _scrollThrottled = _perfUtils.throttle((e) => {
   if (_virtualList) {
     _virtualList.updateVisibility(window.scrollY);
   }
 }, 50);
 
-// --- 19. EVENT DELEGATION ---
+// --- 18. EVENT DELEGATION ---
 function setupEventDelegation() {
   const grid = document.getElementById('grid');
   if (!grid) return;
@@ -1926,8 +1970,10 @@ function setupEventDelegation() {
   });
 }
 
-// --- 20. INITIALIZATION ---
+// --- 19. INITIALIZATION ---
 document.addEventListener('DOMContentLoaded', () => {
+  _requestCache = new RequestCache();
+  
   const searchInput = document.getElementById('q');
   if (searchInput) {
     searchInput.addEventListener('input', (e) => {
@@ -1954,7 +2000,7 @@ document.addEventListener('DOMContentLoaded', () => {
   applyTheme(theme);
 });
 
-// --- 21. REPLACE FUNCTIONS ---
+// --- 20. REPLACE FUNCTIONS ---
 applyData = applyDataOptimized;
 boot = bootOptimized;
 render = renderOptimized;
@@ -1971,7 +2017,7 @@ updateScrapeCount = updateScrapeCountOptimized;
 readCache = readCacheOptimized;
 writeCache = writeCacheOptimized;
 
-// --- 22. MEMORY CLEANUP ---
+// --- 21. MEMORY CLEANUP ---
 function cleanupMemory() {
   if (_virtualList) {
     _virtualList.destroy();
@@ -1998,7 +2044,7 @@ window.addEventListener('beforeunload', () => {
   cleanupMemory();
 });
 
-// --- 23. IDLE TIME PROCESSING ---
+// --- 22. IDLE TIME PROCESSING ---
 function processIdleOptimized(callback) {
   if ('requestIdleCallback' in window) {
     requestIdleCallback(callback, { timeout: 2000 });
@@ -2028,7 +2074,7 @@ processIdleOptimized(() => {
   }
 });
 
-// --- 24. INIT AUTH ---
+// --- 23. INIT AUTH ---
 (function initAuth() {
   SESSION = loadSession();
   if (SESSION && SESSION.token) {
@@ -2039,7 +2085,7 @@ processIdleOptimized(() => {
 
 console.log('✅ Adltix Performance Optimized - All optimizations applied');
 
-// --- 25. ALL ORIGINAL FUNCTIONS (preserved) ---
+// --- 24. ALL ORIGINAL FUNCTIONS (preserved) ---
 
 // All original functions remain here for compatibility
 // These are the original implementations that the optimized versions override
@@ -2961,59 +3007,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('f-contact').addEventListener('change', e => { state.contact = e.target.value;
     render(); });
 });
-
-// --- Cleanup on page unload ---
-window.addEventListener('beforeunload', () => {
-  cleanupMemory();
-  if (_virtualList) {
-    _virtualList.destroy();
-    _virtualList = null;
-  }
-  if (_searchController) {
-    _searchController.abort();
-    _searchController = null;
-  }
-  clearTimeout(_cacheWriteTimer);
-  _cacheWriteTimer = null;
-  for (const [id, timer] of _debounceCleanup) {
-    clearTimeout(timer);
-  }
-  _debounceCleanup.clear();
-});
-
-// --- Constants ---
-const SHEET_ID = "1SZpJPbpmkZ6OAvpfLaiREX5BmpbiyMiP4IEaFOO7KHM";
-const API_BASE = "https://script.google.com/macros/s/AKfycbxuo4IWPwJqwwBcL5mSyExUV-U4Qr6uLQDE9v-UWRIr5esl3hwtCTRFcFeGXsJADl_B/exec";
-const SHEET_TABS = ["👗 Fashion & Style", "✨ Luxury & Lifestyle", "👨‍👩‍👧 Family & Parenting", "⚽ Sports & Fitness", "🍳 Food & Cooking", "🎮 Gaming", "💼 Business", "📱 Tech", "😂 Entertainment", "🔖 Other Niches"];
-const MIN_FOLLOWERS = 0;
-
-const PLAT = {
-  instagram: { ar: "انستجرام", c: "#E1306C", g: "linear-gradient(135deg,#F58529,#DD2A7B,#8134AF)" },
-  tiktok: { ar: "تيك توك", c: "#111", g: "linear-gradient(135deg,#25F4EE,#111,#FE2C55)" },
-  youtube: { ar: "يوتيوب", c: "#FF0000", g: "linear-gradient(135deg,#FF0000,#c4302b)" },
-  x: { ar: "تويتر", c: "#111", g: "linear-gradient(135deg,#1d1d1f,#3a3a3d)" },
-  snapchat: { ar: "سناب", c: "#111", g: "linear-gradient(135deg,#FFFC00,#FFC400)" }
-};
-const NICHE_AR = { fashion: "فاشن", luxury: "لاكشري", moms: "عائلة وأمومة", sports: "رياضة ولياقة", food: "طعام وطبخ", gaming: "جيمنج", business: "أعمال", tech: "تقنية", entertainment: "ترفيه", other: "أخرى" };
-const STAFF_EMOJI = { Rahma: "🌸", Esraa: "🌺", Menna: "🌷", Kholod: "🌻", Faten: "🌹", Sally: "🌼" };
-const COUNTRY_SYN = {
-  "السعودية": ["السعودية", "السعوديه", "الرياض", "جدة", "جده", "مكة", "مكه", "المدينة", "المدينه", "الدمام", "الخبر", "saudi", "ksa"],
-  "الإمارات": ["الإمارات", "الامارات", "دبي", "أبوظبي", "ابوظبي", "الشارقة", "الشارقه", "عجمان", "العين", "uae", "dubai", "emirat"],
-  "الكويت": ["الكويت", "kuwait"],
-  "قطر": ["قطر", "الدوحة", "الدوحه", "qatar", "doha"],
-  "مصر": ["مصر", "القاهرة", "القاهره", "الإسكندرية", "الاسكندرية", "الجيزة", "الجيزه", "egypt", "cairo"],
-  "المغرب": ["المغرب", "مغرب", "الدار البيضاء", "الرباط", "مراكش", "طنجة", "morocco", "casablanca", "rabat"]
-};
-const COUNTRY_ORDER = ["السعودية", "الإمارات", "الكويت", "قطر", "مصر", "المغرب"];
-
-const CACHE_KEY = "adltix_cache_v1";
-const CACHE_MS = 5 * 60 * 1000;
-
-// --- State ---
-const state = { niche: "all", platform: "all", country: "all", fol: "all", contact: "all", sort: "fol", q: "" };
-let scrapingMode = false;
-let _renderObserver = null;
-let _embedObserver = null;
 
 // Ensure observers
 function ensureObs() {
