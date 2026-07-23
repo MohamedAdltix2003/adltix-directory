@@ -6,6 +6,8 @@
 <title>Adltix — دليل المؤثرين</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://docs.google.com">
+<link rel="dns-prefetch" href="https://docs.google.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Tajawal:wght@500;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
@@ -27,7 +29,7 @@
   header{position:sticky;top:0;z-index:40;background:rgba(238,237,244,.85);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
   .bar{max-width:1280px;margin:0 auto;padding:14px 22px;display:flex;align-items:center;gap:18px}
   .brand{display:flex;align-items:center;gap:11px;flex-shrink:0}
-  .logo{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--brand),var(--brand-2),var(--brand));background-size:220% 220%;animation:sheen 7s ease infinite;display:grid;place-items:center;color:#fff;font-weight:800;font-size:20px;box-shadow:0 8px 20px rgba(75,35,201,.42),0 0 0 1px rgba(255,255,255,.06) inset}
+  .logo{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--brand),var(--brand-2),var(--brand));background-size:220% 220%;animation:sheen 9s ease infinite;display:grid;place-items:center;color:#fff;font-weight:800;font-size:20px;box-shadow:0 8px 20px rgba(75,35,201,.42),0 0 0 1px rgba(255,255,255,.06) inset}
   @keyframes sheen{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
   .brand h1{font-size:20px;font-weight:800;letter-spacing:-.3px}
   .brand .sub{font-size:12px;color:var(--muted);font-weight:500;margin-top:-2px}
@@ -250,7 +252,7 @@
 
   /* ===== Staff assignment ribbon (full width, pink, animated) ===== */
   .staff-ribbon{position:relative;overflow:hidden;width:100%;display:flex;align-items:center;justify-content:center;gap:9px;background:linear-gradient(135deg,#EC4899,#DB2777);color:#fff;font-size:15px;font-weight:800;padding:11px 14px;border-radius:13px;margin:2px 0 4px;box-shadow:0 8px 20px rgba(219,39,119,.4),0 0 0 1px rgba(255,255,255,.3) inset;animation:popIn .4s cubic-bezier(.34,1.56,.64,1)}
-  .staff-ribbon::before{content:"";position:absolute;top:0;bottom:0;left:-60%;width:45%;background:linear-gradient(115deg,transparent,rgba(255,255,255,.45),transparent);animation:staffShine 2.6s ease-in-out infinite}
+  .staff-ribbon::before{content:"";position:absolute;top:0;bottom:0;left:-60%;width:45%;background:linear-gradient(115deg,transparent,rgba(255,255,255,.45),transparent);animation:staffShine 3.5s ease-in-out infinite}
   @keyframes staffShine{0%{left:-60%}55%{left:130%}100%{left:130%}}
   .staff-ribbon .staff-emoji{font-size:19px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.15))}
   .staff-ribbon .staff-name{letter-spacing:.2px}
@@ -1428,16 +1430,24 @@ function readCache(){
 }
 function writeCache(data){ try{ sessionStorage.setItem(CACHE_KEY, JSON.stringify({t:Date.now(),data})); }catch(e){} }
 
+function yieldToMain(){ return new Promise(r=>setTimeout(r,0)); }
 async function boot(){
   const cached=readCache();
   if(cached && cached.length){ applyData(cached); return; }
   showSkeleton();
-  const tasks=SHEET_TABS.map(tab=>fetch(gvizUrl(tab)).then(r=>r.text()).then(parseGviz).catch(e=>{console.log("tab failed",tab,e);return [];}));
   let all=[], shownFirst=false;
-  tasks.forEach(t=>t.then(rows=>{
-    if(rows&&rows.length){ all=all.concat(rows); if(!shownFirst){ shownFirst=true; applyData(all); } }
-  }));
-  await Promise.allSettled(tasks);
+  // نسحب+نعالج تابة تابة (مش كله مع بعض) عشان الزراير تفضل شغّالة أثناء التحميل
+  for(const tab of SHEET_TABS){
+    try{
+      const txt=await fetch(gvizUrl(tab)).then(r=>r.text());
+      const rows=parseGviz(txt);
+      if(rows && rows.length){
+        all=all.concat(rows);
+        if(!shownFirst){ shownFirst=true; applyData(all); }
+      }
+    }catch(e){ console.log("tab failed",tab,e); }
+    await yieldToMain();   // نديّ فرصة للمتصفح يستجيب للضغطات بين كل تابة والتانية
+  }
   applyData(all);
   writeCache(all);
 }
