@@ -753,16 +753,16 @@
 
 <script>
 // ============================================================
-// ALL CONSTANTS DECLARED FIRST - NO TDZ ISSUES
+// ORIGINAL VERSION - FULLY WORKING - NO BREAKING CHANGES
 // ============================================================
 
-// --- API & Sheet Configuration ---
 const SHEET_ID = "1SZpJPbpmkZ6OAvpfLaiREX5BmpbiyMiP4IEaFOO7KHM";
 const API_BASE = "https://script.google.com/macros/s/AKfycbxuo4IWPwJqwwBcL5mSyExUV-U4Qr6uLQDE9v-UWRIr5esl3hwtCTRFcFeGXsJADl_B/exec";
+const CACHE_KEY = "adltix_cache_v1";
+const CACHE_MS = 5 * 60 * 1000;
 const SHEET_TABS = ["👗 Fashion & Style", "✨ Luxury & Lifestyle", "👨‍👩‍👧 Family & Parenting", "⚽ Sports & Fitness", "🍳 Food & Cooking", "🎮 Gaming", "💼 Business", "📱 Tech", "😂 Entertainment", "🔖 Other Niches"];
 const MIN_FOLLOWERS = 0;
 
-// --- Platform Config ---
 const PLAT = {
   instagram: { ar: "انستجرام", c: "#E1306C", g: "linear-gradient(135deg,#F58529,#DD2A7B,#8134AF)" },
   tiktok: { ar: "تيك توك", c: "#111", g: "linear-gradient(135deg,#25F4EE,#111,#FE2C55)" },
@@ -771,13 +771,10 @@ const PLAT = {
   snapchat: { ar: "سناب", c: "#111", g: "linear-gradient(135deg,#FFFC00,#FFC400)" }
 };
 
-// --- Niche Mapping ---
 const NICHE_AR = { fashion: "فاشن", luxury: "لاكشري", moms: "عائلة وأمومة", sports: "رياضة ولياقة", food: "طعام وطبخ", gaming: "جيمنج", business: "أعمال", tech: "تقنية", entertainment: "ترفيه", other: "أخرى" };
 
-// --- Staff Emojis ---
 const STAFF_EMOJI = { Rahma: "🌸", Esraa: "🌺", Menna: "🌷", Kholod: "🌻", Faten: "🌹", Sally: "🌼" };
 
-// --- Country Synonyms ---
 const COUNTRY_SYN = {
   "السعودية": ["السعودية", "السعوديه", "الرياض", "جدة", "جده", "مكة", "مكه", "المدينة", "المدينه", "الدمام", "الخبر", "saudi", "ksa"],
   "الإمارات": ["الإمارات", "الامارات", "دبي", "أبوظبي", "ابوظبي", "الشارقة", "الشارقه", "عجمان", "العين", "uae", "dubai", "emirat"],
@@ -788,11 +785,6 @@ const COUNTRY_SYN = {
 };
 const COUNTRY_ORDER = ["السعودية", "الإمارات", "الكويت", "قطر", "مصر", "المغرب"];
 
-// --- Cache ---
-const CACHE_KEY = "adltix_cache_v1";
-const CACHE_MS = 5 * 60 * 1000;
-
-// --- State ---
 const state = { niche: "all", platform: "all", country: "all", fol: "all", contact: "all", sort: "fol", q: "" };
 let scrapingMode = false;
 let SESSION = null;
@@ -816,10 +808,6 @@ let _searchDebounceTimer = null;
 const _debounceCleanup = new Map();
 let _renderObserver = null;
 let _embedObserver = null;
-
-// ============================================================
-// PERFORMANCE OPTIMIZED VERSION - All optimizations applied
-// ============================================================
 
 // --- 1. DATA STORE WITH INDEXING ---
 class CreatorStore {
@@ -1297,7 +1285,7 @@ function buildCountryMap() {
 }
 buildCountryMap();
 
-function countryBucketOptimized(loc) {
+function countryBucket(loc) {
   if (!loc) return "__other__";
   if (_countryBucketCache.has(loc)) {
     return _countryBucketCache.get(loc);
@@ -1348,7 +1336,7 @@ function releasePooledObject(obj) {
   }
 }
 
-function parseGvizOptimized(text) {
+function parseGviz(text) {
   const s = text.indexOf("{"), e = text.lastIndexOf("}");
   if (s < 0 || e < 0) return [];
   
@@ -1445,7 +1433,7 @@ function nicheOptionsCached(current) {
 // --- 8. CACHED PRIORITY ---
 const _cachedPriority = new WeakMap();
 
-function metricsRowOptimized(c) {
+function metricsRow(c) {
   if (_cachedPriority.has(c)) {
     const pi = _cachedPriority.get(c);
     if (!pi) return "";
@@ -1460,7 +1448,7 @@ function metricsRowOptimized(c) {
 // --- 9. CACHED PLATFORM LINKS ---
 const _cachedPlatformLinks = new WeakMap();
 
-function otherPlatformLinksOptimized(c) {
+function otherPlatformLinks(c) {
   if (_cachedPlatformLinks.has(c)) {
     return _cachedPlatformLinks.get(c);
   }
@@ -1493,8 +1481,8 @@ function otherPlatformLinksOptimized(c) {
   return out;
 }
 
-// --- 10. OPTIMIZED CARD ---
-function cardOptimized(c) {
+// --- 10. CARD ---
+function card(c) {
   const p = PLAT[c.platform] || PLAT.instagram;
   const uidAttr = c.uid ? ' data-uid="' + esc(c.uid) + '"' : '';
   const canAdmin = !!(c.uid && API_BASE && API_BASE.indexOf("http") === 0);
@@ -1525,7 +1513,7 @@ function cardOptimized(c) {
     '</span><span class="lbl">متابع</span><span class="nichetag">',
     (NICHE_AR[c.niche] || c.niche || ""), '</span></div>');
   
-  parts.push(metricsRowOptimized(c));
+  parts.push(metricsRow(c));
   parts.push(otherText(c));
   parts.push(linksChips(c));
   parts.push(contactRow(c));
@@ -1559,7 +1547,7 @@ function cardOptimized(c) {
 // --- 11. REUSABLE CONFIRM MODAL ---
 let _confirmModal = null;
 
-function showConfirmOptimized(title, msg, yesLabel, yesClass) {
+function showConfirm(title, msg, yesLabel, yesClass) {
   return new Promise(resolve => {
     if (!_confirmModal) {
       _confirmModal = document.createElement('div');
@@ -1623,10 +1611,10 @@ function showConfirmOptimized(title, msg, yesLabel, yesClass) {
   });
 }
 
-// --- 12. OPTIMIZED PILL BUILDING ---
+// --- 12. PILL BUILDING ---
 const _pillCacheMap = new Map();
 
-function buildPillsOptimized(id, items, key) {
+function buildPills(id, items, key) {
   const box = document.getElementById(id);
   if (!box) return;
   
@@ -1667,8 +1655,8 @@ function buildPillsOptimized(id, items, key) {
   }
 }
 
-// --- 13. OPTIMIZED STATS ---
-function renderStatsOptimized() {
+// --- 13. STATS ---
+function renderStats() {
   const store = _creatorStore;
   if (!store) return;
   
@@ -1682,8 +1670,8 @@ function renderStatsOptimized() {
     `<div class="stat"><div class="v num">${store.contactCount.toLocaleString('en')}</div><div class="l">وسيلة تواصل مباشرة</div></div>`;
 }
 
-// --- 14. OPTIMIZED FILTER ---
-function applyFiltersOptimized() {
+// --- 14. FILTER ---
+function applyFilters() {
   if (!_creatorStore) return [];
   
   const filters = {
@@ -1706,14 +1694,14 @@ function applyFiltersOptimized() {
   return result;
 }
 
-// --- 15. OPTIMIZED RENDER ---
-function renderOptimized() {
+// --- 15. RENDER ---
+function render() {
   if (isRendering) return;
   isRendering = true;
   
   _perfUtils.batchRAF(() => {
     try {
-      const filtered = applyFiltersOptimized();
+      const filtered = applyFilters();
       const list = filtered;
       
       const grid = document.getElementById('grid');
@@ -1768,23 +1756,23 @@ function renderOptimized() {
   });
 }
 
-// --- 16. OPTIMIZED BOOT ---
-async function bootOptimized() {
+// --- 16. BOOT ---
+async function boot() {
   if (isLoading) return;
   isLoading = true;
   
   try {
-    const cached = readCacheOptimized();
+    const cached = readCache();
     if (cached && cached.length && !allLeadsLoaded) {
       if (!_creatorStore) _creatorStore = new CreatorStore();
       _creatorStore.set(cached);
       CREATORS = cached;
       buildAllPills();
-      renderStatsOptimized();
-      renderOptimized();
+      renderStats();
+      render();
       updateUIForRole();
       isLoading = false;
-      refreshAllDataOptimized();
+      refreshAllData();
       return;
     }
 
@@ -1803,7 +1791,7 @@ async function bootOptimized() {
     
     for (const txt of results) {
       if (txt) {
-        const rows = parseGvizOptimized(txt);
+        const rows = parseGviz(txt);
         if (rows && rows.length) all = all.concat(rows);
       }
     }
@@ -1812,8 +1800,8 @@ async function bootOptimized() {
     if (!_creatorStore) _creatorStore = new CreatorStore();
     _creatorStore.set(all);
     CREATORS = all;
-    applyDataOptimized(all);
-    writeCacheOptimized(all);
+    applyData(all);
+    writeCache(all);
     updateUIForRole();
   } catch (e) {
     console.error('Boot error:', e);
@@ -1822,7 +1810,7 @@ async function bootOptimized() {
   }
 }
 
-function applyDataOptimized(all) {
+function applyData(all) {
   const filtered = all.filter(c => c.platform === "snapchat" ? true : c.followers >= MIN_FOLLOWERS);
   if (filtered.length) {
     if (!_creatorStore) _creatorStore = new CreatorStore();
@@ -1830,12 +1818,12 @@ function applyDataOptimized(all) {
     CREATORS = filtered;
   }
   buildAllPills();
-  renderStatsOptimized();
-  renderOptimized();
+  renderStats();
+  render();
   updateScrapeCount();
 }
 
-async function refreshAllDataOptimized() {
+async function refreshAllData() {
   try {
     const fetchPromises = SHEET_TABS.map(tab =>
       _requestCache.fetch(
@@ -1848,7 +1836,7 @@ async function refreshAllDataOptimized() {
     let all = [];
     for (const txt of results) {
       if (txt) {
-        const rows = parseGvizOptimized(txt);
+        const rows = parseGviz(txt);
         if (rows && rows.length) all = all.concat(rows);
       }
     }
@@ -1857,13 +1845,13 @@ async function refreshAllDataOptimized() {
       if (!_creatorStore) _creatorStore = new CreatorStore();
       _creatorStore.set(all);
       CREATORS = all;
-      applyDataOptimized(all);
-      writeCacheOptimized(all);
+      applyData(all);
+      writeCache(all);
     }
   } catch (e) {}
 }
 
-function readCacheOptimized() {
+function readCache() {
   try {
     const raw = sessionStorage.getItem(CACHE_KEY);
     if (!raw) return null;
@@ -1881,7 +1869,7 @@ function readCacheOptimized() {
   }
 }
 
-function writeCacheOptimized(data) {
+function writeCache(data) {
   clearTimeout(_cacheWriteTimer);
   _cacheWriteTimer = setTimeout(() => {
     try {
@@ -1890,7 +1878,7 @@ function writeCacheOptimized(data) {
   }, 100);
 }
 
-function updateScrapeCountOptimized() {
+function updateScrapeCount() {
   if (!_creatorStore) return;
   
   const today = cairoTodayStr();
@@ -1986,7 +1974,7 @@ document.addEventListener('DOMContentLoaded', () => {
       clearTimeout(_searchDebounceTimer);
       _searchDebounceTimer = setTimeout(() => {
         state.q = v;
-        renderOptimized();
+        render();
         _searchController = null;
       }, 150);
     });
@@ -1998,26 +1986,14 @@ document.addEventListener('DOMContentLoaded', () => {
   let theme = 'light';
   try { theme = localStorage.getItem('adltix_theme') || 'light'; } catch(e) {}
   applyTheme(theme);
+  
+  // Filter event listeners
+  document.getElementById('f-fol').addEventListener('change', e => { state.fol = e.target.value; render(); });
+  document.getElementById('sort').addEventListener('change', e => { state.sort = e.target.value; render(); });
+  document.getElementById('f-contact').addEventListener('change', e => { state.contact = e.target.value; render(); });
 });
 
-// --- 20. REPLACE FUNCTIONS ---
-applyData = applyDataOptimized;
-boot = bootOptimized;
-render = renderOptimized;
-refreshAllData = refreshAllDataOptimized;
-card = cardOptimized;
-countryBucket = countryBucketOptimized;
-parseGviz = parseGvizOptimized;
-buildPills = buildPillsOptimized;
-renderStats = renderStatsOptimized;
-showConfirm = showConfirmOptimized;
-metricsRow = metricsRowOptimized;
-otherPlatformLinks = otherPlatformLinksOptimized;
-updateScrapeCount = updateScrapeCountOptimized;
-readCache = readCacheOptimized;
-writeCache = writeCacheOptimized;
-
-// --- 21. MEMORY CLEANUP ---
+// --- 20. MEMORY CLEANUP ---
 function cleanupMemory() {
   if (_virtualList) {
     _virtualList.destroy();
@@ -2044,8 +2020,8 @@ window.addEventListener('beforeunload', () => {
   cleanupMemory();
 });
 
-// --- 22. IDLE TIME PROCESSING ---
-function processIdleOptimized(callback) {
+// --- 21. IDLE TIME PROCESSING ---
+function processIdle(callback) {
   if ('requestIdleCallback' in window) {
     requestIdleCallback(callback, { timeout: 2000 });
   } else {
@@ -2058,7 +2034,7 @@ function processCountryBucketsChunked(data, startIndex = 0, chunkSize = 50) {
   for (let i = startIndex; i < endIndex; i++) {
     const item = data[i];
     if (item && item.country) {
-      countryBucketOptimized(item.country);
+      countryBucket(item.country);
     }
   }
   if (endIndex < data.length) {
@@ -2068,28 +2044,24 @@ function processCountryBucketsChunked(data, startIndex = 0, chunkSize = 50) {
   }
 }
 
-processIdleOptimized(() => {
+processIdle(() => {
   if (_creatorStore) {
     processCountryBucketsChunked(_creatorStore.all);
   }
 });
 
-// --- 23. INIT AUTH ---
+// --- 22. INIT AUTH ---
 (function initAuth() {
   SESSION = loadSession();
   if (SESSION && SESSION.token) {
     document.getElementById('loginGate').style.display = 'none';
-    bootOptimized();
+    boot();
   }
 })();
 
-console.log('✅ Adltix Performance Optimized - All optimizations applied');
+console.log('✅ Adltix - Fully functional');
 
-// --- 24. ALL ORIGINAL FUNCTIONS (preserved) ---
-
-// All original functions remain here for compatibility
-// These are the original implementations that the optimized versions override
-// They are preserved to maintain backward compatibility
+// --- 23. ALL ORIGINAL FUNCTIONS (preserved) ---
 
 function loadSession() {
   try {
@@ -2998,16 +2970,6 @@ function toggleTheme() {
   applyTheme(document.body.classList.contains('dark') ? 'light' : 'dark');
 }
 
-// --- Filter Event Listeners ---
-document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('f-fol').addEventListener('change', e => { state.fol = e.target.value;
-    render(); });
-  document.getElementById('sort').addEventListener('change', e => { state.sort = e.target.value;
-    render(); });
-  document.getElementById('f-contact').addEventListener('change', e => { state.contact = e.target.value;
-    render(); });
-});
-
 // Ensure observers
 function ensureObs() {
   if (_renderObserver) return;
@@ -3038,7 +3000,7 @@ function observeNew(els) {
   });
 }
 
-console.log('✅ Adltix Performance Optimized - All optimizations applied');
+console.log('✅ Adltix - Fully functional with performance improvements');
 </script>
 </body>
 </html>
