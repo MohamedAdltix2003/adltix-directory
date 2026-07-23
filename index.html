@@ -868,7 +868,6 @@ function stripHtml(c){
   const cand=[c.top_video_url, ...vids.map(v=>v.url), c.url].filter(Boolean);
   const pickBy=(fn)=>{ for(const u of cand){ if(fn(u)) return u; } return ''; };
 
-  // إنستجرام + ريلز: الفيديو الحقيقي (embed) مقصوص عشان يبان المحتوى بس من غير كلام
   if(c.platform==='instagram'){
     const u=pickBy(u=>igCode(u)); const ic=igCode(u);
     if(ic){
@@ -879,7 +878,6 @@ function stripHtml(c){
     }
     return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="mlabel">انستجرام</span></div>';
   }
-  // تيك توك: الفيديو الحقيقي مقصوص
   if(c.platform==='tiktok'){
     const u=pickBy(u=>ttVidId(u)); const vid=ttVidId(u);
     if(vid){
@@ -890,7 +888,6 @@ function stripHtml(c){
     }
     return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="mlabel">تيك توك</span></div>';
   }
-  // يوتيوب: صورة الفيديو (بتشتغل) أو صورة القناة، والضغط يفتح الفيديو
   if(c.platform==='youtube'){
     const u=pickBy(u=>ytThumbId(u)); const id=ytThumbId(u);
     if(id){
@@ -902,7 +899,6 @@ function stripHtml(c){
     }
     return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')">'+bigPlay+'<span class="mlabel">يوتيوب</span></div>';
   }
-  // سناب
   if(c.platform==='snapchat'){
     return '<div class="media snap" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="ghost">\uD83D\uDC7B</span><span class="mlabel dark">افتح سناب</span></div>';
   }
@@ -941,7 +937,7 @@ function otherPlatformLinks(c){
   for(const m of map){
     let u=String(m.url||'').trim(); if(!u) continue;
     if(!/^https?:\/\//i.test(u)){ if(/^[\w.-]+\.[a-z]{2,}/i.test(u)) u='https://'+u.replace(/^\/+/,''); else continue; }
-    if(m.plat===c.platform) continue;          // المنصة الرئيسية -> مش هنا
+    if(m.plat===c.platform) continue;
     out.push({plat:m.plat,label:m.label,url:u});
   }
   return out;
@@ -998,6 +994,7 @@ function card(c){
   const p=PLAT[c.platform]||PLAT.instagram;
   const uidAttr = c.uid ? ' data-uid="'+esc(c.uid)+'"' : '';
   const canAdmin = !!(c.uid && API_BASE && API_BASE.indexOf("http")===0);
+  const isStaff = isStaffSession();
   return '<div class="card"'+uidAttr+'>'+
     stripHtml(c)+
     '<div class="body">'+
@@ -1019,7 +1016,7 @@ function card(c){
         '<a class="btn primary" href="'+esc(c.url)+'" target="_blank" rel="noopener">زيارة الحساب الرسمي</a>'+
         '<button class="btn ghost" title="نسخ الحساب" onclick="copyTxt(\'@'+esc(c.handle)+'\',this)">\u29C9</button>'+
       '</div>'+
-      (isStaffSession() ? crmActionsRow(c) :
+      (isStaff ? crmActionsRow(c) : '') +
       (canAdmin ? (
       '<div class="admin-actions">'+
         '<button class="aabtn ok" title="تأكيد ومتابعة" onclick="onApprove(this)">\u2705 تأكيد</button>'+
@@ -1028,10 +1025,15 @@ function card(c){
           '<option value="">نقل لمجال...</option>'+nicheOptions(c.niche)+
         '</select></div>'+
         '<button class="aabtn danger" title="حذف نهائي" onclick="onDelete(this)">\uD83D\uDDD1\uFE0F حذف</button>'+
-      '</div>') : ''))+
+      '</div>') : '')+
     '</div></div>';
 }
-function isStaffSession(){ return !!(SESSION && String(SESSION.role||'').trim().toLowerCase()==='staff'); }
+
+// ===== دالة مساعدة للتحقق من دور المستخدم =====
+function isStaffSession() {
+  return !!(SESSION && String(SESSION.role || '').trim().toLowerCase() === 'staff');
+}
+
 function crmStatusBadges(c){
   if(!isStaffSession()) return "";
   const chips=[];
@@ -1342,7 +1344,7 @@ function _createIframe(host,src){
   f.setAttribute('scrolling','no'); f.setAttribute('allow','encrypted-media; clipboard-write'); f.setAttribute('allowfullscreen','');
   host.innerHTML=''; host.appendChild(f);
   f.addEventListener('load',_embedDone,{once:true});
-  setTimeout(_embedDone,4000);   // فيديو ياخد وقت كتير -> حرر السلوت برضه
+  setTimeout(_embedDone,4000);
 }
 function _embedDone(){ _embedActive=Math.max(0,_embedActive-1); _pumpEmbedQueue(); }
 function _pumpEmbedQueue(){
@@ -1370,7 +1372,6 @@ function observeNew(els){
   els.forEach((el,i)=>{
     el.style.transitionDelay=(Math.min(i,8)*40)+'ms';
     _revealObs.observe(el);
-    // الفيديو يتحمّل ويشتغل تلقائي أول ما يقرب من الشاشة
     el.querySelectorAll('[data-embed-src]').forEach(h=>_embedObs.observe(h));
   });
 }
@@ -1458,15 +1459,12 @@ function gvizUrl(tab){
 }
 function normalizeSheetDate(v){
   if(v==null) return "";
-  // صيغة gviz للتاريخ الحقيقي: Date(2026,6,19) أو Date(2026,6,19,0,0,0)
   if(typeof v==="string"){
     const m=v.match(/^Date\((\d+),(\d+),(\d+)/);
     if(m){ const y=m[1], mo=String(Number(m[2])+1).padStart(2,"0"), d=String(Number(m[3])).padStart(2,"0"); return y+"-"+mo+"-"+d; }
     const t=v.trim();
-    // صيغة ISO/نص عادي بالفعل مثل 2026-07-19 أو فيها وقت 2026-07-19T..
     const iso=t.match(/^(\d{4}-\d{2}-\d{2})/);
     if(iso) return iso[1];
-    // صيغة m/d/yyyy أو d/m/yyyy الشائعة من Sheets
     const slash=t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
     if(slash){ const mo=slash[1].padStart(2,"0"), d=slash[2].padStart(2,"0"); return slash[3]+"-"+mo+"-"+d; }
     return t;
@@ -1540,30 +1538,65 @@ function readCache(){
 function writeCache(data){ try{ sessionStorage.setItem(CACHE_KEY, JSON.stringify({t:Date.now(),data})); }catch(e){} }
 
 function yieldToMain(){ return new Promise(r=>setTimeout(r,0)); }
-async function boot(){
-  const cached=readCache();
-  if(cached && cached.length){ applyData(cached); return; }
-  showSkeleton();
-  // 1) نطلق كل السحب من النت مع بعض فورًا (سريع، مش بيعطّل حاجة لأنه شبكة مش معالجة)
-  const textPromises=SHEET_TABS.map(tab=>fetch(gvizUrl(tab)).then(r=>r.text()).catch(()=>null));
-  let all=[], shownFirst=false;
-  // 2) نعالج كل رد لما يوصل، تابة بعد تابة، مع وقفة بسيطة بينهم عشان الزراير تفضل شغّالة
-  for(let i=0;i<SHEET_TABS.length;i++){
-    try{
-      const txt=await textPromises[i];
-      if(txt){
-        const rows=parseGviz(txt);
-        if(rows && rows.length){
-          all=all.concat(rows);
-          if(!shownFirst){ shownFirst=true; applyData(all); }
-        }
-      }
-    }catch(e){ console.log("tab failed",SHEET_TABS[i],e); }
-    await yieldToMain();
+
+// ===== BOOT: تحميل سريع جداً (متوازي) =====
+async function boot() {
+  const cached = readCache();
+  if (cached && cached.length) {
+    applyData(cached);
+    updateUIForRole();
+    return;
   }
+
+  showSkeleton();
+  
+  // تحميل كل التابات مع بعض (متوازي)
+  const fetchPromises = SHEET_TABS.map(tab => 
+    fetch(gvizUrl(tab))
+      .then(r => r.text())
+      .catch(() => null)
+  );
+
+  let all = [];
+  
+  // نستنى أول 3 تابات عشان نعرضهم بسرعة
+  const firstThree = await Promise.all(fetchPromises.slice(0, 3));
+  for (const txt of firstThree) {
+    if (txt) {
+      const rows = parseGviz(txt);
+      if (rows && rows.length) all = all.concat(rows);
+    }
+  }
+  if (all.length) {
+    applyData(all);
+    updateUIForRole();
+  }
+
+  // نكمل بقية التابات في الخلفية
+  const restPromises = fetchPromises.slice(3);
+  const restResults = await Promise.all(restPromises);
+  for (const txt of restResults) {
+    if (txt) {
+      const rows = parseGviz(txt);
+      if (rows && rows.length) all = all.concat(rows);
+    }
+  }
+  
   applyData(all);
   writeCache(all);
+  updateUIForRole();
 }
+
+// تحديث واجهة المستخدم بناءً على الدور
+function updateUIForRole() {
+  const fab = document.getElementById('addLeadFab');
+  if (isStaffSession()) {
+    if (fab) fab.style.display = '';
+  } else {
+    if (fab) fab.style.display = 'none';
+  }
+}
+
 (function initAuth(){
   SESSION=loadSession();
   if(SESSION && SESSION.token){
