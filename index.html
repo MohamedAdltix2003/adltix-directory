@@ -51,7 +51,6 @@
   .stat .v{font-size:24px;font-weight:800;letter-spacing:-.5px}
   .stat .l{font-size:12px;color:var(--muted);font-weight:600;margin-top:1px}
 
-  /* ===== Admin toolbar ===== */
   .admin-toolbar{background:var(--surface);border:1px solid var(--brand-soft);border-radius:16px;padding:12px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;box-shadow:0 2px 12px rgba(75,35,201,.08)}
   .admin-toolbar .label{font-size:13px;font-weight:800;color:var(--brand);display:flex;align-items:center;gap:6px}
   .admin-toolbar .label::before{content:"⚙️"}
@@ -559,7 +558,6 @@
   .ochip.txt:hover{transform:none;filter:none;box-shadow:none}
   .others.links .ochip{cursor:pointer}
 
-  /* ===== Employee modal ===== */
   .employee-form .form-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
   .employee-form .form-row label{font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:4px}
   .employee-form .form-row input,.employee-form .form-row select{width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid var(--line);font-family:inherit;font-size:14px;background:var(--bg);color:var(--ink);transition:.15s}
@@ -571,7 +569,6 @@
 </head>
 <body>
 
-<!-- ===== Login Gate ===== -->
 <div id="loginGate">
   <div class="lg-box">
     <div class="lg-logo"><img src="https://www.image2url.com/r2/default/images/1784674121200-8960a1dc-1274-453d-9821-2fc581d7076b.jpg" alt="Adltix" referrerpolicy="no-referrer"></div>
@@ -585,10 +582,8 @@
   </div>
 </div>
 
-<!-- ===== Add Lead FAB ===== -->
 <button id="addLeadFab" class="add-fab" style="display:none" onclick="openAddLeadModal()">+ ضيفي شخص</button>
 
-<!-- ===== Add Lead Modal ===== -->
 <div id="addLeadOverlay" class="cf-overlay">
   <div class="cf-box" style="max-width:420px;text-align:right">
     <div class="cf-title">إضافة مؤثر جديد</div>
@@ -616,7 +611,6 @@
   </div>
 </div>
 
-<!-- ===== Employee Modal (للأدمن/مدير) ===== -->
 <div id="employeeOverlay" class="cf-overlay">
   <div class="cf-box" style="max-width:440px;text-align:right">
     <div class="cf-title">👩‍💼 إضافة موظفة جديدة</div>
@@ -644,10 +638,8 @@
 
 <input type="file" id="crmFileInput" accept="image/*" capture="environment" style="display:none">
 
-<!-- ===== Background ===== -->
 <div class="bgfx" aria-hidden="true"><span class="gridfx"></span><span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span><span class="blob b4"></span><span class="mesh"></span><div class="parts"><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span></div></div>
 
-<!-- ===== Header ===== -->
 <header>
   <div class="bar">
     <div class="brand">
@@ -665,7 +657,6 @@
 </header>
 
 <div class="wrap">
-  <!-- ===== Hero ===== -->
   <div class="hero">
     <div>
       <span class="tag">الخليج العربي · مؤثرون موثّقون</span>
@@ -676,7 +667,6 @@
     <div class="stats" id="stats"></div>
   </div>
 
-  <!-- ===== Admin Toolbar (للأدمن/مدير فقط) ===== -->
   <div id="adminToolbar" class="admin-toolbar" style="display:none">
     <span class="label">لوحة التحكم</span>
     <button class="admin-btn" onclick="openEmployeeModal()">➕ إضافة موظفة</button>
@@ -685,7 +675,6 @@
     <span style="font-size:12px;color:var(--muted);font-weight:600">👤 <span id="adminName">أدمن</span></span>
   </div>
 
-  <!-- ===== Filters ===== -->
   <div class="filters">
     <div class="frow ftop">
       <span class="ftitle">تصفية النتائج</span>
@@ -755,7 +744,7 @@
 
 <script>
 // ============================================================
-// 1. تحميل الجلسة فوراً
+// 1. تحميل الجلسة فوراً مع تأكيد
 // ============================================================
 let SESSION = null;
 try {
@@ -769,7 +758,9 @@ try {
 }
 
 function isStaffSession() {
-  return !!(SESSION && String(SESSION.role || '').trim().toLowerCase() === 'staff');
+  const result = !!(SESSION && String(SESSION.role || '').trim().toLowerCase() === 'staff');
+  console.log('🔍 isStaffSession:', result);
+  return result;
 }
 
 function isAdminSession() {
@@ -778,7 +769,7 @@ function isAdminSession() {
 }
 
 // ============================================================
-// 2. باقي الكود
+// 2. المتغيرات الأساسية
 // ============================================================
 const SHEET_ID = "1SZpJPbpmkZ6OAvpfLaiREX5BmpbiyMiP4IEaFOO7KHM";
 const API_BASE = "https://script.google.com/macros/s/AKfycbxuo4IWPwJqwwBcL5mSyExUV-U4Qr6uLQDE9v-UWRIr5esl3hwtCTRFcFeGXsJADl_B/exec";
@@ -786,6 +777,8 @@ const SHEET_TABS = ["👗 Fashion & Style","✨ Luxury & Lifestyle","👨‍👩
 const MIN_FOLLOWERS = 0;
 
 let CREATORS = [];
+let isLoading = false;
+let isRendering = false;
 
 const PLAT = {
   instagram:{ar:"انستجرام",c:"#E1306C",g:"linear-gradient(135deg,#F58529,#DD2A7B,#8134AF)"},
@@ -807,7 +800,9 @@ function esc(s){ return String(s||"").replace(/'/g,"\\'").replace(/"/g,"&quot;")
 function clean(list){ return list.filter(c=> c && (Number(c.followers)>=MIN_FOLLOWERS || c.platform==="snapchat")); }
 
 function buildPills(id, items, key){
-  const box=document.getElementById(id); box.innerHTML="";
+  const box=document.getElementById(id); 
+  if(!box) return;
+  box.innerHTML="";
   items.forEach(it=>{
     const b=document.createElement("button");
     b.className="pill"+(state[key]===it.v?" on":"");
@@ -886,7 +881,7 @@ function stripHtml(c){
   if(c.platform==='youtube'){
     const u=pickBy(u=>u.match(/[?&]v=([^&]+)/)||u.match(/youtu\.be\/([^?]+)/)||u.match(/\/shorts\/([^?\/]+)/)); 
     const id = u ? (u.match(/[?&]v=([^&]+)/)||u.match(/youtu\.be\/([^?]+)/)||u.match(/\/shorts\/([^?\/]+)/)) : null;
-    if(id){
+    if(id && id[1]){
       const t='https://i.ytimg.com/vi/'+id[1]+'/hqdefault.jpg';
       return '<div class="media shot" style="background:'+p.g+'" onclick="openVideo(\''+esc(u||c.url)+'\',\'youtube\')"><img class="cover" src="'+esc(t)+'" loading="lazy" onerror="this.remove()"><div class="ovl"></div>'+bigPlay+'</div>';
     }
@@ -1121,7 +1116,6 @@ async function startApp(){
   const role=String((SESSION&&SESSION.role)||'').trim().toLowerCase();
   console.log('🚀 startApp role:', role);
   
-  // تحديث واجهة الأدمن
   const adminToolbar = document.getElementById('adminToolbar');
   const adminName = document.getElementById('adminName');
   
@@ -1137,7 +1131,11 @@ async function startApp(){
     adminToolbar.style.display='none';
     document.getElementById('addLeadFab').style.display='';
     const cached=readCache();
-    if(cached && cached.length){ applyData(cached); refreshMyLeads(); return; }
+    if(cached && cached.length){ 
+      applyData(cached); 
+      refreshMyLeads(); 
+      return; 
+    }
     showSkeleton();
     await refreshMyLeads();
     return;
@@ -1238,7 +1236,6 @@ async function submitEmployee(){
     setTimeout(()=>{ btn.textContent='➕ إضافة الموظفة'; },2000);
     closeEmployeeModal();
     alert('✅ تم إضافة الموظفة '+name+' بنجاح!\nتم توزيع الـ Leads على جميع الموظفات.');
-    // إعادة تحميل البيانات
     boot();
   }catch(e){ btn.disabled=false; btn.textContent='➕ إضافة الموظفة'; errEl.textContent=e.message||'حصل خطأ'; }
 }
@@ -1288,6 +1285,7 @@ document.getElementById('crmFileInput').addEventListener('change', async (e)=>{
 });
 async function sendCrmAction(btn,uid,actionType,imageBase64){
   const row=btn.closest('.crm-actions');
+  if(!row) return;
   row.querySelectorAll('.crmbtn').forEach(b=>b.disabled=true);
   btn.classList.add('loading');
   try{
@@ -1337,13 +1335,20 @@ function showConfirm(title, msg, yesLabel, yesClass){
 }
 async function callApi(action,payload){
   if(!API_BASE || API_BASE.indexOf('http')!==0) throw new Error('API_BASE مش متظبط');
-  const res=await fetch(API_BASE,{method:'POST',body:JSON.stringify(Object.assign({action},payload))});
-  const j=await res.json();
-  if(!j.ok) throw new Error(j.error||'فشل الطلب');
-  return j.result;
+  try{
+    const res=await fetch(API_BASE,{method:'POST',body:JSON.stringify(Object.assign({action},payload))});
+    const j=await res.json();
+    if(!j.ok) throw new Error(j.error||'فشل الطلب');
+    return j.result;
+  }catch(e){
+    throw new Error(e.message||'مشكلة في الاتصال');
+  }
 }
 function findCardEl(btn){ return btn.closest('.card'); }
-function setBusy(cardEl,busy){ cardEl.querySelectorAll('.aabtn,select').forEach(el=>{ el.disabled=busy; }); }
+function setBusy(cardEl,busy){ 
+  if(!cardEl) return;
+  cardEl.querySelectorAll('.aabtn,select').forEach(el=>{ el.disabled=busy; }); 
+}
 function removeCardAnimated(cardEl,uid){
   cardEl.classList.add('removing');
   setTimeout(()=>{
@@ -1356,7 +1361,8 @@ function removeCardAnimated(cardEl,uid){
 }
 
 async function onDelete(btn){
-  const cardEl=findCardEl(btn); const uid=cardEl.getAttribute('data-uid'); if(!uid) return;
+  const cardEl=findCardEl(btn); if(!cardEl) return;
+  const uid=cardEl.getAttribute('data-uid'); if(!uid) return;
   const ok=await showConfirm('حذف نهائي؟','هيتشال المؤثر ده من الموقع ومن الشيت خالص ومش هيرجع تاني. متأكد؟','حذف نهائي','danger');
   if(!ok) return;
   setBusy(cardEl,true);
@@ -1364,7 +1370,8 @@ async function onDelete(btn){
   catch(e){ alert('حصل خطأ: '+e.message); setBusy(cardEl,false); }
 }
 async function onMoveToNew(btn){
-  const cardEl=findCardEl(btn); const uid=cardEl.getAttribute('data-uid'); if(!uid) return;
+  const cardEl=findCardEl(btn); if(!cardEl) return;
+  const uid=cardEl.getAttribute('data-uid'); if(!uid) return;
   const ok=await showConfirm('نقل للأرشيف؟','هينتقل المؤثر ده للشيت الجديد، ويتشال من هنا أوتوماتيك. متأكد؟','نقل للأرشيف','move');
   if(!ok) return;
   setBusy(cardEl,true);
@@ -1373,7 +1380,8 @@ async function onMoveToNew(btn){
 }
 async function onChangeNiche(sel){
   const niche=sel.value; if(!niche) return;
-  const cardEl=findCardEl(sel); const uid=cardEl.getAttribute('data-uid'); if(!uid){ sel.value=''; return; }
+  const cardEl=findCardEl(sel); if(!cardEl){ sel.value=''; return; }
+  const uid=cardEl.getAttribute('data-uid'); if(!uid){ sel.value=''; return; }
   const label=(NICHE_AR[niche]||niche);
   const ok=await showConfirm('نقل المجال؟','هينقل المؤثر ده لمجال "'+label+'". متأكد؟','نقل المجال','move');
   if(!ok){ sel.value=''; return; }
@@ -1389,7 +1397,8 @@ async function onChangeNiche(sel){
   }catch(e){ alert('حصل خطأ: '+e.message); setBusy(cardEl,false); sel.value=''; }
 }
 async function onApprove(btn){
-  const cardEl=findCardEl(btn); const uid=cardEl.getAttribute('data-uid'); if(!uid) return;
+  const cardEl=findCardEl(btn); if(!cardEl) return;
+  const uid=cardEl.getAttribute('data-uid'); if(!uid) return;
   if(cardEl.classList.contains('approved')) return;
   const ok=await showConfirm('تأكيد المؤثر؟','هيتحدد إنه "معانا" وهيتلوّن في الشيت عشان تتابعه بسهولة.','تأكيد','ok');
   if(!ok) return;
@@ -1457,13 +1466,23 @@ function appendMore(){
   observeNew(added);
 }
 function render(){
-  _list=applyFilters(); _rendered=0;
-  const grid=document.getElementById("grid");
-  grid.innerHTML="";
-  document.getElementById("shown").textContent=_list.length;
-  document.getElementById("empty").style.display=_list.length?"none":"block";
-  grid.style.display=_list.length?"grid":"none";
-  appendMore();
+  if(isRendering) return;
+  isRendering=true;
+  try{
+    _list=applyFilters(); _rendered=0;
+    const grid=document.getElementById("grid");
+    if(grid){
+      grid.innerHTML="";
+      document.getElementById("shown").textContent=_list.length;
+      document.getElementById("empty").style.display=_list.length?"none":"block";
+      grid.style.display=_list.length?"grid":"none";
+      appendMore();
+    }
+  }catch(e){
+    console.error('Render error:', e);
+  }finally{
+    isRendering=false;
+  }
 }
 let _scrollTied=false;
 function tieScroll(){
@@ -1551,44 +1570,49 @@ function normalizeSheetDate(v){
 function parseGviz(text){
   const s=text.indexOf("{"), e=text.lastIndexOf("}");
   if(s<0||e<0) return [];
-  const json=JSON.parse(text.substring(s,e+1));
-  if(!json.table) return [];
-  let labels=(json.table.cols||[]).map(c=>String(c.label||"").trim().toLowerCase());
-  let rows=json.table.rows||[];
-  if(!labels.some(Boolean) && rows.length){
-    labels=(rows[0].c||[]).map(c=>c&&c.v!=null?String(c.v).trim().toLowerCase():"");
-    rows=rows.slice(1);
+  try{
+    const json=JSON.parse(text.substring(s,e+1));
+    if(!json.table) return [];
+    let labels=(json.table.cols||[]).map(c=>String(c.label||"").trim().toLowerCase());
+    let rows=json.table.rows||[];
+    if(!labels.some(Boolean) && rows.length){
+      labels=(rows[0].c||[]).map(c=>c&&c.v!=null?String(c.v).trim().toLowerCase():"");
+      rows=rows.slice(1);
+    }
+    const out=[];
+    for(const r of rows){
+      if(!r||!r.c) continue;
+      const o={};
+      for(let i=0;i<labels.length;i++){ const cell=r.c[i]; o[labels[i]]=cell&&cell.v!=null?cell.v:""; }
+      if(!o.handle) continue;
+      let vids=[];
+      try{ vids=o.videos?JSON.parse(o.videos):[]; }catch(_){ vids=[]; }
+      out.push({
+        uid:String(o.uid||"").toLowerCase(),
+        discoveredAt:normalizeSheetDate(o.discovered_at),
+        assignedTo:String(o.assigned_to||"").trim(),
+        handle:String(o.handle||"").replace(/^@/,""),
+        platform:o.platform||"",
+        followers:Number(o.followers)||0,
+        niche:String(o.niche||"").toLowerCase(),
+        country:o.location||"الخليج",
+        url:o.profile_url||"#",
+        avatar_url:o.avatar_url||"",
+        videos:Array.isArray(vids)?vids:[],
+        top_video_url:o.top_video_url||"",
+        other:o.other_platforms||"",
+        email:o.email||"", whatsapp:o.whatsapp||"", phone:o.phone||"",
+        links:o.links_bio||"", language:o.language||"",
+        priority:o.priority||"", engagement:o.engagement_rate||"",
+        messageStatus:String(o.message_status||"").toLowerCase(), followupCount:parseInt(o.followup_count,10)||0, signupStatus:String(o.signup_status||"").toLowerCase(),
+        igUrl:o.instagram_url||"", ttUrl:o.tiktok_url||"", scUrl:o.snapchat_url||"", twUrl:o.twitter_url||"", ytUrl:o.youtube_url||"", fbUrl:o.facebook_url||""
+      });
+    }
+    return out;
+  }catch(e){
+    console.error('Parse error:', e);
+    return [];
   }
-  const out=[];
-  for(const r of rows){
-    if(!r||!r.c) continue;
-    const o={};
-    for(let i=0;i<labels.length;i++){ const cell=r.c[i]; o[labels[i]]=cell&&cell.v!=null?cell.v:""; }
-    if(!o.handle) continue;
-    let vids=[];
-    try{ vids=o.videos?JSON.parse(o.videos):[]; }catch(_){ vids=[]; }
-    out.push({
-      uid:String(o.uid||"").toLowerCase(),
-      discoveredAt:normalizeSheetDate(o.discovered_at),
-      assignedTo:String(o.assigned_to||"").trim(),
-      handle:String(o.handle||"").replace(/^@/,""),
-      platform:o.platform||"",
-      followers:Number(o.followers)||0,
-      niche:String(o.niche||"").toLowerCase(),
-      country:o.location||"الخليج",
-      url:o.profile_url||"#",
-      avatar_url:o.avatar_url||"",
-      videos:Array.isArray(vids)?vids:[],
-      top_video_url:o.top_video_url||"",
-      other:o.other_platforms||"",
-      email:o.email||"", whatsapp:o.whatsapp||"", phone:o.phone||"",
-      links:o.links_bio||"", language:o.language||"",
-      priority:o.priority||"", engagement:o.engagement_rate||"",
-      messageStatus:String(o.message_status||"").toLowerCase(), followupCount:parseInt(o.followup_count,10)||0, signupStatus:String(o.signup_status||"").toLowerCase(),
-      igUrl:o.instagram_url||"", ttUrl:o.tiktok_url||"", scUrl:o.snapchat_url||"", twUrl:o.twitter_url||"", ytUrl:o.youtube_url||"", fbUrl:o.facebook_url||""
-    });
-  }
-  return out;
 }
 function showSkeleton(){
   const g=document.getElementById("grid"); if(!g) return;
@@ -1615,47 +1639,57 @@ function yieldToMain(){ return new Promise(r=>setTimeout(r,0)); }
 
 // ===== BOOT =====
 async function boot() {
-  const cached = readCache();
-  if (cached && cached.length) {
-    applyData(cached);
-    updateUIForRole();
-    return;
-  }
-
-  showSkeleton();
+  if(isLoading) return;
+  isLoading=true;
   
-  const fetchPromises = SHEET_TABS.map(tab => 
-    fetch(gvizUrl(tab))
-      .then(r => r.text())
-      .catch(() => null)
-  );
-
-  let all = [];
-  
-  const firstTwo = await Promise.all(fetchPromises.slice(0, 2));
-  for (const txt of firstTwo) {
-    if (txt) {
-      const rows = parseGviz(txt);
-      if (rows && rows.length) all = all.concat(rows);
+  try{
+    const cached = readCache();
+    if (cached && cached.length) {
+      applyData(cached);
+      updateUIForRole();
+      isLoading=false;
+      return;
     }
-  }
-  if (all.length) {
+
+    showSkeleton();
+    
+    const fetchPromises = SHEET_TABS.map(tab => 
+      fetch(gvizUrl(tab))
+        .then(r => r.text())
+        .catch(() => null)
+    );
+
+    let all = [];
+    
+    const firstTwo = await Promise.all(fetchPromises.slice(0, 2));
+    for (const txt of firstTwo) {
+      if (txt) {
+        const rows = parseGviz(txt);
+        if (rows && rows.length) all = all.concat(rows);
+      }
+    }
+    if (all.length) {
+      applyData(all);
+      updateUIForRole();
+    }
+
+    const restPromises = fetchPromises.slice(2);
+    const restResults = await Promise.all(restPromises);
+    for (const txt of restResults) {
+      if (txt) {
+        const rows = parseGviz(txt);
+        if (rows && rows.length) all = all.concat(rows);
+      }
+    }
+    
     applyData(all);
+    writeCache(all);
     updateUIForRole();
+  }catch(e){
+    console.error('Boot error:', e);
+  }finally{
+    isLoading=false;
   }
-
-  const restPromises = fetchPromises.slice(2);
-  const restResults = await Promise.all(restPromises);
-  for (const txt of restResults) {
-    if (txt) {
-      const rows = parseGviz(txt);
-      if (rows && rows.length) all = all.concat(rows);
-    }
-  }
-  
-  applyData(all);
-  writeCache(all);
-  updateUIForRole();
 }
 
 function updateUIForRole() {
