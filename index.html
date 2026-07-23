@@ -1435,18 +1435,22 @@ async function boot(){
   const cached=readCache();
   if(cached && cached.length){ applyData(cached); return; }
   showSkeleton();
+  // 1) نطلق كل السحب من النت مع بعض فورًا (سريع، مش بيعطّل حاجة لأنه شبكة مش معالجة)
+  const textPromises=SHEET_TABS.map(tab=>fetch(gvizUrl(tab)).then(r=>r.text()).catch(()=>null));
   let all=[], shownFirst=false;
-  // نسحب+نعالج تابة تابة (مش كله مع بعض) عشان الزراير تفضل شغّالة أثناء التحميل
-  for(const tab of SHEET_TABS){
+  // 2) نعالج كل رد لما يوصل، تابة بعد تابة، مع وقفة بسيطة بينهم عشان الزراير تفضل شغّالة
+  for(let i=0;i<SHEET_TABS.length;i++){
     try{
-      const txt=await fetch(gvizUrl(tab)).then(r=>r.text());
-      const rows=parseGviz(txt);
-      if(rows && rows.length){
-        all=all.concat(rows);
-        if(!shownFirst){ shownFirst=true; applyData(all); }
+      const txt=await textPromises[i];
+      if(txt){
+        const rows=parseGviz(txt);
+        if(rows && rows.length){
+          all=all.concat(rows);
+          if(!shownFirst){ shownFirst=true; applyData(all); }
+        }
       }
-    }catch(e){ console.log("tab failed",tab,e); }
-    await yieldToMain();   // نديّ فرصة للمتصفح يستجيب للضغطات بين كل تابة والتانية
+    }catch(e){ console.log("tab failed",SHEET_TABS[i],e); }
+    await yieldToMain();
   }
   applyData(all);
   writeCache(all);
