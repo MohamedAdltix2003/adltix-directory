@@ -235,7 +235,6 @@
   .scrape-btn .sb-pulse::after{content:"";position:absolute;inset:-5px;border-radius:50%;background:#fff;opacity:.55;animation:sbPulse 1.6s ease-out infinite}
   @keyframes sbPulse{0%{transform:scale(.4);opacity:.6}70%{transform:scale(2.2);opacity:0}100%{transform:scale(2.2);opacity:0}}
   .scrape-btn .sb-count{background:rgba(255,255,255,.25);min-width:22px;height:22px;padding:0 6px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;font-family:'Space Grotesk',inherit;transition:transform .25s cubic-bezier(.34,1.56,.64,1)}
-  .scrape-btn .sb-count.bump{animation:sbBump .35s cubic-bezier(.34,1.56,.64,1)}
   @keyframes sbBump{0%{transform:scale(1)}40%{transform:scale(1.35)}100%{transform:scale(1)}}
 
   .staff-ribbon{position:relative;overflow:hidden;width:100%;display:flex;align-items:center;justify-content:center;gap:9px;background:linear-gradient(135deg,#EC4899,#DB2777);color:#fff;font-size:15px;font-weight:800;padding:11px 14px;border-radius:13px;margin:2px 0 4px;box-shadow:0 8px 20px rgba(219,39,119,.4),0 0 0 1px rgba(255,255,255,.3) inset;animation:popIn .4s cubic-bezier(.34,1.56,.64,1)}
@@ -568,6 +567,12 @@
   .username-hint{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px;margin-top:4px;font-weight:600}
   .username-hint .domain{color:var(--brand);font-weight:700}
   .username-hint .at{color:var(--muted)}
+
+  /* زر تصوير/اختيار */
+  .photo-options{display:flex;gap:10px;margin-bottom:12px}
+  .photo-options button{flex:1;padding:10px;border-radius:11px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px}
+  .photo-options button:hover{border-color:var(--brand);color:var(--brand);background:var(--brand-soft)}
+  .photo-options button.active{background:var(--brand);color:#fff;border-color:var(--brand);box-shadow:0 4px 12px rgba(75,35,201,.3)}
 </style>
 </head>
 <body>
@@ -642,7 +647,9 @@
   </div>
 </div>
 
+<!-- input file مخفي مع خيارين -->
 <input type="file" id="crmFileInput" accept="image/*" capture="environment" style="display:none">
+<input type="file" id="crmFileInputGallery" accept="image/*" style="display:none">
 
 <div class="bgfx" aria-hidden="true"><span class="gridfx"></span><span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span><span class="blob b4"></span><span class="mesh"></span><div class="parts"><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span><span class="pt"></span></div></div>
 
@@ -855,49 +862,11 @@ function applyFilters(){
 function igCode(u){ const m=String(u||'').match(/\/(p|reel|reels|tv)\/([^/?#]+)/); return m?{kind:(m[1]==='reels'?'reel':m[1]),code:m[2]}:null; }
 function ttVidId(u){ const m=String(u||'').match(/\/video\/(\d+)/); return m?m[1]:''; }
 
+// تبسيط stripHtml - بدون تحميل فيديوهات ثقيلة
 function stripHtml(c){
   const p=PLAT[c.platform]||PLAT.instagram;
-  let vids=(c.videos||[]).filter(v=>v && (v.url||v.thumb));
-  const seen={}; vids=vids.filter(v=>{ const k=(v.url||'')+'|'+(v.thumb||''); if(seen[k]) return false; seen[k]=1; return true; });
-  const bigPlay='<span class="playbig"><svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M8 5v14l11-7z"/></svg></span>';
-  const cand=[c.top_video_url, ...vids.map(v=>v.url), c.url].filter(Boolean);
-  const pickBy=(fn)=>{ for(const u of cand){ if(fn(u)) return u; } return ''; };
-
-  if(c.platform==='instagram'){
-    const u=pickBy(u=>igCode(u)); const ic=igCode(u);
-    if(ic){
-      return '<div class="media embed ig" data-embed-src="'+esc('https://www.instagram.com/'+ic.kind+'/'+ic.code+'/embed')+'"><div class="poster" onclick="loadEmbed(this.parentNode)" style="background:'+p.g+'">'+bigPlay+'</div></div>';
-    }
-    if(c.avatar_url){
-      return '<div class="media shot" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel">انستجرام</span></div>';
-    }
-    return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="mlabel">انستجرام</span></div>';
-  }
-  if(c.platform==='tiktok'){
-    const u=pickBy(u=>ttVidId(u)); const vid=ttVidId(u);
-    if(vid){
-      return '<div class="media embed tt" data-embed-src="'+esc('https://www.tiktok.com/embed/v2/'+vid)+'"><div class="poster" onclick="loadEmbed(this.parentNode)" style="background:'+p.g+'">'+bigPlay+'</div></div>';
-    }
-    if(c.avatar_url){
-      return '<div class="media shot" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel">تيك توك</span></div>';
-    }
-    return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="mlabel">تيك توك</span></div>';
-  }
-  if(c.platform==='youtube'){
-    const u=pickBy(u=>u.match(/[?&]v=([^&]+)/)||u.match(/youtu\.be\/([^?]+)/)||u.match(/\/shorts\/([^?\/]+)/)); 
-    const id = u ? (u.match(/[?&]v=([^&]+)/)||u.match(/youtu\.be\/([^?]+)/)||u.match(/\/shorts\/([^?\/]+)/)) : null;
-    if(id && id[1]){
-      const t='https://i.ytimg.com/vi/'+id[1]+'/hqdefault.jpg';
-      return '<div class="media shot" style="background:'+p.g+'" onclick="openVideo(\''+esc(u||c.url)+'\',\'youtube\')"><img class="cover" src="'+esc(t)+'" loading="lazy" onerror="this.remove()"><div class="ovl"></div>'+bigPlay+'</div>';
-    }
-    if(c.avatar_url){
-      return '<div class="media shot yt" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover ytcover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div>'+bigPlay+'<span class="mlabel">قناة يوتيوب</span></div>';
-    }
-    return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')">'+bigPlay+'<span class="mlabel">يوتيوب</span></div>';
-  }
-  if(c.platform==='snapchat'){
-    return '<div class="media snap" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="ghost">👻</span><span class="mlabel dark">افتح سناب</span></div>';
-  }
+  
+  // عرض صورة البروفايل فقط بدون فيديوهات ثقيلة
   if(c.avatar_url){
     return '<div class="media shot" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel">'+p.ar+'</span></div>';
   }
@@ -1134,14 +1103,8 @@ async function startApp(){
   if(role==='staff'){
     adminToolbar.style.display='none';
     document.getElementById('addLeadFab').style.display='';
-    const cached=readCache();
-    if(cached && cached.length){ 
-      applyData(cached); 
-      refreshMyLeads(); 
-      return; 
-    }
-    showSkeleton();
-    await refreshMyLeads();
+    // تحميل مباشر وسريع للموظف
+    await refreshMyLeadsFast();
     return;
   }
   
@@ -1150,8 +1113,10 @@ async function startApp(){
   boot();
 }
 
-async function refreshMyLeads(){
+// === وظيفة سريعة للموظفين ===
+async function refreshMyLeadsFast(){
   try{
+    showSkeleton();
     const res=await fetch(API_BASE+'?action=myLeads&token='+encodeURIComponent(SESSION.token));
     const j=await res.json();
     if(j.ok && j.result && j.result.leads){
@@ -1160,7 +1125,15 @@ async function refreshMyLeads(){
       buildAllPills(); renderStats(); render(); updateScrapeCount();
       writeCache(data);
     }
-  }catch(e){ console.log('myLeads failed',e); }
+  }catch(e){ 
+    console.log('myLeads failed',e);
+    // محاولة استخدام الكاش
+    const cached = readCache();
+    if(cached && cached.length){ 
+      CREATORS=cached;
+      buildAllPills(); renderStats(); render(); updateScrapeCount();
+    }
+  }
 }
 
 function mapRawToCard(o){
@@ -1250,14 +1223,12 @@ async function submitEmployee(){
   if(!password || password.length<4){ errEl.textContent='كلمة المرور (أقل شيء 4 حروف)'; return; }
   if(!name){ errEl.textContent='الاسم الكامل مطلوب'; return; }
   
-  // Check if username exists
   const exists = await checkUsernameExists(username);
   if(exists){
     errEl.textContent='⚠️ اسم المستخدم "'+username+'" موجود بالفعل! اختار اسم تاني.';
     return;
   }
   
-  // الاسم الكامل للبريد الإلكتروني
   const fullEmail = username + '@adltix.com';
   
   const btn=document.getElementById('emp-submit'); btn.disabled=true; btn.textContent='⏳ جاري الإضافة...';
@@ -1281,8 +1252,10 @@ async function distributeLeads(){
   }catch(e){ alert('حصل خطأ: '+e.message); }
 }
 
-// ===== CRM Actions =====
+// ===== CRM Actions مع خيارين للصورة =====
 let _crmPending=null;
+let _photoMode='camera'; // 'camera' or 'gallery'
+
 function fileToBase64(file){
   return new Promise((resolve,reject)=>{
     const r=new FileReader();
@@ -1291,20 +1264,77 @@ function fileToBase64(file){
     r.readAsDataURL(file);
   });
 }
+
 async function onCrmAction(btn,uid,actionType){
   const needsShot = (actionType==='sent' || actionType==='subscribed');
   const labels={sent:'إرسال الرسالة',followup:'متابعة',subscribed:'اشتراك'};
   if(needsShot){
-    const ok=await showConfirm('تأكيد '+labels[actionType],'هترفعي سكرين شوت يثبت إنك '+(actionType==='sent'?'بعتيلها':'أكّدت اشتراكها')+'. جاهزة؟','اختيار الصورة','ok');
-    if(!ok) return;
-    _crmPending={btn,uid,actionType};
-    document.getElementById('crmFileInput').click();
+    // عرض خيارين: تصوير أو اختيار من المعرض
+    const choice = await showPhotoOptions('اختر طريقة رفع الصورة', 
+      '📸 تصوير: التقط صورة الآن\n🖼️ معرض: اختر من صورك');
+    
+    if(choice === 'camera'){
+      _crmPending={btn,uid,actionType};
+      const input = document.getElementById('crmFileInput');
+      input.setAttribute('capture', 'environment');
+      input.click();
+    } else if(choice === 'gallery'){
+      _crmPending={btn,uid,actionType};
+      const input = document.getElementById('crmFileInputGallery');
+      input.removeAttribute('capture');
+      input.click();
+    } else {
+      return; // إلغاء
+    }
   }else{
     const ok=await showConfirm('تأكيد المتابعة','هيتسجّل إنك تابعتي المؤثر ده. متأكدة؟','تأكيد','ok');
     if(!ok) return;
     await sendCrmAction(btn,uid,actionType,null);
   }
 }
+
+function showPhotoOptions(title, msg){
+  return new Promise(resolve=>{
+    const ov=document.createElement('div'); ov.className='cf-overlay';
+    ov.innerHTML='<div class="cf-box" style="max-width:400px;text-align:right">'+
+      '<div class="cf-title">'+esc(title)+'</div>'+
+      '<div class="cf-msg" style="white-space:pre-wrap">'+esc(msg)+'</div>'+
+      '<div class="photo-options">'+
+        '<button class="active" data-choice="camera">📸 تصوير</button>'+
+        '<button data-choice="gallery">🖼️ معرض</button>'+
+      '</div>'+
+      '<div class="cf-btns">'+
+        '<button class="cf-cancel" data-x="cancel">إلغاء</button>'+
+        '<button class="cf-yes ok" data-x="confirm">اختيار</button>'+
+      '</div></div>';
+    document.body.appendChild(ov);
+    requestAnimationFrame(()=>ov.classList.add('show'));
+    
+    let selected = 'camera';
+    const btns = ov.querySelectorAll('.photo-options button');
+    btns.forEach(b=>{
+      b.onclick=()=>{
+        btns.forEach(x=>x.classList.remove('active'));
+        b.classList.add('active');
+        selected = b.dataset.choice;
+      };
+    });
+    
+    function close(val){
+      ov.classList.remove('show'); 
+      setTimeout(()=>ov.remove(),220); 
+      resolve(val);
+    }
+    ov.addEventListener('click',e=>{ if(e.target===ov) close(null); });
+    ov.querySelector('.cf-cancel').onclick=()=>close(null);
+    ov.querySelector('.cf-yes').onclick=()=>{
+      const choice = ov.querySelector('.photo-options button.active');
+      close(choice ? choice.dataset.choice : 'camera');
+    };
+  });
+}
+
+// استماع للأحداث من كلا المدخلين
 document.getElementById('crmFileInput').addEventListener('change', async (e)=>{
   const file=e.target.files[0]; e.target.value='';
   if(!file || !_crmPending) return;
@@ -1314,6 +1344,17 @@ document.getElementById('crmFileInput').addEventListener('change', async (e)=>{
     await sendCrmAction(btn,uid,actionType,base64);
   }catch(err){ alert('حصل خطأ في قراءة الصورة'); }
 });
+
+document.getElementById('crmFileInputGallery').addEventListener('change', async (e)=>{
+  const file=e.target.files[0]; e.target.value='';
+  if(!file || !_crmPending) return;
+  const {btn,uid,actionType}=_crmPending; _crmPending=null;
+  try{
+    const base64=await fileToBase64(file);
+    await sendCrmAction(btn,uid,actionType,base64);
+  }catch(err){ alert('حصل خطأ في قراءة الصورة'); }
+});
+
 async function sendCrmAction(btn,uid,actionType,imageBase64){
   const row=btn.closest('.crm-actions');
   if(!row) return;
@@ -1446,43 +1487,19 @@ async function onApprove(btn){
   }catch(e){ alert('حصل خطأ: '+e.message); setBusy(cardEl,false); }
 }
 
-// ===== Embed loading =====
-const _embedQueue=[]; let _embedActive=0; const EMBED_MAX_CONCURRENT=2;
-function _createIframe(host,src){
-  const f=document.createElement('iframe');
-  f.src=src; f.loading='lazy'; f.className='embedframe';
-  f.setAttribute('scrolling','no'); f.setAttribute('allow','encrypted-media; clipboard-write'); f.setAttribute('allowfullscreen','');
-  host.innerHTML=''; host.appendChild(f);
-  f.addEventListener('load',_embedDone,{once:true});
-  setTimeout(_embedDone,4000);
-}
-function _embedDone(){ _embedActive=Math.max(0,_embedActive-1); _pumpEmbedQueue(); }
-function _pumpEmbedQueue(){
-  while(_embedActive<EMBED_MAX_CONCURRENT && _embedQueue.length){
-    const {host,src}=_embedQueue.shift();
-    if(!host.isConnected || host.dataset.loaded==='skip') continue;
-    _embedActive++; _createIframe(host,src);
-  }
-}
-function loadEmbed(host){
-  if(!host || host.dataset.loaded) return;
-  const src=host.getAttribute('data-embed-src'); if(!src) return;
-  host.dataset.loaded='1';
-  _embedQueue.push({host,src});
-  requestAnimationFrame(_pumpEmbedQueue);
-}
-let _revealObs=null, _embedObs=null;
+// ===== Embed loading (مبسط) =====
+// تم تبسيط stripHtml لإزالة الفيديوهات الثقيلة
+
+let _revealObs=null;
 function ensureObs(){
   if(_revealObs) return;
   _revealObs=new IntersectionObserver((es)=>{ es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); _revealObs.unobserve(e.target);} }); },{threshold:.08});
-  _embedObs=new IntersectionObserver((es)=>{ es.forEach(e=>{ if(e.isIntersecting){ loadEmbed(e.target); _embedObs.unobserve(e.target);} }); },{rootMargin:'250px 0px'});
 }
 function observeNew(els){
   ensureObs();
   els.forEach((el,i)=>{
     el.style.transitionDelay=(Math.min(i,8)*40)+'ms';
     _revealObs.observe(el);
-    el.querySelectorAll('[data-embed-src]').forEach(h=>_embedObs.observe(h));
   });
 }
 
@@ -1536,37 +1553,11 @@ function renderStats(){
 }
 
 // ===== Video player =====
-function reloadScript(src, cb){
-  document.querySelectorAll('script[data-embed="'+src+'"]').forEach(s=>s.remove());
-  const s=document.createElement('script'); s.src=src; s.async=true; s.setAttribute('data-embed',src);
-  s.onload=()=>{ if(cb) cb(); }; document.body.appendChild(s);
-}
 function openVideo(url, platform){
   if(!url || url==="#") return;
-  const body=document.getElementById("modalBody");
-  const title=document.getElementById("modalTitle");
-  body.innerHTML="";
-  if(platform==="tiktok"){
-    title.textContent="فيديو تيك توك";
-    body.innerHTML='<blockquote class="tiktok-embed" cite="'+url+'" style="max-width:540px;min-width:300px;margin:0 auto"><a href="'+url+'">عرض الفيديو</a></blockquote>';
-    reloadScript("https://www.tiktok.com/embed.js");
-  } else if(platform==="instagram"){
-    title.textContent="منشور إنستجرام";
-    body.innerHTML='<blockquote class="instagram-media" data-instgrm-permalink="'+url+'" data-instgrm-version="14" style="margin:0 auto;max-width:540px;width:100%"></blockquote>';
-    reloadScript("https://www.instagram.com/embed.js", ()=>{ if(window.instgrm&&window.instgrm.Embeds) window.instgrm.Embeds.process(); });
-  } else if(platform==="youtube"){
-    const id = url.match(/[?&]v=([^&]+)/)||url.match(/youtu\.be\/([^?]+)/)||url.match(/\/shorts\/([^?\/]+)/);
-    if(id){
-      title.textContent="فيديو يوتيوب";
-      body.innerHTML='<iframe src="https://www.youtube.com/embed/'+id[1]+'" allow="autoplay; encrypted-media" allowfullscreen></iframe>';
-    } else {
-      window.open(url,"_blank"); return;
-    }
-  } else {
-    window.open(url,"_blank"); return;
-  }
-  document.getElementById("modal").style.display="flex";
+  window.open(url,"_blank");
 }
+
 function closeModal(){ document.getElementById("modal").style.display="none"; document.getElementById("modalBody").innerHTML=""; }
 document.getElementById("modal").addEventListener("click",e=>{ if(e.target.id==="modal") closeModal(); });
 document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeModal(); });
@@ -1669,9 +1660,7 @@ function readCache(){
 }
 function writeCache(data){ try{ sessionStorage.setItem(CACHE_KEY, JSON.stringify({t:Date.now(),data})); }catch(e){} }
 
-function yieldToMain(){ return new Promise(r=>setTimeout(r,0)); }
-
-// ===== BOOT - FIXED (Load ALL leads first, videos later) =====
+// ===== BOOT - سريع للموظفين =====
 async function boot() {
   if(isLoading) return;
   isLoading=true;
@@ -1682,25 +1671,23 @@ async function boot() {
       applyData(cached);
       updateUIForRole();
       isLoading=false;
-      // تحديث البيانات في الخلفية (مع الفيديوهات)
       refreshAllData();
       return;
     }
 
     showSkeleton();
     
-    // تحميل البيانات الأساسية أولاً (بدون فيديوهات)
-    const fetchPromises = SHEET_TABS.map(tab => 
+    // تحميل البيانات الأساسية فقط (بدون فيديوهات ثقيلة)
+    const fetchPromises = SHEET_TABS.slice(0, 3).map(tab => 
       fetch(gvizUrl(tab))
         .then(r => r.text())
         .catch(() => null)
     );
     
-    // تحميل أول ورقتين بشكل فوري
-    const firstTwoResults = await Promise.all(fetchPromises.slice(0, 2));
+    const results = await Promise.all(fetchPromises);
     let all = [];
     
-    for (const txt of firstTwoResults) {
+    for (const txt of results) {
       if (txt) {
         const rows = parseGviz(txt);
         if (rows && rows.length) all = all.concat(rows);
@@ -1713,21 +1700,10 @@ async function boot() {
       writeCache(all);
     }
     
-    // تحميل باقي الأوراق في الخلفية
-    const restPromises = fetchPromises.slice(2);
-    const restResults = await Promise.all(restPromises);
-    
-    for (const txt of restResults) {
-      if (txt) {
-        const rows = parseGviz(txt);
-        if (rows && rows.length) all = all.concat(rows);
-      }
-    }
-    
-    allLeadsLoaded = true;
-    applyData(all);
-    writeCache(all);
-    updateUIForRole();
+    // تحميل الباقي في الخلفية
+    setTimeout(() => {
+      refreshAllData();
+    }, 100);
     
   }catch(e){
     console.error('Boot error:', e);
