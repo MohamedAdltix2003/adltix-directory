@@ -25,6 +25,9 @@
   .num{font-family:"Space Grotesk","Tajawal",sans-serif;font-feature-settings:"tnum"}
   a{color:inherit;text-decoration:none}
   img{display:block;max-width:100%}
+  .card,.logo,.media .cover,.media .playbig,.av{will-change:transform}
+  .card{contain:layout style paint}
+  .grid .card{content-visibility:auto;contain-intrinsic-size:0 560px}
 
   header{position:sticky;top:0;z-index:40;background:rgba(238,237,244,.85);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
   .bar{max-width:1280px;margin:0 auto;padding:14px 22px;display:flex;align-items:center;gap:18px}
@@ -750,8 +753,745 @@
 
 <script>
 // ============================================================
-// 1. تحميل الجلسة فوراً
+// PERFORMANCE OPTIMIZED VERSION - All optimizations applied
 // ============================================================
+
+// --- 1. DATA STORE WITH INDEXING ---
+class CreatorStore {
+  constructor() {
+    this._data = [];
+    this._indexes = {
+      uid: new Map(),
+      handle: new Map(),
+      niche: new Map(),
+      platform: new Map(),
+      country: new Map()
+    };
+    this._computed = {
+      niches: new Set(),
+      platforms: new Set(),
+      countries: new Set()
+    };
+    this._cache = {
+      filterResults: new Map(),
+      searchResults: new Map()
+    };
+    this._cacheTTL = 5000;
+    this._cacheTimestamps = new Map();
+    this._contactCount = 0;
+  }
+
+  set(data) {
+    this._data = data;
+    this._rebuildIndexes();
+    this._clearCache();
+    this._computeContactCount();
+  }
+
+  _computeContactCount() {
+    this._contactCount = 0;
+    for (const item of this._data) {
+      if (item.email || item.whatsapp || item.phone) {
+        this._contactCount++;
+      }
+    }
+  }
+
+  _rebuildIndexes() {
+    for (const key of ['uid', 'handle', 'niche', 'platform', 'country']) {
+      this._indexes[key].clear();
+    }
+    for (const key of ['niches', 'platforms', 'countries']) {
+      this._computed[key].clear();
+    }
+
+    for (const item of this._data) {
+      if (item.uid) this._indexes.uid.set(item.uid, item);
+      if (item.handle) {
+        const key = item.handle.toLowerCase();
+        if (!this._indexes.handle.has(key)) {
+          this._indexes.handle.set(key, []);
+        }
+        this._indexes.handle.get(key).push(item);
+      }
+      if (item.niche) {
+        if (!this._indexes.niche.has(item.niche)) {
+          this._indexes.niche.set(item.niche, []);
+        }
+        this._indexes.niche.get(item.niche).push(item);
+        this._computed.niches.add(item.niche);
+      }
+      if (item.platform) {
+        if (!this._indexes.platform.has(item.platform)) {
+          this._indexes.platform.set(item.platform, []);
+        }
+        this._indexes.platform.get(item.platform).push(item);
+        this._computed.platforms.add(item.platform);
+      }
+      const country = countryBucket(item.country);
+      if (country) {
+        if (!this._indexes.country.has(country)) {
+          this._indexes.country.set(country, []);
+        }
+        this._indexes.country.get(country).push(item);
+        this._computed.countries.add(country);
+      }
+    }
+  }
+
+  _clearCache() {
+    this._cache.filterResults.clear();
+    this._cache.searchResults.clear();
+    this._cacheTimestamps.clear();
+  }
+
+  _getCacheKey(filters) {
+    return [filters.niche, filters.platform, filters.country, filters.fol, filters.contact, filters.sort, filters.q].join('|');
+  }
+
+  getFiltered(filters) {
+    const key = this._getCacheKey(filters);
+    const cached = this._cache.filterResults.get(key);
+    if (cached && (Date.now() - this._cacheTimestamps.get(key)) < this._cacheTTL) {
+      return cached;
+    }
+
+    let result = this._data;
+
+    if (filters.niche && filters.niche !== 'all') {
+      const indexed = this._indexes.niche.get(filters.niche);
+      if (indexed) {
+        result = this._intersect(result, indexed);
+      } else {
+        result = [];
+      }
+    }
+
+    if (filters.platform && filters.platform !== 'all') {
+      const indexed = this._indexes.platform.get(filters.platform);
+      if (indexed) {
+        result = this._intersect(result, indexed);
+      } else {
+        result = [];
+      }
+    }
+
+    if (filters.country && filters.country !== 'all') {
+      const indexed = this._indexes.country.get(filters.country);
+      if (indexed) {
+        result = this._intersect(result, indexed);
+      } else {
+        result = [];
+      }
+    }
+
+    if (filters.fol && filters.fol !== 'all') {
+      const [a, b] = filters.fol.split('-').map(Number);
+      result = result.filter(c => {
+        if (c.platform === 'snapchat' && !c.followers) return true;
+        return c.followers >= a * 1000 && c.followers < b * 1000;
+      });
+    }
+
+    if (filters.contact && filters.contact !== 'all') {
+      result = result.filter(c => {
+        const e = !!(c.email && String(c.email).trim());
+        const w = !!((c.whatsapp && String(c.whatsapp).trim()) || (c.phone && String(c.phone).trim()));
+        if (filters.contact === 'email') return e;
+        if (filters.contact === 'whatsapp') return w;
+        if (filters.contact === 'both') return e && w;
+        if (filters.contact === 'none') return !e && !w;
+        return true;
+      });
+    }
+
+    if (filters.q) {
+      result = this._search(result, filters.q);
+    }
+
+    if (filters.sort === 'fol') {
+      result.sort((a, b) => (b.followers || 0) - (a.followers || 0));
+    } else if (filters.sort === 'fola') {
+      result.sort((a, b) => (a.followers || 0) - (b.followers || 0));
+    } else if (filters.sort === 'name') {
+      result.sort((a, b) => (a.handle || '').localeCompare(b.handle || ''));
+    }
+
+    this._cache.filterResults.set(key, result);
+    this._cacheTimestamps.set(key, Date.now());
+
+    return result;
+  }
+
+  _intersect(arr1, arr2) {
+    if (!arr2 || !arr2.length) return [];
+    if (!arr1 || !arr1.length) return [];
+    const set = new Set(arr1);
+    return arr2.filter(item => set.has(item));
+  }
+
+  _search(data, query) {
+    if (!query) return data;
+    const q = query.toLowerCase().trim();
+    if (!q) return data;
+
+    const cacheKey = q;
+    const cached = this._cache.searchResults.get(cacheKey);
+    if (cached && (Date.now() - this._cacheTimestamps.get('search_' + cacheKey)) < this._cacheTTL) {
+      return cached;
+    }
+
+    const result = data.filter(c => {
+      const handle = (c.handle || '').toLowerCase();
+      if (handle.includes(q)) return true;
+      return false;
+    });
+
+    this._cache.searchResults.set(cacheKey, result);
+    this._cacheTimestamps.set('search_' + cacheKey, Date.now());
+
+    return result;
+  }
+
+  getUniqueNiches() { return Array.from(this._computed.niches); }
+  getUniquePlatforms() { return Array.from(this._computed.platforms); }
+  getUniqueCountries() { return Array.from(this._computed.countries); }
+  get length() { return this._data.length; }
+  get all() { return this._data; }
+  get contactCount() { return this._contactCount; }
+  getByUid(uid) { return this._indexes.uid.get(uid) || null; }
+  getByHandle(handle) {
+    const key = handle.toLowerCase();
+    return this._indexes.handle.get(key) || [];
+  }
+}
+
+// --- 2. VIRTUAL LIST ---
+class VirtualList {
+  constructor(container, options = {}) {
+    this._container = container;
+    this._itemHeight = options.itemHeight || 560;
+    this._buffer = options.buffer || 6;
+    this._items = [];
+    this._visibleStart = 0;
+    this._visibleEnd = 0;
+    this._rendered = new Map();
+    this._observer = null;
+    this._rafId = null;
+    this._needsUpdate = false;
+    this._nodePool = [];
+    this._maxPoolSize = 100;
+    
+    this._viewport = document.createElement('div');
+    this._viewport.style.position = 'relative';
+    this._viewport.style.width = '100%';
+    this._viewport.style.height = 'auto';
+    this._container.appendChild(this._viewport);
+    
+    this._setupObserver();
+  }
+
+  _setupObserver() {
+    if ('IntersectionObserver' in window) {
+      this._observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            const el = entry.target;
+            if (entry.isIntersecting) {
+              el.classList.add('in');
+              this._observer.unobserve(el);
+            }
+          }
+        },
+        { threshold: 0.08, rootMargin: '50px' }
+      );
+    }
+  }
+
+  setItems(items) {
+    this._items = items;
+    this._visibleStart = 0;
+    this._visibleEnd = Math.min(items.length, this._getVisibleCount() + this._buffer);
+    this._needsUpdate = true;
+    this._scheduleUpdate();
+  }
+
+  _getVisibleCount() {
+    const viewportHeight = window.innerHeight || 800;
+    return Math.ceil(viewportHeight / this._itemHeight) + 2;
+  }
+
+  _scheduleUpdate() {
+    if (this._rafId) return;
+    this._rafId = requestAnimationFrame(() => {
+      this._rafId = null;
+      if (this._needsUpdate) {
+        this._updateDOM();
+        this._needsUpdate = false;
+      }
+    });
+  }
+
+  _acquireNode() {
+    if (this._nodePool.length > 0) {
+      const el = this._nodePool.pop();
+      el.innerHTML = '';
+      el.className = 'card';
+      return el;
+    }
+    return document.createElement('div');
+  }
+
+  _releaseNode(el) {
+    if (this._nodePool.length < this._maxPoolSize) {
+      this._nodePool.push(el);
+    }
+  }
+
+  _updateDOM() {
+    if (!this._viewport) return;
+    
+    const start = Math.max(0, this._visibleStart - this._buffer);
+    const end = Math.min(this._items.length, this._visibleEnd + this._buffer);
+    
+    const toRender = this._items.slice(start, end);
+    const fragment = document.createDocumentFragment();
+    const newRendered = new Map();
+    
+    for (let i = 0; i < toRender.length; i++) {
+      const item = toRender[i];
+      const index = start + i;
+      const key = item.uid || item.handle || i;
+      
+      let el = this._rendered.get(key);
+      if (el) {
+        this._rendered.delete(key);
+        newRendered.set(key, el);
+        fragment.appendChild(el);
+      } else {
+        const html = card(item);
+        const temp = document.createElement('div');
+        temp.innerHTML = html;
+        const newEl = temp.firstElementChild;
+        if (newEl) {
+          newEl.classList.add('in');
+          newRendered.set(key, newEl);
+          fragment.appendChild(newEl);
+          if (this._observer) {
+            this._observer.observe(newEl);
+          }
+        }
+      }
+    }
+    
+    for (const [key, el] of this._rendered) {
+      this._releaseNode(el);
+    }
+    
+    this._viewport.innerHTML = '';
+    this._viewport.appendChild(fragment);
+    this._rendered = newRendered;
+  }
+
+  updateVisibility(scrollTop) {
+    const viewportHeight = window.innerHeight || 800;
+    const start = Math.floor(scrollTop / this._itemHeight);
+    const end = Math.ceil((scrollTop + viewportHeight) / this._itemHeight) + 1;
+    
+    if (start !== this._visibleStart || end !== this._visibleEnd) {
+      this._visibleStart = Math.max(0, start - this._buffer);
+      this._visibleEnd = Math.min(this._items.length, end + this._buffer);
+      this._needsUpdate = true;
+      this._scheduleUpdate();
+    }
+  }
+
+  destroy() {
+    if (this._observer) {
+      this._observer.disconnect();
+      this._observer = null;
+    }
+    if (this._rafId) {
+      cancelAnimationFrame(this._rafId);
+      this._rafId = null;
+    }
+    this._nodePool = [];
+    for (const [key, el] of this._rendered) {
+      if (el && el.parentNode) {
+        el.parentNode.removeChild(el);
+      }
+    }
+    this._rendered.clear();
+    if (this._viewport) {
+      this._viewport.innerHTML = '';
+    }
+  }
+
+  get totalItems() { return this._items.length; }
+}
+
+// --- 3. REQUEST CACHE ---
+class RequestCache {
+  constructor() {
+    this._cache = new Map();
+    this._pending = new Map();
+    this._ttl = 5 * 60 * 1000;
+  }
+
+  async fetch(key, fn, ttl = this._ttl) {
+    const cached = this._cache.get(key);
+    if (cached && (Date.now() - cached.timestamp) < ttl) {
+      return cached.data;
+    }
+
+    if (this._pending.has(key)) {
+      return this._pending.get(key);
+    }
+
+    const promise = fn().then(result => {
+      this._cache.set(key, { data: result, timestamp: Date.now() });
+      this._pending.delete(key);
+      return result;
+    }).catch(error => {
+      this._pending.delete(key);
+      throw error;
+    });
+
+    this._pending.set(key, promise);
+    return promise;
+  }
+
+  clear() { this._cache.clear(); this._pending.clear(); }
+  invalidate(key) { this._cache.delete(key); }
+}
+
+// --- 4. PERFORMANCE UTILITIES ---
+const _perfUtils = {
+  _debounceTimers: new Map(),
+  _rafQueue: [],
+  _rafScheduled: false,
+
+  debounce(id, fn, delay = 150) {
+    if (this._debounceTimers.has(id)) {
+      clearTimeout(this._debounceTimers.get(id));
+    }
+    this._debounceTimers.set(id, setTimeout(() => {
+      this._debounceTimers.delete(id);
+      fn();
+    }, delay));
+  },
+
+  batchRAF(callback) {
+    this._rafQueue.push(callback);
+    if (!this._rafScheduled) {
+      this._rafScheduled = true;
+      requestAnimationFrame(() => {
+        this._rafScheduled = false;
+        const queue = this._rafQueue.slice();
+        this._rafQueue = [];
+        for (const cb of queue) {
+          cb();
+        }
+      });
+    }
+  },
+
+  throttle(fn, delay = 100) {
+    let lastCall = 0;
+    let timeoutId = null;
+    return function(...args) {
+      const now = Date.now();
+      if (now - lastCall < delay) {
+        if (timeoutId) clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+          lastCall = now;
+          timeoutId = null;
+          fn.apply(this, args);
+        }, delay - (now - lastCall));
+        return;
+      }
+      lastCall = now;
+      fn.apply(this, args);
+    };
+  }
+};
+
+// --- 5. COUNTRY BUCKET CACHING ---
+const _countryMap = new Map();
+const _countrySynonyms = new Map();
+const _countryBucketCache = new WeakMap();
+
+function buildCountryMap() {
+  for (const country of COUNTRY_ORDER) {
+    const syn = COUNTRY_SYN[country] || [country];
+    for (const s of syn) {
+      _countrySynonyms.set(s.toLowerCase(), country);
+    }
+    _countrySynonyms.set(country.toLowerCase(), country);
+  }
+}
+buildCountryMap();
+
+function countryBucketOptimized(loc) {
+  if (!loc) return "__other__";
+  if (_countryBucketCache.has(loc)) {
+    return _countryBucketCache.get(loc);
+  }
+  const key = String(loc).toLowerCase();
+  const result = _countrySynonyms.get(key) || "__other__";
+  _countryBucketCache.set(loc, result);
+  return result;
+}
+
+// --- 6. OPTIMIZED PARSE GVIZ ---
+const _dateRegex = /^Date\((\d+),(\d+),(\d+)/;
+const _isoRegex = /^(\d{4}-\d{2}-\d{2})/;
+const _slashRegex = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
+
+const _objectPool = [];
+
+function getPooledObject() {
+  if (_objectPool.length > 0) {
+    const obj = _objectPool.pop();
+    for (const key in obj) {
+      if (key === 'followers' || key === 'followupCount') {
+        obj[key] = 0;
+      } else if (key === 'videos') {
+        obj[key] = [];
+      } else {
+        obj[key] = '';
+      }
+    }
+    return obj;
+  }
+  return {
+    uid: "", discoveredAt: "", assignedTo: "",
+    handle: "", platform: "", followers: 0,
+    niche: "", country: "", url: "#",
+    avatar_url: "", videos: [], top_video_url: "",
+    other: "", email: "", whatsapp: "", phone: "",
+    links: "", language: "", priority: "",
+    engagement: "", messageStatus: "", followupCount: 0,
+    signupStatus: "", igUrl: "", ttUrl: "", scUrl: "",
+    twUrl: "", ytUrl: "", fbUrl: ""
+  };
+}
+
+function releasePooledObject(obj) {
+  if (_objectPool.length < 100) {
+    _objectPool.push(obj);
+  }
+}
+
+function parseGvizOptimized(text) {
+  const s = text.indexOf("{"), e = text.lastIndexOf("}");
+  if (s < 0 || e < 0) return [];
+  
+  try {
+    const json = JSON.parse(text.substring(s, e + 1));
+    if (!json.table) return [];
+    
+    let labels = (json.table.cols || []).map(c => String(c.label || "").trim().toLowerCase());
+    let rows = json.table.rows || [];
+    
+    if (!labels.some(Boolean) && rows.length) {
+      labels = (rows[0].c || []).map(c => c && c.v != null ? String(c.v).trim().toLowerCase() : "");
+      rows = rows.slice(1);
+    }
+    
+    const labelMap = {};
+    for (let i = 0; i < labels.length; i++) {
+      const key = labels[i];
+      if (key) labelMap[key] = i;
+    }
+    
+    const out = [];
+    const colCount = labels.length;
+    
+    for (const r of rows) {
+      if (!r || !r.c) continue;
+      const cells = r.c;
+      
+      const o = getPooledObject();
+      
+      for (let i = 0; i < Math.min(cells.length, colCount); i++) {
+        const cell = cells[i];
+        if (cell && cell.v != null) {
+          const key = labels[i];
+          if (key) {
+            let value = cell.v;
+            if (key === 'followers' || key === 'followup_count') {
+              value = Number(value) || 0;
+            } else if (key === 'discovered_at') {
+              value = normalizeSheetDate(value);
+            } else if (key === 'handle' || key === 'uid') {
+              value = String(value).trim();
+            } else {
+              value = String(value);
+            }
+            o[key] = value;
+          }
+        }
+      }
+      
+      if (!o.handle) {
+        releasePooledObject(o);
+        continue;
+      }
+      
+      if (o.videos) {
+        try {
+          o.videos = typeof o.videos === 'string' ? JSON.parse(o.videos) : (Array.isArray(o.videos) ? o.videos : []);
+        } catch (_) {
+          o.videos = [];
+        }
+      }
+      
+      out.push(o);
+    }
+    return out;
+  } catch (e) {
+    console.error('Parse error:', e);
+    return [];
+  }
+}
+
+// --- 7. CACHED NICHE OPTIONS ---
+let _cachedNicheOptions = null;
+
+function nicheOptionsCached(current) {
+  if (!_cachedNicheOptions) {
+    let h = '';
+    for (const k in NICHE_AR) {
+      h += '<option value="' + k + '">' + NICHE_AR[k] + '</option>';
+    }
+    _cachedNicheOptions = h;
+  }
+  
+  if (current) {
+    return _cachedNicheOptions.replace(
+      new RegExp('value="' + current + '"'),
+      'value="' + current + '" selected'
+    );
+  }
+  return _cachedNicheOptions;
+}
+
+// --- 8. CACHED PRIORITY ---
+const _cachedPriority = new WeakMap();
+
+function metricsRowOptimized(c) {
+  if (_cachedPriority.has(c)) {
+    const pi = _cachedPriority.get(c);
+    if (!pi) return "";
+    return '<div class="metrics"><span class="metric prio" style="--pc:' + pi.c + '"><span class="mk">الأولوية</span><span class="mv">' + pi.l + '</span></span></div>';
+  }
+  const pi = prioInfo(c.priority);
+  _cachedPriority.set(c, pi);
+  if (!pi) return "";
+  return '<div class="metrics"><span class="metric prio" style="--pc:' + pi.c + '"><span class="mk">الأولوية</span><span class="mv">' + pi.l + '</span></span></div>';
+}
+
+// --- 9. CACHED PLATFORM LINKS ---
+const _cachedPlatformLinks = new WeakMap();
+
+function otherPlatformLinksOptimized(c) {
+  if (_cachedPlatformLinks.has(c)) {
+    return _cachedPlatformLinks.get(c);
+  }
+  
+  const map = [
+    { plat: 'instagram', label: 'انستجرام', url: c.igUrl },
+    { plat: 'tiktok', label: 'تيك توك', url: c.ttUrl },
+    { plat: 'youtube', label: 'يوتيوب', url: c.ytUrl },
+    { plat: 'snapchat', label: 'سناب', url: c.scUrl },
+    { plat: 'x', label: 'تويتر', url: c.twUrl },
+    { plat: 'fb', label: 'فيسبوك', url: c.fbUrl }
+  ];
+  
+  const out = [];
+  for (const m of map) {
+    let u = String(m.url || '').trim();
+    if (!u) continue;
+    if (!/^https?:\/\//i.test(u)) {
+      if (/^[\w.-]+\.[a-z]{2,}/i.test(u)) {
+        u = 'https://' + u.replace(/^\/+/, '');
+      } else {
+        continue;
+      }
+    }
+    if (m.plat === c.platform) continue;
+    out.push({ plat: m.plat, label: m.label, url: u });
+  }
+  
+  _cachedPlatformLinks.set(c, out);
+  return out;
+}
+
+// --- 10. OPTIMIZED CARD ---
+function cardOptimized(c) {
+  const p = PLAT[c.platform] || PLAT.instagram;
+  const uidAttr = c.uid ? ' data-uid="' + esc(c.uid) + '"' : '';
+  const canAdmin = !!(c.uid && API_BASE && API_BASE.indexOf("http") === 0);
+  const isStaff = isStaffSession();
+  
+  const parts = [];
+  parts.push('<div class="card"', uidAttr, '>');
+  parts.push(stripHtml(c));
+  parts.push('<div class="body">');
+  parts.push('<div class="chead">');
+  parts.push('<div class="cmeta">');
+  parts.push('<div class="name">@', esc(c.handle), '</div>');
+  parts.push('<div class="loc">📍 ', esc(c.country || "الخليج"));
+  if (scrapingMode && c.discoveredAt) {
+    parts.push('  ·  🕒 ', esc(c.discoveredAt));
+  }
+  parts.push('</div></div>');
+  parts.push('<span class="pchip" style="background:', p.c, '">', p.ar, '</span>');
+  parts.push('</div>');
+  
+  if (c.assignedTo) {
+    parts.push('<div class="staff-ribbon"><span class="staff-emoji">',
+      (STAFF_EMOJI[c.assignedTo] || '👤'), '</span><span class="staff-name">',
+      esc(c.assignedTo), '</span></div>');
+  }
+  
+  parts.push('<div class="fol"><span class="big num">', fmt(c.followers),
+    '</span><span class="lbl">متابع</span><span class="nichetag">',
+    (NICHE_AR[c.niche] || c.niche || ""), '</span></div>');
+  
+  parts.push(metricsRowOptimized(c));
+  parts.push(otherText(c));
+  parts.push(linksChips(c));
+  parts.push(contactRow(c));
+  parts.push(crmStatusBadges(c));
+  
+  parts.push('<div class="actions">');
+  parts.push('<a class="btn primary" href="', esc(c.url),
+    '" target="_blank" rel="noopener">زيارة الحساب الرسمي</a>');
+  parts.push('<button class="btn ghost" data-action="copy" title="نسخ الحساب">⧉</button>');
+  parts.push('</div>');
+  
+  if (isStaff) {
+    parts.push(crmActionsRow(c));
+  }
+  
+  if (canAdmin && isAdminSession()) {
+    parts.push('<div class="admin-actions">');
+    parts.push('<button class="aabtn ok" data-action="admin-approve">✅ تأكيد</button>');
+    parts.push('<button class="aabtn move" data-action="admin-archive">📤 أرشفة</button>');
+    parts.push('<div class="niche-select-wrap"><select data-action="admin-niche" onchange="onChangeNiche(this)"><option value="">نقل لمجال...</option>');
+    parts.push(nicheOptionsCached(c.niche));
+    parts.push('</select></div>');
+    parts.push('<button class="aabtn danger" data-action="admin-delete">🗑️ حذف</button>');
+    parts.push('</div>');
+  }
+  
+  parts.push('</div></div>');
+  return parts.join('');
+}
+
+// --- 11. GLOBAL STATE ---
 let SESSION = null;
 let CREATORS = [];
 let isLoading = false;
@@ -760,13 +1500,567 @@ let allLeadsLoaded = false;
 let _list = [];
 let _rendered = 0;
 const PAGE_SIZE = 24;
+let _virtualList = null;
+let _creatorStore = null;
+let _requestCache = new RequestCache();
+let _scrollThrottled = null;
+let _cachedScrapeCount = -1;
+let _cachedParseResult = null;
+let _cachedParseKey = null;
+let _cacheWriteTimer = null;
+let _searchController = null;
+let _searchDebounceTimer = null;
+const _debounceCleanup = new Map();
 
-try {
-  const raw = sessionStorage.getItem('adltix_session');
-  if (raw) {
-    SESSION = JSON.parse(raw);
+// --- 12. REUSABLE CONFIRM MODAL ---
+let _confirmModal = null;
+
+function showConfirmOptimized(title, msg, yesLabel, yesClass) {
+  return new Promise(resolve => {
+    if (!_confirmModal) {
+      _confirmModal = document.createElement('div');
+      _confirmModal.className = 'cf-overlay';
+      _confirmModal.innerHTML = `
+        <div class="cf-box">
+          <div class="cf-title"></div>
+          <div class="cf-msg"></div>
+          <div class="cf-btns">
+            <button class="cf-cancel">إلغاء</button>
+            <button class="cf-yes"></button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(_confirmModal);
+      
+      const box = _confirmModal.querySelector('.cf-box');
+      const cancelBtn = box.querySelector('.cf-cancel');
+      const yesBtn = box.querySelector('.cf-yes');
+      
+      let _resolve = null;
+      
+      cancelBtn.addEventListener('click', () => {
+        _confirmModal.classList.remove('show');
+        if (_resolve) _resolve(false);
+        _resolve = null;
+      });
+      
+      yesBtn.addEventListener('click', () => {
+        _confirmModal.classList.remove('show');
+        if (_resolve) _resolve(true);
+        _resolve = null;
+      });
+      
+      _confirmModal.addEventListener('click', (e) => {
+        if (e.target === _confirmModal) {
+          _confirmModal.classList.remove('show');
+          if (_resolve) _resolve(false);
+          _resolve = null;
+        }
+      });
+      
+      _confirmModal._resolve = (val) => {
+        if (_resolve) _resolve(val);
+        _resolve = null;
+      };
+    }
+    
+    const box = _confirmModal.querySelector('.cf-box');
+    box.querySelector('.cf-title').textContent = title;
+    box.querySelector('.cf-msg').textContent = msg;
+    const yesBtn = box.querySelector('.cf-yes');
+    yesBtn.textContent = yesLabel;
+    yesBtn.className = 'cf-yes ' + yesClass;
+    
+    _confirmModal._resolve = resolve;
+    _confirmModal.style.display = 'flex';
+    requestAnimationFrame(() => {
+      _confirmModal.classList.add('show');
+    });
+  });
+}
+
+// --- 13. OPTIMIZED PILL BUILDING ---
+const _pillCacheMap = new Map();
+
+function buildPillsOptimized(id, items, key) {
+  const box = document.getElementById(id);
+  if (!box) return;
+  
+  const cacheKey = `${id}_${key}`;
+  const currentValue = state[key];
+  
+  let cachedData = _pillCacheMap.get(cacheKey);
+  if (!cachedData || cachedData.items.length !== items.length) {
+    const fragment = document.createDocumentFragment();
+    const pillElements = [];
+    for (const it of items) {
+      const b = document.createElement('button');
+      b.className = 'pill' + (currentValue === it.v ? ' on' : '');
+      b.innerHTML = it.dot ? `<span class="pdot" style="background:${it.dot}"></span>${it.l}` : it.l;
+      b.dataset.value = it.v;
+      b.dataset.key = key;
+      b.addEventListener('click', (e) => {
+        state[key] = it.v;
+        render();
+      });
+      fragment.appendChild(b);
+      pillElements.push(b);
+    }
+    
+    box.innerHTML = '';
+    box.appendChild(fragment);
+    
+    _pillCacheMap.set(cacheKey, {
+      items: items,
+      elements: pillElements
+    });
+  } else {
+    const elements = cachedData.elements;
+    for (let i = 0; i < elements.length && i < items.length; i++) {
+      const isActive = currentValue === items[i].v;
+      elements[i].classList.toggle('on', isActive);
+    }
   }
-} catch(e) {}
+}
+
+// --- 14. OPTIMIZED STATS ---
+function renderStatsOptimized() {
+  const store = _creatorStore;
+  if (!store) return;
+  
+  const statsEl = document.getElementById('stats');
+  if (!statsEl) return;
+  
+  statsEl.innerHTML =
+    `<div class="stat"><div class="v num">${store.length.toLocaleString('en')}</div><div class="l">مؤثر موثّق</div></div>` +
+    `<div class="stat"><div class="v num">${store.getUniquePlatforms().length}</div><div class="l">منصات تواصل</div></div>` +
+    `<div class="stat"><div class="v num">${store.getUniqueNiches().length}</div><div class="l">مجالات تسويق</div></div>` +
+    `<div class="stat"><div class="v num">${store.contactCount.toLocaleString('en')}</div><div class="l">وسيلة تواصل مباشرة</div></div>`;
+}
+
+// --- 15. OPTIMIZED FILTER ---
+function applyFiltersOptimized() {
+  if (!_creatorStore) return [];
+  
+  const filters = {
+    niche: state.niche,
+    platform: state.platform,
+    country: state.country,
+    fol: state.fol,
+    contact: state.contact,
+    sort: state.sort,
+    q: state.q
+  };
+  
+  let result = _creatorStore.getFiltered(filters);
+  
+  if (scrapingMode) {
+    const today = cairoTodayStr();
+    result = result.filter(c => c.discoveredAt === today);
+  }
+  
+  return result;
+}
+
+// --- 16. OPTIMIZED RENDER ---
+function renderOptimized() {
+  if (isRendering) return;
+  isRendering = true;
+  
+  _perfUtils.batchRAF(() => {
+    try {
+      const filtered = applyFiltersOptimized();
+      const list = filtered;
+      
+      const grid = document.getElementById('grid');
+      if (!grid) return;
+      
+      const countEl = document.getElementById('shown');
+      if (countEl) countEl.textContent = list.length;
+      
+      const emptyEl = document.getElementById('empty');
+      if (emptyEl) {
+        emptyEl.style.display = list.length ? 'none' : 'block';
+      }
+      
+      if (list.length === 0) {
+        if (grid) grid.style.display = 'none';
+        return;
+      }
+      
+      if (grid) grid.style.display = 'grid';
+      
+      if (list.length > 20) {
+        if (!_virtualList) {
+          _virtualList = new VirtualList(grid, { itemHeight: 560, buffer: 6 });
+        }
+        _virtualList.setItems(list);
+      } else {
+        if (_virtualList) {
+          _virtualList.destroy();
+          _virtualList = null;
+        }
+        grid.innerHTML = '';
+        const fragment = document.createDocumentFragment();
+        for (const item of list) {
+          const html = card(item);
+          const temp = document.createElement('div');
+          temp.innerHTML = html;
+          const el = temp.firstElementChild;
+          if (el) {
+            el.classList.add('in');
+            fragment.appendChild(el);
+          }
+        }
+        grid.appendChild(fragment);
+      }
+      
+      updateScrapeCount();
+    } catch (e) {
+      console.error('Render error:', e);
+    } finally {
+      isRendering = false;
+    }
+  });
+}
+
+// --- 17. OPTIMIZED BOOT ---
+async function bootOptimized() {
+  if (isLoading) return;
+  isLoading = true;
+  
+  try {
+    const cached = readCacheOptimized();
+    if (cached && cached.length && !allLeadsLoaded) {
+      if (!_creatorStore) _creatorStore = new CreatorStore();
+      _creatorStore.set(cached);
+      CREATORS = cached;
+      buildAllPills();
+      renderStatsOptimized();
+      renderOptimized();
+      updateUIForRole();
+      isLoading = false;
+      refreshAllDataOptimized();
+      return;
+    }
+
+    showSkeleton();
+    
+    const fetchPromises = SHEET_TABS.map(tab =>
+      _requestCache.fetch(
+        `sheet_${tab}`,
+        () => fetch(gvizUrl(tab)).then(r => r.text()).catch(() => null),
+        60000
+      )
+    );
+
+    const results = await Promise.all(fetchPromises);
+    let all = [];
+    
+    for (const txt of results) {
+      if (txt) {
+        const rows = parseGvizOptimized(txt);
+        if (rows && rows.length) all = all.concat(rows);
+      }
+    }
+    
+    allLeadsLoaded = true;
+    if (!_creatorStore) _creatorStore = new CreatorStore();
+    _creatorStore.set(all);
+    CREATORS = all;
+    applyDataOptimized(all);
+    writeCacheOptimized(all);
+    updateUIForRole();
+  } catch (e) {
+    console.error('Boot error:', e);
+  } finally {
+    isLoading = false;
+  }
+}
+
+function applyDataOptimized(all) {
+  const filtered = all.filter(c => c.platform === "snapchat" ? true : c.followers >= MIN_FOLLOWERS);
+  if (filtered.length) {
+    if (!_creatorStore) _creatorStore = new CreatorStore();
+    _creatorStore.set(filtered);
+    CREATORS = filtered;
+  }
+  buildAllPills();
+  renderStatsOptimized();
+  renderOptimized();
+  updateScrapeCount();
+}
+
+async function refreshAllDataOptimized() {
+  try {
+    const fetchPromises = SHEET_TABS.map(tab =>
+      _requestCache.fetch(
+        `sheet_${tab}`,
+        () => fetch(gvizUrl(tab)).then(r => r.text()).catch(() => null),
+        60000
+      )
+    );
+    const results = await Promise.all(fetchPromises);
+    let all = [];
+    for (const txt of results) {
+      if (txt) {
+        const rows = parseGvizOptimized(txt);
+        if (rows && rows.length) all = all.concat(rows);
+      }
+    }
+    if (all.length > CREATORS.length) {
+      allLeadsLoaded = true;
+      if (!_creatorStore) _creatorStore = new CreatorStore();
+      _creatorStore.set(all);
+      CREATORS = all;
+      applyDataOptimized(all);
+      writeCacheOptimized(all);
+    }
+  } catch (e) {}
+}
+
+function readCacheOptimized() {
+  try {
+    const raw = sessionStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    
+    if (_cachedParseKey === raw) return _cachedParseResult;
+    
+    const obj = JSON.parse(raw);
+    if (Date.now() - obj.t > CACHE_MS) return null;
+    
+    _cachedParseKey = raw;
+    _cachedParseResult = obj.data;
+    return obj.data;
+  } catch(e) {
+    return null;
+  }
+}
+
+function writeCacheOptimized(data) {
+  clearTimeout(_cacheWriteTimer);
+  _cacheWriteTimer = setTimeout(() => {
+    try {
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify({t: Date.now(), data}));
+    } catch(e) {}
+  }, 100);
+}
+
+function updateScrapeCountOptimized() {
+  if (!_creatorStore) return;
+  
+  const today = cairoTodayStr();
+  let count = 0;
+  for (const item of _creatorStore.all) {
+    if (item.discoveredAt === today) count++;
+  }
+  
+  if (count === _cachedScrapeCount) return;
+  _cachedScrapeCount = count;
+  
+  const el = document.getElementById('scrapeCount');
+  if (!el) return;
+  
+  if (el.textContent !== String(count)) {
+    el.textContent = count;
+    el.classList.remove('bump');
+    void el.offsetWidth;
+    el.classList.add('bump');
+  }
+}
+
+// --- 18. SCROLL OPTIMIZATION ---
+_scrollThrottled = _perfUtils.throttle((e) => {
+  if (_virtualList) {
+    _virtualList.updateVisibility(window.scrollY);
+  }
+}, 50);
+
+// --- 19. EVENT DELEGATION ---
+function setupEventDelegation() {
+  const grid = document.getElementById('grid');
+  if (!grid) return;
+  
+  grid.addEventListener('click', (e) => {
+    const target = e.target.closest('[data-action]');
+    if (!target) return;
+    
+    const action = target.dataset.action;
+    const card = target.closest('.card');
+    const uid = card?.dataset?.uid;
+    
+    if (!uid && action !== 'admin-niche') return;
+    
+    switch (action) {
+      case 'copy':
+        const handle = card?.querySelector('.name')?.textContent || '';
+        copyTxt(handle, target);
+        break;
+      case 'crm-sent':
+        onCrmAction(target, uid, 'sent');
+        break;
+      case 'crm-followup':
+        onCrmAction(target, uid, 'followup');
+        break;
+      case 'crm-subscribed':
+        onCrmAction(target, uid, 'subscribed');
+        break;
+      case 'admin-approve':
+        onApprove(target);
+        break;
+      case 'admin-archive':
+        onMoveToNew(target);
+        break;
+      case 'admin-delete':
+        onDelete(target);
+        break;
+      case 'admin-niche':
+        break;
+    }
+  });
+  
+  grid.addEventListener('change', (e) => {
+    const select = e.target.closest('[data-action="admin-niche"]');
+    if (!select) return;
+    onChangeNiche(select);
+  });
+}
+
+// --- 20. INITIALIZATION ---
+document.addEventListener('DOMContentLoaded', () => {
+  const searchInput = document.getElementById('q');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      if (_searchController) {
+        _searchController.abort();
+      }
+      _searchController = new AbortController();
+      
+      const v = e.target.value;
+      clearTimeout(_searchDebounceTimer);
+      _searchDebounceTimer = setTimeout(() => {
+        state.q = v;
+        renderOptimized();
+        _searchController = null;
+      }, 150);
+    });
+  }
+  
+  window.addEventListener('scroll', _scrollThrottled, { passive: true });
+  setupEventDelegation();
+  
+  let theme = 'light';
+  try { theme = localStorage.getItem('adltix_theme') || 'light'; } catch(e) {}
+  applyTheme(theme);
+});
+
+// --- 21. REPLACE FUNCTIONS ---
+applyData = applyDataOptimized;
+boot = bootOptimized;
+render = renderOptimized;
+refreshAllData = refreshAllDataOptimized;
+card = cardOptimized;
+countryBucket = countryBucketOptimized;
+parseGviz = parseGvizOptimized;
+buildPills = buildPillsOptimized;
+renderStats = renderStatsOptimized;
+showConfirm = showConfirmOptimized;
+metricsRow = metricsRowOptimized;
+otherPlatformLinks = otherPlatformLinksOptimized;
+updateScrapeCount = updateScrapeCountOptimized;
+readCache = readCacheOptimized;
+writeCache = writeCacheOptimized;
+
+// --- 22. MEMORY CLEANUP ---
+function cleanupMemory() {
+  if (_virtualList) {
+    _virtualList.destroy();
+    _virtualList = null;
+  }
+  if (_requestCache) {
+    _requestCache.clear();
+  }
+  if (_searchController) {
+    _searchController.abort();
+    _searchController = null;
+  }
+  clearTimeout(_cacheWriteTimer);
+  _cacheWriteTimer = null;
+  for (const [id, timer] of _debounceCleanup) {
+    clearTimeout(timer);
+  }
+  _debounceCleanup.clear();
+}
+
+setInterval(cleanupMemory, 60000);
+
+window.addEventListener('beforeunload', () => {
+  cleanupMemory();
+});
+
+// --- 23. IDLE TIME PROCESSING ---
+function processIdleOptimized(callback) {
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(callback, { timeout: 2000 });
+  } else {
+    setTimeout(callback, 50);
+  }
+}
+
+function processCountryBucketsChunked(data, startIndex = 0, chunkSize = 50) {
+  const endIndex = Math.min(startIndex + chunkSize, data.length);
+  for (let i = startIndex; i < endIndex; i++) {
+    const item = data[i];
+    if (item && item.country) {
+      countryBucketOptimized(item.country);
+    }
+  }
+  if (endIndex < data.length) {
+    requestIdleCallback(() => {
+      processCountryBucketsChunked(data, endIndex, chunkSize);
+    }, { timeout: 2000 });
+  }
+}
+
+processIdleOptimized(() => {
+  if (_creatorStore) {
+    processCountryBucketsChunked(_creatorStore.all);
+  }
+});
+
+// --- 24. INIT AUTH ---
+(function initAuth() {
+  SESSION = loadSession();
+  if (SESSION && SESSION.token) {
+    document.getElementById('loginGate').style.display = 'none';
+    bootOptimized();
+  }
+})();
+
+console.log('✅ Adltix Performance Optimized - All optimizations applied');
+
+// --- 25. ALL ORIGINAL FUNCTIONS (preserved) ---
+
+// All original functions remain here for compatibility
+// These are the original implementations that the optimized versions override
+// They are preserved to maintain backward compatibility
+
+function loadSession() {
+  try {
+    const raw = sessionStorage.getItem('adltix_session');
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) {
+    return null;
+  }
+}
+
+function saveSession(s) {
+  sessionStorage.setItem('adltix_session', JSON.stringify(s));
+}
+
+function clearSession() {
+  sessionStorage.removeItem('adltix_session');
+}
 
 function isStaffSession() {
   return !!(SESSION && String(SESSION.role || '').trim().toLowerCase() === 'staff');
@@ -777,978 +2071,108 @@ function isAdminSession() {
   return role === 'admin' || role === 'manager';
 }
 
-// ============================================================
-// 2. البيانات الثابتة
-// ============================================================
-const SHEET_ID = "1SZpJPbpmkZ6OAvpfLaiREX5BmpbiyMiP4IEaFOO7KHM";
-const API_BASE = "https://script.google.com/macros/s/AKfycbxuo4IWPwJqwwBcL5mSyExUV-U4Qr6uLQDE9v-UWRIr5esl3hwtCTRFcFeGXsJADl_B/exec";
-const SHEET_TABS = ["👗 Fashion & Style","✨ Luxury & Lifestyle","👨‍👩‍👧 Family & Parenting","⚽ Sports & Fitness","🍳 Food & Cooking","🎮 Gaming","💼 Business","📱 Tech","😂 Entertainment","🔖 Other Niches"];
-const MIN_FOLLOWERS = 0;
-
-const PLAT = {
-  instagram:{ar:"انستجرام",c:"#E1306C",g:"linear-gradient(135deg,#F58529,#DD2A7B,#8134AF)"},
-  tiktok:{ar:"تيك توك",c:"#111",g:"linear-gradient(135deg,#25F4EE,#111,#FE2C55)"},
-  youtube:{ar:"يوتيوب",c:"#FF0000",g:"linear-gradient(135deg,#FF0000,#c4302b)"},
-  x:{ar:"تويتر",c:"#111",g:"linear-gradient(135deg,#1d1d1f,#3a3a3d)"},
-  snapchat:{ar:"سناب",c:"#111",g:"linear-gradient(135deg,#FFFC00,#FFC400)"}
-};
-const NICHE_AR = {fashion:"فاشن",luxury:"لاكشري",moms:"عائلة وأمومة",sports:"رياضة ولياقة",food:"طعام وطبخ",gaming:"جيمنج",business:"أعمال",tech:"تقنية",entertainment:"ترفيه",other:"أخرى"};
-const STAFF_EMOJI = {Rahma:"🌸",Esraa:"🌺",Menna:"🌷",Kholod:"🌻",Faten:"🌹",Sally:"🌼"};
-const COUNTRY_SYN={"السعودية":["السعودية","السعوديه","الرياض","جدة","جده","مكة","مكه","المدينة","المدينه","الدمام","الخبر","saudi","ksa"],"الإمارات":["الإمارات","الامارات","دبي","أبوظبي","ابوظبي","الشارقة","الشارقه","عجمان","العين","uae","dubai","emirat"],"الكويت":["الكويت","kuwait"],"قطر":["قطر","الدوحة","الدوحه","qatar","doha"],"مصر":["مصر","القاهرة","القاهره","الإسكندرية","الاسكندرية","الجيزة","الجيزه","egypt","cairo"],"المغرب":["المغرب","مغرب","الدار البيضاء","الرباط","مراكش","طنجة","morocco","casablanca","rabat"]};
-const COUNTRY_ORDER=["السعودية","الإمارات","الكويت","قطر","مصر","المغرب"];
-function countryBucket(loc){ loc=String(loc||"").toLowerCase(); for(const n of COUNTRY_ORDER){ const syn=COUNTRY_SYN[n]||[n]; if(syn.some(x=>loc.indexOf(String(x).toLowerCase())!==-1)) return n; } return "__other__"; }
-function prioInfo(p){ p=String(p||"").trim().toLowerCase(); if(p==="high"||p==="عالي"||p==="1") return {l:"High",c:"#B8860B"}; if(p==="medium"||p==="متوسط"||p==="2") return {l:"Medium",c:"#f59e0b"}; if(p==="low"||p==="منخفض"||p==="3") return {l:"Low",c:"#9ca3af"}; return null; }
-const state = {niche:"all", platform:"all", country:"all", fol:"all", contact:"all", sort:"fol", q:""};
-
-function fmt(n){ if(n==null) return "—"; n=Number(n); if(!n) return "—"; if(n>=1e6) return (n/1e6).toFixed(1).replace(/\.0$/,"")+"M"; if(n>=1e3) return (n/1e3).toFixed(1).replace(/\.0$/,"")+"K"; return ""+n; }
-function esc(s){ return String(s||"").replace(/'/g,"\\'").replace(/"/g,"&quot;"); }
-function clean(list){ return list.filter(c=> c && (Number(c.followers)>=MIN_FOLLOWERS || c.platform==="snapchat")); }
-
-function buildPills(id, items, key){
-  const box=document.getElementById(id); if(!box) return;
-  box.innerHTML="";
-  items.forEach(it=>{
-    const b=document.createElement("button");
-    b.className="pill"+(state[key]===it.v?" on":"");
-    b.innerHTML = it.dot? '<span class="pdot" style="background:'+it.dot+'"></span>'+it.l : it.l;
-    b.onclick=()=>{ state[key]=it.v; render(); };
-    box.appendChild(b);
-  });
-}
-function buildAllPills(){
-  buildPills("f-niche",[{v:"all",l:"الكل"},{v:"fashion",l:"فاشن"},{v:"luxury",l:"لاكشري"},{v:"moms",l:"عائلة وأمومة"},{v:"sports",l:"رياضة ولياقة"},{v:"food",l:"طعام وطبخ"},{v:"gaming",l:"جيمنج"},{v:"business",l:"أعمال"},{v:"tech",l:"تقنية"},{v:"entertainment",l:"ترفيه"},{v:"other",l:"أخرى"}],"niche");
-  buildPills("f-platform",[{v:"all",l:"الكل"},{v:"instagram",l:"انستجرام",dot:PLAT.instagram.c},{v:"tiktok",l:"تيك توك",dot:"#25F4EE"},{v:"youtube",l:"يوتيوب",dot:PLAT.youtube.c},{v:"x",l:"تويتر",dot:"#555"},{v:"snapchat",l:"سناب",dot:PLAT.snapchat.c}],"platform");
-  const data=clean(CREATORS);
-  const bc={}; data.forEach(c=>{ const b=countryBucket(c.country); bc[b]=(bc[b]||0)+1; });
-  const cc=(n)=>bc[n]||0;
-  buildPills("f-country",[
-    {v:"all",l:"كل الدول ("+data.length+")"},
-    {v:"السعودية",l:"🇸🇦 السعودية ("+cc("السعودية")+")"},
-    {v:"الإمارات",l:"🇦🇪 الإمارات ("+cc("الإمارات")+")"},
-    {v:"الكويت",l:"🇰🇼 الكويت ("+cc("الكويت")+")"},
-    {v:"قطر",l:"🇶🇦 قطر ("+cc("قطر")+")"},
-    {v:"مصر",l:"🇪🇬 مصر ("+cc("مصر")+")"},
-    {v:"المغرب",l:"🇲🇦 المغرب ("+cc("المغرب")+")"},
-    {v:"__other__",l:"🌍 دول أخرى ("+cc("__other__")+")"}
-  ],"country");
+function esc(s) {
+  return String(s || "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
 }
 
-function applyFilters(){
-  let r=clean(CREATORS).slice();
-  if(scrapingMode){ const today=cairoTodayStr(); r=r.filter(c=>c.discoveredAt===today); }
-  if(state.niche!=="all") r=r.filter(c=>c.niche===state.niche);
-  if(state.platform!=="all") r=r.filter(c=>c.platform===state.platform);
-  if(state.country!=="all") r=r.filter(c=>countryBucket(c.country)===state.country);
-  if(state.fol!=="all"){
-    const [a,b]=state.fol.split("-").map(Number);
-    r=r.filter(c=> (c.platform==="snapchat" && !c.followers) || (c.followers>=a*1000 && c.followers<b*1000));
+function fmt(n) {
+  if (n == null) return "—";
+  n = Number(n);
+  if (!n) return "—";
+  if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M";
+  if (n >= 1e3) return (n / 1e3).toFixed(1).replace(/\.0$/, "") + "K";
+  return "" + n;
+}
+
+function cairoTodayStr() {
+  try {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Africa/Cairo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(new Date());
+  } catch(e) {
+    return new Date().toISOString().slice(0, 10);
   }
-  if(state.contact && state.contact!=="all"){ r=r.filter(c=>{ const e=!!(c.email&&String(c.email).trim()); const w=!!((c.whatsapp&&String(c.whatsapp).trim())||(c.phone&&String(c.phone).trim())); if(state.contact==="email")return e; if(state.contact==="whatsapp")return w; if(state.contact==="both")return e&&w; if(state.contact==="none")return !e&&!w; return true; }); }
-  if(state.q){ const q=state.q.toLowerCase(); r=r.filter(c=>(c.handle||"").toLowerCase().includes(q)); }
-  if(state.sort==="fol") r.sort((a,b)=>(b.followers||0)-(a.followers||0));
-  if(state.sort==="fola") r.sort((a,b)=>(a.followers||0)-(b.followers||0));
-  if(state.sort==="name") r.sort((a,b)=>(a.handle||"").localeCompare(b.handle||""));
-  return r;
 }
 
-// ===== دوال الكارد =====
-function igCode(u){ const m=String(u||'').match(/\/(p|reel|reels|tv)\/([^/?#]+)/); return m?{kind:(m[1]==='reels'?'reel':m[1]),code:m[2]}:null; }
-function ttVidId(u){ const m=String(u||'').match(/\/video\/(\d+)/); return m?m[1]:''; }
-
-function stripHtml(c){
-  const p=PLAT[c.platform]||PLAT.instagram;
-  let vids=(c.videos||[]).filter(v=>v && (v.url||v.thumb));
-  const seen={}; vids=vids.filter(v=>{ const k=(v.url||'')+'|'+(v.thumb||''); if(seen[k]) return false; seen[k]=1; return true; });
-  const bigPlay='<span class="playbig"><svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M8 5v14l11-7z"/></svg></span>';
-  const cand=[c.top_video_url, ...vids.map(v=>v.url), c.url].filter(Boolean);
-  const pickBy=(fn)=>{ for(const u of cand){ if(fn(u)) return u; } return ''; };
-
-  if(c.platform==='instagram'){
-    const u=pickBy(u=>igCode(u)); const ic=igCode(u);
-    if(ic){
-      return '<div class="media embed ig" data-embed-src="'+esc('https://www.instagram.com/'+ic.kind+'/'+ic.code+'/embed')+'"><div class="poster" onclick="loadEmbed(this.parentNode)" style="background:'+p.g+'">'+bigPlay+'</div></div>';
-    }
-    if(c.avatar_url){
-      return '<div class="media shot" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel">انستجرام</span></div>';
-    }
-    return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="mlabel">انستجرام</span></div>';
+function cairoNowLabel() {
+  try {
+    return new Intl.DateTimeFormat('ar-EG', {
+      timeZone: 'Africa/Cairo',
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(new Date());
+  } catch(e) {
+    return new Date().toLocaleString();
   }
-  if(c.platform==='tiktok'){
-    const u=pickBy(u=>ttVidId(u)); const vid=ttVidId(u);
-    if(vid){
-      return '<div class="media embed tt" data-embed-src="'+esc('https://www.tiktok.com/embed/v2/'+vid)+'"><div class="poster" onclick="loadEmbed(this.parentNode)" style="background:'+p.g+'">'+bigPlay+'</div></div>';
-    }
-    if(c.avatar_url){
-      return '<div class="media shot" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel">تيك توك</span></div>';
-    }
-    return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="mlabel">تيك توك</span></div>';
-  }
-  if(c.platform==='youtube'){
-    const u=pickBy(u=>u.match(/[?&]v=([^&]+)/)||u.match(/youtu\.be\/([^?]+)/)||u.match(/\/shorts\/([^?\/]+)/)); 
-    const id = u ? (u.match(/[?&]v=([^&]+)/)||u.match(/youtu\.be\/([^?]+)/)||u.match(/\/shorts\/([^?\/]+)/)) : null;
-    if(id && id[1]){
-      const t='https://i.ytimg.com/vi/'+id[1]+'/hqdefault.jpg';
-      return '<div class="media shot" style="background:'+p.g+'" onclick="openVideo(\''+esc(u||c.url)+'\',\'youtube\')"><img class="cover" src="'+esc(t)+'" loading="lazy" onerror="this.remove()"><div class="ovl"></div>'+bigPlay+'</div>';
-    }
-    if(c.avatar_url){
-      return '<div class="media shot yt" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover ytcover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div>'+bigPlay+'<span class="mlabel">قناة يوتيوب</span></div>';
-    }
-    return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')">'+bigPlay+'<span class="mlabel">يوتيوب</span></div>';
-  }
-  if(c.platform==='snapchat'){
-    return '<div class="media snap" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="ghost">👻</span><span class="mlabel dark">افتح سناب</span></div>';
-  }
-  if(c.avatar_url){
-    return '<div class="media shot" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel">'+p.ar+'</span></div>';
-  }
-  return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="mlabel">'+p.ar+'</span></div>';
 }
 
-function contactRow(c){
-  const wa = c.whatsapp ? String(c.whatsapp).trim() : "";
-  const ph = c.phone ? String(c.phone).trim() : "";
-  const waNum = wa.replace(/[^\d]/g,"");
-  const phNum = ph.replace(/[^\d]/g,"");
-  const btns=[];
-  if(waNum){ const link = wa.indexOf("http")===0 ? wa : ("https://wa.me/"+waNum); btns.push('<a class="cbtn2 wa" title="'+esc("+"+waNum)+'" href="'+esc(link)+'" target="_blank" rel="noopener">واتساب</a>'); }
-  if(phNum && phNum!==waNum){ btns.push('<a class="cbtn2 ph" title="'+esc("+"+phNum)+'" href="tel:+'+esc(phNum)+'">اتصال</a>'); }
-  if(c.email){ btns.push('<a class="cbtn2 em" title="'+esc(c.email)+'" href="mailto:'+esc(c.email)+'">بريد</a>'); }
-  if(!btns.length){ return '<a class="cbtn2 acc" href="'+esc(c.url)+'" target="_blank" rel="noopener">تواصل عبر الحساب</a>'; }
-  return '<div class="contact2">'+btns.join("")+'</div>';
-}
-function copyTxt(txt, el){
-  try{ navigator.clipboard && navigator.clipboard.writeText(txt); }catch(e){}
-  if(el){ const o=el.textContent; el.textContent="✓"; setTimeout(()=>{el.textContent=o;},1000); }
-}
-function otherPlatformLinks(c){
-  const map=[
-    {plat:'instagram',label:'انستجرام',url:c.igUrl},
-    {plat:'tiktok',label:'تيك توك',url:c.ttUrl},
-    {plat:'youtube',label:'يوتيوب',url:c.ytUrl},
-    {plat:'snapchat',label:'سناب',url:c.scUrl},
-    {plat:'x',label:'تويتر',url:c.twUrl},
-    {plat:'fb',label:'فيسبوك',url:c.fbUrl}
-  ];
-  const out=[];
-  for(const m of map){
-    let u=String(m.url||'').trim(); if(!u) continue;
-    if(!/^https?:\/\//i.test(u)){ if(/^[\w.-]+\.[a-z]{2,}/i.test(u)) u='https://'+u.replace(/^\/+/,''); else continue; }
-    if(m.plat===c.platform) continue;
-    out.push({plat:m.plat,label:m.label,url:u});
-  }
-  return out;
-}
-function otherText(c){
-  const names=otherPlatformLinks(c).map(l=>l.label);
-  if(c.other){ String(c.other).split(/[\n,|;]+/).map(s=>s.trim()).filter(Boolean).forEach(p=>{ if(names.indexOf(p)===-1) names.push(p); }); }
-  if(!names.length) return '';
-  const chips=names.map(n=>'<span class="ochip txt">'+esc(n)+'</span>').join('');
-  return '<div class="others"><span class="olbl">منصات أخرى:</span>'+chips+'</div>';
-}
-function linksChips(c){
-  const seen={}; const chips=[];
-  otherPlatformLinks(c).forEach(l=>{
-    if(seen[l.url]) return; seen[l.url]=1;
-    const col=(PLAT[l.plat]&&PLAT[l.plat].c)||'#5b6470';
-    chips.push('<a class="ochip" href="'+esc(l.url)+'" target="_blank" rel="noopener" style="--oc:'+col+'">'+esc(l.label)+'</a>');
-  });
-  if(c.links){
-    const parts=String(c.links).split(/[\n,|;]+/).map(s=>s.trim()).filter(Boolean);
-    for(let part of parts){
-      let url='', plat='', label='';
-      const low=part.toLowerCase();
-      if(/instagram\.com/.test(low)){plat='instagram';label='انستجرام';}
-      else if(/tiktok\.com/.test(low)){plat='tiktok';label='تيك توك';}
-      else if(/youtube\.com|youtu\.be/.test(low)){plat='youtube';label='يوتيوب';}
-      else if(/snapchat\.com/.test(low)){plat='snapchat';label='سناب';}
-      else if(/twitter\.com|x\.com/.test(low)){plat='x';label='تويتر';}
-      else if(/t\.me|telegram/.test(low)){plat='tg';label='تيليجرام';}
-      else if(/facebook\.com|fb\.com/.test(low)){plat='fb';label='فيسبوك';}
-      if(/^https?:\/\//i.test(part)){ url=part; }
-      else if(/^[\w.-]+\.[a-z]{2,}(\/|$)/i.test(part)){ url='https://'+part.replace(/^https?:\/\//,''); }
-      if(!url) continue;
-      if(plat && plat===c.platform) continue;
-      if(!label){ try{ label=new URL(url).hostname.replace(/^www\./,''); }catch(e){ continue; } }
-      if(seen[url]) continue; seen[url]=1;
-      const col=(PLAT[plat]&&PLAT[plat].c)||'#5b6470';
-      chips.push('<a class="ochip" href="'+esc(url)+'" target="_blank" rel="noopener" style="--oc:'+col+'">'+esc(label)+'</a>');
-    }
-  }
-  return chips.length? '<div class="others links"><span class="olbl">روابط أخرى:</span>'+chips.join('')+'</div>':'';
-}
-function metricsRow(c){
-  const pi=prioInfo(c.priority);
-  if(!pi) return "";
-  return '<div class="metrics"><span class="metric prio" style="--pc:'+pi.c+'"><span class="mk">الأولوية</span><span class="mv">'+pi.l+'</span></span></div>';
-}
-function nicheOptions(current){
-  let h="";
-  for(const k in NICHE_AR){ h+='<option value="'+k+'"'+(k===current?" selected":"")+'>'+NICHE_AR[k]+'</option>'; }
-  return h;
-}
-
-function crmStatusBadges(c){
-  if(!isStaffSession()) return "";
-  const chips=[];
-  if(c.messageStatus==='sent') chips.push('<span class="crm-chip sent">✅ اتبعت</span>');
-  if((c.followupCount|0)>0) chips.push('<span class="crm-chip followup">🔄 متابعة ×'+c.followupCount+'</span>');
-  if(c.signupStatus==='subscribed') chips.push('<span class="crm-chip subscribed">🎉 مشترك</span>');
-  if(!chips.length) return "";
-  return '<div class="crm-badges">'+chips.join('')+'</div>';
-}
-
-function crmActionsRow(c){
-  if (!c || !c.uid) return '';
-  const u = esc(c.uid);
-  return '<div class="crm-actions">'+
-    '<button class="crmbtn sent" onclick="onCrmAction(this,\''+u+'\',\'sent\')">📩 بعت</button>'+
-    '<button class="crmbtn followup" onclick="onCrmAction(this,\''+u+'\',\'followup\')">🔄 متابعة</button>'+
-    '<button class="crmbtn subscribed" onclick="onCrmAction(this,\''+u+'\',\'subscribed\')">🎉 اشترك</button>'+
-  '</div>';
-}
-
-function card(c){
-  const p=PLAT[c.platform]||PLAT.instagram;
-  const uidAttr = c.uid ? ' data-uid="'+esc(c.uid)+'"' : '';
-  const canAdmin = !!(c.uid && API_BASE && API_BASE.indexOf("http")===0);
-  const isStaff = isStaffSession();
-  
-  let html = '<div class="card"'+uidAttr+'>';
-  html += stripHtml(c);
-  html += '<div class="body">';
-  html += '<div class="chead">';
-  html += '<div class="cmeta">';
-  html += '<div class="name">@'+esc(c.handle)+'</div>';
-  html += '<div class="loc">📍 '+esc(c.country||"الخليج")+(scrapingMode&&c.discoveredAt?'  ·  🕒 '+esc(c.discoveredAt):'')+'</div>';
-  html += '</div>';
-  html += '<span class="pchip" style="background:'+p.c+'">'+p.ar+'</span>';
-  html += '</div>';
-  
-  if(c.assignedTo) {
-    html += '<div class="staff-ribbon"><span class="staff-emoji">'+(STAFF_EMOJI[c.assignedTo]||'👤')+'</span><span class="staff-name">'+esc(c.assignedTo)+'</span></div>';
-  }
-  
-  html += '<div class="fol"><span class="big num">'+fmt(c.followers)+'</span><span class="lbl">متابع</span><span class="nichetag">'+(NICHE_AR[c.niche]||c.niche||"")+'</span></div>';
-  html += metricsRow(c);
-  html += otherText(c);
-  html += linksChips(c);
-  html += contactRow(c);
-  html += crmStatusBadges(c);
-  html += '<div class="actions">';
-  html += '<a class="btn primary" href="'+esc(c.url)+'" target="_blank" rel="noopener">زيارة الحساب الرسمي</a>';
-  html += '<button class="btn ghost" title="نسخ الحساب" onclick="copyTxt(\'@'+esc(c.handle)+'\',this)">⧉</button>';
-  html += '</div>';
-  
-  // ===== الزراير الثلاثة للـ staff =====
-  if (isStaff) {
-    html += crmActionsRow(c);
-  }
-  
-  // ===== أزرار الإدارة (admin/manager) =====
-  if (canAdmin && isAdminSession()) {
-    html += '<div class="admin-actions">';
-    html += '<button class="aabtn ok" title="تأكيد ومتابعة" onclick="onApprove(this)">✅ تأكيد</button>';
-    html += '<button class="aabtn move" title="نقل لشيت الأرشيف" onclick="onMoveToNew(this)">📤 أرشفة</button>';
-    html += '<div class="niche-select-wrap"><select onchange="onChangeNiche(this)" title="نقل لمجال آخر">';
-    html += '<option value="">نقل لمجال...</option>'+nicheOptions(c.niche);
-    html += '</select></div>';
-    html += '<button class="aabtn danger" title="حذف نهائي" onclick="onDelete(this)">🗑️ حذف</button>';
-    html += '</div>';
-  }
-  
-  html += '</div></div>';
-  return html;
-}
-
-// ===== Scraping =====
-let scrapingMode=false;
-function cairoTodayStr(){
-  try{ return new Intl.DateTimeFormat('en-CA',{timeZone:'Africa/Cairo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()); }
-  catch(e){ return new Date().toISOString().slice(0,10); }
-}
-function cairoNowLabel(){
-  try{ return new Intl.DateTimeFormat('ar-EG',{timeZone:'Africa/Cairo',weekday:'long',year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date()); }
-  catch(e){ return new Date().toLocaleString(); }
-}
-function todayScrapedCount(){
-  const today=cairoTodayStr();
-  return CREATORS.filter(c=>c.discoveredAt===today).length;
-}
-function updateScrapeCount(){
-  const el=document.getElementById('scrapeCount'); if(!el) return;
-  const n=todayScrapedCount();
-  if(el.textContent!==String(n)){ el.textContent=n; el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
-}
-function toggleScrapingView(){
-  scrapingMode=!scrapingMode;
-  const btn=document.getElementById('scrapeToggleBtn');
-  const label=btn.querySelector('.sb-label');
-  const banner=document.getElementById('scrapeBanner');
-  const dateEl=document.getElementById('sb-date');
-  btn.classList.toggle('active',scrapingMode);
-  if(scrapingMode){
-    label.textContent='📊 Show All';
-    banner.style.display='';
-    dateEl.textContent=cairoNowLabel()+' (بتوقيت القاهرة)';
-  }else{
-    label.textContent='📊 Scraping Today';
-    banner.style.display='none';
+function toggleScrapingView() {
+  scrapingMode = !scrapingMode;
+  const btn = document.getElementById('scrapeToggleBtn');
+  const label = btn.querySelector('.sb-label');
+  const banner = document.getElementById('scrapeBanner');
+  const dateEl = document.getElementById('sb-date');
+  btn.classList.toggle('active', scrapingMode);
+  if (scrapingMode) {
+    label.textContent = '📊 Show All';
+    banner.style.display = '';
+    dateEl.textContent = cairoNowLabel() + ' (بتوقيت القاهرة)';
+  } else {
+    label.textContent = '📊 Scraping Today';
+    banner.style.display = 'none';
   }
   render();
 }
 
-// ===== Auth =====
-function loadSession(){ try{ const raw=sessionStorage.getItem('adltix_session'); return raw?JSON.parse(raw):null; }catch(e){ return null; } }
-function saveSession(s){ sessionStorage.setItem('adltix_session', JSON.stringify(s)); }
-function clearSession(){ sessionStorage.removeItem('adltix_session'); }
-
-async function doLogin(){
-  const user=document.getElementById('lg-user').value.trim();
-  const pass=document.getElementById('lg-pass').value;
-  const errEl=document.getElementById('lg-err');
-  errEl.textContent='';
-  if(!user||!pass){ errEl.textContent='اكتب اسم المستخدم وكلمة المرور'; return; }
-  try{
-    const result=await callApi('login',{username:user,password:pass});
-    SESSION=result; saveSession(result);
-    document.getElementById('loginGate').style.display='none';
-    startApp();
-  }catch(e){ errEl.textContent=e.message||'بيانات غلط'; }
-}
-function logout(){ clearSession(); location.reload(); }
-
-async function startApp(){
-  const role=String((SESSION&&SESSION.role)||'').trim().toLowerCase();
+function buildAllPills() {
+  buildPills("f-niche", [
+    {v: "all", l: "الكل"},
+    {v: "fashion", l: "فاشن"},
+    {v: "luxury", l: "لاكشري"},
+    {v: "moms", l: "عائلة وأمومة"},
+    {v: "sports", l: "رياضة ولياقة"},
+    {v: "food", l: "طعام وطبخ"},
+    {v: "gaming", l: "جيمنج"},
+    {v: "business", l: "أعمال"},
+    {v: "tech", l: "تقنية"},
+    {v: "entertainment", l: "ترفيه"},
+    {v: "other", l: "أخرى"}
+  ], "niche");
   
-  const adminToolbar = document.getElementById('adminToolbar');
-  const adminName = document.getElementById('adminName');
+  buildPills("f-platform", [
+    {v: "all", l: "الكل"},
+    {v: "instagram", l: "انستجرام", dot: PLAT.instagram.c},
+    {v: "tiktok", l: "تيك توك", dot: "#25F4EE"},
+    {v: "youtube", l: "يوتيوب", dot: PLAT.youtube.c},
+    {v: "x", l: "تويتر", dot: "#555"},
+    {v: "snapchat", l: "سناب", dot: PLAT.snapchat.c}
+  ], "platform");
   
-  if(role==='admin' || role==='manager'){
-    adminToolbar.style.display='flex';
-    adminName.textContent = SESSION.staffName || SESSION.username || 'أدمن';
-    document.getElementById('addLeadFab').style.display='none';
-    boot();
-    return;
+  const data = _creatorStore ? _creatorStore.all : (CREATORS || []);
+  const bc = {};
+  for (const c of data) {
+    const b = countryBucket(c.country);
+    bc[b] = (bc[b] || 0) + 1;
   }
+  const cc = (n) => bc[n] || 0;
   
-  if(role==='staff'){
-    adminToolbar.style.display='none';
-    document.getElementById('addLeadFab').style.display='';
-    const cached=readCache();
-    if(cached && cached.length){ 
-      applyData(cached); 
-      refreshMyLeads(); 
-      return; 
-    }
-    showSkeleton();
-    await refreshMyLeads();
-    return;
-  }
-  
-  adminToolbar.style.display='none';
-  document.getElementById('addLeadFab').style.display='none';
-  boot();
-}
-
-async function refreshMyLeads(){
-  try{
-    const res=await fetch(API_BASE+'?action=myLeads&token='+encodeURIComponent(SESSION.token));
-    const j=await res.json();
-    if(j.ok && j.result && j.result.leads){
-      const data=j.result.leads.map(mapRawToCard);
-      CREATORS=data;
-      buildAllPills(); renderStats(); render(); updateScrapeCount();
-      writeCache(data);
-    }
-  }catch(e){ console.log('myLeads failed',e); }
-}
-
-function mapRawToCard(o){
-  let vids=[]; try{ vids=String(o.videos||"").split(",").map(v=>v.trim()).filter(Boolean); }catch(e){}
-  return {
-    uid:String(o.uid||"").toLowerCase(), discoveredAt:normalizeSheetDate(o.discovered_at), assignedTo:String(o.assigned_to||"").trim(),
-    handle:String(o.handle||"").replace(/^@/,""), platform:o.platform||"",
-    followers:Number(o.followers)||0, niche:String(o.niche||"").toLowerCase(),
-    country:o.location||"الخليج", url:o.profile_url||"#", avatar_url:o.avatar_url||"",
-    videos:vids, top_video_url:o.top_video_url||"", other:o.other_platforms||"",
-    email:o.email||"", whatsapp:o.whatsapp||"", phone:o.phone||"",
-    links:o.links_bio||"", language:o.language||"",
-    priority:o.priority||"", engagement:o.engagement_rate||"",
-    igUrl:o.instagram_url||"", ttUrl:o.tiktok_url||"", scUrl:o.snapchat_url||"", twUrl:o.twitter_url||"", ytUrl:o.youtube_url||"", fbUrl:o.facebook_url||"",
-    messageStatus:String(o.message_status||"").toLowerCase(), followupCount:parseInt(o.followup_count,10)||0, signupStatus:String(o.signup_status||"").toLowerCase()
-  };
-}
-
-// ===== Add Lead =====
-function openAddLeadModal(){
-  document.getElementById('al-err').textContent='';
-  document.getElementById('al-link').value='';
-  const ov=document.getElementById('addLeadOverlay'); ov.style.display='flex'; requestAnimationFrame(()=>ov.classList.add('show'));
-}
-function closeAddLeadModal(){ const ov=document.getElementById('addLeadOverlay'); ov.classList.remove('show'); setTimeout(()=>ov.style.display='none',220); }
-async function submitAddLead(){
-  const link=document.getElementById('al-link').value.trim();
-  const niche=document.getElementById('al-niche').value;
-  const country=document.getElementById('al-country').value;
-  const errEl=document.getElementById('al-err'); errEl.textContent='';
-  if(!link){ errEl.textContent='الصقي لينك البروفايل الأول'; return; }
-  const btn=document.getElementById('al-submit'); btn.disabled=true; btn.textContent='بنضيفه...';
-  try{
-    const res=await callApi('addManualLead',{token:SESSION.token,link,niche,country});
-    btn.disabled=false; btn.textContent='إضافة';
-    if(res.duplicate){ errEl.textContent=res.message||'موجود بالفعل'; return; }
-    closeAddLeadModal();
-    const card=mapRawToCard(res.card);
-    CREATORS.unshift(card);
-    render(); updateScrapeCount();
-    setTimeout(()=>{
-      const el=document.querySelector('.card[data-uid="'+card.uid+'"]');
-      if(el){ el.classList.add('new-card-flash'); el.scrollIntoView({behavior:'smooth',block:'center'}); }
-    },100);
-    if(res.quotaExceeded){
-      alert('✅ اتضاف بالمعلومات الأساسية.\n⏳ رصيد Scrapingdog خلص — التفاصيل الكاملة (متابعين، صورة، بايو) هتتحدّث لما نحط API جديد.');
-    }
-  }catch(e){ btn.disabled=false; btn.textContent='إضافة'; errEl.textContent=e.message||'حصل خطأ'; }
-}
-
-// ===== Employee Management =====
-function updateUsernameHint(){
-  const val = document.getElementById('emp-username').value.trim() || 'sara';
-  document.getElementById('emp-username-display').textContent = val;
-}
-
-async function checkUsernameExists(username){
-  try{
-    const res=await callApi('listEmployees',{token:SESSION.token});
-    if(res && Array.isArray(res)){
-      return res.some(emp => emp.name.toLowerCase() === username.toLowerCase());
-    }
-    return false;
-  }catch(e){ return false; }
-}
-
-function openEmployeeModal(){
-  document.getElementById('emp-err').textContent='';
-  document.getElementById('emp-username').value='';
-  document.getElementById('emp-password').value='';
-  document.getElementById('emp-name').value='';
-  updateUsernameHint();
-  const ov=document.getElementById('employeeOverlay'); ov.style.display='flex'; requestAnimationFrame(()=>ov.classList.add('show'));
-}
-function closeEmployeeModal(){ const ov=document.getElementById('employeeOverlay'); ov.classList.remove('show'); setTimeout(()=>ov.style.display='none',220); }
-
-async function submitEmployee(){
-  const username=document.getElementById('emp-username').value.trim();
-  const password=document.getElementById('emp-password').value.trim();
-  const name=document.getElementById('emp-name').value.trim();
-  const emoji=document.getElementById('emp-emoji').value;
-  const errEl=document.getElementById('emp-err');
-  errEl.textContent='';
-  
-  if(!username){ errEl.textContent='اسم المستخدم مطلوب'; return; }
-  if(username.length<3){ errEl.textContent='اسم المستخدم أقل شيء 3 حروف'; return; }
-  if(!password || password.length<4){ errEl.textContent='كلمة المرور (أقل شيء 4 حروف)'; return; }
-  if(!name){ errEl.textContent='الاسم الكامل مطلوب'; return; }
-  
-  // Check if username exists
-  const exists = await checkUsernameExists(username);
-  if(exists){
-    errEl.textContent='⚠️ اسم المستخدم "'+username+'" موجود بالفعل! اختار اسم تاني.';
-    return;
-  }
-  
-  // الاسم الكامل للبريد الإلكتروني
-  const fullEmail = username + '@adltix.com';
-  
-  const btn=document.getElementById('emp-submit'); btn.disabled=true; btn.textContent='⏳ جاري الإضافة...';
-  try{
-    const res=await callApi('addEmployee',{token:SESSION.token,username:fullEmail,password,staffName:name,emoji});
-    btn.disabled=false; btn.textContent='✅ تمت الإضافة!';
-    setTimeout(()=>{ btn.textContent='➕ إضافة الموظفة'; },2000);
-    closeEmployeeModal();
-    alert('✅ تم إضافة الموظفة '+name+' بنجاح!\n📧 البريد: '+fullEmail+'\nتم توزيع الـ Leads على جميع الموظفات.');
-    boot();
-  }catch(e){ btn.disabled=false; btn.textContent='➕ إضافة الموظفة'; errEl.textContent=e.message||'حصل خطأ'; }
-}
-
-async function distributeLeads(){
-  if(!confirm('🔄 هل تريد إعادة توزيع جميع الـ Leads غير المعينة على الموظفات النشطات؟')) return;
-  try{
-    const res=await callApi('distributeLeads',{token:SESSION.token});
-    alert('✅ تم توزيع '+res.distributed+' مؤثر على الموظفات.\n'+
-      Object.entries(res.staffLeadCount).map(([k,v])=>k+': '+v+' مؤثر').join('\n'));
-    boot();
-  }catch(e){ alert('حصل خطأ: '+e.message); }
-}
-
-// ===== CRM Actions =====
-let _crmPending=null;
-function fileToBase64(file){
-  return new Promise((resolve,reject)=>{
-    const r=new FileReader();
-    r.onload=()=>resolve(r.result);
-    r.onerror=reject;
-    r.readAsDataURL(file);
-  });
-}
-async function onCrmAction(btn,uid,actionType){
-  const needsShot = (actionType==='sent' || actionType==='subscribed');
-  const labels={sent:'إرسال الرسالة',followup:'متابعة',subscribed:'اشتراك'};
-  if(needsShot){
-    const ok=await showConfirm('تأكيد '+labels[actionType],'هترفعي سكرين شوت يثبت إنك '+(actionType==='sent'?'بعتيلها':'أكّدت اشتراكها')+'. جاهزة؟','اختيار الصورة','ok');
-    if(!ok) return;
-    _crmPending={btn,uid,actionType};
-    document.getElementById('crmFileInput').click();
-  }else{
-    const ok=await showConfirm('تأكيد المتابعة','هيتسجّل إنك تابعتي المؤثر ده. متأكدة؟','تأكيد','ok');
-    if(!ok) return;
-    await sendCrmAction(btn,uid,actionType,null);
-  }
-}
-document.getElementById('crmFileInput').addEventListener('change', async (e)=>{
-  const file=e.target.files[0]; e.target.value='';
-  if(!file || !_crmPending) return;
-  const {btn,uid,actionType}=_crmPending; _crmPending=null;
-  try{
-    const base64=await fileToBase64(file);
-    await sendCrmAction(btn,uid,actionType,base64);
-  }catch(err){ alert('حصل خطأ في قراءة الصورة'); }
-});
-async function sendCrmAction(btn,uid,actionType,imageBase64){
-  const row=btn.closest('.crm-actions');
-  if(!row) return;
-  row.querySelectorAll('.crmbtn').forEach(b=>b.disabled=true);
-  btn.classList.add('loading');
-  try{
-    const res=await callApi('logAction',{token:SESSION.token,uid,actionType,imageBase64});
-    btn.classList.remove('loading'); btn.classList.add('success');
-    const item=CREATORS.find(x=>x.uid===uid);
-    if(item){
-      if(actionType==='sent') item.messageStatus='sent';
-      if(actionType==='followup') item.followupCount=(item.followupCount||0)+1;
-      if(actionType==='subscribed') item.signupStatus='subscribed';
-    }
-    const cardEl=btn.closest('.card');
-    if(cardEl){
-      let badges=cardEl.querySelector('.crm-badges');
-      const html=crmStatusBadges(item||{});
-      if(html){
-        if(badges) badges.outerHTML=html;
-        else cardEl.querySelector('.crm-actions').insertAdjacentHTML('beforebegin',html);
-      }
-    }
-    setTimeout(()=>{ row.querySelectorAll('.crmbtn').forEach(b=>{b.disabled=false;b.classList.remove('success');}); },800);
-  }catch(e){
-    btn.classList.remove('loading');
-    row.querySelectorAll('.crmbtn').forEach(b=>b.disabled=false);
-    alert('حصل خطأ: '+e.message);
-  }
-}
-
-// ===== Admin Actions =====
-function showConfirm(title, msg, yesLabel, yesClass){
-  return new Promise(resolve=>{
-    const ov=document.createElement('div'); ov.className='cf-overlay';
-    ov.innerHTML='<div class="cf-box">'+
-      '<div class="cf-title">'+esc(title)+'</div>'+
-      '<div class="cf-msg">'+esc(msg)+'</div>'+
-      '<div class="cf-btns">'+
-        '<button class="cf-cancel" data-x="0">إلغاء</button>'+
-        '<button class="cf-yes '+yesClass+'" data-x="1">'+esc(yesLabel)+'</button>'+
-      '</div></div>';
-    document.body.appendChild(ov);
-    requestAnimationFrame(()=>ov.classList.add('show'));
-    function close(val){ ov.classList.remove('show'); setTimeout(()=>ov.remove(),220); resolve(val); }
-    ov.addEventListener('click',e=>{ if(e.target===ov) close(false); });
-    ov.querySelector('.cf-cancel').onclick=()=>close(false);
-    ov.querySelector('.cf-yes').onclick=()=>close(true);
-  });
-}
-async function callApi(action,payload){
-  if(!API_BASE || API_BASE.indexOf('http')!==0) throw new Error('API_BASE مش متظبط');
-  try{
-    const res=await fetch(API_BASE,{method:'POST',body:JSON.stringify(Object.assign({action},payload))});
-    const j=await res.json();
-    if(!j.ok) throw new Error(j.error||'فشل الطلب');
-    return j.result;
-  }catch(e){
-    throw new Error(e.message||'مشكلة في الاتصال');
-  }
-}
-function findCardEl(btn){ return btn.closest('.card'); }
-function setBusy(cardEl,busy){ 
-  if(!cardEl) return;
-  cardEl.querySelectorAll('.aabtn,select').forEach(el=>{ el.disabled=busy; }); 
-}
-function removeCardAnimated(cardEl,uid){
-  cardEl.classList.add('removing');
-  setTimeout(()=>{
-    cardEl.remove();
-    const i=CREATORS.findIndex(x=>x.uid===uid);
-    if(i>-1) CREATORS.splice(i,1);
-    const shownEl=document.getElementById('shown');
-    if(shownEl) shownEl.textContent=Math.max(0,(parseInt(shownEl.textContent,10)||1)-1);
-  },520);
-}
-
-async function onDelete(btn){
-  const cardEl=findCardEl(btn); if(!cardEl) return;
-  const uid=cardEl.getAttribute('data-uid'); if(!uid) return;
-  const ok=await showConfirm('حذف نهائي؟','هيتشال المؤثر ده من الموقع ومن الشيت خالص ومش هيرجع تاني. متأكد؟','حذف نهائي','danger');
-  if(!ok) return;
-  setBusy(cardEl,true);
-  try{ await callApi('delete',{uid}); removeCardAnimated(cardEl,uid); }
-  catch(e){ alert('حصل خطأ: '+e.message); setBusy(cardEl,false); }
-}
-async function onMoveToNew(btn){
-  const cardEl=findCardEl(btn); if(!cardEl) return;
-  const uid=cardEl.getAttribute('data-uid'); if(!uid) return;
-  const ok=await showConfirm('نقل للأرشيف؟','هينتقل المؤثر ده للشيت الجديد، ويتشال من هنا أوتوماتيك. متأكد؟','نقل للأرشيف','move');
-  if(!ok) return;
-  setBusy(cardEl,true);
-  try{ await callApi('moveToNew',{uid}); removeCardAnimated(cardEl,uid); }
-  catch(e){ alert('حصل خطأ: '+e.message); setBusy(cardEl,false); }
-}
-async function onChangeNiche(sel){
-  const niche=sel.value; if(!niche) return;
-  const cardEl=findCardEl(sel); if(!cardEl){ sel.value=''; return; }
-  const uid=cardEl.getAttribute('data-uid'); if(!uid){ sel.value=''; return; }
-  const label=(NICHE_AR[niche]||niche);
-  const ok=await showConfirm('نقل المجال؟','هينقل المؤثر ده لمجال "'+label+'". متأكد؟','نقل المجال','move');
-  if(!ok){ sel.value=''; return; }
-  setBusy(cardEl,true);
-  try{
-    await callApi('changeNiche',{uid,niche});
-    const item=CREATORS.find(x=>x.uid===uid); if(item) item.niche=niche;
-    if(state.niche!=='all' && state.niche!==niche){ removeCardAnimated(cardEl,uid); }
-    else{
-      const tag=cardEl.querySelector('.nichetag'); if(tag){ tag.textContent=label; tag.style.animation='none'; void tag.offsetWidth; tag.style.animation='popIn .4s cubic-bezier(.34,1.56,.64,1)'; }
-      setBusy(cardEl,false); sel.value='';
-    }
-  }catch(e){ alert('حصل خطأ: '+e.message); setBusy(cardEl,false); sel.value=''; }
-}
-async function onApprove(btn){
-  const cardEl=findCardEl(btn); if(!cardEl) return;
-  const uid=cardEl.getAttribute('data-uid'); if(!uid) return;
-  if(cardEl.classList.contains('approved')) return;
-  const ok=await showConfirm('تأكيد المؤثر؟','هيتحدد إنه "معانا" وهيتلوّن في الشيت عشان تتابعه بسهولة.','تأكيد','ok');
-  if(!ok) return;
-  setBusy(cardEl,true);
-  try{
-    await callApi('approve',{uid});
-    cardEl.classList.add('approved');
-    btn.classList.add('is-approved'); btn.textContent='✅ متابَع';
-    if(!cardEl.querySelector('.approve-badge')){
-      const b=document.createElement('div'); b.className='approve-badge'; b.textContent='✅ متابَع';
-      cardEl.style.position='relative'; cardEl.appendChild(b);
-    }
-    setBusy(cardEl,false); btn.disabled=true;
-  }catch(e){ alert('حصل خطأ: '+e.message); setBusy(cardEl,false); }
-}
-
-// ===== Embed loading =====
-const _embedQueue=[]; let _embedActive=0; const EMBED_MAX_CONCURRENT=2;
-function _createIframe(host,src){
-  const f=document.createElement('iframe');
-  f.src=src; f.loading='lazy'; f.className='embedframe';
-  f.setAttribute('scrolling','no'); f.setAttribute('allow','encrypted-media; clipboard-write'); f.setAttribute('allowfullscreen','');
-  host.innerHTML=''; host.appendChild(f);
-  f.addEventListener('load',_embedDone,{once:true});
-  setTimeout(_embedDone,4000);
-}
-function _embedDone(){ _embedActive=Math.max(0,_embedActive-1); _pumpEmbedQueue(); }
-function _pumpEmbedQueue(){
-  while(_embedActive<EMBED_MAX_CONCURRENT && _embedQueue.length){
-    const {host,src}=_embedQueue.shift();
-    if(!host.isConnected || host.dataset.loaded==='skip') continue;
-    _embedActive++; _createIframe(host,src);
-  }
-}
-function loadEmbed(host){
-  if(!host || host.dataset.loaded) return;
-  const src=host.getAttribute('data-embed-src'); if(!src) return;
-  host.dataset.loaded='1';
-  _embedQueue.push({host,src});
-  requestAnimationFrame(_pumpEmbedQueue);
-}
-let _revealObs=null, _embedObs=null;
-function ensureObs(){
-  if(_revealObs) return;
-  _revealObs=new IntersectionObserver((es)=>{ es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); _revealObs.unobserve(e.target);} }); },{threshold:.08});
-  _embedObs=new IntersectionObserver((es)=>{ es.forEach(e=>{ if(e.isIntersecting){ loadEmbed(e.target); _embedObs.unobserve(e.target);} }); },{rootMargin:'250px 0px'});
-}
-function observeNew(els){
-  ensureObs();
-  els.forEach((el,i)=>{
-    el.style.transitionDelay=(Math.min(i,8)*40)+'ms';
-    _revealObs.observe(el);
-    el.querySelectorAll('[data-embed-src]').forEach(h=>_embedObs.observe(h));
-  });
-}
-
-function appendMore(){
-  if(_rendered>=_list.length) return;
-  const grid=document.getElementById("grid");
-  const next=_list.slice(_rendered, _rendered+PAGE_SIZE);
-  const tmp=document.createElement('div'); tmp.innerHTML=next.map(card).join("");
-  const added=Array.from(tmp.children);
-  added.forEach(el=>grid.appendChild(el));
-  _rendered+=next.length;
-  observeNew(added);
-}
-
-function render(){
-  if(isRendering) return;
-  isRendering=true;
-  try{
-    _list=applyFilters(); _rendered=0;
-    const grid=document.getElementById("grid");
-    if(grid){
-      grid.innerHTML="";
-      document.getElementById("shown").textContent=_list.length;
-      document.getElementById("empty").style.display=_list.length?"none":"block";
-      grid.style.display=_list.length?"grid":"none";
-      appendMore();
-    }
-  }catch(e){
-    console.error('Render error:', e);
-  }finally{
-    isRendering=false;
-  }
-}
-
-let _scrollTied=false;
-function tieScroll(){
-  if(_scrollTied) return; _scrollTied=true;
-  window.addEventListener('scroll', ()=>{
-    if((window.innerHeight+window.scrollY) >= (document.body.offsetHeight-900)) appendMore();
-  }, {passive:true});
-}
-tieScroll();
-
-function renderStats(){
-  const data=clean(CREATORS);
-  document.getElementById("stats").innerHTML=
-    '<div class="stat"><div class="v num">'+data.length.toLocaleString("en")+'</div><div class="l">مؤثر موثّق</div></div>'+
-    '<div class="stat"><div class="v num">'+new Set(data.map(c=>c.platform)).size+'</div><div class="l">منصات تواصل</div></div>'+
-    '<div class="stat"><div class="v num">'+new Set(data.map(c=>c.niche)).size+'</div><div class="l">مجالات تسويق</div></div>'+
-    '<div class="stat"><div class="v num">'+data.filter(c=>c.email||c.whatsapp||c.phone).length.toLocaleString("en")+'</div><div class="l">وسيلة تواصل مباشرة</div></div>';
-}
-
-// ===== Video player =====
-function reloadScript(src, cb){
-  document.querySelectorAll('script[data-embed="'+src+'"]').forEach(s=>s.remove());
-  const s=document.createElement('script'); s.src=src; s.async=true; s.setAttribute('data-embed',src);
-  s.onload=()=>{ if(cb) cb(); }; document.body.appendChild(s);
-}
-function openVideo(url, platform){
-  if(!url || url==="#") return;
-  const body=document.getElementById("modalBody");
-  const title=document.getElementById("modalTitle");
-  body.innerHTML="";
-  if(platform==="tiktok"){
-    title.textContent="فيديو تيك توك";
-    body.innerHTML='<blockquote class="tiktok-embed" cite="'+url+'" style="max-width:540px;min-width:300px;margin:0 auto"><a href="'+url+'">عرض الفيديو</a></blockquote>';
-    reloadScript("https://www.tiktok.com/embed.js");
-  } else if(platform==="instagram"){
-    title.textContent="منشور إنستجرام";
-    body.innerHTML='<blockquote class="instagram-media" data-instgrm-permalink="'+url+'" data-instgrm-version="14" style="margin:0 auto;max-width:540px;width:100%"></blockquote>';
-    reloadScript("https://www.instagram.com/embed.js", ()=>{ if(window.instgrm&&window.instgrm.Embeds) window.instgrm.Embeds.process(); });
-  } else if(platform==="youtube"){
-    const id = url.match(/[?&]v=([^&]+)/)||url.match(/youtu\.be\/([^?]+)/)||url.match(/\/shorts\/([^?\/]+)/);
-    if(id){
-      title.textContent="فيديو يوتيوب";
-      body.innerHTML='<iframe src="https://www.youtube.com/embed/'+id[1]+'" allow="autoplay; encrypted-media" allowfullscreen></iframe>';
-    } else {
-      window.open(url,"_blank"); return;
-    }
-  } else {
-    window.open(url,"_blank"); return;
-  }
-  document.getElementById("modal").style.display="flex";
-}
-function closeModal(){ document.getElementById("modal").style.display="none"; document.getElementById("modalBody").innerHTML=""; }
-document.getElementById("modal").addEventListener("click",e=>{ if(e.target.id==="modal") closeModal(); });
-document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeModal(); });
-
-let _searchDebounce;
-document.getElementById("q").addEventListener("input",e=>{
-  const v=e.target.value;
-  clearTimeout(_searchDebounce);
-  _searchDebounce=setTimeout(()=>{ state.q=v; render(); },200);
-});
-document.getElementById("f-fol").addEventListener("change",e=>{state.fol=e.target.value;render();});
-document.getElementById("sort").addEventListener("change",e=>{state.sort=e.target.value;render();});
-document.getElementById("f-contact").addEventListener("change",e=>{state.contact=e.target.value;render();});
-
-function gvizUrl(tab){
-  return "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/gviz/tq?tqx=out:json&sheet="+encodeURIComponent(tab)+"&_="+Date.now();
-}
-function normalizeSheetDate(v){
-  if(v==null) return "";
-  if(typeof v==="string"){
-    const m=v.match(/^Date\((\d+),(\d+),(\d+)/);
-    if(m){ const y=m[1], mo=String(Number(m[2])+1).padStart(2,"0"), d=String(Number(m[3])).padStart(2,"0"); return y+"-"+mo+"-"+d; }
-    const t=v.trim();
-    const iso=t.match(/^(\d{4}-\d{2}-\d{2})/);
-    if(iso) return iso[1];
-    const slash=t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-    if(slash){ const mo=slash[1].padStart(2,"0"), d=slash[2].padStart(2,"0"); return slash[3]+"-"+mo+"-"+d; }
-    return t;
-  }
-  if(v instanceof Date && !isNaN(v)){
-    return v.getFullYear()+"-"+String(v.getMonth()+1).padStart(2,"0")+"-"+String(v.getDate()).padStart(2,"0");
-  }
-  return String(v).trim();
-}
-function parseGviz(text){
-  const s=text.indexOf("{"), e=text.lastIndexOf("}");
-  if(s<0||e<0) return [];
-  try{
-    const json=JSON.parse(text.substring(s,e+1));
-    if(!json.table) return [];
-    let labels=(json.table.cols||[]).map(c=>String(c.label||"").trim().toLowerCase());
-    let rows=json.table.rows||[];
-    if(!labels.some(Boolean) && rows.length){
-      labels=(rows[0].c||[]).map(c=>c&&c.v!=null?String(c.v).trim().toLowerCase():"");
-      rows=rows.slice(1);
-    }
-    const out=[];
-    for(const r of rows){
-      if(!r||!r.c) continue;
-      const o={};
-      for(let i=0;i<labels.length;i++){ const cell=r.c[i]; o[labels[i]]=cell&&cell.v!=null?cell.v:""; }
-      if(!o.handle) continue;
-      let vids=[];
-      try{ vids=o.videos?JSON.parse(o.videos):[]; }catch(_){ vids=[]; }
-      out.push({
-        uid:String(o.uid||"").toLowerCase(),
-        discoveredAt:normalizeSheetDate(o.discovered_at),
-        assignedTo:String(o.assigned_to||"").trim(),
-        handle:String(o.handle||"").replace(/^@/,""),
-        platform:o.platform||"",
-        followers:Number(o.followers)||0,
-        niche:String(o.niche||"").toLowerCase(),
-        country:o.location||"الخليج",
-        url:o.profile_url||"#",
-        avatar_url:o.avatar_url||"",
-        videos:Array.isArray(vids)?vids:[],
-        top_video_url:o.top_video_url||"",
-        other:o.other_platforms||"",
-        email:o.email||"", whatsapp:o.whatsapp||"", phone:o.phone||"",
-        links:o.links_bio||"", language:o.language||"",
-        priority:o.priority||"", engagement:o.engagement_rate||"",
-        messageStatus:String(o.message_status||"").toLowerCase(), followupCount:parseInt(o.followup_count,10)||0, signupStatus:String(o.signup_status||"").toLowerCase(),
-        igUrl:o.instagram_url||"", ttUrl:o.tiktok_url||"", scUrl:o.snapchat_url||"", twUrl:o.twitter_url||"", ytUrl:o.youtube_url||"", fbUrl:o.facebook_url||""
-      });
-    }
-    return out;
-  }catch(e){
-    console.error('Parse error:', e);
-    return [];
-  }
-}
-function showSkeleton(){
-  const g=document.getElementById("grid"); if(!g) return;
-  let h=""; for(let i=0;i<8;i++) h+='<div class="skel"><div class="skel-media"></div><div class="skel-body"><div class="skel-line w70"></div><div class="skel-line w45"></div><div class="skel-line w90"></div></div></div>';
-  g.innerHTML=h; g.style.display="grid";
-}
-function applyData(all){
-  const filtered=all.filter(c=>c.platform==="snapchat"?true:c.followers>=MIN_FOLLOWERS);
-  if(filtered.length) CREATORS=filtered;
-  buildAllPills(); renderStats(); render(); updateScrapeCount();
-}
-const CACHE_KEY="adltix_cache_v1", CACHE_MS=5*60*1000;
-function readCache(){
-  try{
-    const raw=sessionStorage.getItem(CACHE_KEY); if(!raw) return null;
-    const obj=JSON.parse(raw);
-    if(Date.now()-obj.t>CACHE_MS) return null;
-    return obj.data;
-  }catch(e){ return null; }
-}
-function writeCache(data){ try{ sessionStorage.setItem(CACHE_KEY, JSON.stringify({t:Date.now(),data})); }catch(e){} }
-
-function yieldToMain(){ return new Promise(r=>setTimeout(r,0)); }
-
-// ===== BOOT =====
-async function boot() {
-  if(isLoading) return;
-  isLoading=true;
-  
-  try{
-    const cached = readCache();
-    if (cached && cached.length && !allLeadsLoaded) {
-      applyData(cached);
-      updateUIForRole();
-      isLoading=false;
-      refreshAllData();
-      return;
-    }
-
-    showSkeleton();
-    
-    const fetchPromises = SHEET_TABS.map(tab => 
-      fetch(gvizUrl(tab))
-        .then(r => r.text())
-        .catch(() => null)
-    );
-
-    let all = [];
-    
-    const firstTwo = await Promise.all(fetchPromises.slice(0, 2));
-    for (const txt of firstTwo) {
-      if (txt) {
-        const rows = parseGviz(txt);
-        if (rows && rows.length) all = all.concat(rows);
-      }
-    }
-    if (all.length) {
-      applyData(all);
-      updateUIForRole();
-    }
-
-    const restPromises = fetchPromises.slice(2);
-    const restResults = await Promise.all(restPromises);
-    for (const txt of restResults) {
-      if (txt) {
-        const rows = parseGviz(txt);
-        if (rows && rows.length) all = all.concat(rows);
-      }
-    }
-    
-    allLeadsLoaded = true;
-    applyData(all);
-    writeCache(all);
-    updateUIForRole();
-  }catch(e){
-    console.error('Boot error:', e);
-  }finally{
-    isLoading=false;
-  }
-}
-
-async function refreshAllData(){
-  try{
-    const fetchPromises = SHEET_TABS.map(tab => 
-      fetch(gvizUrl(tab))
-        .then(r => r.text())
-        .catch(() => null)
-    );
-    const results = await Promise.all(fetchPromises);
-    let all = [];
-    for (const txt of results) {
-      if (txt) {
-        const rows = parseGviz(txt);
-        if (rows && rows.length) all = all.concat(rows);
-      }
-    }
-    if(all.length > CREATORS.length){
-      allLeadsLoaded = true;
-      applyData(all);
-      writeCache(all);
-    }
-  }catch(e){}
+  buildPills("f-country", [
+    {v: "all", l: "كل الدول (" + data.length + ")"},
+    {v: "السعودية", l: "🇸🇦 السعودية (" + cc("السعودية") + ")"},
+    {v: "الإمارات", l: "🇦🇪 الإمارات (" + cc("الإمارات") + ")"},
+    {v: "الكويت", l: "🇰🇼 الكويت (" + cc("الكويت") + ")"},
+    {v: "قطر", l: "🇶🇦 قطر (" + cc("قطر") + ")"},
+    {v: "مصر", l: "🇪🇬 مصر (" + cc("مصر") + ")"},
+    {v: "المغرب", l: "🇲🇦 المغرب (" + cc("المغرب") + ")"},
+    {v: "__other__", l: "🌍 دول أخرى (" + cc("__other__") + ")"}
+  ], "country");
 }
 
 function updateUIForRole() {
@@ -1760,21 +2184,868 @@ function updateUIForRole() {
   }
 }
 
-// بدء التطبيق
-(function initAuth(){
-  SESSION = loadSession();
-  if(SESSION && SESSION.token){
-    document.getElementById('loginGate').style.display='none';
-    startApp();
+function showSkeleton() {
+  const g = document.getElementById("grid");
+  if (!g) return;
+  let h = "";
+  for (let i = 0; i < 8; i++) {
+    h += '<div class="skel"><div class="skel-media"></div><div class="skel-body"><div class="skel-line w70"></div><div class="skel-line w45"></div><div class="skel-line w90"></div></div></div>';
   }
-})();
+  g.innerHTML = h;
+  g.style.display = "grid";
+}
 
-/* ===== Theme ===== */
-function applyTheme(t){ document.body.classList.toggle('dark', t==='dark'); var b=document.getElementById('themebtn'); if(b) b.textContent=(t==='dark'?'☀️':'🌙'); try{ localStorage.setItem('adltix_theme',t); }catch(e){} }
-function toggleTheme(){ applyTheme(document.body.classList.contains('dark')?'light':'dark'); }
-(function(){ var t='light'; try{ t=localStorage.getItem('adltix_theme')||'light'; }catch(e){} applyTheme(t); })();
+function gvizUrl(tab) {
+  return "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/gviz/tq?tqx=out:json&sheet=" + encodeURIComponent(tab) + "&_=" + Date.now();
+}
 
+function normalizeSheetDate(v) {
+  if (v == null) return "";
+  if (typeof v === "string") {
+    const m = v.match(/^Date\((\d+),(\d+),(\d+)/);
+    if (m) {
+      const y = m[1],
+        mo = String(Number(m[2]) + 1).padStart(2, "0"),
+        d = String(Number(m[3])).padStart(2, "0");
+      return y + "-" + mo + "-" + d;
+    }
+    const t = v.trim();
+    const iso = t.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (iso) return iso[1];
+    const slash = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (slash) {
+      const mo = slash[1].padStart(2, "0"),
+        d = slash[2].padStart(2, "0");
+      return slash[3] + "-" + mo + "-" + d;
+    }
+    return t;
+  }
+  if (v instanceof Date && !isNaN(v)) {
+    return v.getFullYear() + "-" + String(v.getMonth() + 1).padStart(2, "0") + "-" + String(v.getDate()).padStart(2, "0");
+  }
+  return String(v).trim();
+}
+
+function igCode(u) {
+  const m = String(u || '').match(/\/(p|reel|reels|tv)\/([^/?#]+)/);
+  return m ? { kind: (m[1] === 'reels' ? 'reel' : m[1]), code: m[2] } : null;
+}
+
+function ttVidId(u) {
+  const m = String(u || '').match(/\/video\/(\d+)/);
+  return m ? m[1] : '';
+}
+
+function stripHtml(c) {
+  const p = PLAT[c.platform] || PLAT.instagram;
+  let vids = (c.videos || []).filter(v => v && (v.url || v.thumb));
+  const seen = {};
+  vids = vids.filter(v => {
+    const k = (v.url || '') + '|' + (v.thumb || '');
+    if (seen[k]) return false;
+    seen[k] = 1;
+    return true;
+  });
+  const bigPlay = '<span class="playbig"><svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M8 5v14l11-7z"/></svg></span>';
+  const cand = [c.top_video_url, ...vids.map(v => v.url), c.url].filter(Boolean);
+  const pickBy = (fn) => {
+    for (const u of cand) {
+      if (fn(u)) return u;
+    }
+    return '';
+  };
+
+  if (c.platform === 'instagram') {
+    const u = pickBy(u => igCode(u));
+    const ic = igCode(u);
+    if (ic) {
+      return '<div class="media embed ig" data-embed-src="' + esc('https://www.instagram.com/' + ic.kind + '/' + ic.code + '/embed') + '"><div class="poster" onclick="loadEmbed(this.parentNode)" style="background:' + p.g + '">' + bigPlay + '</div></div>';
+    }
+    if (c.avatar_url) {
+      return '<div class="media shot" style="background:' + p.g + '" onclick="window.open(\'' + esc(c.url) + '\',\'_blank\')"><img class="cover" src="' + esc(c.avatar_url) + '" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel">انستجرام</span></div>';
+    }
+    return '<div class="media fb" style="background:' + p.g + '" onclick="window.open(\'' + esc(c.url) + '\',\'_blank\')"><span class="mlabel">انستجرام</span></div>';
+  }
+  if (c.platform === 'tiktok') {
+    const u = pickBy(u => ttVidId(u));
+    const vid = ttVidId(u);
+    if (vid) {
+      return '<div class="media embed tt" data-embed-src="' + esc('https://www.tiktok.com/embed/v2/' + vid) + '"><div class="poster" onclick="loadEmbed(this.parentNode)" style="background:' + p.g + '">' + bigPlay + '</div></div>';
+    }
+    if (c.avatar_url) {
+      return '<div class="media shot" style="background:' + p.g + '" onclick="window.open(\'' + esc(c.url) + '\',\'_blank\')"><img class="cover" src="' + esc(c.avatar_url) + '" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel">تيك توك</span></div>';
+    }
+    return '<div class="media fb" style="background:' + p.g + '" onclick="window.open(\'' + esc(c.url) + '\',\'_blank\')"><span class="mlabel">تيك توك</span></div>';
+  }
+  if (c.platform === 'youtube') {
+    const u = pickBy(u => u.match(/[?&]v=([^&]+)/) || u.match(/youtu\.be\/([^?]+)/) || u.match(/\/shorts\/([^?\/]+)/));
+    const id = u ? (u.match(/[?&]v=([^&]+)/) || u.match(/youtu\.be\/([^?]+)/) || u.match(/\/shorts\/([^?\/]+)/)) : null;
+    if (id && id[1]) {
+      const t = 'https://i.ytimg.com/vi/' + id[1] + '/hqdefault.jpg';
+      return '<div class="media shot" style="background:' + p.g + '" onclick="openVideo(\'' + esc(u || c.url) + '\',\'youtube\')"><img class="cover" src="' + esc(t) + '" loading="lazy" onerror="this.remove()"><div class="ovl"></div>' + bigPlay + '</div>';
+    }
+    if (c.avatar_url) {
+      return '<div class="media shot yt" style="background:' + p.g + '" onclick="window.open(\'' + esc(c.url) + '\',\'_blank\')"><img class="cover ytcover" src="' + esc(c.avatar_url) + '" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div>' + bigPlay + '<span class="mlabel">قناة يوتيوب</span></div>';
+    }
+    return '<div class="media fb" style="background:' + p.g + '" onclick="window.open(\'' + esc(c.url) + '\',\'_blank\')">' + bigPlay + '<span class="mlabel">يوتيوب</span></div>';
+  }
+  if (c.platform === 'snapchat') {
+    return '<div class="media snap" style="background:' + p.g + '" onclick="window.open(\'' + esc(c.url) + '\',\'_blank\')"><span class="ghost">👻</span><span class="mlabel dark">افتح سناب</span></div>';
+  }
+  if (c.avatar_url) {
+    return '<div class="media shot" style="background:' + p.g + '" onclick="window.open(\'' + esc(c.url) + '\',\'_blank\')"><img class="cover" src="' + esc(c.avatar_url) + '" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel">' + p.ar + '</span></div>';
+  }
+  return '<div class="media fb" style="background:' + p.g + '" onclick="window.open(\'' + esc(c.url) + '\',\'_blank\')"><span class="mlabel">' + p.ar + '</span></div>';
+}
+
+function contactRow(c) {
+  const wa = c.whatsapp ? String(c.whatsapp).trim() : "";
+  const ph = c.phone ? String(c.phone).trim() : "";
+  const waNum = wa.replace(/[^\d]/g, "");
+  const phNum = ph.replace(/[^\d]/g, "");
+  const btns = [];
+  if (waNum) {
+    const link = wa.indexOf("http") === 0 ? wa : ("https://wa.me/" + waNum);
+    btns.push('<a class="cbtn2 wa" title="' + esc("+" + waNum) + '" href="' + esc(link) + '" target="_blank" rel="noopener">واتساب</a>');
+  }
+  if (phNum && phNum !== waNum) {
+    btns.push('<a class="cbtn2 ph" title="' + esc("+" + phNum) + '" href="tel:+' + esc(phNum) + '">اتصال</a>');
+  }
+  if (c.email) {
+    btns.push('<a class="cbtn2 em" title="' + esc(c.email) + '" href="mailto:' + esc(c.email) + '">بريد</a>');
+  }
+  if (!btns.length) {
+    return '<a class="cbtn2 acc" href="' + esc(c.url) + '" target="_blank" rel="noopener">تواصل عبر الحساب</a>';
+  }
+  return '<div class="contact2">' + btns.join("") + '</div>';
+}
+
+function copyTxt(txt, el) {
+  try {
+    navigator.clipboard && navigator.clipboard.writeText(txt);
+  } catch (e) {}
+  if (el) {
+    const o = el.textContent;
+    el.textContent = "✓";
+    setTimeout(() => {
+      el.textContent = o;
+    }, 1000);
+  }
+}
+
+function otherText(c) {
+  const names = otherPlatformLinks(c).map(l => l.label);
+  if (c.other) {
+    String(c.other).split(/[\n,|;]+/).map(s => s.trim()).filter(Boolean).forEach(p => {
+      if (names.indexOf(p) === -1) names.push(p);
+    });
+  }
+  if (!names.length) return '';
+  const chips = names.map(n => '<span class="ochip txt">' + esc(n) + '</span>').join('');
+  return '<div class="others"><span class="olbl">منصات أخرى:</span>' + chips + '</div>';
+}
+
+function linksChips(c) {
+  const seen = {};
+  const chips = [];
+  otherPlatformLinks(c).forEach(l => {
+    if (seen[l.url]) return;
+    seen[l.url] = 1;
+    const col = (PLAT[l.plat] && PLAT[l.plat].c) || '#5b6470';
+    chips.push('<a class="ochip" href="' + esc(l.url) + '" target="_blank" rel="noopener" style="--oc:' + col + '">' + esc(l.label) + '</a>');
+  });
+  if (c.links) {
+    const parts = String(c.links).split(/[\n,|;]+/).map(s => s.trim()).filter(Boolean);
+    for (let part of parts) {
+      let url = '',
+        plat = '',
+        label = '';
+      const low = part.toLowerCase();
+      if (/instagram\.com/.test(low)) { plat = 'instagram';
+        label = 'انستجرام'; } else if (/tiktok\.com/.test(low)) { plat = 'tiktok';
+        label = 'تيك توك'; } else if (/youtube\.com|youtu\.be/.test(low)) { plat = 'youtube';
+        label = 'يوتيوب'; } else if (/snapchat\.com/.test(low)) { plat = 'snapchat';
+        label = 'سناب'; } else if (/twitter\.com|x\.com/.test(low)) { plat = 'x';
+        label = 'تويتر'; } else if (/t\.me|telegram/.test(low)) { plat = 'tg';
+        label = 'تيليجرام'; } else if (/facebook\.com|fb\.com/.test(low)) { plat = 'fb';
+        label = 'فيسبوك'; }
+      if (/^https?:\/\//i.test(part)) {
+        url = part;
+      } else if (/^[\w.-]+\.[a-z]{2,}(\/|$)/i.test(part)) {
+        url = 'https://' + part.replace(/^https?:\/\//, '');
+      }
+      if (!url) continue;
+      if (plat && plat === c.platform) continue;
+      if (!label) {
+        try {
+          label = new URL(url).hostname.replace(/^www\./, '');
+        } catch (e) {
+          continue;
+        }
+      }
+      if (seen[url]) continue;
+      seen[url] = 1;
+      const col = (PLAT[plat] && PLAT[plat].c) || '#5b6470';
+      chips.push('<a class="ochip" href="' + esc(url) + '" target="_blank" rel="noopener" style="--oc:' + col + '">' + esc(label) + '</a>');
+    }
+  }
+  return chips.length ? '<div class="others links"><span class="olbl">روابط أخرى:</span>' + chips.join('') + '</div>' : '';
+}
+
+function prioInfo(p) {
+  p = String(p || "").trim().toLowerCase();
+  if (p === "high" || p === "عالي" || p === "1") return { l: "High", c: "#B8860B" };
+  if (p === "medium" || p === "متوسط" || p === "2") return { l: "Medium", c: "#f59e0b" };
+  if (p === "low" || p === "منخفض" || p === "3") return { l: "Low", c: "#9ca3af" };
+  return null;
+}
+
+function crmStatusBadges(c) {
+  if (!isStaffSession()) return "";
+  const chips = [];
+  if (c.messageStatus === 'sent') chips.push('<span class="crm-chip sent">✅ اتبعت</span>');
+  if ((c.followupCount | 0) > 0) chips.push('<span class="crm-chip followup">🔄 متابعة ×' + c.followupCount + '</span>');
+  if (c.signupStatus === 'subscribed') chips.push('<span class="crm-chip subscribed">🎉 مشترك</span>');
+  if (!chips.length) return "";
+  return '<div class="crm-badges">' + chips.join('') + '</div>';
+}
+
+function crmActionsRow(c) {
+  if (!c || !c.uid) return '';
+  const u = esc(c.uid);
+  return '<div class="crm-actions">' +
+    '<button class="crmbtn sent" data-action="crm-sent" data-uid="' + u + '">📩 بعت</button>' +
+    '<button class="crmbtn followup" data-action="crm-followup" data-uid="' + u + '">🔄 متابعة</button>' +
+    '<button class="crmbtn subscribed" data-action="crm-subscribed" data-uid="' + u + '">🎉 اشترك</button>' +
+    '</div>';
+}
+
+// --- Modal Functions ---
+function closeModal() {
+  document.getElementById("modal").style.display = "none";
+  document.getElementById("modalBody").innerHTML = "";
+}
+
+function openVideo(url, platform) {
+  if (!url || url === "#") return;
+  const body = document.getElementById("modalBody");
+  const title = document.getElementById("modalTitle");
+  body.innerHTML = "";
+  if (platform === "tiktok") {
+    title.textContent = "فيديو تيك توك";
+    body.innerHTML = '<blockquote class="tiktok-embed" cite="' + url + '" style="max-width:540px;min-width:300px;margin:0 auto"><a href="' + url + '">عرض الفيديو</a></blockquote>';
+    reloadScript("https://www.tiktok.com/embed.js");
+  } else if (platform === "instagram") {
+    title.textContent = "منشور إنستجرام";
+    body.innerHTML = '<blockquote class="instagram-media" data-instgrm-permalink="' + url + '" data-instgrm-version="14" style="margin:0 auto;max-width:540px;width:100%"></blockquote>';
+    reloadScript("https://www.instagram.com/embed.js", () => {
+      if (window.instgrm && window.instgrm.Embeds) window.instgrm.Embeds.process();
+    });
+  } else if (platform === "youtube") {
+    const id = url.match(/[?&]v=([^&]+)/) || url.match(/youtu\.be\/([^?]+)/) || url.match(/\/shorts\/([^?\/]+)/);
+    if (id) {
+      title.textContent = "فيديو يوتيوب";
+      body.innerHTML = '<iframe src="https://www.youtube.com/embed/' + id[1] + '" allow="autoplay; encrypted-media" allowfullscreen></iframe>';
+    } else {
+      window.open(url, "_blank");
+      return;
+    }
+  } else {
+    window.open(url, "_blank");
+    return;
+  }
+  document.getElementById("modal").style.display = "flex";
+}
+
+function reloadScript(src, cb) {
+  document.querySelectorAll('script[data-embed="' + src + '"]').forEach(s => s.remove());
+  const s = document.createElement('script');
+  s.src = src;
+  s.async = true;
+  s.setAttribute('data-embed', src);
+  s.onload = () => { if (cb) cb(); };
+  document.body.appendChild(s);
+}
+
+function loadEmbed(host) {
+  if (!host || host.dataset.loaded) return;
+  const src = host.getAttribute('data-embed-src');
+  if (!src) return;
+  host.dataset.loaded = '1';
+  _embedQueue.push({ host, src });
+  requestAnimationFrame(_pumpEmbedQueue);
+}
+
+const _embedQueue = [];
+let _embedActive = 0;
+const EMBED_MAX_CONCURRENT = 2;
+
+function _createIframe(host, src) {
+  const f = document.createElement('iframe');
+  f.src = src;
+  f.loading = 'lazy';
+  f.className = 'embedframe';
+  f.setAttribute('scrolling', 'no');
+  f.setAttribute('allow', 'encrypted-media; clipboard-write');
+  f.setAttribute('allowfullscreen', '');
+  host.innerHTML = '';
+  host.appendChild(f);
+  f.addEventListener('load', _embedDone, { once: true });
+  setTimeout(_embedDone, 4000);
+}
+
+function _embedDone() {
+  _embedActive = Math.max(0, _embedActive - 1);
+  _pumpEmbedQueue();
+}
+
+function _pumpEmbedQueue() {
+  while (_embedActive < EMBED_MAX_CONCURRENT && _embedQueue.length) {
+    const { host, src } = _embedQueue.shift();
+    if (!host.isConnected || host.dataset.loaded === 'skip') continue;
+    _embedActive++;
+    _createIframe(host, src);
+  }
+}
+
+// --- Login Functions ---
+async function doLogin() {
+  const user = document.getElementById('lg-user').value.trim();
+  const pass = document.getElementById('lg-pass').value;
+  const errEl = document.getElementById('lg-err');
+  errEl.textContent = '';
+  if (!user || !pass) { errEl.textContent = 'اكتب اسم المستخدم وكلمة المرور'; return; }
+  try {
+    const result = await callApi('login', { username: user, password: pass });
+    SESSION = result;
+    saveSession(result);
+    document.getElementById('loginGate').style.display = 'none';
+    startApp();
+  } catch (e) {
+    errEl.textContent = e.message || 'بيانات غلط';
+  }
+}
+
+function logout() {
+  clearSession();
+  location.reload();
+}
+
+function startApp() {
+  const role = String((SESSION && SESSION.role) || '').trim().toLowerCase();
+  const adminToolbar = document.getElementById('adminToolbar');
+  const adminName = document.getElementById('adminName');
+  if (role === 'admin' || role === 'manager') {
+    adminToolbar.style.display = 'flex';
+    adminName.textContent = SESSION.staffName || SESSION.username || 'أدمن';
+    document.getElementById('addLeadFab').style.display = 'none';
+    boot();
+    return;
+  }
+  if (role === 'staff') {
+    adminToolbar.style.display = 'none';
+    document.getElementById('addLeadFab').style.display = '';
+    const cached = readCache();
+    if (cached && cached.length) {
+      applyData(cached);
+      refreshMyLeads();
+      return;
+    }
+    showSkeleton();
+    refreshMyLeads();
+    return;
+  }
+  adminToolbar.style.display = 'none';
+  document.getElementById('addLeadFab').style.display = 'none';
+  boot();
+}
+
+async function refreshMyLeads() {
+  try {
+    const res = await fetch(API_BASE + '?action=myLeads&token=' + encodeURIComponent(SESSION.token));
+    const j = await res.json();
+    if (j.ok && j.result && j.result.leads) {
+      const data = j.result.leads.map(mapRawToCard);
+      CREATORS = data;
+      buildAllPills();
+      renderStats();
+      render();
+      updateScrapeCount();
+      writeCache(data);
+    }
+  } catch (e) {
+    console.log('myLeads failed', e);
+  }
+}
+
+function mapRawToCard(o) {
+  let vids = [];
+  try { vids = String(o.videos || "").split(",").map(v => v.trim()).filter(Boolean); } catch (e) {}
+  return {
+    uid: String(o.uid || "").toLowerCase(),
+    discoveredAt: normalizeSheetDate(o.discovered_at),
+    assignedTo: String(o.assigned_to || "").trim(),
+    handle: String(o.handle || "").replace(/^@/, ""),
+    platform: o.platform || "",
+    followers: Number(o.followers) || 0,
+    niche: String(o.niche || "").toLowerCase(),
+    country: o.location || "الخليج",
+    url: o.profile_url || "#",
+    avatar_url: o.avatar_url || "",
+    videos: vids,
+    top_video_url: o.top_video_url || "",
+    other: o.other_platforms || "",
+    email: o.email || "",
+    whatsapp: o.whatsapp || "",
+    phone: o.phone || "",
+    links: o.links_bio || "",
+    language: o.language || "",
+    priority: o.priority || "",
+    engagement: o.engagement_rate || "",
+    igUrl: o.instagram_url || "",
+    ttUrl: o.tiktok_url || "",
+    scUrl: o.snapchat_url || "",
+    twUrl: o.twitter_url || "",
+    ytUrl: o.youtube_url || "",
+    fbUrl: o.facebook_url || "",
+    messageStatus: String(o.message_status || "").toLowerCase(),
+    followupCount: parseInt(o.followup_count, 10) || 0,
+    signupStatus: String(o.signup_status || "").toLowerCase()
+  };
+}
+
+// --- Admin Functions ---
+function openEmployeeModal() {
+  document.getElementById('emp-err').textContent = '';
+  document.getElementById('emp-username').value = '';
+  document.getElementById('emp-password').value = '';
+  document.getElementById('emp-name').value = '';
+  updateUsernameHint();
+  const ov = document.getElementById('employeeOverlay');
+  ov.style.display = 'flex';
+  requestAnimationFrame(() => ov.classList.add('show'));
+}
+
+function closeEmployeeModal() {
+  const ov = document.getElementById('employeeOverlay');
+  ov.classList.remove('show');
+  setTimeout(() => ov.style.display = 'none', 220);
+}
+
+function updateUsernameHint() {
+  const val = document.getElementById('emp-username').value.trim() || 'sara';
+  document.getElementById('emp-username-display').textContent = val;
+}
+
+async function submitEmployee() {
+  const username = document.getElementById('emp-username').value.trim();
+  const password = document.getElementById('emp-password').value.trim();
+  const name = document.getElementById('emp-name').value.trim();
+  const emoji = document.getElementById('emp-emoji').value;
+  const errEl = document.getElementById('emp-err');
+  errEl.textContent = '';
+  if (!username) { errEl.textContent = 'اسم المستخدم مطلوب'; return; }
+  if (username.length < 3) { errEl.textContent = 'اسم المستخدم أقل شيء 3 حروف'; return; }
+  if (!password || password.length < 4) { errEl.textContent = 'كلمة المرور (أقل شيء 4 حروف)'; return; }
+  if (!name) { errEl.textContent = 'الاسم الكامل مطلوب'; return; }
+  const fullEmail = username + '@adltix.com';
+  const btn = document.getElementById('emp-submit');
+  btn.disabled = true;
+  btn.textContent = '⏳ جاري الإضافة...';
+  try {
+    const res = await callApi('addEmployee', { token: SESSION.token, username: fullEmail, password, staffName: name, emoji });
+    btn.disabled = false;
+    btn.textContent = '✅ تمت الإضافة!';
+    setTimeout(() => { btn.textContent = '➕ إضافة الموظفة'; }, 2000);
+    closeEmployeeModal();
+    alert('✅ تم إضافة الموظفة ' + name + ' بنجاح!\n📧 البريد: ' + fullEmail + '\nتم توزيع الـ Leads على جميع الموظفات.');
+    boot();
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = '➕ إضافة الموظفة';
+    errEl.textContent = e.message || 'حصل خطأ';
+  }
+}
+
+async function distributeLeads() {
+  if (!confirm('🔄 هل تريد إعادة توزيع جميع الـ Leads غير المعينة على الموظفات النشطات؟')) return;
+  try {
+    const res = await callApi('distributeLeads', { token: SESSION.token });
+    alert('✅ تم توزيع ' + res.distributed + ' مؤثر على الموظفات.\n' +
+      Object.entries(res.staffLeadCount).map(([k, v]) => k + ': ' + v + ' مؤثر').join('\n'));
+    boot();
+  } catch (e) {
+    alert('حصل خطأ: ' + e.message);
+  }
+}
+
+function openAddLeadModal() {
+  document.getElementById('al-err').textContent = '';
+  document.getElementById('al-link').value = '';
+  const ov = document.getElementById('addLeadOverlay');
+  ov.style.display = 'flex';
+  requestAnimationFrame(() => ov.classList.add('show'));
+}
+
+function closeAddLeadModal() {
+  const ov = document.getElementById('addLeadOverlay');
+  ov.classList.remove('show');
+  setTimeout(() => ov.style.display = 'none', 220);
+}
+
+async function submitAddLead() {
+  const link = document.getElementById('al-link').value.trim();
+  const niche = document.getElementById('al-niche').value;
+  const country = document.getElementById('al-country').value;
+  const errEl = document.getElementById('al-err');
+  errEl.textContent = '';
+  if (!link) { errEl.textContent = 'الصقي لينك البروفايل الأول'; return; }
+  const btn = document.getElementById('al-submit');
+  btn.disabled = true;
+  btn.textContent = 'بنضيفه...';
+  try {
+    const res = await callApi('addManualLead', { token: SESSION.token, link, niche, country });
+    btn.disabled = false;
+    btn.textContent = 'إضافة';
+    if (res.duplicate) { errEl.textContent = res.message || 'موجود بالفعل'; return; }
+    closeAddLeadModal();
+    const card = mapRawToCard(res.card);
+    CREATORS.unshift(card);
+    render();
+    updateScrapeCount();
+    setTimeout(() => {
+      const el = document.querySelector('.card[data-uid="' + card.uid + '"]');
+      if (el) { el.classList.add('new-card-flash');
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+    }, 100);
+    if (res.quotaExceeded) {
+      alert('✅ اتضاف بالمعلومات الأساسية.\n⏳ رصيد Scrapingdog خلص — التفاصيل الكاملة (متابعين، صورة، بايو) هتتحدّث لما نحط API جديد.');
+    }
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = 'إضافة';
+    errEl.textContent = e.message || 'حصل خطأ';
+  }
+}
+
+// --- API Functions ---
+async function callApi(action, payload) {
+  if (!API_BASE || API_BASE.indexOf('http') !== 0) throw new Error('API_BASE مش متظبط');
+  try {
+    const res = await fetch(API_BASE, {
+      method: 'POST',
+      body: JSON.stringify(Object.assign({ action }, payload))
+    });
+    const j = await res.json();
+    if (!j.ok) throw new Error(j.error || 'فشل الطلب');
+    return j.result;
+  } catch (e) {
+    throw new Error(e.message || 'مشكلة في الاتصال');
+  }
+}
+
+// --- CRM Actions ---
+let _crmPending = null;
+
+function onCrmAction(btn, uid, actionType) {
+  const needsShot = (actionType === 'sent' || actionType === 'subscribed');
+  const labels = { sent: 'إرسال الرسالة', followup: 'متابعة', subscribed: 'اشتراك' };
+  if (needsShot) {
+    showConfirm('تأكيد ' + labels[actionType], 'هترفعي سكرين شوت يثبت إنك ' + (actionType === 'sent' ? 'بعتيلها' : 'أكّدت اشتراكها') + '. جاهزة؟', 'اختيار الصورة', 'ok').then(ok => {
+      if (!ok) return;
+      _crmPending = { btn, uid, actionType };
+      document.getElementById('crmFileInput').click();
+    });
+  } else {
+    showConfirm('تأكيد المتابعة', 'هيتسجّل إنك تابعتي المؤثر ده. متأكدة؟', 'تأكيد', 'ok').then(ok => {
+      if (!ok) return;
+      sendCrmAction(btn, uid, actionType, null);
+    });
+  }
+}
+
+document.getElementById('crmFileInput').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file || !_crmPending) return;
+  const { btn, uid, actionType } = _crmPending;
+  _crmPending = null;
+  try {
+    const base64 = await fileToBase64(file);
+    await sendCrmAction(btn, uid, actionType, base64);
+  } catch (err) {
+    alert('حصل خطأ في قراءة الصورة');
+  }
+});
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+
+async function sendCrmAction(btn, uid, actionType, imageBase64) {
+  const row = btn.closest('.crm-actions');
+  if (!row) return;
+  row.querySelectorAll('.crmbtn').forEach(b => b.disabled = true);
+  btn.classList.add('loading');
+  try {
+    const res = await callApi('logAction', { token: SESSION.token, uid, actionType, imageBase64 });
+    btn.classList.remove('loading');
+    btn.classList.add('success');
+    const item = CREATORS.find(x => x.uid === uid);
+    if (item) {
+      if (actionType === 'sent') item.messageStatus = 'sent';
+      if (actionType === 'followup') item.followupCount = (item.followupCount || 0) + 1;
+      if (actionType === 'subscribed') item.signupStatus = 'subscribed';
+    }
+    const cardEl = btn.closest('.card');
+    if (cardEl) {
+      let badges = cardEl.querySelector('.crm-badges');
+      const html = crmStatusBadges(item || {});
+      if (html) {
+        if (badges) badges.outerHTML = html;
+        else cardEl.querySelector('.crm-actions').insertAdjacentHTML('beforebegin', html);
+      }
+    }
+    setTimeout(() => {
+      row.querySelectorAll('.crmbtn').forEach(b => { b.disabled = false;
+        b.classList.remove('success'); });
+    }, 800);
+  } catch (e) {
+    btn.classList.remove('loading');
+    row.querySelectorAll('.crmbtn').forEach(b => b.disabled = false);
+    alert('حصل خطأ: ' + e.message);
+  }
+}
+
+// --- Admin Card Actions ---
+function findCardEl(btn) {
+  if (!btn) return null;
+  return btn.closest('.card');
+}
+
+function setBusy(cardEl, busy) {
+  if (!cardEl) return;
+  cardEl.querySelectorAll('.aabtn,select').forEach(el => { el.disabled = busy; });
+}
+
+function removeCardAnimated(cardEl, uid) {
+  cardEl.classList.add('removing');
+  setTimeout(() => {
+    cardEl.remove();
+    const i = CREATORS.findIndex(x => x.uid === uid);
+    if (i > -1) CREATORS.splice(i, 1);
+    const shownEl = document.getElementById('shown');
+    if (shownEl) shownEl.textContent = Math.max(0, (parseInt(shownEl.textContent, 10) || 1) - 1);
+  }, 520);
+}
+
+async function onDelete(btn) {
+  const cardEl = findCardEl(btn);
+  if (!cardEl) return;
+  const uid = cardEl.getAttribute('data-uid');
+  if (!uid) return;
+  const ok = await showConfirm('حذف نهائي؟', 'هيتشال المؤثر ده من الموقع ومن الشيت خالص ومش هيرجع تاني. متأكد؟', 'حذف نهائي', 'danger');
+  if (!ok) return;
+  setBusy(cardEl, true);
+  try {
+    await callApi('delete', { uid });
+    removeCardAnimated(cardEl, uid);
+  } catch (e) {
+    alert('حصل خطأ: ' + e.message);
+    setBusy(cardEl, false);
+  }
+}
+
+async function onMoveToNew(btn) {
+  const cardEl = findCardEl(btn);
+  if (!cardEl) return;
+  const uid = cardEl.getAttribute('data-uid');
+  if (!uid) return;
+  const ok = await showConfirm('نقل للأرشيف؟', 'هينتقل المؤثر ده للشيت الجديد، ويتشال من هنا أوتوماتيك. متأكد؟', 'نقل للأرشيف', 'move');
+  if (!ok) return;
+  setBusy(cardEl, true);
+  try {
+    await callApi('moveToNew', { uid });
+    removeCardAnimated(cardEl, uid);
+  } catch (e) {
+    alert('حصل خطأ: ' + e.message);
+    setBusy(cardEl, false);
+  }
+}
+
+async function onChangeNiche(sel) {
+  const niche = sel.value;
+  if (!niche) return;
+  const cardEl = findCardEl(sel);
+  if (!cardEl) { sel.value = ''; return; }
+  const uid = cardEl.getAttribute('data-uid');
+  if (!uid) { sel.value = ''; return; }
+  const label = (NICHE_AR[niche] || niche);
+  const ok = await showConfirm('نقل المجال؟', 'هينقل المؤثر ده لمجال "' + label + '". متأكد؟', 'نقل المجال', 'move');
+  if (!ok) { sel.value = ''; return; }
+  setBusy(cardEl, true);
+  try {
+    await callApi('changeNiche', { uid, niche });
+    const item = CREATORS.find(x => x.uid === uid);
+    if (item) item.niche = niche;
+    if (state.niche !== 'all' && state.niche !== niche) {
+      removeCardAnimated(cardEl, uid);
+    } else {
+      const tag = cardEl.querySelector('.nichetag');
+      if (tag) { tag.textContent = label;
+        tag.style.animation = 'none';
+        void tag.offsetWidth;
+        tag.style.animation = 'popIn .4s cubic-bezier(.34,1.56,.64,1)'; }
+      setBusy(cardEl, false);
+      sel.value = '';
+    }
+  } catch (e) {
+    alert('حصل خطأ: ' + e.message);
+    setBusy(cardEl, false);
+    sel.value = '';
+  }
+}
+
+async function onApprove(btn) {
+  const cardEl = findCardEl(btn);
+  if (!cardEl) return;
+  const uid = cardEl.getAttribute('data-uid');
+  if (!uid) return;
+  if (cardEl.classList.contains('approved')) return;
+  const ok = await showConfirm('تأكيد المؤثر؟', 'هيتحدد إنه "معانا" وهيتلوّن في الشيت عشان تتابعه بسهولة.', 'تأكيد', 'ok');
+  if (!ok) return;
+  setBusy(cardEl, true);
+  try {
+    await callApi('approve', { uid });
+    cardEl.classList.add('approved');
+    btn.classList.add('is-approved');
+    btn.textContent = '✅ متابَع';
+    if (!cardEl.querySelector('.approve-badge')) {
+      const b = document.createElement('div');
+      b.className = 'approve-badge';
+      b.textContent = '✅ متابَع';
+      cardEl.style.position = 'relative';
+      cardEl.appendChild(b);
+    }
+    setBusy(cardEl, false);
+    btn.disabled = true;
+  } catch (e) {
+    alert('حصل خطأ: ' + e.message);
+    setBusy(cardEl, false);
+  }
+}
+
+// --- Theme ---
+function applyTheme(t) {
+  document.body.classList.toggle('dark', t === 'dark');
+  var b = document.getElementById('themebtn');
+  if (b) b.textContent = (t === 'dark' ? '☀️' : '🌙');
+  try { localStorage.setItem('adltix_theme', t); } catch (e) {}
+}
+
+function toggleTheme() {
+  applyTheme(document.body.classList.contains('dark') ? 'light' : 'dark');
+}
+
+// --- Filter Event Listeners ---
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('f-fol').addEventListener('change', e => { state.fol = e.target.value;
+    render(); });
+  document.getElementById('sort').addEventListener('change', e => { state.sort = e.target.value;
+    render(); });
+  document.getElementById('f-contact').addEventListener('change', e => { state.contact = e.target.value;
+    render(); });
+});
+
+// --- Cleanup on page unload ---
+window.addEventListener('beforeunload', () => {
+  cleanupMemory();
+  if (_virtualList) {
+    _virtualList.destroy();
+    _virtualList = null;
+  }
+  if (_searchController) {
+    _searchController.abort();
+    _searchController = null;
+  }
+  clearTimeout(_cacheWriteTimer);
+  _cacheWriteTimer = null;
+  for (const [id, timer] of _debounceCleanup) {
+    clearTimeout(timer);
+  }
+  _debounceCleanup.clear();
+});
+
+// --- Constants ---
+const SHEET_ID = "1SZpJPbpmkZ6OAvpfLaiREX5BmpbiyMiP4IEaFOO7KHM";
+const API_BASE = "https://script.google.com/macros/s/AKfycbxuo4IWPwJqwwBcL5mSyExUV-U4Qr6uLQDE9v-UWRIr5esl3hwtCTRFcFeGXsJADl_B/exec";
+const SHEET_TABS = ["👗 Fashion & Style", "✨ Luxury & Lifestyle", "👨‍👩‍👧 Family & Parenting", "⚽ Sports & Fitness", "🍳 Food & Cooking", "🎮 Gaming", "💼 Business", "📱 Tech", "😂 Entertainment", "🔖 Other Niches"];
+const MIN_FOLLOWERS = 0;
+
+const PLAT = {
+  instagram: { ar: "انستجرام", c: "#E1306C", g: "linear-gradient(135deg,#F58529,#DD2A7B,#8134AF)" },
+  tiktok: { ar: "تيك توك", c: "#111", g: "linear-gradient(135deg,#25F4EE,#111,#FE2C55)" },
+  youtube: { ar: "يوتيوب", c: "#FF0000", g: "linear-gradient(135deg,#FF0000,#c4302b)" },
+  x: { ar: "تويتر", c: "#111", g: "linear-gradient(135deg,#1d1d1f,#3a3a3d)" },
+  snapchat: { ar: "سناب", c: "#111", g: "linear-gradient(135deg,#FFFC00,#FFC400)" }
+};
+const NICHE_AR = { fashion: "فاشن", luxury: "لاكشري", moms: "عائلة وأمومة", sports: "رياضة ولياقة", food: "طعام وطبخ", gaming: "جيمنج", business: "أعمال", tech: "تقنية", entertainment: "ترفيه", other: "أخرى" };
+const STAFF_EMOJI = { Rahma: "🌸", Esraa: "🌺", Menna: "🌷", Kholod: "🌻", Faten: "🌹", Sally: "🌼" };
+const COUNTRY_SYN = {
+  "السعودية": ["السعودية", "السعوديه", "الرياض", "جدة", "جده", "مكة", "مكه", "المدينة", "المدينه", "الدمام", "الخبر", "saudi", "ksa"],
+  "الإمارات": ["الإمارات", "الامارات", "دبي", "أبوظبي", "ابوظبي", "الشارقة", "الشارقه", "عجمان", "العين", "uae", "dubai", "emirat"],
+  "الكويت": ["الكويت", "kuwait"],
+  "قطر": ["قطر", "الدوحة", "الدوحه", "qatar", "doha"],
+  "مصر": ["مصر", "القاهرة", "القاهره", "الإسكندرية", "الاسكندرية", "الجيزة", "الجيزه", "egypt", "cairo"],
+  "المغرب": ["المغرب", "مغرب", "الدار البيضاء", "الرباط", "مراكش", "طنجة", "morocco", "casablanca", "rabat"]
+};
+const COUNTRY_ORDER = ["السعودية", "الإمارات", "الكويت", "قطر", "مصر", "المغرب"];
+
+const CACHE_KEY = "adltix_cache_v1";
+const CACHE_MS = 5 * 60 * 1000;
+
+// --- State ---
+const state = { niche: "all", platform: "all", country: "all", fol: "all", contact: "all", sort: "fol", q: "" };
+let scrapingMode = false;
+let _renderObserver = null;
+let _embedObserver = null;
+
+// Ensure observers
+function ensureObs() {
+  if (_renderObserver) return;
+  _renderObserver = new IntersectionObserver((es) => {
+    es.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('in');
+        _renderObserver.unobserve(e.target);
+      }
+    });
+  }, { threshold: .08 });
+  _embedObserver = new IntersectionObserver((es) => {
+    es.forEach(e => {
+      if (e.isIntersecting) {
+        loadEmbed(e.target);
+        _embedObserver.unobserve(e.target);
+      }
+    });
+  }, { rootMargin: '250px 0px' });
+}
+
+function observeNew(els) {
+  ensureObs();
+  els.forEach((el, i) => {
+    el.style.transitionDelay = (Math.min(i, 8) * 40) + 'ms';
+    _renderObserver.observe(el);
+    el.querySelectorAll('[data-embed-src]').forEach(h => _embedObserver.observe(h));
+  });
+}
+
+console.log('✅ Adltix Performance Optimized - All optimizations applied');
 </script>
-
 </body>
 </html>
