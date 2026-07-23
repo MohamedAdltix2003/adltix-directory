@@ -1671,7 +1671,7 @@ function writeCache(data){ try{ sessionStorage.setItem(CACHE_KEY, JSON.stringify
 
 function yieldToMain(){ return new Promise(r=>setTimeout(r,0)); }
 
-// ===== BOOT =====
+// ===== BOOT - FIXED =====
 async function boot() {
   if(isLoading) return;
   isLoading=true;
@@ -1682,33 +1682,48 @@ async function boot() {
       applyData(cached);
       updateUIForRole();
       isLoading=false;
+      // تحميل البيانات الجديدة في الخلفية
       refreshAllData();
       return;
     }
 
     showSkeleton();
     
-    const fetchPromises = SHEET_TABS.map(tab => 
+    // تحميل أول ورقتين فقط بشكل فوري
+    const firstTwoTabs = SHEET_TABS.slice(0, 2);
+    const restTabs = SHEET_TABS.slice(2);
+    
+    // تحميل أول ورقتين
+    const firstPromises = firstTwoTabs.map(tab => 
       fetch(gvizUrl(tab))
         .then(r => r.text())
         .catch(() => null)
     );
-
+    
+    const firstResults = await Promise.all(firstPromises);
     let all = [];
     
-    const firstTwo = await Promise.all(fetchPromises.slice(0, 2));
-    for (const txt of firstTwo) {
+    for (const txt of firstResults) {
       if (txt) {
         const rows = parseGviz(txt);
         if (rows && rows.length) all = all.concat(rows);
       }
     }
+    
     if (all.length) {
       applyData(all);
       updateUIForRole();
+      writeCache(all);
     }
-
-    const restPromises = fetchPromises.slice(2);
+    
+    // تحميل الباقي في الخلفية
+    const restPromises = restTabs.map(tab => 
+      fetch(gvizUrl(tab))
+        .then(r => r.text())
+        .catch(() => null)
+    );
+    
+    // استمرار تحميل الباقي بدون تجميد
     const restResults = await Promise.all(restPromises);
     for (const txt of restResults) {
       if (txt) {
@@ -1721,6 +1736,7 @@ async function boot() {
     applyData(all);
     writeCache(all);
     updateUIForRole();
+    
   }catch(e){
     console.error('Boot error:', e);
   }finally{
