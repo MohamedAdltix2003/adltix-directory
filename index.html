@@ -59,8 +59,6 @@
   .admin-btn:active{transform:scale(.96)}
   .admin-btn.secondary{background:transparent;border:1.5px solid var(--line);color:var(--ink)}
   .admin-btn.secondary:hover{background:var(--brand-soft);border-color:var(--brand);color:var(--brand)}
-
-  /* ===== الزر الجديد: Dashboard ===== */
   .admin-btn.dashboard{background:linear-gradient(135deg,var(--gold),var(--gold-2));color:#fff}
   .admin-btn.dashboard:hover{box-shadow:0 6px 20px rgba(201,162,75,.45)}
 
@@ -650,7 +648,6 @@
   </div>
 </div>
 
-<!-- ===== مدخلين لرفع الصورة: واحد للتصوير وواحد للمعرض ===== -->
 <input type="file" id="crmFileInput" accept="image/*" capture="environment" style="display:none">
 <input type="file" id="crmFileInputGallery" accept="image/*" style="display:none">
 
@@ -687,7 +684,6 @@
     <span class="label">لوحة التحكم</span>
     <button class="admin-btn" onclick="openEmployeeModal()">➕ إضافة موظفة</button>
     <button class="admin-btn secondary" onclick="distributeLeads()">🔄 توزيع الـ Leads</button>
-    <!-- ===== الزر الجديد: Dashboard ===== -->
     <button class="admin-btn dashboard" onclick="openDashboard()">📊 Dashboard</button>
     <span class="spacer"></span>
     <span style="font-size:12px;color:var(--muted);font-weight:600">👤 <span id="adminName">أدمن</span></span>
@@ -1289,7 +1285,7 @@ async function distributeLeads(){
   }catch(e){ alert('حصل خطأ: '+e.message); }
 }
 
-// ===== زر Dashboard =====
+// ===== Dashboard =====
 function openDashboard(){
   if(!isAdminSession()){
     alert('هذه الخاصية متاحة فقط للمديرين والأدمن.');
@@ -1320,7 +1316,7 @@ function openDashboard(){
     .catch(err => alert('خطأ في الاتصال: ' + err.message));
 }
 
-// ===== CRM Actions مع خيارين للصورة =====
+// ===== CRM Actions =====
 let _crmPending=null;
 
 function fileToBase64(file){
@@ -1549,22 +1545,25 @@ async function onApprove(btn){
   }catch(e){ alert('حصل خطأ: '+e.message); setBusy(cardEl,false); }
 }
 
-// ===== Embed loading =====
-const _embedQueue=[]; let _embedActive=0; const EMBED_MAX_CONCURRENT=2;
+// ===== Embed loading - مع تحسين الأداء =====
+const _embedQueue=[]; let _embedActive=0; const EMBED_MAX_CONCURRENT=1;
+
 function _createIframe(host,src){
   const f=document.createElement('iframe');
   f.src=src; f.loading='lazy'; f.className='embedframe';
   f.setAttribute('scrolling','no'); f.setAttribute('allow','encrypted-media; clipboard-write'); f.setAttribute('allowfullscreen','');
+  f.setAttribute('style','width:100%;height:100%;min-height:400px;border:0;');
   host.innerHTML=''; host.appendChild(f);
   f.addEventListener('load',_embedDone,{once:true});
-  setTimeout(_embedDone,4000);
+  setTimeout(_embedDone,5000);
 }
 function _embedDone(){ _embedActive=Math.max(0,_embedActive-1); _pumpEmbedQueue(); }
 function _pumpEmbedQueue(){
   while(_embedActive<EMBED_MAX_CONCURRENT && _embedQueue.length){
     const {host,src}=_embedQueue.shift();
     if(!host.isConnected || host.dataset.loaded==='skip') continue;
-    _embedActive++; _createIframe(host,src);
+    _embedActive++; 
+    setTimeout(()=>_createIframe(host,src),100);
   }
 }
 function loadEmbed(host){
@@ -1574,16 +1573,33 @@ function loadEmbed(host){
   _embedQueue.push({host,src});
   requestAnimationFrame(_pumpEmbedQueue);
 }
+
 let _revealObs=null, _embedObs=null;
 function ensureObs(){
   if(_revealObs) return;
-  _revealObs=new IntersectionObserver((es)=>{ es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); _revealObs.unobserve(e.target);} }); },{threshold:.08});
-  _embedObs=new IntersectionObserver((es)=>{ es.forEach(e=>{ if(e.isIntersecting){ loadEmbed(e.target); _embedObs.unobserve(e.target);} }); },{rootMargin:'250px 0px'});
+  _revealObs=new IntersectionObserver((es)=>{ 
+    es.forEach(e=>{ 
+      if(e.isIntersecting){ 
+        e.target.classList.add('in'); 
+        _revealObs.unobserve(e.target);
+      } 
+    }); 
+  },{threshold:.02});
+  
+  _embedObs=new IntersectionObserver((es)=>{ 
+    es.forEach(e=>{ 
+      if(e.isIntersecting){ 
+        loadEmbed(e.target); 
+        _embedObs.unobserve(e.target);
+      } 
+    }); 
+  },{rootMargin:'200px 0px'});
 }
+
 function observeNew(els){
   ensureObs();
   els.forEach((el,i)=>{
-    el.style.transitionDelay=(Math.min(i,8)*40)+'ms';
+    el.style.transitionDelay=(Math.min(i,6)*30)+'ms';
     _revealObs.observe(el);
     el.querySelectorAll('[data-embed-src]').forEach(h=>_embedObs.observe(h));
   });
@@ -1611,7 +1627,17 @@ function render(){
       document.getElementById("shown").textContent=_list.length;
       document.getElementById("empty").style.display=_list.length?"none":"block";
       grid.style.display=_list.length?"grid":"none";
-      appendMore();
+      if(_list.length){
+        // عرض أول 8 بطاقات فوراً
+        const firstBatch = _list.slice(0, Math.min(8, _list.length));
+        const tmp2=document.createElement('div'); tmp2.innerHTML=firstBatch.map(card).join("");
+        const firstAdded=Array.from(tmp2.children);
+        firstAdded.forEach(el=>grid.appendChild(el));
+        _rendered=firstBatch.length;
+        observeNew(firstAdded);
+        // باقي البطاقات بتظهر بالتمرير
+        setTimeout(appendMore, 200);
+      }
     }
   }catch(e){
     console.error('Render error:', e);
@@ -1624,7 +1650,7 @@ let _scrollTied=false;
 function tieScroll(){
   if(_scrollTied) return; _scrollTied=true;
   window.addEventListener('scroll', ()=>{
-    if((window.innerHeight+window.scrollY) >= (document.body.offsetHeight-900)) appendMore();
+    if((window.innerHeight+window.scrollY) >= (document.body.offsetHeight-800)) appendMore();
   }, {passive:true});
 }
 tieScroll();
@@ -1753,7 +1779,7 @@ function parseGviz(text){
 }
 function showSkeleton(){
   const g=document.getElementById("grid"); if(!g) return;
-  let h=""; for(let i=0;i<8;i++) h+='<div class="skel"><div class="skel-media"></div><div class="skel-body"><div class="skel-line w70"></div><div class="skel-line w45"></div><div class="skel-line w90"></div></div></div>';
+  let h=""; for(let i=0;i<6;i++) h+='<div class="skel"><div class="skel-media"></div><div class="skel-body"><div class="skel-line w70"></div><div class="skel-line w45"></div><div class="skel-line w90"></div></div></div>';
   g.innerHTML=h; g.style.display="grid";
 }
 function applyData(all){
@@ -1772,9 +1798,7 @@ function readCache(){
 }
 function writeCache(data){ try{ sessionStorage.setItem(CACHE_KEY, JSON.stringify({t:Date.now(),data})); }catch(e){} }
 
-function yieldToMain(){ return new Promise(r=>setTimeout(r,0)); }
-
-// ===== BOOT - باستخدام الـ Endpoint الجديد =====
+// ===== BOOT - سريع جداً =====
 async function boot() {
   if(isLoading) return;
   isLoading=true;
