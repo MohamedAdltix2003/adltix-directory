@@ -60,6 +60,10 @@
   .admin-btn.secondary{background:transparent;border:1.5px solid var(--line);color:var(--ink)}
   .admin-btn.secondary:hover{background:var(--brand-soft);border-color:var(--brand);color:var(--brand)}
 
+  /* ===== الزر الجديد: Dashboard ===== */
+  .admin-btn.dashboard{background:linear-gradient(135deg,var(--gold),var(--gold-2));color:#fff}
+  .admin-btn.dashboard:hover{box-shadow:0 6px 20px rgba(201,162,75,.45)}
+
   .filters{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;box-shadow:var(--shadow);margin-bottom:24px;position:sticky;top:74px;z-index:30}
   .frow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
   .frow + .frow{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
@@ -568,7 +572,6 @@
   .username-hint .domain{color:var(--brand);font-weight:700}
   .username-hint .at{color:var(--muted)}
 
-  /* ===== CSS لخيارين رفع الصورة ===== */
   .photo-options{display:flex;gap:10px;margin-bottom:12px}
   .photo-options button{flex:1;padding:10px;border-radius:11px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px}
   .photo-options button:hover{border-color:var(--brand);color:var(--brand);background:var(--brand-soft)}
@@ -684,6 +687,8 @@
     <span class="label">لوحة التحكم</span>
     <button class="admin-btn" onclick="openEmployeeModal()">➕ إضافة موظفة</button>
     <button class="admin-btn secondary" onclick="distributeLeads()">🔄 توزيع الـ Leads</button>
+    <!-- ===== الزر الجديد: Dashboard ===== -->
+    <button class="admin-btn dashboard" onclick="openDashboard()">📊 Dashboard</button>
     <span class="spacer"></span>
     <span style="font-size:12px;color:var(--muted);font-weight:600">👤 <span id="adminName">أدمن</span></span>
   </div>
@@ -1046,12 +1051,10 @@ function card(c){
   html += '<button class="btn ghost" title="نسخ الحساب" onclick="copyTxt(\'@'+esc(c.handle)+'\',this)">⧉</button>';
   html += '</div>';
   
-  // ===== الزراير الثلاثة للـ staff =====
   if (isStaff) {
     html += crmActionsRow(c);
   }
   
-  // ===== أزرار الإدارة (admin/manager) =====
   if (canAdmin && isAdminSession()) {
     html += '<div class="admin-actions">';
     html += '<button class="aabtn ok" title="تأكيد ومتابعة" onclick="onApprove(this)">✅ تأكيد</button>';
@@ -1257,14 +1260,12 @@ async function submitEmployee(){
   if(!password || password.length<4){ errEl.textContent='كلمة المرور (أقل شيء 4 حروف)'; return; }
   if(!name){ errEl.textContent='الاسم الكامل مطلوب'; return; }
   
-  // Check if username exists
   const exists = await checkUsernameExists(username);
   if(exists){
     errEl.textContent='⚠️ اسم المستخدم "'+username+'" موجود بالفعل! اختار اسم تاني.';
     return;
   }
   
-  // الاسم الكامل للبريد الإلكتروني
   const fullEmail = username + '@adltix.com';
   
   const btn=document.getElementById('emp-submit'); btn.disabled=true; btn.textContent='⏳ جاري الإضافة...';
@@ -1288,6 +1289,37 @@ async function distributeLeads(){
   }catch(e){ alert('حصل خطأ: '+e.message); }
 }
 
+// ===== زر Dashboard =====
+function openDashboard(){
+  if(!isAdminSession()){
+    alert('هذه الخاصية متاحة فقط للمديرين والأدمن.');
+    return;
+  }
+  const url = API_BASE + '?action=dashboardStats&token=' + encodeURIComponent(SESSION.token);
+  fetch(url)
+    .then(res => res.json())
+    .then(data => {
+      if(data.ok && data.result){
+        const r = data.result;
+        let msg = '📊 **إحصائيات المنصة**\n\n';
+        msg += '👥 إجمالي المؤثرين: ' + r.total + '\n';
+        msg += '🕒 تم إضافتهم اليوم: ' + r.today + '\n';
+        msg += '📱 المنصات:\n';
+        for(const [k,v] of Object.entries(r.platforms)){
+          msg += '   • ' + (PLAT[k]?.ar || k) + ': ' + v + '\n';
+        }
+        msg += '\n🏷️ المجالات:\n';
+        for(const [k,v] of Object.entries(r.niches)){
+          msg += '   • ' + (NICHE_AR[k] || k) + ': ' + v + '\n';
+        }
+        alert(msg);
+      } else {
+        alert('حدث خطأ في جلب الإحصائيات');
+      }
+    })
+    .catch(err => alert('خطأ في الاتصال: ' + err.message));
+}
+
 // ===== CRM Actions مع خيارين للصورة =====
 let _crmPending=null;
 
@@ -1300,7 +1332,6 @@ function fileToBase64(file){
   });
 }
 
-// ===== دالة عرض خيارين للصورة =====
 function showPhotoOptions(title, msg){
   return new Promise(resolve=>{
     const ov=document.createElement('div'); ov.className='cf-overlay';
@@ -1342,12 +1373,9 @@ function showPhotoOptions(title, msg){
   });
 }
 
-// ===== دالة onCrmAction المعدلة =====
 async function onCrmAction(btn,uid,actionType){
   const needsShot = (actionType==='sent' || actionType==='subscribed');
-  const labels={sent:'إرسال الرسالة',followup:'متابعة',subscribed:'اشتراك'};
   if(needsShot){
-    // عرض خيارين: تصوير أو معرض
     const choice = await showPhotoOptions('اختر طريقة رفع الصورة', 
       '📸 تصوير: التقط صورة الآن\n🖼️ معرض: اختر من صورك');
     
@@ -1362,7 +1390,6 @@ async function onCrmAction(btn,uid,actionType){
       input.removeAttribute('capture');
       input.click();
     }
-    // لو اختار إلغاء، ميعملش حاجة
   }else{
     const ok=await showConfirm('تأكيد المتابعة','هيتسجّل إنك تابعتي المؤثر ده. متأكدة؟','تأكيد','ok');
     if(!ok) return;
@@ -1370,7 +1397,6 @@ async function onCrmAction(btn,uid,actionType){
   }
 }
 
-// ===== Event Listener للتصوير =====
 document.getElementById('crmFileInput').addEventListener('change', async (e)=>{
   const file=e.target.files[0]; e.target.value='';
   if(!file || !_crmPending) return;
@@ -1381,7 +1407,6 @@ document.getElementById('crmFileInput').addEventListener('change', async (e)=>{
   }catch(err){ alert('حصل خطأ في قراءة الصورة'); }
 });
 
-// ===== Event Listener للمعرض =====
 document.getElementById('crmFileInputGallery').addEventListener('change', async (e)=>{
   const file=e.target.files[0]; e.target.value='';
   if(!file || !_crmPending) return;
@@ -1749,7 +1774,7 @@ function writeCache(data){ try{ sessionStorage.setItem(CACHE_KEY, JSON.stringify
 
 function yieldToMain(){ return new Promise(r=>setTimeout(r,0)); }
 
-// ===== BOOT - FIXED (Load ALL leads first, videos later) =====
+// ===== BOOT - باستخدام الـ Endpoint الجديد =====
 async function boot() {
   if(isLoading) return;
   isLoading=true;
@@ -1760,55 +1785,30 @@ async function boot() {
       applyData(cached);
       updateUIForRole();
       isLoading=false;
-      // تحديث البيانات في الخلفية (مع الفيديوهات)
       refreshAllData();
       return;
     }
 
     showSkeleton();
     
-    // تحميل البيانات الأساسية أولاً (بدون فيديوهات)
-    const fetchPromises = SHEET_TABS.map(tab => 
-      fetch(gvizUrl(tab))
-        .then(r => r.text())
-        .catch(() => null)
-    );
+    const url = API_BASE + '?action=allLeads&token=' + encodeURIComponent(SESSION.token);
+    const response = await fetch(url);
+    const data = await response.json();
     
-    // تحميل أول ورقتين بشكل فوري
-    const firstTwoResults = await Promise.all(fetchPromises.slice(0, 2));
-    let all = [];
-    
-    for (const txt of firstTwoResults) {
-      if (txt) {
-        const rows = parseGviz(txt);
-        if (rows && rows.length) all = all.concat(rows);
-      }
-    }
-    
-    if (all.length) {
+    if (data.ok && data.result && data.result.leads) {
+      const all = data.result.leads;
+      allLeadsLoaded = true;
       applyData(all);
-      updateUIForRole();
       writeCache(all);
+      updateUIForRole();
+    } else {
+      console.warn('No leads from API');
+      document.getElementById("grid").innerHTML = '<div class="empty"><div class="ei"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4B23C9" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></div><h3>لا توجد بيانات</h3><p>لم يتم العثور على مؤثرين في قاعدة البيانات.</p></div>';
     }
-    
-    // تحميل باقي الأوراق في الخلفية
-    const restPromises = fetchPromises.slice(2);
-    const restResults = await Promise.all(restPromises);
-    
-    for (const txt of restResults) {
-      if (txt) {
-        const rows = parseGviz(txt);
-        if (rows && rows.length) all = all.concat(rows);
-      }
-    }
-    
-    allLeadsLoaded = true;
-    applyData(all);
-    writeCache(all);
-    updateUIForRole();
     
   }catch(e){
     console.error('Boot error:', e);
+    document.getElementById("grid").innerHTML = '<div class="empty"><div class="ei">⚠️</div><h3>خطأ في التحميل</h3><p>' + e.message + '</p></div>';
   }finally{
     isLoading=false;
   }
@@ -1816,20 +1816,11 @@ async function boot() {
 
 async function refreshAllData(){
   try{
-    const fetchPromises = SHEET_TABS.map(tab => 
-      fetch(gvizUrl(tab))
-        .then(r => r.text())
-        .catch(() => null)
-    );
-    const results = await Promise.all(fetchPromises);
-    let all = [];
-    for (const txt of results) {
-      if (txt) {
-        const rows = parseGviz(txt);
-        if (rows && rows.length) all = all.concat(rows);
-      }
-    }
-    if(all.length > CREATORS.length){
+    const url = API_BASE + '?action=allLeads&token=' + encodeURIComponent(SESSION.token);
+    const response = await fetch(url);
+    const data = await response.json();
+    if(data.ok && data.result && data.result.leads && data.result.leads.length > CREATORS.length){
+      const all = data.result.leads;
       allLeadsLoaded = true;
       applyData(all);
       writeCache(all);
