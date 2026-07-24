@@ -6,8 +6,6 @@
 <title>Adltix — دليل المؤثرين</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preconnect" href="https://docs.google.com">
-<link rel="dns-prefetch" href="https://docs.google.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Tajawal:wght@500;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
@@ -26,6 +24,30 @@
   a{color:inherit;text-decoration:none}
   img{display:block;max-width:100%}
 
+  /* ===== Toast Notifications ===== */
+  .toast-container{position:fixed;top:20px;right:20px;z-index:999999;display:flex;flex-direction:column;gap:10px;max-width:380px;width:100%}
+  .toast{background:var(--surface);border-radius:12px;padding:14px 18px;box-shadow:0 10px 40px rgba(0,0,0,.2);border-right:4px solid var(--brand);transform:translateX(120%);opacity:0;transition:transform .4s cubic-bezier(.34,1.56,.64,1),opacity .3s ease;display:flex;align-items:center;gap:12px}
+  .toast.show{transform:translateX(0);opacity:1}
+  .toast.success{border-right-color:#22c55e}
+  .toast.error{border-right-color:#ef4444}
+  .toast.warning{border-right-color:#f59e0b}
+  .toast .toast-icon{font-size:22px;flex-shrink:0}
+  .toast .toast-msg{flex:1;font-weight:600;font-size:14px;color:var(--ink)}
+  .toast .toast-close{cursor:pointer;font-size:18px;color:var(--muted);background:none;border:none;padding:0 4px}
+
+  /* ===== Back to Top ===== */
+  #backToTop{position:fixed;bottom:30px;right:30px;z-index:9999;width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#fff;border:none;font-size:22px;cursor:pointer;box-shadow:0 8px 25px rgba(75,35,201,.4);transform:scale(0);transition:transform .3s cubic-bezier(.34,1.56,.64,1),box-shadow .3s;display:grid;place-items:center}
+  #backToTop.visible{transform:scale(1)}
+  #backToTop:hover{box-shadow:0 12px 35px rgba(75,35,201,.55);transform:scale(1.08)}
+
+  /* ===== Loading Spinner ===== */
+  .load-more{text-align:center;padding:20px;display:none}
+  .load-more.show{display:block}
+  .spinner{width:36px;height:36px;border:4px solid var(--line);border-top:4px solid var(--brand);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 8px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .load-more span{font-size:13px;color:var(--muted);font-weight:600}
+
+  /* ===== باقي الـ CSS كما هو ===== */
   header{position:sticky;top:0;z-index:40;background:rgba(238,237,244,.85);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
   .bar{max-width:1280px;margin:0 auto;padding:14px 22px;display:flex;align-items:center;gap:18px}
   .brand{display:flex;align-items:center;gap:11px;flex-shrink:0}
@@ -62,7 +84,7 @@
   .admin-btn.dashboard{background:linear-gradient(135deg,var(--gold),var(--gold-2));color:#fff}
   .admin-btn.dashboard:hover{box-shadow:0 6px 20px rgba(201,162,75,.45)}
 
-  .filters{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;box-shadow:var(--shadow);margin-bottom:24px;position:sticky;top:74px;z-index:30}
+  .filters{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;box-shadow:var(--shadow);margin-bottom:24px}
   .frow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
   .frow + .frow{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
   .flabel{font-size:12.5px;font-weight:700;color:var(--muted);width:62px;flex-shrink:0}
@@ -122,8 +144,10 @@
   .empty .ei{width:64px;height:64px;border-radius:18px;background:var(--brand-soft);display:grid;place-items:center;margin:0 auto 16px}
   .empty h3{color:var(--ink);font-size:18px;font-weight:800;margin-bottom:6px}
 
-  .modal{display:none;position:fixed;inset:0;z-index:100;background:rgba(15,12,30,.72);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:20px}
-  .modal .sheet{background:#fff;border-radius:20px;max-width:620px;width:100%;max-height:90vh;overflow:auto;position:relative;padding:20px}
+  .modal{display:none;position:fixed;inset:0;z-index:100;background:rgba(15,12,30,.72);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:20px;animation:fadeIn .25s ease}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  .modal .sheet{background:#fff;border-radius:20px;max-width:620px;width:100%;max-height:90vh;overflow:auto;position:relative;padding:20px;animation:slideUp .3s cubic-bezier(.34,1.56,.64,1)}
+  @keyframes slideUp{from{transform:translateY(30px) scale(.95);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
   .modal .x{position:absolute;top:12px;inset-inline-end:12px;z-index:2;width:38px;height:38px;border-radius:11px;border:none;background:#f1eff7;color:var(--ink);font-size:20px;cursor:pointer;font-weight:700}
   .modal .x:hover{background:var(--brand-soft);color:var(--brand)}
   .modal h4{font-size:16px;font-weight:800;margin-bottom:14px;padding-inline-end:46px}
@@ -385,7 +409,7 @@
   body.dark .filters{background:color-mix(in srgb,var(--surface) 88%,transparent)}
   @media (prefers-reduced-motion:reduce){ .logo::after{animation:none} }
 
-  .filters{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:6px;box-shadow:var(--shadow);margin-bottom:26px;position:sticky;top:74px;z-index:30;display:flex;flex-direction:column;gap:2px;overflow:hidden}
+  .filters{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:6px;box-shadow:var(--shadow);margin-bottom:26px;display:flex;flex-direction:column;gap:2px;overflow:hidden}
   .frow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:9px 12px}
   .frow + .frow{margin-top:0;border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent);padding-top:11px}
   .flabel{font-size:11px;font-weight:800;color:var(--muted);min-width:54px;letter-spacing:.2px;text-transform:none}
@@ -591,6 +615,12 @@
   </div>
 </div>
 
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Back to Top Button -->
+<button id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
 <button id="addLeadFab" class="add-fab" style="display:none" onclick="openAddLeadModal()">+ Add Influencer ⭐</button>
 
 <div id="addLeadOverlay" class="cf-overlay">
@@ -739,6 +769,7 @@
   <div class="meta"><div class="count"><b id="shown">0</b> مؤثر ضمن النتائج</div></div>
   
   <div class="grid" id="grid"></div>
+  <div class="load-more" id="loadMore"><div class="spinner"></div><span>جاري تحميل المزيد...</span></div>
   <div class="empty" id="empty" style="display:none">
     <div class="ei"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4B23C9" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></div>
     <h3>لا توجد نتائج مطابقة</h3>
@@ -767,7 +798,8 @@ let isRendering = false;
 let allLeadsLoaded = false;
 let _list = [];
 let _rendered = 0;
-const PAGE_SIZE = 24;
+const PAGE_SIZE = 20;
+let isLoadingMore = false;
 
 try {
   const raw = sessionStorage.getItem('adltix_session');
@@ -786,7 +818,28 @@ function isAdminSession() {
 }
 
 // ============================================================
-// 2. البيانات الثابتة
+// 2. Toast Notifications
+// ============================================================
+function showToast(message, type = 'success', duration = 3500) {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+  toast.innerHTML = `
+    <span class="toast-icon">${icons[type] || 'ℹ️'}</span>
+    <span class="toast-msg">${message}</span>
+    <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+  `;
+  container.appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add('show'));
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 400);
+  }, duration);
+}
+
+// ============================================================
+// 3. البيانات الثابتة
 // ============================================================
 const SHEET_ID = "1SZpJPbpmkZ6OAvpfLaiREX5BmpbiyMiP4IEaFOO7KHM";
 const API_BASE = "https://script.google.com/macros/s/AKfycbxuo4IWPwJqwwBcL5mSyExUV-U4Qr6uLQDE9v-UWRIr5esl3hwtCTRFcFeGXsJADl_B/exec";
@@ -804,6 +857,7 @@ const NICHE_AR = {fashion:"فاشن",luxury:"لاكشري",moms:"عائلة وأ
 const STAFF_EMOJI = {Rahma:"🌸",Esraa:"🌺",Menna:"🌷",Kholod:"🌻",Faten:"🌹",Sally:"🌼"};
 const COUNTRY_SYN={"السعودية":["السعودية","السعوديه","الرياض","جدة","جده","مكة","مكه","المدينة","المدينه","الدمام","الخبر","saudi","ksa"],"الإمارات":["الإمارات","الامارات","دبي","أبوظبي","ابوظبي","الشارقة","الشارقه","عجمان","العين","uae","dubai","emirat"],"الكويت":["الكويت","kuwait"],"قطر":["قطر","الدوحة","الدوحه","qatar","doha"],"مصر":["مصر","القاهرة","القاهره","الإسكندرية","الاسكندرية","الجيزة","الجيزه","egypt","cairo"],"المغرب":["المغرب","مغرب","الدار البيضاء","الرباط","مراكش","طنجة","morocco","casablanca","rabat"]};
 const COUNTRY_ORDER=["السعودية","الإمارات","الكويت","قطر","مصر","المغرب"];
+
 function countryBucket(loc){ loc=String(loc||"").toLowerCase(); for(const n of COUNTRY_ORDER){ const syn=COUNTRY_SYN[n]||[n]; if(syn.some(x=>loc.indexOf(String(x).toLowerCase())!==-1)) return n; } return "__other__"; }
 function prioInfo(p){ p=String(p||"").trim().toLowerCase(); if(p==="high"||p==="عالي"||p==="1") return {l:"High",c:"#B8860B"}; if(p==="medium"||p==="متوسط"||p==="2") return {l:"Medium",c:"#f59e0b"}; if(p==="low"||p==="منخفض"||p==="3") return {l:"Low",c:"#9ca3af"}; return null; }
 const state = {niche:"all", platform:"all", country:"all", fol:"all", contact:"all", sort:"fol", q:""};
@@ -1118,6 +1172,7 @@ async function doLogin(){
     const result=await callApi('login',{username:user,password:pass});
     SESSION=result; saveSession(result);
     document.getElementById('loginGate').style.display='none';
+    showToast('تم تسجيل الدخول بنجاح! 👋', 'success');
     startApp();
   }catch(e){ errEl.textContent=e.message||'بيانات غلط'; }
 }
@@ -1207,12 +1262,13 @@ async function submitAddLead(){
     const card=mapRawToCard(res.card);
     CREATORS.unshift(card);
     render(); updateScrapeCount();
+    showToast('✅ تم إضافة المؤثر بنجاح!', 'success');
     setTimeout(()=>{
       const el=document.querySelector('.card[data-uid="'+card.uid+'"]');
       if(el){ el.classList.add('new-card-flash'); el.scrollIntoView({behavior:'smooth',block:'center'}); }
     },100);
     if(res.quotaExceeded){
-      alert('✅ اتضاف بالمعلومات الأساسية.\n⏳ رصيد Scrapingdog خلص — التفاصيل الكاملة (متابعين، صورة، بايو) هتتحدّث لما نحط API جديد.');
+      showToast('⚠️ رصيد Scrapingdog خلص، التفاصيل الكاملة هتتحدّث لاحقاً.', 'warning');
     }
   }catch(e){ btn.disabled=false; btn.textContent='إضافة'; errEl.textContent=e.message||'حصل خطأ'; }
 }
@@ -1270,7 +1326,7 @@ async function submitEmployee(){
     btn.disabled=false; btn.textContent='✅ تمت الإضافة!';
     setTimeout(()=>{ btn.textContent='➕ إضافة الموظفة'; },2000);
     closeEmployeeModal();
-    alert('✅ تم إضافة الموظفة '+name+' بنجاح!\n📧 البريد: '+fullEmail+'\nتم توزيع الـ Leads على جميع الموظفات.');
+    showToast('✅ تم إضافة الموظفة '+name+' بنجاح!', 'success');
     boot();
   }catch(e){ btn.disabled=false; btn.textContent='➕ إضافة الموظفة'; errEl.textContent=e.message||'حصل خطأ'; }
 }
@@ -1279,16 +1335,15 @@ async function distributeLeads(){
   if(!confirm('🔄 هل تريد إعادة توزيع جميع الـ Leads غير المعينة على الموظفات النشطات؟')) return;
   try{
     const res=await callApi('distributeLeads',{token:SESSION.token});
-    alert('✅ تم توزيع '+res.distributed+' مؤثر على الموظفات.\n'+
-      Object.entries(res.staffLeadCount).map(([k,v])=>k+': '+v+' مؤثر').join('\n'));
+    showToast('✅ تم توزيع '+res.distributed+' مؤثر على الموظفات.', 'success');
     boot();
-  }catch(e){ alert('حصل خطأ: '+e.message); }
+  }catch(e){ showToast('❌ حصل خطأ: '+e.message, 'error'); }
 }
 
 // ===== Dashboard =====
 function openDashboard(){
   if(!isAdminSession()){
-    alert('هذه الخاصية متاحة فقط للمديرين والأدمن.');
+    showToast('هذه الخاصية متاحة فقط للمديرين والأدمن.', 'warning');
     return;
   }
   const url = API_BASE + '?action=dashboardStats&token=' + encodeURIComponent(SESSION.token);
@@ -1310,10 +1365,10 @@ function openDashboard(){
         }
         alert(msg);
       } else {
-        alert('حدث خطأ في جلب الإحصائيات');
+        showToast('حدث خطأ في جلب الإحصائيات', 'error');
       }
     })
-    .catch(err => alert('خطأ في الاتصال: ' + err.message));
+    .catch(err => showToast('خطأ في الاتصال: ' + err.message, 'error'));
 }
 
 // ===== CRM Actions =====
@@ -1400,7 +1455,7 @@ document.getElementById('crmFileInput').addEventListener('change', async (e)=>{
   try{
     const base64=await fileToBase64(file);
     await sendCrmAction(btn,uid,actionType,base64);
-  }catch(err){ alert('حصل خطأ في قراءة الصورة'); }
+  }catch(err){ showToast('حصل خطأ في قراءة الصورة', 'error'); }
 });
 
 document.getElementById('crmFileInputGallery').addEventListener('change', async (e)=>{
@@ -1410,7 +1465,7 @@ document.getElementById('crmFileInputGallery').addEventListener('change', async 
   try{
     const base64=await fileToBase64(file);
     await sendCrmAction(btn,uid,actionType,base64);
-  }catch(err){ alert('حصل خطأ في قراءة الصورة'); }
+  }catch(err){ showToast('حصل خطأ في قراءة الصورة', 'error'); }
 });
 
 async function sendCrmAction(btn,uid,actionType,imageBase64){
@@ -1436,11 +1491,12 @@ async function sendCrmAction(btn,uid,actionType,imageBase64){
         else cardEl.querySelector('.crm-actions').insertAdjacentHTML('beforebegin',html);
       }
     }
+    showToast('✅ تم تسجيل الإجراء بنجاح!', 'success');
     setTimeout(()=>{ row.querySelectorAll('.crmbtn').forEach(b=>{b.disabled=false;b.classList.remove('success');}); },800);
   }catch(e){
     btn.classList.remove('loading');
     row.querySelectorAll('.crmbtn').forEach(b=>b.disabled=false);
-    alert('حصل خطأ: '+e.message);
+    showToast('❌ حصل خطأ: '+e.message, 'error');
   }
 }
 
@@ -1496,8 +1552,8 @@ async function onDelete(btn){
   const ok=await showConfirm('حذف نهائي؟','هيتشال المؤثر ده من الموقع ومن الشيت خالص ومش هيرجع تاني. متأكد؟','حذف نهائي','danger');
   if(!ok) return;
   setBusy(cardEl,true);
-  try{ await callApi('delete',{uid}); removeCardAnimated(cardEl,uid); }
-  catch(e){ alert('حصل خطأ: '+e.message); setBusy(cardEl,false); }
+  try{ await callApi('delete',{uid}); removeCardAnimated(cardEl,uid); showToast('✅ تم الحذف بنجاح', 'success'); }
+  catch(e){ showToast('❌ حصل خطأ: '+e.message, 'error'); setBusy(cardEl,false); }
 }
 async function onMoveToNew(btn){
   const cardEl=findCardEl(btn); if(!cardEl) return;
@@ -1505,8 +1561,8 @@ async function onMoveToNew(btn){
   const ok=await showConfirm('نقل للأرشيف؟','هينتقل المؤثر ده للشيت الجديد، ويتشال من هنا أوتوماتيك. متأكد؟','نقل للأرشيف','move');
   if(!ok) return;
   setBusy(cardEl,true);
-  try{ await callApi('moveToNew',{uid}); removeCardAnimated(cardEl,uid); }
-  catch(e){ alert('حصل خطأ: '+e.message); setBusy(cardEl,false); }
+  try{ await callApi('moveToNew',{uid}); removeCardAnimated(cardEl,uid); showToast('✅ تم النقل للأرشيف', 'success'); }
+  catch(e){ showToast('❌ حصل خطأ: '+e.message, 'error'); setBusy(cardEl,false); }
 }
 async function onChangeNiche(sel){
   const niche=sel.value; if(!niche) return;
@@ -1524,7 +1580,8 @@ async function onChangeNiche(sel){
       const tag=cardEl.querySelector('.nichetag'); if(tag){ tag.textContent=label; tag.style.animation='none'; void tag.offsetWidth; tag.style.animation='popIn .4s cubic-bezier(.34,1.56,.64,1)'; }
       setBusy(cardEl,false); sel.value='';
     }
-  }catch(e){ alert('حصل خطأ: '+e.message); setBusy(cardEl,false); sel.value=''; }
+    showToast('✅ تم نقل المجال بنجاح', 'success');
+  }catch(e){ showToast('❌ حصل خطأ: '+e.message, 'error'); setBusy(cardEl,false); sel.value=''; }
 }
 async function onApprove(btn){
   const cardEl=findCardEl(btn); if(!cardEl) return;
@@ -1542,10 +1599,11 @@ async function onApprove(btn){
       cardEl.style.position='relative'; cardEl.appendChild(b);
     }
     setBusy(cardEl,false); btn.disabled=true;
-  }catch(e){ alert('حصل خطأ: '+e.message); setBusy(cardEl,false); }
+    showToast('✅ تم تأكيد المؤثر', 'success');
+  }catch(e){ showToast('❌ حصل خطأ: '+e.message, 'error'); setBusy(cardEl,false); }
 }
 
-// ===== Embed loading - مع تحسين الأداء =====
+// ===== Embed loading =====
 const _embedQueue=[]; let _embedActive=0; const EMBED_MAX_CONCURRENT=1;
 
 function _createIframe(host,src){
@@ -1563,7 +1621,7 @@ function _pumpEmbedQueue(){
     const {host,src}=_embedQueue.shift();
     if(!host.isConnected || host.dataset.loaded==='skip') continue;
     _embedActive++; 
-    setTimeout(()=>_createIframe(host,src),100);
+    setTimeout(()=>_createIframe(host,src),150);
   }
 }
 function loadEmbed(host){
@@ -1593,7 +1651,7 @@ function ensureObs(){
         _embedObs.unobserve(e.target);
       } 
     }); 
-  },{rootMargin:'200px 0px'});
+  },{rootMargin:'150px 0px'});
 }
 
 function observeNew(els){
@@ -1606,14 +1664,28 @@ function observeNew(els){
 }
 
 function appendMore(){
-  if(_rendered>=_list.length) return;
-  const grid=document.getElementById("grid");
-  const next=_list.slice(_rendered, _rendered+PAGE_SIZE);
-  const tmp=document.createElement('div'); tmp.innerHTML=next.map(card).join("");
-  const added=Array.from(tmp.children);
-  added.forEach(el=>grid.appendChild(el));
-  _rendered+=next.length;
-  observeNew(added);
+  if(_rendered>=_list.length) {
+    document.getElementById('loadMore').classList.remove('show');
+    return;
+  }
+  if(isLoadingMore) return;
+  isLoadingMore = true;
+  document.getElementById('loadMore').classList.add('show');
+  
+  setTimeout(() => {
+    const grid=document.getElementById("grid");
+    const next=_list.slice(_rendered, _rendered+PAGE_SIZE);
+    const tmp=document.createElement('div'); tmp.innerHTML=next.map(card).join("");
+    const added=Array.from(tmp.children);
+    added.forEach(el=>grid.appendChild(el));
+    _rendered+=next.length;
+    observeNew(added);
+    document.getElementById('loadMore').classList.remove('show');
+    isLoadingMore = false;
+    if(_rendered>=_list.length) {
+      document.getElementById('loadMore').style.display = 'none';
+    }
+  }, 300);
 }
 
 function render(){
@@ -1627,16 +1699,18 @@ function render(){
       document.getElementById("shown").textContent=_list.length;
       document.getElementById("empty").style.display=_list.length?"none":"block";
       grid.style.display=_list.length?"grid":"none";
+      document.getElementById('loadMore').style.display = _list.length > PAGE_SIZE ? '' : 'none';
+      document.getElementById('loadMore').classList.remove('show');
       if(_list.length){
-        // عرض أول 8 بطاقات فوراً
-        const firstBatch = _list.slice(0, Math.min(8, _list.length));
+        const firstBatch = _list.slice(0, Math.min(PAGE_SIZE, _list.length));
         const tmp2=document.createElement('div'); tmp2.innerHTML=firstBatch.map(card).join("");
         const firstAdded=Array.from(tmp2.children);
         firstAdded.forEach(el=>grid.appendChild(el));
         _rendered=firstBatch.length;
         observeNew(firstAdded);
-        // باقي البطاقات بتظهر بالتمرير
-        setTimeout(appendMore, 200);
+        if(_rendered < _list.length) {
+          setTimeout(appendMore, 400);
+        }
       }
     }
   }catch(e){
@@ -1650,10 +1724,22 @@ let _scrollTied=false;
 function tieScroll(){
   if(_scrollTied) return; _scrollTied=true;
   window.addEventListener('scroll', ()=>{
-    if((window.innerHeight+window.scrollY) >= (document.body.offsetHeight-800)) appendMore();
+    if((window.innerHeight+window.scrollY) >= (document.body.offsetHeight-600) && _rendered < _list.length && !isLoadingMore) {
+      appendMore();
+    }
   }, {passive:true});
 }
 tieScroll();
+
+// Back to Top visibility
+window.addEventListener('scroll', () => {
+  const btn = document.getElementById('backToTop');
+  if (window.scrollY > 400) {
+    btn.classList.add('visible');
+  } else {
+    btn.classList.remove('visible');
+  }
+});
 
 function renderStats(){
   const data=clean(CREATORS);
@@ -1710,9 +1796,6 @@ document.getElementById("f-fol").addEventListener("change",e=>{state.fol=e.targe
 document.getElementById("sort").addEventListener("change",e=>{state.sort=e.target.value;render();});
 document.getElementById("f-contact").addEventListener("change",e=>{state.contact=e.target.value;render();});
 
-function gvizUrl(tab){
-  return "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/gviz/tq?tqx=out:json&sheet="+encodeURIComponent(tab)+"&_="+Date.now();
-}
 function normalizeSheetDate(v){
   if(v==null) return "";
   if(typeof v==="string"){
@@ -1721,8 +1804,6 @@ function normalizeSheetDate(v){
     const t=v.trim();
     const iso=t.match(/^(\d{4}-\d{2}-\d{2})/);
     if(iso) return iso[1];
-    const slash=t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-    if(slash){ const mo=slash[1].padStart(2,"0"), d=slash[2].padStart(2,"0"); return slash[3]+"-"+mo+"-"+d; }
     return t;
   }
   if(v instanceof Date && !isNaN(v)){
@@ -1730,58 +1811,13 @@ function normalizeSheetDate(v){
   }
   return String(v).trim();
 }
-function parseGviz(text){
-  const s=text.indexOf("{"), e=text.lastIndexOf("}");
-  if(s<0||e<0) return [];
-  try{
-    const json=JSON.parse(text.substring(s,e+1));
-    if(!json.table) return [];
-    let labels=(json.table.cols||[]).map(c=>String(c.label||"").trim().toLowerCase());
-    let rows=json.table.rows||[];
-    if(!labels.some(Boolean) && rows.length){
-      labels=(rows[0].c||[]).map(c=>c&&c.v!=null?String(c.v).trim().toLowerCase():"");
-      rows=rows.slice(1);
-    }
-    const out=[];
-    for(const r of rows){
-      if(!r||!r.c) continue;
-      const o={};
-      for(let i=0;i<labels.length;i++){ const cell=r.c[i]; o[labels[i]]=cell&&cell.v!=null?cell.v:""; }
-      if(!o.handle) continue;
-      let vids=[];
-      try{ vids=o.videos?JSON.parse(o.videos):[]; }catch(_){ vids=[]; }
-      out.push({
-        uid:String(o.uid||"").toLowerCase(),
-        discoveredAt:normalizeSheetDate(o.discovered_at),
-        assignedTo:String(o.assigned_to||"").trim(),
-        handle:String(o.handle||"").replace(/^@/,""),
-        platform:o.platform||"",
-        followers:Number(o.followers)||0,
-        niche:String(o.niche||"").toLowerCase(),
-        country:o.location||"الخليج",
-        url:o.profile_url||"#",
-        avatar_url:o.avatar_url||"",
-        videos:Array.isArray(vids)?vids:[],
-        top_video_url:o.top_video_url||"",
-        other:o.other_platforms||"",
-        email:o.email||"", whatsapp:o.whatsapp||"", phone:o.phone||"",
-        links:o.links_bio||"", language:o.language||"",
-        priority:o.priority||"", engagement:o.engagement_rate||"",
-        messageStatus:String(o.message_status||"").toLowerCase(), followupCount:parseInt(o.followup_count,10)||0, signupStatus:String(o.signup_status||"").toLowerCase(),
-        igUrl:o.instagram_url||"", ttUrl:o.tiktok_url||"", scUrl:o.snapchat_url||"", twUrl:o.twitter_url||"", ytUrl:o.youtube_url||"", fbUrl:o.facebook_url||""
-      });
-    }
-    return out;
-  }catch(e){
-    console.error('Parse error:', e);
-    return [];
-  }
-}
+
 function showSkeleton(){
   const g=document.getElementById("grid"); if(!g) return;
   let h=""; for(let i=0;i<6;i++) h+='<div class="skel"><div class="skel-media"></div><div class="skel-body"><div class="skel-line w70"></div><div class="skel-line w45"></div><div class="skel-line w90"></div></div></div>';
   g.innerHTML=h; g.style.display="grid";
 }
+
 function applyData(all){
   const filtered=all.filter(c=>c.platform==="snapchat"?true:c.followers>=MIN_FOLLOWERS);
   if(filtered.length) CREATORS=filtered;
@@ -1798,7 +1834,7 @@ function readCache(){
 }
 function writeCache(data){ try{ sessionStorage.setItem(CACHE_KEY, JSON.stringify({t:Date.now(),data})); }catch(e){} }
 
-// ===== BOOT - سريع جداً =====
+// ===== BOOT - استخدام الـ API السريع =====
 async function boot() {
   if(isLoading) return;
   isLoading=true;
@@ -1815,6 +1851,7 @@ async function boot() {
 
     showSkeleton();
     
+    // استخدام الـ Endpoint السريع action=allLeads
     const url = API_BASE + '?action=allLeads&token=' + encodeURIComponent(SESSION.token);
     const response = await fetch(url);
     const data = await response.json();
@@ -1825,6 +1862,7 @@ async function boot() {
       applyData(all);
       writeCache(all);
       updateUIForRole();
+      showToast('✅ تم تحميل ' + all.length + ' مؤثر بنجاح', 'success');
     } else {
       console.warn('No leads from API');
       document.getElementById("grid").innerHTML = '<div class="empty"><div class="ei"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4B23C9" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></div><h3>لا توجد بيانات</h3><p>لم يتم العثور على مؤثرين في قاعدة البيانات.</p></div>';
@@ -1833,6 +1871,7 @@ async function boot() {
   }catch(e){
     console.error('Boot error:', e);
     document.getElementById("grid").innerHTML = '<div class="empty"><div class="ei">⚠️</div><h3>خطأ في التحميل</h3><p>' + e.message + '</p></div>';
+    showToast('❌ حدث خطأ في تحميل البيانات', 'error');
   }finally{
     isLoading=false;
   }
@@ -1876,6 +1915,5 @@ function toggleTheme(){ applyTheme(document.body.classList.contains('dark')?'lig
 (function(){ var t='light'; try{ t=localStorage.getItem('adltix_theme')||'light'; }catch(e){} applyTheme(t); })();
 
 </script>
-
 </body>
 </html>
