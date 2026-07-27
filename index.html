@@ -884,6 +884,117 @@
     .stat{ padding:10px 13px; min-width:88px }
     .stat .v{ font-size:19px }
   }
+
+  /* ==========================================================
+     زر العودة للأعلى
+     ========================================================== */
+  .to-top{
+    position:fixed; bottom:22px; inset-inline-end:22px; z-index:9500;
+    width:46px; height:46px; border-radius:50%; border:none; cursor:pointer;
+    display:grid; place-items:center; color:#fff;
+    background:linear-gradient(135deg,var(--brand),var(--brand-2));
+    box-shadow:0 8px 24px rgba(75,35,201,.42);
+    opacity:0; visibility:hidden; transform:translateY(14px) scale(.85);
+    transition:opacity .25s ease, transform .25s cubic-bezier(.34,1.56,.64,1), visibility .25s, box-shadow .2s;
+  }
+  .to-top.show{ opacity:1; visibility:visible; transform:none }
+  .to-top:hover{ box-shadow:0 12px 32px rgba(75,35,201,.55); filter:brightness(1.08) }
+  .to-top:active{ transform:scale(.9) }
+  @media (max-width:640px){ .to-top{ bottom:16px; inset-inline-end:16px; width:42px; height:42px } }
+
+  /* ==========================================================
+     مؤشر "جاري تحميل المزيد"
+     ========================================================== */
+  .lm-bar{
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    padding:18px 0 6px; font-size:13px; font-weight:700; color:var(--muted);
+  }
+  .lm-spin{
+    width:17px; height:17px; border-radius:50%; flex-shrink:0;
+    border:2.5px solid color-mix(in srgb,var(--brand) 22%,transparent);
+    border-top-color:var(--brand);
+    animation:lmSpin .7s linear infinite;
+  }
+  @keyframes lmSpin{ to{ transform:rotate(360deg) } }
+
+  /* ==========================================================
+     شريط تقدّم الموظفة
+     ========================================================== */
+  .mp{
+    background:var(--surface); border:1px solid var(--line); border-radius:16px;
+    padding:14px 16px; margin-bottom:16px; box-shadow:var(--shadow);
+  }
+  .mp-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:9px }
+  .mp-title{ font-size:13.5px; font-weight:900; color:var(--ink) }
+  .mp-pct{
+    font-family:'Space Grotesk','Tajawal',sans-serif;
+    font-size:17px; font-weight:800; color:var(--brand);
+  }
+  .mp-track{
+    height:8px; border-radius:99px; overflow:hidden;
+    background:color-mix(in srgb,var(--line) 55%,transparent);
+  }
+  .mp-fill{
+    display:block; height:100%; border-radius:99px;
+    background:linear-gradient(90deg,var(--brand),var(--brand-2));
+    transition:width .6s cubic-bezier(.2,.7,.2,1);
+  }
+  .mp-chips{ display:flex; flex-wrap:wrap; gap:7px; margin-top:11px }
+  .mp-chip{
+    font-size:11.5px; font-weight:800; padding:5px 11px; border-radius:999px;
+    background:color-mix(in srgb,var(--line) 40%,transparent); color:var(--ink);
+  }
+  .mp-chip.sent{ background:#DBEAFE; color:#1D4ED8 }
+  .mp-chip.fu  { background:#FEF3C7; color:#B45309 }
+  .mp-chip.sub { background:#DCFCE7; color:#15803D }
+  .mp-chip.left{ background:transparent; box-shadow:inset 0 0 0 1px var(--line); color:var(--muted) }
+  body.dark .mp-chip.sent{ background:#1e3a5f; color:#93c5fd }
+  body.dark .mp-chip.fu  { background:#4a3510; color:#fcd34d }
+  body.dark .mp-chip.sub { background:#14432a; color:#86efac }
+  @media (max-width:640px){ .mp{ padding:12px 13px } .mp-chip{ font-size:11px; padding:4px 9px } }
+
+  @media (prefers-reduced-motion:reduce){
+    .lm-spin{ animation:none }
+    .to-top{ transition:opacity .2s }
+    .mp-fill{ transition:none }
+  }
+
+  /* ==========================================================
+     شريط الفلاتر النشطة
+     ========================================================== */
+  .af{
+    display:flex; align-items:center; flex-wrap:wrap; gap:7px;
+    background:var(--surface); border:1px solid var(--line);
+    border-radius:14px; padding:10px 13px; margin-bottom:14px;
+    box-shadow:0 1px 4px rgba(30,20,70,.05);
+    animation:afIn .3s cubic-bezier(.2,.7,.2,1);
+  }
+  @keyframes afIn{ from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:none} }
+  .af-lbl{ font-size:11.5px; font-weight:800; color:var(--muted); margin-inline-end:3px }
+  .af-chip{
+    display:inline-flex; align-items:center; gap:6px;
+    font-family:inherit; font-size:12px; font-weight:700; cursor:pointer;
+    padding:6px 10px 6px 12px; border-radius:999px; border:none;
+    background:var(--brand-soft); color:var(--brand);
+    transition:background .15s, color .15s, transform .12s;
+  }
+  .af-chip:hover{ background:var(--brand); color:#fff }
+  .af-chip:active{ transform:scale(.94) }
+  .af-x{ font-size:15px; line-height:1; opacity:.7 }
+  .af-clear{
+    margin-inline-start:auto;
+    font-family:inherit; font-size:12px; font-weight:800; cursor:pointer;
+    padding:6px 13px; border-radius:999px;
+    border:1px solid var(--line); background:transparent; color:var(--muted);
+    transition:.15s;
+  }
+  .af-clear:hover{ border-color:#dc2626; color:#dc2626; background:#fee2e2 }
+  body.dark .af-clear:hover{ background:#4a1414; color:#fca5a5 }
+  @media (max-width:640px){
+    .af{ padding:9px 11px; gap:6px }
+    .af-chip{ font-size:11.5px; padding:5px 9px 5px 11px }
+    .af-clear{ margin-inline-start:0; width:100%; margin-top:4px }
+  }
 </style>
 </head>
 <body>
@@ -1043,6 +1154,7 @@
     <button class="admin-btn secondary" onclick="distributeLeads()">🔄 توزيع الـ Leads</button>
     <button class="admin-btn" onclick="openAddLeadModal()">⭐ إضافة مؤثر</button>
     <button class="admin-btn secondary" onclick="openStaffManager()">👥 إدارة الفريق</button>
+    <button class="admin-btn secondary" onclick="exportCSV()">⬇️ تصدير النتائج</button>
     <span class="spacer"></span>
     <span style="font-size:12px;color:var(--muted);font-weight:600">👤 <span id="adminName">أدمن</span></span>
   </div>
@@ -1096,9 +1208,22 @@
     </div>
   </div>
 
+  <div id="activeFilters" class="af" style="display:none"></div>
+
+  <div id="myProgress" class="mp" style="display:none"></div>
+
   <div class="meta"><div class="count"><b id="shown">0</b> مؤثر ضمن النتائج</div></div>
   
   <div class="grid" id="grid"></div>
+
+  <div id="loadMoreBar" class="lm-bar" style="display:none">
+    <span class="lm-spin"></span>
+    <span>جاري تحميل المزيد…</span>
+  </div>
+  <div id="loadMore" class="load-more" style="display:none">
+    <span class="lm-spin"></span>
+    <span>جاري تحميل المزيد…</span>
+  </div>
   <div class="empty" id="empty" style="display:none">
     <div class="ei"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4B23C9" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></div>
     <h3>لا توجد نتائج مطابقة</h3>
@@ -1113,6 +1238,14 @@
     <div class="embed" id="modalBody"></div>
   </div>
 </div>
+
+<button id="toTop" class="to-top" onclick="scrollToTop()" title="العودة للأعلى" aria-label="العودة للأعلى">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+</button>
+
+<button id="toTopBtn" class="to-top" onclick="scrollTop()" title="العودة للأعلى" aria-label="العودة للأعلى">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+</button>
 
 <footer>Adltix · منصة اكتشاف المؤثرين في الخليج — قاعدة بيانات محدّثة باستمرار</footer>
 
@@ -1255,13 +1388,27 @@ function buildAllPills(){
         names.map(n=>({v:n,l:(STAFF_EMOJI[n]||"👤")+" "+n+" ("+sc[n]+")"}))
       ),"staff");
     }
+  }
+
+  // فلتر حالة التواصل — للكل، الموظفة والأدمن.
+  // الموظفة محتاجة تعرف مين بعتت له ومين لسه، والأرقام جنب كل حالة
+  // بتخليها تشوف تقدّمها من غير ما تعد بإيدها.
+  {
+    let nNone=0, nSome=0, nFull=0, nSub=0;
+    for(const c of data){
+      const pr = PROOFS[c.uid];
+      if(!pr){ nNone++; continue; }
+      nSome++;
+      if((pr.shots_count||0) >= 3) nFull++;
+      if((pr.subscribed_count||0) > 0) nSub++;
+    }
     const prow=document.getElementById("proofFilterRow"); if(prow) prow.style.display="";
     buildPills("f-proof",[
-      {v:"all",   l:"الكل"},
-      {v:"none",  l:"لسه محدش كلّمه"},
-      {v:"some",  l:"اتبعتله"},
-      {v:"full",  l:"✅ مكتمل (٣ رسايل)"},
-      {v:"sub",   l:"🎉 اشترك"}
+      {v:"all",   l:"الكل ("+data.length+")"},
+      {v:"none",  l:"⚪ لسه مبعتلوش ("+nNone+")"},
+      {v:"some",  l:"📩 اتبعتله ("+nSome+")"},
+      {v:"full",  l:"✅ مكتمل ("+nFull+")"},
+      {v:"sub",   l:"🎉 اشترك ("+nSub+")"}
     ],"proof");
   }
 
@@ -1770,10 +1917,31 @@ async function doLogin(){
   try{
     const result=await callApi('login',{username:user,password:pass});
     SESSION=result; saveSession(result);
+    _sessionExpiredShown=false;   // نصفّر العلم عشان لو الجلسة انتهت تاني تشتغل
     document.getElementById('loginGate').style.display='none';
     startApp();
   }catch(e){ errEl.textContent=e.message||'بيانات غلط'; }
 }
+// بتتنده مرة واحدة بس مهما كان عدد الطلبات اللي فشلت مع بعض
+let _sessionExpiredShown = false;
+function handleSessionExpired(){
+  if(_sessionExpiredShown) return;
+  _sessionExpiredShown = true;
+
+  clearSession();
+  try{ sessionStorage.removeItem(CACHE_KEY); }catch(e){}
+
+  const gate = document.getElementById('loginGate');
+  const err  = document.getElementById('lg-err');
+  if(err) err.textContent = 'انتهت الجلسة — سجّل دخول تاني';
+  if(gate){
+    gate.style.display = 'flex';
+    const u = document.getElementById('lg-user');
+    if(u) setTimeout(()=>u.focus(), 100);
+  }
+  if(typeof toast === 'function') toast('انتهت جلستك — سجّل دخول تاني','warn', 6000);
+}
+
 async function logout(){
   const ok = await showConfirm('تسجيل الخروج؟','هترجع لشاشة الدخول. أي شغل لسه بيتحمّل هيتوقف.','خروج','danger');
   if(!ok) return;
@@ -1886,7 +2054,7 @@ async function submitAddLead(){
     },100);
     // الـ backend بيرجّع رسالة مناسبة لكل حالة (اتحوّل للأجنت / الرصيد خلص /
     // المنصة مش مفعّلة / اتجاب بنجاح) — بنعرضها زي ما هي
-    if(res.message) alert(res.message);
+    if(res.message) toast(res.message, res.routedToAgent ? 'warn' : 'success');
   }catch(e){ btn.disabled=false; btn.textContent='إضافة'; errEl.textContent=e.message||'حصل خطأ'; }
 }
 
@@ -1945,7 +2113,7 @@ async function submitEmployee(){
     btn.disabled=false; btn.textContent='✅ تمت الإضافة!';
     setTimeout(()=>{ btn.textContent='➕ إضافة الموظفة'; },2000);
     closeEmployeeModal();
-    alert('✅ تم إضافة الموظفة '+name+' بنجاح!\n📧 البريد: '+fullEmail+'\nتم توزيع الـ Leads على جميع الموظفات.');
+    toastOk('تم إضافة '+name+' — البريد: '+fullEmail+'. واتوزعت الـ Leads على الفريق.');
     boot();
   }catch(e){ btn.disabled=false; btn.textContent='➕ إضافة الموظفة'; errEl.textContent=e.message||'حصل خطأ'; }
 }
@@ -1954,10 +2122,10 @@ async function distributeLeads(){
   if(!confirm('🔄 هل تريد إعادة توزيع جميع الـ Leads غير المعينة على الموظفات النشطات؟')) return;
   try{
     const res=await callApi('distributeLeads',{token:SESSION.token});
-    alert('✅ تم توزيع '+res.distributed+' مؤثر على الموظفات.\n'+
-      Object.entries(res.staffLeadCount).map(([k,v])=>k+': '+v+' مؤثر').join('\n'));
+    toastOk('اتوزع '+res.distributed+' مؤثر. التوزيع الحالي: '+
+      Object.entries(res.staffLeadCount||{}).map(([k,v])=>k+' ('+v+')').join(' · '));
     boot();
-  }catch(e){ alert('حصل خطأ: '+e.message); }
+  }catch(e){ toastErr(e.message); }
 }
 
 // ===== إدارة الموظفات =====
@@ -2008,10 +2176,7 @@ async function removeStaff(btn, name){
   try{
     const r=await callApi('removeEmployee',{token:SESSION.token,staffName:name});
     const lines=Object.entries(r.staffLeadCount||{}).map(([k,v])=>k+': '+v+' مؤثر').join('\n');
-    alert('✅ اتحذفت '+name+' من الفريق\n\n'
-      +'كان عندها: '+(r.hadLeads||0)+' مؤثر\n'
-      +'اتوزع على الباقيين: '+(r.redistributed||0)+'\n'
-      +'فضل باسمها كأرشيف: '+(r.keptAsHistory||0)+'\n\nالتوزيع الجديد:\n'+lines);
+    toastOk('اتحذفت '+name+' — اتوزع '+(r.redistributed||0)+' مؤثر على الباقيين، وفضل '+(r.keptAsHistory||0)+' كأرشيف.');
     loadStaffManager();
     boot();
   }catch(err){
@@ -2114,7 +2279,7 @@ document.getElementById('crmFileInput').addEventListener('change', async (e)=>{
   try{
     const base64=await fileToBase64(file);
     await sendCrmAction(btn,uid,actionType,base64,mode);
-  }catch(err){ alert('حصل خطأ في قراءة الصورة'); }
+  }catch(err){ toastErr('مش قادر أقرا الصورة — جرّبي صورة تانية'); }
 });
 
 // ===== Event Listener للمعرض =====
@@ -2125,7 +2290,7 @@ document.getElementById('crmFileInputGallery').addEventListener('change', async 
   try{
     const base64=await fileToBase64(file);
     await sendCrmAction(btn,uid,actionType,base64,mode);
-  }catch(err){ alert('حصل خطأ في قراءة الصورة'); }
+  }catch(err){ toastErr('مش قادر أقرا الصورة — جرّبي صورة تانية'); }
 });
 
 // احتفال خفيف عند الاشتراك — CSS بس، من غير أي مكتبات
@@ -2211,7 +2376,7 @@ async function sendCrmAction(btn,uid,actionType,imageBase64,mode){
   }catch(e){
     btn.classList.remove('loading');
     row.querySelectorAll('.crmbtn:not(.is-done),.crmedit').forEach(b=>b.disabled=false);
-    alert('حصل خطأ: '+e.message);
+    toastErr(e.message);
   }
 }
 
@@ -2260,7 +2425,13 @@ async function callApi(action,payload){
   catch(e){ throw new Error('رد غير مفهوم من السيرفر ('+res.status+')'); }
 
   if(!j.ok){
-    if(res.status===401){ throw new Error(j.error||'انتهت الجلسة — سجّل دخول تاني'); }
+    if(res.status===401){
+      // الجلسة انتهت أو التوكن مش صالح.
+      // بدل ما كل زرار يدي خطأ غامض لوحده، بنمسكها هنا مرة واحدة
+      // ونرجّع المستخدم لشاشة الدخول برسالة واضحة.
+      handleSessionExpired();
+      throw new Error('انتهت الجلسة');
+    }
     // بنلزّق اسم الـ function في الرسالة عشان لو حصل خطأ نعرف مصدره
     // فورًا بدل ما ندوّر في 12 function
     throw new Error((j.error||'فشل الطلب') + '  [' + fn + ']');
@@ -2312,7 +2483,7 @@ async function onDelete(btn){
     finalizeRemove(cardEl,uid);
   }catch(e){
     undoRemove(cardEl);
-    alert('الحذف مانجحش: '+e.message);
+    toastErr('الحذف مانجحش: '+e.message);
   }
 }
 async function onMoveToNew(btn){
@@ -2327,7 +2498,7 @@ async function onMoveToNew(btn){
     finalizeRemove(cardEl,uid);
   }catch(e){
     undoRemove(cardEl);
-    alert('الأرشفة مانجحتش: '+e.message);
+    toastErr('الأرشفة مانجحتش: '+e.message);
   }
 }
 async function onChangeNiche(sel){
@@ -2358,7 +2529,7 @@ async function onChangeNiche(sel){
     if(willHide) undoRemove(cardEl);
     else if(tag) tag.textContent=oldTag;
     setBusy(cardEl,false);
-    alert('نقل المجال مانجحش: '+e.message);
+    toastErr('نقل المجال مانجحش: '+e.message);
   }
 }
 async function onApprove(btn){
@@ -2382,7 +2553,7 @@ async function onApprove(btn){
     cardEl.classList.remove('approved');
     btn.classList.remove('is-approved'); btn.textContent=oldLabel; btn.disabled=false;
     const bd=cardEl.querySelector('.approve-badge'); if(bd) bd.remove();
-    alert('التأكيد مانجحش: '+e.message);
+    toastErr('التأكيد مانجحش: '+e.message);
   }
 }
 
@@ -2508,8 +2679,34 @@ function observeNew(els){
   });
 }
 
+function scrollToTop(){
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+// الزرار بيظهر بعد 300px بس — قبل كده مالوش لازمة
+(function(){
+  let shown = false;
+  window.addEventListener('scroll', () => {
+    const should = window.scrollY > 300;
+    if(should === shown) return;          // مبنلمسش الـ DOM إلا لو الحالة اتغيّرت فعلاً
+    shown = should;
+    const b = document.getElementById('toTop');
+    if(b) b.classList.toggle('show', should);
+  }, { passive:true });
+})();
+
+function showLoadMore(on){
+  const el = document.getElementById('loadMore');
+  if(el) el.style.display = on ? 'flex' : 'none';
+}
+
 function appendMore(){
-  if(_rendered>=_list.length) return;
+  if(_rendered>=_list.length){ showLoadMore(false); return; }
+
+  // المؤشر بيظهر لحظة الرسم بس — الرسم نفسه سريع، بس بيطمّن المستخدم
+  // إن فيه حاجة جاية بدل ما يحس إن الصفحة خلصت
+  showLoadMore(true);
+
   const grid=document.getElementById("grid");
   const next=_list.slice(_rendered, _rendered+PAGE_SIZE);
   const tmp=document.createElement('div'); tmp.innerHTML=next.map(card).join("");
@@ -2517,12 +2714,17 @@ function appendMore(){
   added.forEach(el=>grid.appendChild(el));
   _rendered+=next.length;
   observeNew(added);
+
+  requestAnimationFrame(()=>{
+    setTimeout(()=>showLoadMore(_rendered < _list.length), 180);
+  });
 }
 
 function render(){
   if(isRendering) return;
   isRendering=true;
   try{
+    renderActiveFilters();
     _list=applyFilters(); _rendered=0;
     const grid=document.getElementById("grid");
     if(grid){
@@ -2539,14 +2741,194 @@ function render(){
   }
 }
 
+function scrollTop(){
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+// مؤشر "جاري تحميل المزيد" — بيظهر وقت إضافة كروت جديدة بس
+let _lmTimer=null;
+function showLoadMore(on){
+  const bar=document.getElementById('loadMoreBar');
+  if(!bar) return;
+  clearTimeout(_lmTimer);
+  if(on){ bar.style.display='flex'; }
+  else { _lmTimer=setTimeout(()=>{ bar.style.display='none'; }, 250); }
+}
+
 let _scrollTied=false;
 function tieScroll(){
   if(_scrollTied) return; _scrollTied=true;
   window.addEventListener('scroll', ()=>{
-    if((window.innerHeight+window.scrollY) >= (document.body.offsetHeight-900)) appendMore();
+    // زر العودة للأعلى بعد 300px
+    const btn=document.getElementById('toTopBtn');
+    if(btn) btn.classList.toggle('show', window.scrollY > 300);
+
+    if((window.innerHeight+window.scrollY) >= (document.body.offsetHeight-900)){
+      const before=_rendered;
+      appendMore();
+      // لو فعلاً اتضافت كروت، نوري المؤشر لحظة
+      if(_rendered > before && _rendered < _list.length) { showLoadMore(true); showLoadMore(false); }
+    }
   }, {passive:true});
 }
 tieScroll();
+
+// شريط تقدّم شخصي للموظفة: بتشوف شغلها في سطر واحد من غير ما تعد بإيدها.
+// وللأدمن مش بيظهر — عنده الفلاتر والداشبورد.
+// ===== تصدير النتائج المفلترة إلى CSV =====
+// بيصدّر اللي ظاهر قدامك بالظبط بعد الفلترة — مش القاعدة كلها.
+// كله بيحصل في المتصفح: صفر طلبات للسيرفر، وشغّال حتى على 14 ألف صف.
+function csvCell(v){
+  const t = String(v ?? "");
+  // لو فيه فاصلة أو تنصيص أو سطر جديد، لازم يتحاط في تنصيص
+  return /[",\n\r]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+}
+
+function exportCSV(){
+  const rows = (typeof _list !== "undefined" && _list.length) ? _list : applyFilters();
+  if(!rows.length){
+    if(typeof toast==="function") toast("مفيش نتائج تتصدّر","warn");
+    return;
+  }
+
+  const headers = ["اسم الحساب","المنصة","المتابعين","المجال","الدولة",
+                   "الموظفة","البريد","واتساب","تليفون","حالة الرسالة",
+                   "عدد المتابعات","حالة الاشتراك","رابط الحساب","تاريخ الإضافة"];
+
+  const lines = [headers.join(",")];
+  for(const c of rows){
+    const pr = PROOFS[c.uid] || {};
+    lines.push([
+      "@" + String(c.handle || ""),
+      (PLAT[c.platform] || {}).ar || c.platform || "",
+      c.followers || 0,
+      NICHE_AR[c.niche] || c.niche || "",
+      c.country || "",
+      c.assignedTo || "للأجنت",
+      c.email || "",
+      c.whatsapp || "",
+      c.phone || "",
+      (pr.sent_count || 0) > 0 ? "اتبعتله" : "لسه",
+      pr.followup_count || 0,
+      (pr.subscribed_count || 0) > 0 ? "مشترك" : "لسه",
+      c.url || "",
+      c.discoveredAt || ""
+    ].map(csvCell).join(","));
+  }
+
+  // BOM ضروري عشان إكسل يقرا العربي صح — من غيره الحروف بتطلع رموز
+  const blob = new Blob(["\uFEFF" + lines.join("\r\n")], { type:"text/csv;charset=utf-8;" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  const d    = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = "adltix_" + d + "_" + rows.length + ".csv";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 1500);
+
+  if(typeof toast==="function") toast("اتصدّر " + rows.length.toLocaleString("en") + " مؤثر ✅","success");
+}
+
+// ===== شريط الفلاتر النشطة =====
+// لما تفلتر بكذا حاجة مع بعض بيبقى صعب تفتكر إنت مفلتر بإيه —
+// وده بيخلي المستخدم يفتكر إن فيه بيانات ناقصة وهي متفلترة بس.
+const FOL_LABELS = {
+  "0-10":"أقل من 10K", "10-50":"10K–50K", "50-100":"50K–100K",
+  "100-200":"100K–200K", "200-500":"200K–500K"
+};
+const CONTACT_LABELS = {
+  email:"بريد متاح", whatsapp:"واتساب متاح", both:"بريد + واتساب", none:"بدون بيانات تواصل"
+};
+const PROOF_LABELS = {
+  none:"لسه مبعتلوش", some:"اتبعتله", full:"مكتمل", sub:"اشترك"
+};
+
+function activeFilterList(){
+  const out=[];
+  if(state.q)                 out.push({k:"q",        l:'بحث: "'+state.q+'"'});
+  if(state.niche!=="all")     out.push({k:"niche",    l:"المجال: "+(NICHE_AR[state.niche]||state.niche)});
+  if(state.platform!=="all")  out.push({k:"platform", l:"المنصة: "+((PLAT[state.platform]||{}).ar||state.platform)});
+  if(state.country!=="all")   out.push({k:"country",  l:"الدولة: "+(state.country==="__other__"?"دول أخرى":state.country)});
+  if(state.fol!=="all")       out.push({k:"fol",      l:"المتابعين: "+(FOL_LABELS[state.fol]||state.fol)});
+  if(state.contact!=="all")   out.push({k:"contact",  l:CONTACT_LABELS[state.contact]||state.contact});
+  if(state.staff!=="all")     out.push({k:"staff",    l:"الموظفة: "+state.staff});
+  if(state.proof!=="all")     out.push({k:"proof",    l:PROOF_LABELS[state.proof]||state.proof});
+  if(scrapingMode)            out.push({k:"scraping", l:"سكرابينج النهاردة"});
+  return out;
+}
+
+function clearFilter(key){
+  if(key==="q"){
+    state.q=""; const q=document.getElementById("q"); if(q) q.value="";
+  } else if(key==="scraping"){
+    toggleScrapingView(); return;              // بتعمل render بنفسها
+  } else {
+    state[key]="all";
+    const sel = {fol:"f-fol", contact:"f-contact"}[key];
+    if(sel){ const el=document.getElementById(sel); if(el) el.value="all"; }
+  }
+  buildAllPills(); render();
+}
+
+function clearAllFilters(){
+  state.niche="all"; state.platform="all"; state.country="all";
+  state.fol="all"; state.contact="all"; state.staff="all"; state.proof="all";
+  state.q="";
+  const q=document.getElementById("q"); if(q) q.value="";
+  ["f-fol","f-contact"].forEach(id=>{ const el=document.getElementById(id); if(el) el.value="all"; });
+  if(scrapingMode) toggleScrapingView();
+  buildAllPills(); render();
+  if(typeof toast==="function") toast("اتشالت كل الفلاتر","info");
+}
+
+function renderActiveFilters(){
+  const box=document.getElementById("activeFilters");
+  if(!box) return;
+  const list=activeFilterList();
+  if(!list.length){ box.style.display="none"; box.innerHTML=""; return; }
+
+  box.style.display="";
+  box.innerHTML =
+      '<span class="af-lbl">الفلاتر الشغالة</span>'
+    + list.map(f =>
+        '<button class="af-chip" onclick="clearFilter(\''+f.k+'\')" title="شيل الفلتر ده">'
+        + esc(f.l) + '<span class="af-x">×</span></button>'
+      ).join('')
+    + '<button class="af-clear" onclick="clearAllFilters()">مسح الكل</button>';
+}
+
+function renderMyProgress(){
+  const box=document.getElementById('myProgress');
+  if(!box) return;
+  if(!isStaffSession()){ box.style.display='none'; return; }
+
+  const mine = cleanList();
+  let sent=0, fu=0, sub=0;
+  for(const c of mine){
+    const pr = PROOFS[c.uid];
+    if(!pr) continue;
+    if((pr.sent_count||0) > 0)       sent++;
+    if((pr.followup_count||0) > 0)   fu++;
+    if((pr.subscribed_count||0) > 0) sub++;
+  }
+  const total = mine.length || 1;
+  const pct = Math.min(100, Math.round((sent / total) * 100));
+
+  box.style.display='';
+  box.innerHTML =
+      '<div class="mp-head">'
+    +   '<span class="mp-title">شغلك لحد دلوقتي</span>'
+    +   '<span class="mp-pct">'+pct+'%</span>'
+    + '</div>'
+    + '<div class="mp-track"><span class="mp-fill" style="width:'+pct+'%"></span></div>'
+    + '<div class="mp-chips">'
+    +   '<span class="mp-chip all">📋 '+mine.length.toLocaleString('en')+' مؤثر</span>'
+    +   '<span class="mp-chip sent">📩 '+sent.toLocaleString('en')+' اتبعتلهم</span>'
+    +   '<span class="mp-chip fu">🔄 '+fu.toLocaleString('en')+' متابعة</span>'
+    +   '<span class="mp-chip sub">🎉 '+sub.toLocaleString('en')+' مشترك</span>'
+    +   '<span class="mp-chip left">⚪ '+(mine.length-sent).toLocaleString('en')+' فاضلين</span>'
+    + '</div>';
+}
 
 function renderStats(){
   const data=cleanList();
@@ -2650,7 +3032,7 @@ function applyData(all){
   const filtered=all.filter(c=>c && (c.platform==="snapchat" || c.followers>=MIN_FOLLOWERS));
   if(filtered.length) CREATORS=filtered;
   invalidateCache();
-  buildAllPills(); renderStats(); render(); updateScrapeCount();
+  buildAllPills(); renderStats(); renderMyProgress(); render(); updateScrapeCount();
 }
 
 // تحديث في الخلفية من غير ما نمسح الشبكة أو نرجّع المستخدم لفوق.
@@ -2665,7 +3047,7 @@ function applyDataSilent(all){
     _list = applyFilters();
     const shownEl=document.getElementById("shown");
     if(shownEl) shownEl.textContent=_list.length;
-    renderStats(); updateScrapeCount();
+    renderStats(); renderMyProgress(); updateScrapeCount();
   }catch(e){}
 }
 let _silentTimer=null;
@@ -2723,6 +3105,8 @@ async function loadProofs(){
     const n = Object.keys(map).length;
     if(n){
       console.log('[adltix] '+n+' مؤثر عليهم أكشنات');
+      buildAllPills();                 // عدّادات فلتر حالة التواصل
+      renderMyProgress();
       render();                        // نعيد الرسم عشان الصور تظهر
     }
   }catch(e){
@@ -2897,6 +3281,55 @@ function updateUIForRole() {
     if (r2) r2.style.display = 'none';
   }
 }
+
+// ==========================================================
+// نظام الإشعارات (Toast)
+// بديل alert() — الـ alert بيوقف الصفحة كلها وشكله بدائي،
+// ودي بتظهر في الزاوية وتختفي لوحدها من غير ما تعطّل المستخدم.
+// ==========================================================
+const TOAST_ICON = { success:'✅', error:'⚠️', warn:'⚡', info:'ℹ️' };
+
+function toastHost(){
+  let h = document.getElementById('toastHost');
+  if(!h){
+    h = document.createElement('div');
+    h.id = 'toastHost';
+    document.body.appendChild(h);
+  }
+  return h;
+}
+
+function toast(msg, type = 'info', ms){
+  const text = String(msg == null ? '' : msg).trim();
+  if(!text) return;
+
+  // الرسايل الطويلة محتاجة وقت أطول عشان تتقرا
+  const dur = ms || Math.min(9000, Math.max(3500, text.length * 55));
+
+  const el = document.createElement('div');
+  el.className = 'toast t-' + type;
+  el.innerHTML = '<span class="t-ico">' + (TOAST_ICON[type] || 'ℹ️') + '</span>'
+    + '<span class="t-msg"></span>'
+    + '<button class="t-x" aria-label="إغلاق">×</button>';
+  el.querySelector('.t-msg').textContent = text;   // textContent = آمن ضد أي HTML
+
+  const close = () => {
+    el.classList.remove('in');
+    el.classList.add('out');
+    setTimeout(() => el.remove(), 260);
+  };
+  el.querySelector('.t-x').onclick = close;
+
+  toastHost().appendChild(el);
+  requestAnimationFrame(() => el.classList.add('in'));
+  const timer = setTimeout(close, dur);
+  el.addEventListener('mouseenter', () => clearTimeout(timer));   // وقف العد لو المستخدم بيقرا
+  return el;
+}
+
+const toastOk   = (m) => toast(m, 'success');
+const toastErr  = (m) => toast(m, 'error');
+const toastWarn = (m) => toast(m, 'warn');
 
 // ===== مُبلّغ الأخطاء =====
 // أي خطأ جافاسكريبت بيظهر في شريط أحمر فوق الصفحة بدل ما يعدّي في صمت
