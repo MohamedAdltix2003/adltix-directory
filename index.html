@@ -836,6 +836,9 @@
   @media (prefers-reduced-motion:reduce){
     .win-ribbon::before{ animation:none; display:none }
   }
+
+  /* Creator Embed بتاع تيك توك — أبعاده مختلفة عن فيديو واحد */
+  .media.embed.tt.creator .embedframe{ top:0; height:640px }
 </style>
 </head>
 <body>
@@ -1333,11 +1336,23 @@ const _NOW_TS = Math.floor(Date.now()/1000);
 function avatarUsable(url){
   if(!url) return false;
   const u = String(url);
-  const m = u.match(/[?&]oe=([0-9A-Fa-f]+)/);
-  if(m){
-    const exp = parseInt(m[1], 16);
-    if(exp && exp < _NOW_TS) return false;   // منتهية — بلاش نضيّع طلب
+
+  // إنستجرام / فيسبوك:  oe=<hex>
+  const ig = u.match(/[?&]oe=([0-9A-Fa-f]+)/);
+  if(ig){
+    const exp = parseInt(ig[1], 16);
+    if(exp && exp < _NOW_TS) return false;
   }
+
+  // تيك توك:  x-expires=<seconds>
+  // ⚠️ صور تيك توك بتنتهي بعد ~يومين بس! فالفحص ده مهم جدًا،
+  // من غيره كل صور تيك توك هترجع 403 بعد يومين من السكرابينج.
+  const tt = u.match(/[?&]x-expires=(\d+)/i);
+  if(tt){
+    const exp = parseInt(tt[1], 10);
+    if(exp && exp < _NOW_TS) return false;
+  }
+
   return true;
 }
 
@@ -1389,6 +1404,14 @@ function stripHtml(c){
     const u=pickBy(u=>ttVidId(u)); const vid=ttVidId(u);
     if(vid){
       return '<div class="media embed tt" data-embed-src="'+esc('https://www.tiktok.com/embed/v2/'+vid)+'">'+posterHtml(c,p)+'</div>';
+    }
+    // مفيش لينك فيديو محدد؟ نستخدم Creator Embed بتاع تيك توك.
+    // ده بيعرض آخر 10 فيديوهات للحساب، **ومجاني تمامًا** — مفيش أي نداء API.
+    // البديل كان نداء Scrapingdog تاني = 10 كريدت لكل مؤثر بدل 5.
+    const ttUser = String(c.handle||'').replace(/^@/,'').trim();
+    if(ttUser){
+      return '<div class="media embed tt creator" data-embed-src="'
+           + esc('https://www.tiktok.com/embed/@'+ttUser)+'">'+posterHtml(c,p)+'</div>';
     }
     if(avatarUsable(c.avatar_url)){
       return '<div class="media shot" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel">تيك توك</span></div>';
