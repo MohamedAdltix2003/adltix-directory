@@ -1844,31 +1844,35 @@ function showPhotoOptions(title, msg){
 }
 
 // ===== دالة onCrmAction المعدلة =====
+// الأكشنات التلاتة كلهم لازم سكرين شوت.
+// المتابعة كانت بتتسجّل بتأكيد بس — يعني كان ينفع تتسجّل من غير
+// ما تكون اتعملت فعلاً، وده بيخلي أرقام المتابعة غير موثوقة.
+const CRM_LABELS = {
+  sent:       { t:'إثبات إرسال الرسالة', h:'ارفعي صورة الرسالة اللي بعتيها' },
+  followup:   { t:'إثبات المتابعة',      h:'ارفعي صورة رسالة المتابعة' },
+  subscribed: { t:'إثبات الاشتراك',      h:'ارفعي صورة تأكيد الاشتراك' }
+};
+
 async function onCrmAction(btn,uid,actionType){
-  const needsShot = (actionType==='sent' || actionType==='subscribed');
-  const labels={sent:'إرسال الرسالة',followup:'متابعة',subscribed:'اشتراك'};
-  if(needsShot){
-    // عرض خيارين: تصوير أو معرض
-    const choice = await showPhotoOptions('اختر طريقة رفع الصورة', 
-      '📸 تصوير: التقط صورة الآن\n🖼️ معرض: اختر من صورك');
-    
-    if(choice === 'camera'){
-      _crmPending={btn,uid,actionType};
-      const input = document.getElementById('crmFileInput');
-      input.setAttribute('capture', 'environment');
-      input.click();
-    } else if(choice === 'gallery'){
-      _crmPending={btn,uid,actionType};
-      const input = document.getElementById('crmFileInputGallery');
-      input.removeAttribute('capture');
-      input.click();
-    }
-    // لو اختار إلغاء، ميعملش حاجة
-  }else{
-    const ok=await showConfirm('تأكيد المتابعة','هيتسجّل إنك تابعتي المؤثر ده. متأكدة؟','تأكيد','ok');
-    if(!ok) return;
-    await sendCrmAction(btn,uid,actionType,null);
+  const L = CRM_LABELS[actionType] || { t:'رفع صورة', h:'' };
+
+  const choice = await showPhotoOptions(
+    L.t,
+    L.h + '\n\n📸 تصوير: التقطي صورة دلوقتي\n🖼️ معرض: اختاري من صورك'
+  );
+
+  if(choice === 'camera'){
+    _crmPending={btn,uid,actionType};
+    const input = document.getElementById('crmFileInput');
+    input.setAttribute('capture','environment');
+    input.click();
+  } else if(choice === 'gallery'){
+    _crmPending={btn,uid,actionType};
+    const input = document.getElementById('crmFileInputGallery');
+    input.removeAttribute('capture');
+    input.click();
   }
+  // إلغاء → مفيش أي حاجة تتسجّل
 }
 
 // ===== Event Listener للتصوير =====
@@ -1970,7 +1974,9 @@ async function callApi(action,payload){
 
   if(!j.ok){
     if(res.status===401){ throw new Error(j.error||'انتهت الجلسة — سجّل دخول تاني'); }
-    throw new Error(j.error||'فشل الطلب');
+    // بنلزّق اسم الـ function في الرسالة عشان لو حصل خطأ نعرف مصدره
+    // فورًا بدل ما ندوّر في 12 function
+    throw new Error((j.error||'فشل الطلب') + '  [' + fn + ']');
   }
   return j.result;
 }
