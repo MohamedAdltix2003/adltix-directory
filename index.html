@@ -736,6 +736,41 @@
     background:rgba(0,0,0,.6); padding:1px 5px; border-radius:6px;
   }
   .pf-more{ font-size:12px; font-weight:800; color:var(--muted) }
+
+  /* ===== شريحة المستخدم + زرار الخروج ===== */
+  .userchip{
+    display:flex; align-items:center; gap:9px; flex-shrink:0;
+    background:var(--surface); border:1.5px solid var(--line);
+    border-radius:14px; padding:5px 6px 5px 5px;
+    box-shadow:0 2px 8px rgba(40,20,90,.06);
+  }
+  .userchip .uc-av{
+    width:34px; height:34px; border-radius:10px; flex-shrink:0;
+    display:grid; place-items:center; font-size:16px;
+    background:var(--brand-soft);
+  }
+  .userchip .uc-txt{ display:flex; flex-direction:column; line-height:1.25; padding-inline-end:2px }
+  .userchip .uc-name{
+    font-size:13px; font-weight:800; color:var(--ink);
+    max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .userchip .uc-role{ font-size:10.5px; font-weight:700; color:var(--brand) }
+  .userchip .uc-out{
+    display:inline-flex; align-items:center; gap:5px; flex-shrink:0;
+    font-family:inherit; font-size:12.5px; font-weight:800;
+    padding:8px 12px; border-radius:11px; cursor:pointer;
+    border:1px solid transparent; background:#FEE2E2; color:#DC2626;
+    transition:background .15s, color .15s, transform .15s;
+  }
+  .userchip .uc-out:hover{ background:#DC2626; color:#fff; transform:translateY(-1px) }
+  .userchip .uc-out:active{ transform:scale(.95) }
+  body.dark .userchip .uc-out{ background:#4a1414; color:#fca5a5 }
+  body.dark .userchip .uc-out:hover{ background:#DC2626; color:#fff }
+
+  @media (max-width:720px){
+    .userchip .uc-txt{ display:none }
+    .userchip .uc-out span{ display:none }
+  }
 </style>
 </head>
 <body>
@@ -837,7 +872,17 @@
       <input id="q" type="search" placeholder="ابحث باسم المؤثر أو اسم الحساب…">
     </div>
     <button class="themebtn" id="themebtn" onclick="toggleTheme()" title="تبديل الوضع (أبيض/أسود)">🌙</button>
-    <button class="themebtn" onclick="logout()" title="تسجيل الخروج">🚪</button>
+    <div class="userchip" id="userChip" style="display:none">
+      <span class="uc-av" id="ucAvatar">؟</span>
+      <span class="uc-txt">
+        <span class="uc-name" id="ucName">—</span>
+        <span class="uc-role" id="ucRole">—</span>
+      </span>
+      <button class="uc-out" onclick="logout()" title="تسجيل الخروج">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        خروج
+      </button>
+    </div>
     <div class="live"><span class="dot"></span> تحديث مباشر</div>
   </div>
 </header>
@@ -1518,9 +1563,15 @@ async function doLogin(){
     startApp();
   }catch(e){ errEl.textContent=e.message||'بيانات غلط'; }
 }
-function logout(){ clearSession(); location.reload(); }
+async function logout(){
+  const ok = await showConfirm('تسجيل الخروج؟','هترجع لشاشة الدخول. أي شغل لسه بيتحمّل هيتوقف.','خروج','danger');
+  if(!ok) return;
+  clearSession();
+  location.reload();
+}
 
 async function startApp(){
+  paintUserChip();   // تظهر فورًا، من غير ما تستنى البيانات تحمّل
   const role=String((SESSION&&SESSION.role)||'').trim().toLowerCase();
   
   const adminToolbar = document.getElementById('adminToolbar');
@@ -2501,7 +2552,20 @@ async function loadAllLeads(){
 
 async function boot(){ return loadAllLeads(); }
 
+const ROLE_AR = { admin:"أدمن", manager:"مدير", staff:"موظفة" };
+function paintUserChip(){
+  const chip=document.getElementById('userChip');
+  if(!chip || !SESSION || !SESSION.token){ if(chip) chip.style.display='none'; return; }
+  const role = String(SESSION.role||'').toLowerCase();
+  const name = SESSION.staffName || (SESSION.username||'').split('@')[0] || 'مستخدم';
+  document.getElementById('ucName').textContent = name;
+  document.getElementById('ucRole').textContent = ROLE_AR[role] || role || '';
+  document.getElementById('ucAvatar').textContent = (STAFF_EMOJI[name] || (role==='staff'?'👤':'🛡️'));
+  chip.style.display='flex';
+}
+
 function updateUIForRole() {
+  paintUserChip();
   const fab = document.getElementById('addLeadFab');
   if (isStaffSession()) {
     if (fab) fab.style.display = '';
