@@ -932,6 +932,18 @@
         <option value="EG">مصر</option><option value="MA">المغرب</option>
       </select>
     </div>
+    <div id="al-manual" style="display:none;border-top:1px dashed var(--line);margin-top:12px;padding-top:12px">
+      <div class="form-hint" style="font-size:11.5px;color:var(--muted);margin-bottom:10px">
+        ℹ️ سناب مالوش سحب معلومات تلقائي — اكتبي اللي تعرفيه، وسيبي الباقي فاضي.
+      </div>
+      <div class="lg-field"><label>الاسم الكامل</label><input id="al-name" type="text" placeholder="مثال: Kylie Jenner"></div>
+      <div class="lg-field"><label>عدد المتابعين</label><input id="al-followers" type="text" inputmode="numeric" placeholder="مثال: 250000"></div>
+      <div class="lg-field"><label>الإيميل (اختياري)</label><input id="al-email" type="text" placeholder="name@mail.com"></div>
+      <div class="lg-field"><label>رقم الواتساب (اختياري)</label><input id="al-phone" type="text" inputmode="tel" placeholder="+9665xxxxxxxx"></div>
+      <div class="form-hint" style="font-size:11px;color:var(--muted)">
+        ⚠️ لو كتبتي إيميل أو رقم، المؤثر هيتحوّل تلقائي للـ AI Agent.
+      </div>
+    </div>
     <div class="lg-err" id="al-err"></div>
     <div class="cf-btns">
       <button class="cf-cancel" onclick="closeAddLeadModal()">إلغاء</button>
@@ -1830,8 +1842,21 @@ function mapRawToCard(o){
 function openAddLeadModal(){
   document.getElementById('al-err').textContent='';
   document.getElementById('al-link').value='';
+  ['al-name','al-followers','al-email','al-phone'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  alSyncManual();
+  const sel=document.getElementById('al-platform');
+  if(sel && !sel._synced){ sel.addEventListener('change', alSyncManual); sel._synced=true; }
   const ov=document.getElementById('addLeadOverlay'); ov.style.display='flex'; requestAnimationFrame(()=>ov.classList.add('show'));
 }
+// الخانات اليدوية بتظهر للمنصات اللي مالهاش سحب تلقائي بس
+function alSyncManual(){
+  const pl = document.getElementById('al-platform').value;
+  const box = document.getElementById('al-manual');
+  if(box) box.style.display = (pl === 'snapchat') ? '' : 'none';
+}
+
 function closeAddLeadModal(){ const ov=document.getElementById('addLeadOverlay'); ov.classList.remove('show'); setTimeout(()=>ov.style.display='none',220); }
 async function submitAddLead(){
   const link=document.getElementById('al-link').value.trim();
@@ -1842,7 +1867,13 @@ async function submitAddLead(){
   if(!link){ errEl.textContent='الصقي لينك البروفايل الأول'; return; }
   const btn=document.getElementById('al-submit'); btn.disabled=true; btn.textContent='بنضيفه...';
   try{
-    const res=await callApi('addManualLead',{token:SESSION.token,link,niche,country,platform});
+    const res=await callApi('addManualLead',{
+      token:SESSION.token, link, niche, country, platform,
+      manualName:      (document.getElementById('al-name')||{}).value || '',
+      manualFollowers: (document.getElementById('al-followers')||{}).value || '',
+      manualEmail:     (document.getElementById('al-email')||{}).value || '',
+      manualPhone:     (document.getElementById('al-phone')||{}).value || ''
+    });
     btn.disabled=false; btn.textContent='إضافة';
     if(res.duplicate){ errEl.textContent=res.message||'موجود بالفعل'; return; }
     closeAddLeadModal();
