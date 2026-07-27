@@ -980,6 +980,7 @@
     <span class="label">لوحة التحكم</span>
     <button class="admin-btn" onclick="openEmployeeModal()">➕ إضافة موظفة</button>
     <button class="admin-btn secondary" onclick="distributeLeads()">🔄 توزيع الـ Leads</button>
+    <button class="admin-btn" onclick="openAddLeadModal()">⭐ إضافة مؤثر</button>
     <button class="admin-btn secondary" onclick="openStaffManager()">👥 إدارة الفريق</button>
     <span class="spacer"></span>
     <span style="font-size:12px;color:var(--muted);font-weight:600">👤 <span id="adminName">أدمن</span></span>
@@ -1729,7 +1730,7 @@ async function startApp(){
   if(role==='admin' || role==='manager'){
     adminToolbar.style.display='flex';
     adminName.textContent = SESSION.staffName || SESSION.username || 'أدمن';
-    document.getElementById('addLeadFab').style.display='none';
+    document.getElementById('addLeadFab').style.display='';
     boot();
     return;
   }
@@ -1749,7 +1750,7 @@ async function startApp(){
   }
   
   adminToolbar.style.display='none';
-  document.getElementById('addLeadFab').style.display='none';
+  document.getElementById('addLeadFab').style.display='';
   boot();
 }
 
@@ -2798,12 +2799,11 @@ function paintUserChip(){
 
 function updateUIForRole() {
   paintUserChip();
+  // كان بيظهر للموظفات بس — والأدمن/المدير مكانوش يقدروا يضيفوا مؤثر خالص.
+  // مفيش سبب لده: الـ backend بيتعامل مع الاتنين صح
+  // (الموظفة بتاخده لنفسها، والأدمن التريجر بيوزّعه).
   const fab = document.getElementById('addLeadFab');
-  if (isStaffSession()) {
-    if (fab) fab.style.display = '';
-  } else {
-    if (fab) fab.style.display = 'none';
-  }
+  if (fab) fab.style.display = (SESSION && SESSION.token) ? '' : 'none';
 }
 
 // ===== مُبلّغ الأخطاء =====
