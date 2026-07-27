@@ -705,6 +705,16 @@
   </div>
 </div>
 
+<div id="staffMgrOverlay" class="cf-overlay">
+  <div class="cf-box" style="max-width:460px;text-align:right">
+    <div class="cf-title">👥 إدارة الموظفات</div>
+    <div class="cf-msg">لما تشيل موظفة، المؤثرين اللي <b>لسه محدش كلّمهم</b> بيتوزعوا على الباقيين. اللي اتبعتلهم رسالة أو اترفعلهم سكرين شوت بيفضلوا مسجّلين باسمها كأرشيف.</div>
+    <div id="staffMgrList" style="max-height:44vh;overflow:auto;margin-bottom:14px"></div>
+    <div class="lg-err" id="sm-err"></div>
+    <div class="cf-btns"><button class="cf-cancel" onclick="closeStaffManager()">إغلاق</button></div>
+  </div>
+</div>
+
 <div id="employeeOverlay" class="cf-overlay">
   <div class="cf-box" style="max-width:440px;text-align:right">
     <div class="cf-title">👩‍💼 إضافة موظفة جديدة</div>
@@ -770,6 +780,7 @@
     <span class="label">لوحة التحكم</span>
     <button class="admin-btn" onclick="openEmployeeModal()">➕ إضافة موظفة</button>
     <button class="admin-btn secondary" onclick="distributeLeads()">🔄 توزيع الـ Leads</button>
+    <button class="admin-btn secondary" onclick="openStaffManager()">👥 إدارة الموظفات</button>
     <span class="spacer"></span>
     <span style="font-size:12px;color:var(--muted);font-weight:600">👤 <span id="adminName">أدمن</span></span>
   </div>
@@ -884,6 +895,7 @@ const FN_MAP = {
   listEmployees:  "list-employees",
   addEmployee:    "add-employee",
   distributeLeads:"distribute-leads",
+  removeEmployee: "remove-employee",
   logAction:      "log-action",
   dashboardStats: "dashboard-stats",
   // الأربعة دول كلهم على نفس الـ function مع اختلاف الـ action جوه الـ body
@@ -1553,6 +1565,59 @@ async function distributeLeads(){
       Object.entries(res.staffLeadCount).map(([k,v])=>k+': '+v+' مؤثر').join('\n'));
     boot();
   }catch(e){ alert('حصل خطأ: '+e.message); }
+}
+
+// ===== إدارة الموظفات =====
+function openStaffManager(){
+  document.getElementById('sm-err').textContent='';
+  document.getElementById('staffMgrList').innerHTML='<div style="padding:18px;text-align:center;color:var(--muted)">بنحمّل…</div>';
+  const ov=document.getElementById('staffMgrOverlay');
+  ov.style.display='flex'; requestAnimationFrame(()=>ov.classList.add('show'));
+  loadStaffManager();
+}
+function closeStaffManager(){
+  const ov=document.getElementById('staffMgrOverlay');
+  ov.classList.remove('show'); setTimeout(()=>ov.style.display='none',220);
+}
+async function loadStaffManager(){
+  const box=document.getElementById('staffMgrList');
+  try{
+    const list=await callApi('listEmployees',{token:SESSION.token});
+    const active=(list||[]).filter(e=>e.active!==false);
+    if(!active.length){ box.innerHTML='<div style="padding:18px;text-align:center;color:var(--muted)">مفيش موظفات</div>'; return; }
+    box.innerHTML=active.map(e=>{
+      const n=esc(e.name||e.staff_name||'');
+      const me=(SESSION&&SESSION.staffName===((e.name||e.staff_name)))?' disabled title="مينفعش تشيل نفسك"':'';
+      return '<div class="crow" style="margin-bottom:8px">'
+        +'<span class="cic">'+esc(e.emoji||'👤')+'</span>'
+        +'<span class="cval">'+n+(e.username?' <span style="opacity:.55;font-weight:600">· '+esc(e.username)+'</span>':'')+'</span>'
+        +'<button class="cbtn" style="background:#fee2e2;color:#dc2626"'+me
+        +' onclick="removeStaff(this,\''+n+'\')">🗑️ شيل</button></div>';
+    }).join('');
+  }catch(err){
+    box.innerHTML='';
+    document.getElementById('sm-err').textContent=err.message||'مش قادر أحمّل القائمة';
+  }
+}
+async function removeStaff(btn, name){
+  const ok=await showConfirm('تشيل '+name+'؟',
+    'المؤثرين اللي لسه محدش كلّمهم هيتوزعوا على الباقيين. اللي اتبعتلهم رسالة هيفضلوا مسجّلين باسمها كأرشيف. وحسابها مش هيقدر يدخل تاني.',
+    'شيلها','danger');
+  if(!ok) return;
+  btn.disabled=true; btn.textContent='…';
+  try{
+    const r=await callApi('removeEmployee',{token:SESSION.token,staffName:name});
+    const lines=Object.entries(r.staffLeadCount||{}).map(([k,v])=>k+': '+v+' مؤثر').join('\n');
+    alert('✅ اتشالت '+name+'\n\n'
+      +'كان عندها: '+(r.hadLeads||0)+' مؤثر\n'
+      +'اتوزع على الباقيين: '+(r.redistributed||0)+'\n'
+      +'فضل باسمها كأرشيف: '+(r.keptAsHistory||0)+'\n\nالتوزيع الجديد:\n'+lines);
+    loadStaffManager();
+    boot();
+  }catch(err){
+    btn.disabled=false; btn.textContent='🗑️ شيل';
+    document.getElementById('sm-err').textContent=err.message||'حصل خطأ';
+  }
 }
 
 // ===== CRM Actions مع خيارين للصورة =====
