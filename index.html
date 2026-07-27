@@ -839,6 +839,51 @@
 
   /* Creator Embed بتاع تيك توك — أبعاده مختلفة عن فيديو واحد */
   .media.embed.tt.creator .embedframe{ top:0; height:640px }
+
+  /* ==========================================================
+     زرار إضافة مؤثر في الهيدر
+     الهيدر sticky، فالزرار ظاهر دايمًا من غير تمرير ولا zoom.
+     الزرار العايم تحت فضل موجود للشاشات الكبيرة كاختصار.
+     ========================================================== */
+  .hdr-add{
+    display:inline-flex; align-items:center; gap:7px; flex-shrink:0;
+    font-family:inherit; font-size:13.5px; font-weight:800; color:#fff;
+    padding:11px 16px; border:none; border-radius:13px; cursor:pointer;
+    background:linear-gradient(135deg,#16a34a,#22c55e);
+    box-shadow:0 6px 18px rgba(22,163,74,.35);
+    transition:transform .15s, box-shadow .15s, filter .15s;
+  }
+  .hdr-add:hover{ transform:translateY(-2px); box-shadow:0 10px 26px rgba(22,163,74,.45); filter:brightness(1.05) }
+  .hdr-add:active{ transform:scale(.96) }
+
+  /* ===== الموبايل ===== */
+  @media (max-width:900px){
+    .bar{ gap:10px; padding:11px 14px; flex-wrap:wrap }
+    /* الزرار العايم بيتشال — الهيدر أوضح وأسهل في الوصول */
+    .add-fab{ display:none !important }
+  }
+  @media (max-width:640px){
+    .hdr-add{ padding:10px 12px }
+    .hdr-add span{ display:none }        /* أيقونة + بس */
+    .brand .sub{ display:none }
+    .live{ display:none }
+    .search{ order:5; flex-basis:100%; max-width:100% }
+    .themebtn{ width:38px; height:38px; font-size:16px }
+    .userchip{ padding:4px 5px }
+    .userchip .uc-av{ width:30px; height:30px; font-size:14px }
+
+    /* الفلاتر ماتاخدش نص الشاشة */
+    .filters{ padding:10px 12px !important }
+    .frow{ gap:6px }
+    .pill{ padding:7px 12px !important; font-size:12.5px }
+    .flabel{ min-width:auto; font-size:11px !important }
+    .fctl{ flex:1 1 auto }
+    .grid{ grid-template-columns:1fr; gap:14px }
+    .hero h2{ font-size:22px }
+    .stats{ gap:8px }
+    .stat{ padding:10px 13px; min-width:88px }
+    .stat .v{ font-size:19px }
+  }
 </style>
 </head>
 <body>
@@ -950,6 +995,10 @@
       <input id="q" type="search" placeholder="ابحث باسم المؤثر أو اسم الحساب…">
     </div>
     <button class="themebtn" id="themebtn" onclick="toggleTheme()" title="تبديل الوضع (أبيض/أسود)">🌙</button>
+    <button class="hdr-add" id="hdrAddBtn" style="display:none" onclick="openAddLeadModal()" title="إضافة مؤثر جديد">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <span>إضافة مؤثر</span>
+    </button>
     <div class="userchip" id="userChip" style="display:none">
       <span class="uc-av" id="ucAvatar">؟</span>
       <span class="uc-txt">
@@ -2802,8 +2851,20 @@ function updateUIForRole() {
   // كان بيظهر للموظفات بس — والأدمن/المدير مكانوش يقدروا يضيفوا مؤثر خالص.
   // مفيش سبب لده: الـ backend بيتعامل مع الاتنين صح
   // (الموظفة بتاخده لنفسها، والأدمن التريجر بيوزّعه).
+  const logged = !!(SESSION && SESSION.token);
   const fab = document.getElementById('addLeadFab');
-  if (fab) fab.style.display = (SESSION && SESSION.token) ? '' : 'none';
+  if (fab) fab.style.display = logged ? '' : 'none';
+  const hdrAdd = document.getElementById('hdrAddBtn');
+  if (hdrAdd) hdrAdd.style.display = logged ? '' : 'none';
+
+  // صفوف الفلاتر دي للأدمن بس — بنخفيها عن الموظفة
+  // عشان ماتاخدش مساحة فاضية وتزوّد التمرير من غير فايدة
+  if (!isAdminSession()){
+    const r1 = document.getElementById('staffFilterRow');
+    const r2 = document.getElementById('proofFilterRow');
+    if (r1) r1.style.display = 'none';
+    if (r2) r2.style.display = 'none';
+  }
 }
 
 // ===== مُبلّغ الأخطاء =====
