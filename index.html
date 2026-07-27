@@ -771,6 +771,21 @@
     .userchip .uc-txt{ display:none }
     .userchip .uc-out span{ display:none }
   }
+
+  /* ===== زرار تغيير الصورة ===== */
+  .crm-actions .crmwrap{
+    flex:1; min-width:0; display:flex; align-items:stretch; gap:4px;
+  }
+  .crm-actions .crmwrap .crmbtn{ flex:1; min-width:0 }
+  .crmedit{
+    flex:0 0 30px; border:none; border-radius:11px; cursor:pointer;
+    font-size:13px; line-height:1; padding:0;
+    background:color-mix(in srgb,var(--line) 55%,transparent);
+    color:var(--ink); transition:background .15s, transform .15s;
+  }
+  .crmedit:hover{ background:var(--brand); color:#fff }
+  .crmedit:active{ transform:scale(.9) }
+  .crmedit[disabled]{ opacity:.45; pointer-events:none }
 </style>
 </head>
 <body>
@@ -1444,14 +1459,47 @@ function crmStatusBadges(c){
   return '<div class="crm-badges">'+chips.join('')+'</div>';
 }
 
+// إيه اللي اتعمل فعلاً على المؤثر ده؟
+// بنجمّع من مصدرين: حالة المؤثر نفسه + سجل الأكشنات (PROOFS)
+// عشان لو الصفحة اتقفلت وفتحت تاني الزراير تفضل مقفولة صح.
+function crmDone(c){
+  const pr = (typeof PROOFS!=='undefined' && PROOFS) ? PROOFS[c.uid] : null;
+  return {
+    sent:       (c.messageStatus === 'sent')        || !!(pr && pr.sent_count > 0),
+    followup:   ((c.followupCount|0) > 0)           || !!(pr && pr.followup_count > 0),
+    subscribed: (c.signupStatus === 'subscribed')   || !!(pr && pr.subscribed_count > 0)
+  };
+}
+function crmCompleteCount(c){
+  const d = crmDone(c);
+  return (d.sent?1:0) + (d.followup?1:0) + (d.subscribed?1:0);
+}
+
 function crmActionsRow(c){
   if (!c || !c.uid) return '';
   const u = esc(c.uid);
-  return '<div class="crm-actions">'+
-    '<button class="crmbtn sent" onclick="onCrmAction(this,\''+u+'\',\'sent\')">📩 بعت</button>'+
-    '<button class="crmbtn followup" onclick="onCrmAction(this,\''+u+'\',\'followup\')">🔄 متابعة</button>'+
-    '<button class="crmbtn subscribed" onclick="onCrmAction(this,\''+u+'\',\'subscribed\')">🎉 اشترك</button>'+
-  '</div>';
+  const d = crmDone(c);
+
+  // كل زرار بيتقفل بعد ما يتبعت صورته — مينفعش يتبعت تاني
+  const mk = (key, cls, icon, label) => {
+    const isDone = d[key];
+    if(!isDone){
+      return '<button class="crmbtn '+cls+'" onclick="onCrmAction(this,\''+u+'\',\''+key+'\')">'
+           + icon + ' ' + label + '</button>';
+    }
+    // اتعمل خلاص → الزرار يتقفل، وجنبه ✏️ لتغيير الصورة لو اترفعت غلط
+    return '<span class="crmwrap">'
+         + '<button class="crmbtn '+cls+' is-done" disabled title="اتعمل خلاص">✓ ' + label + '</button>'
+         + '<button class="crmedit" title="تغيير الصورة" '
+         + 'onclick="onCrmEdit(this,\''+u+'\',\''+key+'\')">✏️</button>'
+         + '</span>';
+  };
+
+  return '<div class="crm-actions">'
+    + mk('sent','sent','📩','بعت')
+    + mk('followup','followup','🔄','متابعة')
+    + mk('subscribed','subscribed','🎉','اشترك')
+    + '</div>';
 }
 
 function card(c){
@@ -1460,7 +1508,16 @@ function card(c){
   const canAdmin = !!(c.uid && FN_BASE && FN_BASE.indexOf("http")===0);
   const isStaff = isStaffSession();
   
-  let html = '<div class="card"'+uidAttr+'>';
+  const _d = crmDone(c);
+  const _n = (_d.sent?1:0)+(_d.followup?1:0)+(_d.subscribed?1:0);
+  let cls = 'card';
+  if(_d.subscribed) cls += ' is-subscribed';
+  else if(_n >= 3)  cls += ' is-complete';
+  else if(_n > 0)   cls += ' is-progress';
+
+  let html = '<div class="'+cls+'"'+uidAttr+'>';
+  if(_d.subscribed) html += '<span class="win-ribbon">🎁 مشترك معانا</span>';
+  else if(_n >= 3)  html += '<span class="win-ribbon done">✅ اكتمل التواصل</span>';
   html += stripHtml(c);
   html += '<div class="body">';
   html += '<div class="chead">';
@@ -1879,10 +1936,10 @@ async function onCrmAction(btn,uid,actionType){
 document.getElementById('crmFileInput').addEventListener('change', async (e)=>{
   const file=e.target.files[0]; e.target.value='';
   if(!file || !_crmPending) return;
-  const {btn,uid,actionType}=_crmPending; _crmPending=null;
+  const {btn,uid,actionType,mode}=_crmPending; _crmPending=null;
   try{
     const base64=await fileToBase64(file);
-    await sendCrmAction(btn,uid,actionType,base64);
+    await sendCrmAction(btn,uid,actionType,base64,mode);
   }catch(err){ alert('حصل خطأ في قراءة الصورة'); }
 });
 
@@ -1890,20 +1947,57 @@ document.getElementById('crmFileInput').addEventListener('change', async (e)=>{
 document.getElementById('crmFileInputGallery').addEventListener('change', async (e)=>{
   const file=e.target.files[0]; e.target.value='';
   if(!file || !_crmPending) return;
-  const {btn,uid,actionType}=_crmPending; _crmPending=null;
+  const {btn,uid,actionType,mode}=_crmPending; _crmPending=null;
   try{
     const base64=await fileToBase64(file);
-    await sendCrmAction(btn,uid,actionType,base64);
+    await sendCrmAction(btn,uid,actionType,base64,mode);
   }catch(err){ alert('حصل خطأ في قراءة الصورة'); }
 });
 
-async function sendCrmAction(btn,uid,actionType,imageBase64){
+// احتفال خفيف عند الاشتراك — CSS بس، من غير أي مكتبات
+function celebrate(cardEl){
+  if(!cardEl) return;
+  const box=document.createElement('div');
+  box.className='confetti';
+  const colors=['#22c55e','#16a34a','#FFD166','#7C4DFF','#FF6A4D','#25D366'];
+  let h='';
+  for(let i=0;i<18;i++){
+    h+='<i style="--x:'+(Math.random()*100).toFixed(1)+'%;'
+      +'--d:'+(0.6+Math.random()*0.7).toFixed(2)+'s;'
+      +'--dl:'+(Math.random()*0.35).toFixed(2)+'s;'
+      +'--r:'+Math.floor(Math.random()*360)+'deg;'
+      +'background:'+colors[i%colors.length]+'"></i>';
+  }
+  box.innerHTML=h;
+  cardEl.appendChild(box);
+  setTimeout(()=>box.remove(),1800);
+}
+
+// تغيير صورة أكشن اتسجّل قبل كده.
+// بيروح لـ log-action بوضع replace: بيبدّل صورة آخر سجل لنفس الأكشن
+// وبيمسح القديمة من الـ storage — من غير ما يزوّد العدادات تاني.
+async function onCrmEdit(btn, uid, actionType){
+  const L = (typeof CRM_LABELS!=='undefined' && CRM_LABELS[actionType]) || { t:'الصورة' };
+  const choice = await showPhotoOptions(
+    'تغيير ' + (L.t || 'الصورة'),
+    'الصورة القديمة هتتمسح وتتبدل بالجديدة.\n\n📸 تصوير: التقطي صورة دلوقتي\n🖼️ معرض: اختاري من صورك'
+  );
+  if(choice === 'camera'){
+    _crmPending={btn,uid,actionType,mode:'replace'};
+    const i=document.getElementById('crmFileInput'); i.setAttribute('capture','environment'); i.click();
+  } else if(choice === 'gallery'){
+    _crmPending={btn,uid,actionType,mode:'replace'};
+    const i=document.getElementById('crmFileInputGallery'); i.removeAttribute('capture'); i.click();
+  }
+}
+
+async function sendCrmAction(btn,uid,actionType,imageBase64,mode){
   const row=btn.closest('.crm-actions');
   if(!row) return;
-  row.querySelectorAll('.crmbtn').forEach(b=>b.disabled=true);
+  row.querySelectorAll('.crmbtn,.crmedit').forEach(b=>b.disabled=true);
   btn.classList.add('loading');
   try{
-    const res=await callApi('logAction',{token:SESSION.token,uid,actionType,imageBase64});
+    const res=await callApi('logAction',{token:SESSION.token,uid,actionType,imageBase64,mode:mode||'new'});
     btn.classList.remove('loading'); btn.classList.add('success');
     const item=CREATORS.find(x=>x.uid===uid);
     if(item){
@@ -1911,19 +2005,38 @@ async function sendCrmAction(btn,uid,actionType,imageBase64){
       if(actionType==='followup') item.followupCount=(item.followupCount||0)+1;
       if(actionType==='subscribed') item.signupStatus='subscribed';
     }
+    // بنحدّث سجل الإثباتات محليًا كمان — من غير كده الكارت يفضل
+    // يقول "٢ من ٣" لحد ما تعمل refresh للصفحة
+    if(item){
+      const pr = PROOFS[uid] || { uid, sent_count:0, followup_count:0, subscribed_count:0, shots_count:0, shots:[] };
+      if(actionType==='sent')       pr.sent_count       = (pr.sent_count||0)+1;
+      if(actionType==='followup')   pr.followup_count   = (pr.followup_count||0)+1;
+      if(actionType==='subscribed') pr.subscribed_count = (pr.subscribed_count||0)+1;
+      if(res && res.screenshotUrl){
+        pr.shots = (pr.shots||[]).concat([res.screenshotUrl]);
+        pr.shots_count = (pr.shots_count||0)+1;
+      }
+      pr.last_action_at = res && res.at ? res.at : new Date().toISOString();
+      pr.last_staff = (SESSION && SESSION.staffName) || pr.last_staff || '';
+      PROOFS[uid] = pr;
+    }
+
     const cardEl=btn.closest('.card');
-    if(cardEl){
-      let badges=cardEl.querySelector('.crm-badges');
-      const html=crmStatusBadges(item||{});
-      if(html){
-        if(badges) badges.outerHTML=html;
-        else cardEl.querySelector('.crm-actions').insertAdjacentHTML('beforebegin',html);
+    if(cardEl && item){
+      const wasSub = crmDone(item).subscribed;
+      // نعيد بناء الكارت كامل: الزراير تتقفل، الألوان تتغيّر، الصور تظهر
+      const tmp=document.createElement('div');
+      tmp.innerHTML=card(item);
+      const fresh=tmp.firstElementChild;
+      if(fresh){
+        fresh.classList.add('in');
+        cardEl.replaceWith(fresh);
+        if(wasSub) celebrate(fresh);
       }
     }
-    setTimeout(()=>{ row.querySelectorAll('.crmbtn').forEach(b=>{b.disabled=false;b.classList.remove('success');}); },800);
   }catch(e){
     btn.classList.remove('loading');
-    row.querySelectorAll('.crmbtn').forEach(b=>b.disabled=false);
+    row.querySelectorAll('.crmbtn:not(.is-done),.crmedit').forEach(b=>b.disabled=false);
     alert('حصل خطأ: '+e.message);
   }
 }
