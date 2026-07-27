@@ -1272,6 +1272,81 @@
   @media (prefers-reduced-motion:reduce){
     .lg-bot, .bot-shadow, .bot-eye, .bot-antdot, .lg-wave, .lg-caret{ animation:none !important }
   }
+
+  /* ==========================================================
+     تهدئة الإضاءة + تقوية وضوح النص
+     المشكلة كانت: دوائر الخلفية البرتقالية شغالة بشدة عالية،
+     فالصفحة بانت "منوّرة" من فوق واليمين والنصوص بقت باهتة عليها.
+     ========================================================== */
+
+  /* 1) الخلفية أهدى بكتير */
+  .bgfx .blob{ opacity:.14 !important }
+  body.dark .bgfx .blob{ opacity:.16 !important }
+  .bgfx .mesh{ opacity:.28 !important }
+  .bgfx .gridfx{ opacity:.22 !important }
+  body.dark .bgfx .gridfx{ opacity:.16 !important }
+
+  /* 2) خلفية الصفحة نفسها: رمادي دافي محايد بدل الوردي */
+  body{
+    background:linear-gradient(168deg,#F6F4F2 0%,#F2EEEC 55%,#EFEAE8 100%) !important;
+    background-attachment:fixed !important;
+  }
+  body.dark{
+    background:linear-gradient(168deg,#0F0D10 0%,#131015 100%) !important;
+  }
+
+  /* 3) نصوص أوضح — الرمادي كان فاتح أوي على خلفية منوّرة */
+  :root{
+    --ink:#171319 !important;
+    --muted:#6B6470 !important;
+    --line:#E6E0DC !important;
+  }
+  body.dark{
+    --ink:#F4F1F3 !important;
+    --muted:#A39BA5 !important;
+    --line:#2C2630 !important;
+  }
+
+  /* 4) البطاقات بيضا صريحة عشان تنفصل عن الخلفية */
+  .grid .card, .filters, .stat, .admin-toolbar, .mp, .af{
+    background:#FFFFFF !important;
+  }
+  body.dark .grid .card, body.dark .filters, body.dark .stat,
+  body.dark .admin-toolbar, body.dark .mp, body.dark .af{
+    background:#1A161C !important;
+  }
+
+  /* 5) العنوان الرئيسي: البرتقالي كان فاتح على خلفية فاتحة */
+  .hero h2 b{ color:#C6432D !important }
+  body.dark .hero h2 b{ color:#FF8163 !important }
+
+  /* 6) أرقام الإحصائيات كانت متدرّجة فبتبان باهتة — لون صريح */
+  .stat .v{
+    background:none !important;
+    -webkit-text-fill-color:currentColor !important;
+    color:#C6432D !important;
+  }
+  body.dark .stat .v{ color:#FF8163 !important }
+  .stat::after{ opacity:.28 !important }
+
+  /* 7) اسم المنصة في الهيدر */
+  .brand h1{
+    background:none !important;
+    -webkit-text-fill-color:currentColor !important;
+    color:#C6432D !important;
+  }
+  body.dark .brand h1{ color:#FF8163 !important }
+
+  /* 8) الهيدر أوضح وأقل شفافية */
+  header{
+    background:rgba(250,248,247,.92) !important;
+    border-bottom:1px solid var(--line) !important;
+  }
+  body.dark header{ background:rgba(15,13,16,.94) !important }
+
+  /* 9) وصف الهيرو كان باهت */
+  .hero p{ color:#5E5763 !important }
+  body.dark .hero p{ color:#A39BA5 !important }
 </style>
 </head>
 <body>
