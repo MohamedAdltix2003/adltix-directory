@@ -573,6 +573,46 @@
   .photo-options button{flex:1;padding:10px;border-radius:11px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px}
   .photo-options button:hover{border-color:var(--brand);color:var(--brand);background:var(--brand-soft)}
   .photo-options button.active{background:var(--brand);color:#fff;border-color:var(--brand);box-shadow:0 4px 12px rgba(75,35,201,.3)}
+
+  /* ==========================================================
+     تحسينات الأداء — بتتحط في الآخر عشان تغلب اللي فوق
+     كل الأنيميشنز المستمرة اللي كانت بتخلي كارت الجرافيكس
+     يعيد الرسم طول الوقت اتوقفت. الشكل زي ما هو تقريبًا،
+     بس الصفحة بقت أسرع بكتير.
+     ========================================================== */
+
+  /* الخلفية: الدوائر والشبكة تفضل مكانها بس تبطّل حركة.
+     blur(72px) على عنصر بحجم نص الشاشة + حركة مستمرة = أغلى حاجة في الصفحة */
+  .bgfx .blob{ animation:none !important; will-change:auto !important }
+  .bgfx .mesh{ animation:none !important }
+  .bgfx .gridfx{ animation:none !important }
+  /* الجزيئات الطايرة: 16 عنصر بأنيميشن مستمر — اتشالوا خالص */
+  .bgfx .parts{ display:none !important }
+
+  /* لمعة كارت الموظفة: كانت شغالة على كل كارت فيه موظفة في نفس الوقت */
+  .staff-ribbon::before{ display:none !important }
+
+  /* نبضة زرار التشغيل: أنيميشن box-shadow = إعادة رسم مستمرة لكل كارت */
+  .media .playbig{ animation:none !important }
+
+  /* تحسين الـ scroll: المتصفح مش بيرسم الكروت اللي بره الشاشة */
+  .grid .card{ content-visibility:auto; contain-intrinsic-size:0 620px }
+
+  /* البوستر الجديد */
+  .media.embed .poster{ overflow:hidden }
+  .media.embed .poster .pcover{
+    position:absolute; inset:0; width:100%; height:100%;
+    object-fit:cover; z-index:1
+  }
+  .media.embed .poster .povl{
+    position:absolute; inset:0; z-index:2;
+    background:linear-gradient(180deg,rgba(0,0,0,.06),rgba(0,0,0,.42))
+  }
+  .media.embed .poster .playbig{ z-index:3 }
+  .media.embed .poster::before{ display:none }
+
+  /* لمّا الكارت بيتشال، مفيش داعي نستنى أنيميشن طويل */
+  .card.removing{ transition-duration:.28s !important }
 </style>
 </head>
 <body>
@@ -787,9 +827,29 @@ function isAdminSession() {
 // ============================================================
 // 2. البيانات الثابتة
 // ============================================================
-const SHEET_ID = "1SZpJPbpmkZ6OAvpfLaiREX5BmpbiyMiP4IEaFOO7KHM";
-const API_BASE = "https://script.google.com/macros/s/AKfycbxuo4IWPwJqwwBcL5mSyExUV-U4Qr6uLQDE9v-UWRIr5esl3hwtCTRFcFeGXsJADl_B/exec";
-const SHEET_TABS = ["👗 Fashion & Style","✨ Luxury & Lifestyle","👨‍👩‍👧 Family & Parenting","⚽ Sports & Fitness","🍳 Food & Cooking","🎮 Gaming","💼 Business","📱 Tech","😂 Entertainment","🔖 Other Niches"];
+// ===== Supabase Backend (بديل Google Sheets + Apps Script) =====
+const FN_BASE = "https://svjnugimaadcadawnglf.supabase.co/functions/v1";
+
+// خريطة: اسم الأكشن القديم -> اسم الـ Edge Function
+const FN_MAP = {
+  login:          "login",
+  getLeads:       "get-leads",
+  addManualLead:  "manual-add-lead",
+  listEmployees:  "list-employees",
+  addEmployee:    "add-employee",
+  distributeLeads:"distribute-leads",
+  logAction:      "log-action",
+  dashboardStats: "dashboard-stats",
+  // الأربعة دول كلهم على نفس الـ function مع اختلاف الـ action جوه الـ body
+  "delete":       "admin-action",
+  moveToNew:      "admin-action",
+  changeNiche:    "admin-action",
+  approve:        "admin-action",
+  unarchive:      "admin-action"
+};
+const ADMIN_ACTIONS = { "delete":"delete", moveToNew:"archive", changeNiche:"changeNiche", approve:"approve", unarchive:"unarchive" };
+
+const LEADS_PAGE_SIZE = 2000;  // أقصى حجم صفحة تسمح بيه الـ backend
 const MIN_FOLLOWERS = 0;
 
 const PLAT = {
@@ -807,9 +867,34 @@ function countryBucket(loc){ loc=String(loc||"").toLowerCase(); for(const n of C
 function prioInfo(p){ p=String(p||"").trim().toLowerCase(); if(p==="high"||p==="عالي"||p==="1") return {l:"High",c:"#B8860B"}; if(p==="medium"||p==="متوسط"||p==="2") return {l:"Medium",c:"#f59e0b"}; if(p==="low"||p==="منخفض"||p==="3") return {l:"Low",c:"#9ca3af"}; return null; }
 const state = {niche:"all", platform:"all", country:"all", fol:"all", contact:"all", sort:"fol", q:""};
 
+// ===== تحسين الأداء =====
+// الفلاتر كانت بتحسب countryBucket لكل صف في كل تفاعل (14,169 صف × 72 مقارنة).
+// دلوقتي بنحسب كل المفاتيح دي مرة واحدة وقت التحميل ونخزّنها على الكائن نفسه.
+function indexCreator(c){
+  c._cb = countryBucket(c.country);                    // الدولة (كانت أغلى عملية)
+  c._h  = String(c.handle||"").toLowerCase();          // للبحث
+  const e = !!(c.email && String(c.email).trim());
+  const w = !!((c.whatsapp && String(c.whatsapp).trim()) || (c.phone && String(c.phone).trim()));
+  c._e = e; c._w = w;                                  // وسيلة التواصل
+  c._ok = (Number(c.followers) >= MIN_FOLLOWERS) || c.platform === "snapchat";
+  return c;
+}
+
+// نسخة نضيفة مخزّنة — بنعيد حسابها بس لما البيانات تتغيّر فعلاً
+let _cleanCache = null;
+function invalidateCache(){ _cleanCache = null; }
+function cleanList(){
+  if(!_cleanCache) _cleanCache = CREATORS.filter(c => c && c._ok);
+  return _cleanCache;
+}
+
 function fmt(n){ if(n==null) return "—"; n=Number(n); if(!n) return "—"; if(n>=1e6) return (n/1e6).toFixed(1).replace(/\.0$/,"")+"M"; if(n>=1e3) return (n/1e3).toFixed(1).replace(/\.0$/,"")+"K"; return ""+n; }
 function esc(s){ return String(s||"").replace(/'/g,"\\'").replace(/"/g,"&quot;"); }
-function clean(list){ return list.filter(c=> c && (Number(c.followers)>=MIN_FOLLOWERS || c.platform==="snapchat")); }
+// بقت بتستخدم الكاش بدل ما تفلتر 14 ألف صف في كل نداء
+function clean(list){
+  if(list === CREATORS) return cleanList();
+  return list.filter(c=> c && (Number(c.followers)>=MIN_FOLLOWERS || c.platform==="snapchat"));
+}
 
 function buildPills(id, items, key){
   const box=document.getElementById(id); if(!box) return;
@@ -825,8 +910,8 @@ function buildPills(id, items, key){
 function buildAllPills(){
   buildPills("f-niche",[{v:"all",l:"الكل"},{v:"fashion",l:"فاشن"},{v:"luxury",l:"لاكشري"},{v:"moms",l:"عائلة وأمومة"},{v:"sports",l:"رياضة ولياقة"},{v:"food",l:"طعام وطبخ"},{v:"gaming",l:"جيمنج"},{v:"business",l:"أعمال"},{v:"tech",l:"تقنية"},{v:"entertainment",l:"ترفيه"},{v:"other",l:"أخرى"}],"niche");
   buildPills("f-platform",[{v:"all",l:"الكل"},{v:"instagram",l:"انستجرام",dot:PLAT.instagram.c},{v:"tiktok",l:"تيك توك",dot:"#25F4EE"},{v:"youtube",l:"يوتيوب",dot:PLAT.youtube.c},{v:"x",l:"تويتر",dot:"#555"},{v:"snapchat",l:"سناب",dot:PLAT.snapchat.c}],"platform");
-  const data=clean(CREATORS);
-  const bc={}; data.forEach(c=>{ const b=countryBucket(c.country); bc[b]=(bc[b]||0)+1; });
+  const data=cleanList();
+  const bc={}; for(const c of data){ bc[c._cb]=(bc[c._cb]||0)+1; }
   const cc=(n)=>bc[n]||0;
   buildPills("f-country",[
     {v:"all",l:"كل الدول ("+data.length+")"},
@@ -841,39 +926,145 @@ function buildAllPills(){
 }
 
 function applyFilters(){
-  let r=clean(CREATORS).slice();
-  if(scrapingMode){ const today=cairoTodayStr(); r=r.filter(c=>c.discoveredAt===today); }
-  if(state.niche!=="all") r=r.filter(c=>c.niche===state.niche);
-  if(state.platform!=="all") r=r.filter(c=>c.platform===state.platform);
-  if(state.country!=="all") r=r.filter(c=>countryBucket(c.country)===state.country);
-  if(state.fol!=="all"){
-    const [a,b]=state.fol.split("-").map(Number);
-    r=r.filter(c=> (c.platform==="snapchat" && !c.followers) || (c.followers>=a*1000 && c.followers<b*1000));
+  let r = cleanList();
+  let copied = false;
+  // مرشّح واحد بيمشي مرة واحدة على البيانات بدل 7 مرات منفصلة،
+  // وبيستخدم المفاتيح المحسوبة مسبقًا (_cb / _h / _e / _w)
+  const needFilter = scrapingMode || state.niche!=="all" || state.platform!=="all" ||
+                     state.country!=="all" || state.fol!=="all" ||
+                     (state.contact && state.contact!=="all") || !!state.q;
+
+  if(needFilter){
+    const today = scrapingMode ? cairoTodayStr() : null;
+    let folA=0, folB=0;
+    if(state.fol!=="all"){ const parts=state.fol.split("-"); folA=+parts[0]*1000; folB=+parts[1]*1000; }
+    const q = state.q ? state.q.toLowerCase() : null;
+    const ct = (state.contact && state.contact!=="all") ? state.contact : null;
+
+    r = r.filter(c => {
+      if(today && c.discoveredAt !== today) return false;
+      if(state.niche!=="all"    && c.niche    !== state.niche)    return false;
+      if(state.platform!=="all" && c.platform !== state.platform) return false;
+      if(state.country!=="all"  && c._cb      !== state.country)  return false;
+      if(state.fol!=="all"){
+        const snapNoFol = (c.platform==="snapchat" && !c.followers);
+        if(!snapNoFol && !(c.followers>=folA && c.followers<folB)) return false;
+      }
+      if(ct){
+        if(ct==="email"    && !c._e) return false;
+        if(ct==="whatsapp" && !c._w) return false;
+        if(ct==="both"     && !(c._e && c._w)) return false;
+        if(ct==="none"     && (c._e || c._w))  return false;
+      }
+      if(q && c._h.indexOf(q) === -1) return false;
+      return true;
+    });
+    copied = true;
   }
-  if(state.contact && state.contact!=="all"){ r=r.filter(c=>{ const e=!!(c.email&&String(c.email).trim()); const w=!!((c.whatsapp&&String(c.whatsapp).trim())||(c.phone&&String(c.phone).trim())); if(state.contact==="email")return e; if(state.contact==="whatsapp")return w; if(state.contact==="both")return e&&w; if(state.contact==="none")return !e&&!w; return true; }); }
-  if(state.q){ const q=state.q.toLowerCase(); r=r.filter(c=>(c.handle||"").toLowerCase().includes(q)); }
-  if(state.sort==="fol") r.sort((a,b)=>(b.followers||0)-(a.followers||0));
+
+  // الـ backend بيرجّع البيانات مرتبة بالمتابعين تنازليًا أصلاً،
+  // فالترتيب الافتراضي مش محتاج أي sort خالص — ده بيوفّر شغل على 14 ألف صف
+  if(state.sort==="fol") return r;
+  if(!copied) r = r.slice();
   if(state.sort==="fola") r.sort((a,b)=>(a.followers||0)-(b.followers||0));
-  if(state.sort==="name") r.sort((a,b)=>(a.handle||"").localeCompare(b.handle||""));
+  else if(state.sort==="name") r.sort((a,b)=>(a._h||"").localeCompare(b._h||""));
   return r;
 }
 
 // ===== دوال الكارد =====
-function igCode(u){ const m=String(u||'').match(/\/(p|reel|reels|tv)\/([^/?#]+)/); return m?{kind:(m[1]==='reels'?'reel':m[1]),code:m[2]}:null; }
-function ttVidId(u){ const m=String(u||'').match(/\/video\/(\d+)/); return m?m[1]:''; }
+function igCode(u){
+  const s=String(u||'');
+  // بيمسك: /p/CODE  /reel/CODE  /reels/CODE  /tv/CODE  — مع أو من غير query params
+  let m=s.match(/\/(p|reel|reels|tv)\/([A-Za-z0-9_-]+)/);
+  if(m) return {kind:(m[1]==='reels'?'reel':m[1]), code:m[2]};
+  // وكمان: /share/reel/CODE و /share/p/CODE
+  m=s.match(/\/share\/(p|reel)\/([A-Za-z0-9_-]+)/);
+  if(m) return {kind:m[1], code:m[2]};
+  return null;
+}
+function ttVidId(u){
+  // بيمسك الفيديو والصور (photo) — الاتنين بيشتغلوا مع نفس الـ embed
+  const m=String(u||'').match(/\/(?:video|photo)\/(\d+)/);
+  if(m) return m[1];
+  // لينك من غير @username زي tiktok.com/embed/v2/123456
+  const m2=String(u||'').match(/\/embed\/v2\/(\d+)/);
+  return m2?m2[1]:'';
+}
+
+// عمود videos في الداتابيز فيه صيغتين مختلفتين:
+//   1) لينكات مفصولة بفاصلة:  "https://.../p/AAA/ , https://.../p/BBB/"
+//   2) JSON:                  '[{"url":"https://...","thumb":"","type":"Video"}]'
+// الدالة دي بتفهم الاتنين + المصفوفات الجاهزة، وبترجّع دايمًا [{url, thumb}]
+function normalizeVideos(raw){
+  const out=[];
+  const push=(v)=>{
+    if(!v) return;
+    if(typeof v==='string'){ const u=v.trim(); if(/^https?:\/\//i.test(u)) out.push({url:u,thumb:''}); return; }
+    if(typeof v==='object'){
+      const u=String(v.url||v.link||v.href||'').trim();
+      const t=String(v.thumb||v.thumbnail||v.cover||'').trim();
+      if(u||t) out.push({url:u,thumb:t});
+    }
+  };
+
+  if(!raw) return out;
+  if(Array.isArray(raw)){ raw.forEach(push); return dedupeVids(out); }
+
+  const s=String(raw).trim();
+  if(!s) return out;
+
+  // الصيغة التانية: JSON
+  if(s[0]==='['||s[0]==='{'){
+    try{
+      const j=JSON.parse(s);
+      (Array.isArray(j)?j:[j]).forEach(push);
+      if(out.length) return dedupeVids(out);
+    }catch(e){ /* مش JSON سليم — بنكمل للصيغة الأولى */ }
+  }
+
+  // الصيغة الأولى: لينكات مفصولة بفاصلة أو مسافة أو سطر جديد
+  s.split(/[\s,|;]+/).forEach(push);
+  return dedupeVids(out);
+}
+function dedupeVids(list){
+  const seen={}; const out=[];
+  for(const v of list){
+    const k=(v.url||'')+'|'+(v.thumb||'');
+    if(seen[k]) continue; seen[k]=1; out.push(v);
+  }
+  return out;
+}
+
+// بوستر خفيف: صورة واحدة (أو تدرّج لوني) + زرار تشغيل.
+// الـ iframe التقيل بيتحمّل بس لما المستخدم يدوس.
+function posterHtml(c, p){
+  const play='<span class="playbig"><svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M8 5v14l11-7z"/></svg></span>';
+  let img='';
+  if(c.avatar_url){
+    img='<img class="pcover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()">';
+  }
+  return '<div class="poster" onclick="loadEmbed(this.parentNode)" style="background:'+p.g+'">'
+       + img + '<span class="povl"></span>' + play + '</div>';
+}
 
 function stripHtml(c){
   const p=PLAT[c.platform]||PLAT.instagram;
-  let vids=(c.videos||[]).filter(v=>v && (v.url||v.thumb));
-  const seen={}; vids=vids.filter(v=>{ const k=(v.url||'')+'|'+(v.thumb||''); if(seen[k]) return false; seen[k]=1; return true; });
+  // بنعالج الصيغتين هنا كمان (مش بس وقت التحميل) عشان أي كارت يتضاف لحظيًا يشتغل برضه
+  const vids=normalizeVideos(c.videos);
   const bigPlay='<span class="playbig"><svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M8 5v14l11-7z"/></svg></span>';
-  const cand=[c.top_video_url, ...vids.map(v=>v.url), c.url].filter(Boolean);
+  // ترتيب البحث عن لينك فيديو: الفيديو المميز -> كل الفيديوهات -> لينكات المنصات -> البروفايل
+  const cand=[
+    c.top_video_url,
+    ...vids.map(v=>v.url),
+    c.igUrl, c.ttUrl, c.ytUrl,
+    c.url
+  ].filter(Boolean);
   const pickBy=(fn)=>{ for(const u of cand){ if(fn(u)) return u; } return ''; };
 
   if(c.platform==='instagram'){
     const u=pickBy(u=>igCode(u)); const ic=igCode(u);
     if(ic){
-      return '<div class="media embed ig" data-embed-src="'+esc('https://www.instagram.com/'+ic.kind+'/'+ic.code+'/embed')+'"><div class="poster" onclick="loadEmbed(this.parentNode)" style="background:'+p.g+'">'+bigPlay+'</div></div>';
+      return '<div class="media embed ig" data-embed-src="'+esc('https://www.instagram.com/'+ic.kind+'/'+ic.code+'/embed')+'">'+posterHtml(c,p)+'</div>';
     }
     if(c.avatar_url){
       return '<div class="media shot" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel">انستجرام</span></div>';
@@ -883,7 +1074,7 @@ function stripHtml(c){
   if(c.platform==='tiktok'){
     const u=pickBy(u=>ttVidId(u)); const vid=ttVidId(u);
     if(vid){
-      return '<div class="media embed tt" data-embed-src="'+esc('https://www.tiktok.com/embed/v2/'+vid)+'"><div class="poster" onclick="loadEmbed(this.parentNode)" style="background:'+p.g+'">'+bigPlay+'</div></div>';
+      return '<div class="media embed tt" data-embed-src="'+esc('https://www.tiktok.com/embed/v2/'+vid)+'">'+posterHtml(c,p)+'</div>';
     }
     if(c.avatar_url){
       return '<div class="media shot" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel">تيك توك</span></div>';
@@ -1017,7 +1208,7 @@ function crmActionsRow(c){
 function card(c){
   const p=PLAT[c.platform]||PLAT.instagram;
   const uidAttr = c.uid ? ' data-uid="'+esc(c.uid)+'"' : '';
-  const canAdmin = !!(c.uid && API_BASE && API_BASE.indexOf("http")===0);
+  const canAdmin = !!(c.uid && FN_BASE && FN_BASE.indexOf("http")===0);
   const isStaff = isStaffSession();
   
   let html = '<div class="card"'+uidAttr+'>';
@@ -1157,22 +1348,16 @@ async function startApp(){
   boot();
 }
 
-async function refreshMyLeads(){
-  try{
-    const res=await fetch(API_BASE+'?action=myLeads&token='+encodeURIComponent(SESSION.token));
-    const j=await res.json();
-    if(j.ok && j.result && j.result.leads){
-      const data=j.result.leads.map(mapRawToCard);
-      CREATORS=data;
-      buildAllPills(); renderStats(); render(); updateScrapeCount();
-      writeCache(data);
-    }
-  }catch(e){ console.log('myLeads failed',e); }
-}
+// الموظفة والأدمن بيستخدموا نفس الدالة — الـ backend هو اللي بيقرر
+// تشوف إيه بناءً على الدور، مفيش داعي لكودين مختلفين.
+async function refreshMyLeads(){ return loadAllLeads(); }
 
 function mapRawToCard(o){
-  let vids=[]; try{ vids=String(o.videos||"").split(",").map(v=>v.trim()).filter(Boolean); }catch(e){}
-  return {
+  // كانت بتعمل split على فاصلة وترجّع نصوص — والكارت بيدوّر على كائنات فيها .url
+  // فالنتيجة إن الفيديوهات كانت بتتفلتر وتختفي. normalizeVideos بتحل ده.
+  const vids = normalizeVideos(o.videos);
+  // indexCreator بتحسب مفاتيح الفلترة مرة واحدة هنا — ده اللي بيخلي الزراير فورية
+  return indexCreator({
     uid:String(o.uid||"").toLowerCase(), discoveredAt:normalizeSheetDate(o.discovered_at), assignedTo:String(o.assigned_to||"").trim(),
     handle:String(o.handle||"").replace(/^@/,""), platform:o.platform||"",
     followers:Number(o.followers)||0, niche:String(o.niche||"").toLowerCase(),
@@ -1183,7 +1368,7 @@ function mapRawToCard(o){
     priority:o.priority||"", engagement:o.engagement_rate||"",
     igUrl:o.instagram_url||"", ttUrl:o.tiktok_url||"", scUrl:o.snapchat_url||"", twUrl:o.twitter_url||"", ytUrl:o.youtube_url||"", fbUrl:o.facebook_url||"",
     messageStatus:String(o.message_status||"").toLowerCase(), followupCount:parseInt(o.followup_count,10)||0, signupStatus:String(o.signup_status||"").toLowerCase()
-  };
+  });
 }
 
 // ===== Add Lead =====
@@ -1443,15 +1628,35 @@ function showConfirm(title, msg, yesLabel, yesClass){
   });
 }
 async function callApi(action,payload){
-  if(!API_BASE || API_BASE.indexOf('http')!==0) throw new Error('API_BASE مش متظبط');
+  const fn = FN_MAP[action];
+  if(!fn) throw new Error('أكشن غير معروف: '+action);
+
+  const body = Object.assign({}, payload||{});
+  // الأكشنات الإدارية بتروح كلها لـ admin-action، والنوع بيتحدد جوه الـ body
+  if(ADMIN_ACTIONS[action]) body.action = ADMIN_ACTIONS[action];
+  // الأمان: كل أكشن لازم يبعت التوكن (النسخة القديمة كانت بتبعت أكشنات الحذف من غيره)
+  if(!body.token && SESSION && SESSION.token) body.token = SESSION.token;
+
+  let res;
   try{
-    const res=await fetch(API_BASE,{method:'POST',body:JSON.stringify(Object.assign({action},payload))});
-    const j=await res.json();
-    if(!j.ok) throw new Error(j.error||'فشل الطلب');
-    return j.result;
-  }catch(e){
-    throw new Error(e.message||'مشكلة في الاتصال');
+    res = await fetch(FN_BASE+'/'+fn, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    });
+  }catch(netErr){
+    throw new Error('مشكلة في الاتصال بالسيرفر');
   }
+
+  let j;
+  try{ j = await res.json(); }
+  catch(e){ throw new Error('رد غير مفهوم من السيرفر ('+res.status+')'); }
+
+  if(!j.ok){
+    if(res.status===401){ throw new Error(j.error||'انتهت الجلسة — سجّل دخول تاني'); }
+    throw new Error(j.error||'فشل الطلب');
+  }
+  return j.result;
 }
 function findCardEl(btn){ return btn.closest('.card'); }
 function setBusy(cardEl,busy){ 
@@ -1469,23 +1674,52 @@ function removeCardAnimated(cardEl,uid){
   },520);
 }
 
+// ===== استجابة فورية للزراير =====
+// قبل كده: تدوس -> ينتظر الشبكة -> بعدها الكارت يتحرك (بيحس بطيء).
+// دلوقتي: الكارت يتحرك فورًا والطلب يمشي في الخلفية، ولو فشل يرجع مكانه.
+function finalizeRemove(cardEl, uid){
+  const i = CREATORS.findIndex(x => x.uid === uid);
+  if(i > -1) CREATORS.splice(i, 1);
+  invalidateCache();
+  const shownEl = document.getElementById('shown');
+  if(shownEl) shownEl.textContent = Math.max(0, (parseInt(shownEl.textContent,10)||1) - 1);
+  setTimeout(() => { if(cardEl) cardEl.remove(); }, 300);
+}
+function undoRemove(cardEl){
+  if(!cardEl) return;
+  cardEl.classList.remove('removing');
+  setBusy(cardEl, false);
+}
+
 async function onDelete(btn){
   const cardEl=findCardEl(btn); if(!cardEl) return;
   const uid=cardEl.getAttribute('data-uid'); if(!uid) return;
-  const ok=await showConfirm('حذف نهائي؟','هيتشال المؤثر ده من الموقع ومن الشيت خالص ومش هيرجع تاني. متأكد؟','حذف نهائي','danger');
+  const ok=await showConfirm('حذف نهائي؟','هيتشال المؤثر ده من قاعدة البيانات خالص ومش هيرجع تاني. متأكد؟','حذف نهائي','danger');
   if(!ok) return;
   setBusy(cardEl,true);
-  try{ await callApi('delete',{uid}); removeCardAnimated(cardEl,uid); }
-  catch(e){ alert('حصل خطأ: '+e.message); setBusy(cardEl,false); }
+  cardEl.classList.add('removing');            // فورًا، من غير انتظار
+  try{
+    await callApi('delete',{uid});
+    finalizeRemove(cardEl,uid);
+  }catch(e){
+    undoRemove(cardEl);
+    alert('الحذف مانجحش: '+e.message);
+  }
 }
 async function onMoveToNew(btn){
   const cardEl=findCardEl(btn); if(!cardEl) return;
   const uid=cardEl.getAttribute('data-uid'); if(!uid) return;
-  const ok=await showConfirm('نقل للأرشيف؟','هينتقل المؤثر ده للشيت الجديد، ويتشال من هنا أوتوماتيك. متأكد؟','نقل للأرشيف','move');
+  const ok=await showConfirm('نقل للأرشيف؟','هيتنقل للأرشيف ويختفي من الموقع. تقدر ترجّعه في أي وقت لو ضفت اللينك بتاعه تاني.','نقل للأرشيف','move');
   if(!ok) return;
   setBusy(cardEl,true);
-  try{ await callApi('moveToNew',{uid}); removeCardAnimated(cardEl,uid); }
-  catch(e){ alert('حصل خطأ: '+e.message); setBusy(cardEl,false); }
+  cardEl.classList.add('removing');            // فورًا
+  try{
+    await callApi('moveToNew',{uid});
+    finalizeRemove(cardEl,uid);
+  }catch(e){
+    undoRemove(cardEl);
+    alert('الأرشفة مانجحتش: '+e.message);
+  }
 }
 async function onChangeNiche(sel){
   const niche=sel.value; if(!niche) return;
@@ -1494,34 +1728,53 @@ async function onChangeNiche(sel){
   const label=(NICHE_AR[niche]||niche);
   const ok=await showConfirm('نقل المجال؟','هينقل المؤثر ده لمجال "'+label+'". متأكد؟','نقل المجال','move');
   if(!ok){ sel.value=''; return; }
-  setBusy(cardEl,true);
+  const item=CREATORS.find(x=>x.uid===uid);
+  const oldNiche=item?item.niche:'';
+  const tag=cardEl.querySelector('.nichetag');
+  const oldTag=tag?tag.textContent:'';
+  const willHide=(state.niche!=='all' && state.niche!==niche);
+
+  // التغيير يبان فورًا
+  if(item){ item.niche=niche; invalidateCache(); }
+  if(willHide) cardEl.classList.add('removing');
+  else if(tag){ tag.textContent=label; tag.style.animation='none'; void tag.offsetWidth; tag.style.animation='popIn .4s cubic-bezier(.34,1.56,.64,1)'; }
+  sel.value='';
+
   try{
     await callApi('changeNiche',{uid,niche});
-    const item=CREATORS.find(x=>x.uid===uid); if(item) item.niche=niche;
-    if(state.niche!=='all' && state.niche!==niche){ removeCardAnimated(cardEl,uid); }
-    else{
-      const tag=cardEl.querySelector('.nichetag'); if(tag){ tag.textContent=label; tag.style.animation='none'; void tag.offsetWidth; tag.style.animation='popIn .4s cubic-bezier(.34,1.56,.64,1)'; }
-      setBusy(cardEl,false); sel.value='';
-    }
-  }catch(e){ alert('حصل خطأ: '+e.message); setBusy(cardEl,false); sel.value=''; }
+    if(willHide) finalizeRemove(cardEl,uid);
+    else setBusy(cardEl,false);
+  }catch(e){
+    if(item){ item.niche=oldNiche; invalidateCache(); }
+    if(willHide) undoRemove(cardEl);
+    else if(tag) tag.textContent=oldTag;
+    setBusy(cardEl,false);
+    alert('نقل المجال مانجحش: '+e.message);
+  }
 }
 async function onApprove(btn){
   const cardEl=findCardEl(btn); if(!cardEl) return;
   const uid=cardEl.getAttribute('data-uid'); if(!uid) return;
   if(cardEl.classList.contains('approved')) return;
-  const ok=await showConfirm('تأكيد المؤثر؟','هيتحدد إنه "معانا" وهيتلوّن في الشيت عشان تتابعه بسهولة.','تأكيد','ok');
+  const ok=await showConfirm('تأكيد المؤثر؟','هيتحدد إنه "معانا" عشان تتابعه بسهولة.','تأكيد','ok');
   if(!ok) return;
-  setBusy(cardEl,true);
+  // العلامة تظهر فورًا، والطلب يمشي في الخلفية
+  const oldLabel = btn.textContent;
+  cardEl.classList.add('approved');
+  btn.classList.add('is-approved'); btn.textContent='✅ متابَع'; btn.disabled=true;
+  if(!cardEl.querySelector('.approve-badge')){
+    const b=document.createElement('div'); b.className='approve-badge'; b.textContent='✅ متابَع';
+    cardEl.style.position='relative'; cardEl.appendChild(b);
+  }
   try{
     await callApi('approve',{uid});
-    cardEl.classList.add('approved');
-    btn.classList.add('is-approved'); btn.textContent='✅ متابَع';
-    if(!cardEl.querySelector('.approve-badge')){
-      const b=document.createElement('div'); b.className='approve-badge'; b.textContent='✅ متابَع';
-      cardEl.style.position='relative'; cardEl.appendChild(b);
-    }
-    setBusy(cardEl,false); btn.disabled=true;
-  }catch(e){ alert('حصل خطأ: '+e.message); setBusy(cardEl,false); }
+  }catch(e){
+    // رجّع كل حاجة زي ما كانت
+    cardEl.classList.remove('approved');
+    btn.classList.remove('is-approved'); btn.textContent=oldLabel; btn.disabled=false;
+    const bd=cardEl.querySelector('.approve-badge'); if(bd) bd.remove();
+    alert('التأكيد مانجحش: '+e.message);
+  }
 }
 
 // ===== Embed loading =====
@@ -1549,18 +1802,21 @@ function loadEmbed(host){
   _embedQueue.push({host,src});
   requestAnimationFrame(_pumpEmbedQueue);
 }
-let _revealObs=null, _embedObs=null;
+let _revealObs=null;
 function ensureObs(){
   if(_revealObs) return;
   _revealObs=new IntersectionObserver((es)=>{ es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); _revealObs.unobserve(e.target);} }); },{threshold:.08});
-  _embedObs=new IntersectionObserver((es)=>{ es.forEach(e=>{ if(e.isIntersecting){ loadEmbed(e.target); _embedObs.unobserve(e.target);} }); },{rootMargin:'250px 0px'});
+  // _embedObs اتشال — الـ embeds بقت بالضغط بس
 }
 function observeNew(els){
   ensureObs();
   els.forEach((el,i)=>{
-    el.style.transitionDelay=(Math.min(i,8)*40)+'ms';
+    el.style.transitionDelay=(Math.min(i,6)*30)+'ms';
     _revealObs.observe(el);
-    el.querySelectorAll('[data-embed-src]').forEach(h=>_embedObs.observe(h));
+    // ⚠️ اتشال تحميل الـ iframes تلقائيًا هنا.
+    // كان كل كارت يظهر في الشاشة يفتح iframe من instagram.com فورًا،
+    // يعني 20 كارت = 20 طلب لموقع خارجي = الصفحة تقف.
+    // دلوقتي الـ iframe بيتحمّل بس لما المستخدم يدوس على زرار التشغيل.
   });
 }
 
@@ -1605,7 +1861,7 @@ function tieScroll(){
 tieScroll();
 
 function renderStats(){
-  const data=clean(CREATORS);
+  const data=cleanList();
   document.getElementById("stats").innerHTML=
     '<div class="stat"><div class="v num">'+data.length.toLocaleString("en")+'</div><div class="l">مؤثر موثّق</div></div>'+
     '<div class="stat"><div class="v num">'+new Set(data.map(c=>c.platform)).size+'</div><div class="l">منصات تواصل</div></div>'+
@@ -1659,9 +1915,7 @@ document.getElementById("f-fol").addEventListener("change",e=>{state.fol=e.targe
 document.getElementById("sort").addEventListener("change",e=>{state.sort=e.target.value;render();});
 document.getElementById("f-contact").addEventListener("change",e=>{state.contact=e.target.value;render();});
 
-function gvizUrl(tab){
-  return "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/gviz/tq?tqx=out:json&sheet="+encodeURIComponent(tab)+"&_="+Date.now();
-}
+// (اتشالت gvizUrl و parseGviz — الموقع مبقاش بيقرا من جوجل شيت خالص)
 function normalizeSheetDate(v){
   if(v==null) return "";
   if(typeof v==="string"){
@@ -1679,62 +1933,37 @@ function normalizeSheetDate(v){
   }
   return String(v).trim();
 }
-function parseGviz(text){
-  const s=text.indexOf("{"), e=text.lastIndexOf("}");
-  if(s<0||e<0) return [];
-  try{
-    const json=JSON.parse(text.substring(s,e+1));
-    if(!json.table) return [];
-    let labels=(json.table.cols||[]).map(c=>String(c.label||"").trim().toLowerCase());
-    let rows=json.table.rows||[];
-    if(!labels.some(Boolean) && rows.length){
-      labels=(rows[0].c||[]).map(c=>c&&c.v!=null?String(c.v).trim().toLowerCase():"");
-      rows=rows.slice(1);
-    }
-    const out=[];
-    for(const r of rows){
-      if(!r||!r.c) continue;
-      const o={};
-      for(let i=0;i<labels.length;i++){ const cell=r.c[i]; o[labels[i]]=cell&&cell.v!=null?cell.v:""; }
-      if(!o.handle) continue;
-      let vids=[];
-      try{ vids=o.videos?JSON.parse(o.videos):[]; }catch(_){ vids=[]; }
-      out.push({
-        uid:String(o.uid||"").toLowerCase(),
-        discoveredAt:normalizeSheetDate(o.discovered_at),
-        assignedTo:String(o.assigned_to||"").trim(),
-        handle:String(o.handle||"").replace(/^@/,""),
-        platform:o.platform||"",
-        followers:Number(o.followers)||0,
-        niche:String(o.niche||"").toLowerCase(),
-        country:o.location||"الخليج",
-        url:o.profile_url||"#",
-        avatar_url:o.avatar_url||"",
-        videos:Array.isArray(vids)?vids:[],
-        top_video_url:o.top_video_url||"",
-        other:o.other_platforms||"",
-        email:o.email||"", whatsapp:o.whatsapp||"", phone:o.phone||"",
-        links:o.links_bio||"", language:o.language||"",
-        priority:o.priority||"", engagement:o.engagement_rate||"",
-        messageStatus:String(o.message_status||"").toLowerCase(), followupCount:parseInt(o.followup_count,10)||0, signupStatus:String(o.signup_status||"").toLowerCase(),
-        igUrl:o.instagram_url||"", ttUrl:o.tiktok_url||"", scUrl:o.snapchat_url||"", twUrl:o.twitter_url||"", ytUrl:o.youtube_url||"", fbUrl:o.facebook_url||""
-      });
-    }
-    return out;
-  }catch(e){
-    console.error('Parse error:', e);
-    return [];
-  }
-}
 function showSkeleton(){
   const g=document.getElementById("grid"); if(!g) return;
   let h=""; for(let i=0;i<8;i++) h+='<div class="skel"><div class="skel-media"></div><div class="skel-body"><div class="skel-line w70"></div><div class="skel-line w45"></div><div class="skel-line w90"></div></div></div>';
   g.innerHTML=h; g.style.display="grid";
 }
 function applyData(all){
-  const filtered=all.filter(c=>c.platform==="snapchat"?true:c.followers>=MIN_FOLLOWERS);
+  const filtered=all.filter(c=>c && (c.platform==="snapchat" || c.followers>=MIN_FOLLOWERS));
   if(filtered.length) CREATORS=filtered;
+  invalidateCache();
   buildAllPills(); renderStats(); render(); updateScrapeCount();
+}
+
+// تحديث في الخلفية من غير ما نمسح الشبكة أو نرجّع المستخدم لفوق.
+// البيانات جاية مرتبة بالمتابعين تنازليًا، والصفحة الأولى فيها الأعلى متابعةً،
+// فأول 24 كارت معروضين مش هيتغيروا خالص — بنحدّث العدد والإحصائيات بس.
+function applyDataSilent(all){
+  const filtered=all.filter(c=>c && (c.platform==="snapchat" || c.followers>=MIN_FOLLOWERS));
+  if(!filtered.length) return;
+  CREATORS=filtered;
+  invalidateCache();
+  try{
+    _list = applyFilters();
+    const shownEl=document.getElementById("shown");
+    if(shownEl) shownEl.textContent=_list.length;
+    renderStats(); updateScrapeCount();
+  }catch(e){}
+}
+let _silentTimer=null;
+function scheduleSilentUpdate(all){
+  clearTimeout(_silentTimer);
+  _silentTimer=setTimeout(()=>applyDataSilent(all), 250);
 }
 const CACHE_KEY="adltix_cache_v1", CACHE_MS=5*60*1000;
 function readCache(){
@@ -1745,97 +1974,94 @@ function readCache(){
     return obj.data;
   }catch(e){ return null; }
 }
-function writeCache(data){ try{ sessionStorage.setItem(CACHE_KEY, JSON.stringify({t:Date.now(),data})); }catch(e){} }
+function writeCache(data){
+  // JSON.stringify على 14 ألف صف لوحدها بتجمّد الصفحة ~300ms،
+  // و sessionStorage حده ~5MB فمش هتقبلهم أصلاً. فبنكاش الصفحة
+  // الأولى بس (الأعلى متابعةً) — دي اللي بتظهر أول ما تفتح الموقع.
+  try{
+    if(!Array.isArray(data)) return;
+    const slice = data.length > 1500 ? data.slice(0,1500) : data;
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify({t:Date.now(),data:slice,partial:data.length>1500}));
+  }catch(e){}
+}
 
 function yieldToMain(){ return new Promise(r=>setTimeout(r,0)); }
 
-// ===== BOOT - FIXED (Load ALL leads first, videos later) =====
-async function boot() {
+// ===== تحميل البيانات من Supabase — نسخة سريعة =====
+//
+// الفكرة: بدل ما نستنى الـ 14,169 صف كلهم يوصلوا قبل ما نعرض أي حاجة،
+// بنجيب أول صفحة (2000 صف) ونعرضها فورًا، وفي نفس اللحظة بنعرف العدد الكلي
+// فنطلب كل الصفحات الباقية **مع بعض في نفس الوقت** مش واحدة ورا التانية.
+// النتيجة: المستخدم بيشوف كروت في أقل من ثانية بدل ما يستنى التحميل كله.
+
+async function fetchLeadsPage(page, pageSize){
+  return await callApi('getLeads', { token: SESSION.token, page, pageSize });
+}
+
+async function loadAllLeads(){
   if(isLoading) return;
-  isLoading=true;
-  
+  isLoading = true;
+
   try{
+    // 1) كاش من آخر 5 دقايق → الشاشة تبان مليانة فورًا (من غير أي انتظار للشبكة)
     const cached = readCache();
-    if (cached && cached.length && !allLeadsLoaded) {
+    if (cached && cached.length){
+      cached.forEach(indexCreator);
       applyData(cached);
       updateUIForRole();
-      isLoading=false;
-      // تحديث البيانات في الخلفية (مع الفيديوهات)
-      refreshAllData();
-      return;
+    } else {
+      showSkeleton();
     }
 
-    showSkeleton();
-    
-    // تحميل البيانات الأساسية أولاً (بدون فيديوهات)
-    const fetchPromises = SHEET_TABS.map(tab => 
-      fetch(gvizUrl(tab))
-        .then(r => r.text())
-        .catch(() => null)
-    );
-    
-    // تحميل أول ورقتين بشكل فوري
-    const firstTwoResults = await Promise.all(fetchPromises.slice(0, 2));
-    let all = [];
-    
-    for (const txt of firstTwoResults) {
-      if (txt) {
-        const rows = parseGviz(txt);
-        if (rows && rows.length) all = all.concat(rows);
-      }
-    }
-    
-    if (all.length) {
-      applyData(all);
-      updateUIForRole();
-      writeCache(all);
-    }
-    
-    // تحميل باقي الأوراق في الخلفية
-    const restPromises = fetchPromises.slice(2);
-    const restResults = await Promise.all(restPromises);
-    
-    for (const txt of restResults) {
-      if (txt) {
-        const rows = parseGviz(txt);
-        if (rows && rows.length) all = all.concat(rows);
-      }
-    }
-    
-    allLeadsLoaded = true;
-    applyData(all);
-    writeCache(all);
+    // 2) أول صفحة — أعلى 2000 متابعةً. دي اللي المستخدم بيشوفها فعلاً.
+    const first = await fetchLeadsPage(0, LEADS_PAGE_SIZE);
+    let all = (first.leads || []).map(mapRawToCard);
+
+    applyData(all);          // أول رسم حقيقي
     updateUIForRole();
-    
+    writeCache(all);         // نكاش دلوقتي وهي لسه صغيرة وسريعة
+
+    const total = Number(first.total) || all.length;
+    const pages = Math.ceil(total / LEADS_PAGE_SIZE);
+
+    // 3) باقي الصفحات: كلها بالتوازي، وكل واحدة توصل بتحدّث العدد
+    //    من غير ما تمسح الشبكة ولا ترجّع المستخدم لفوق
+    if (pages > 1){
+      const jobs = [];
+      for (let i = 1; i < pages; i++){
+        jobs.push(
+          fetchLeadsPage(i, LEADS_PAGE_SIZE)
+            .then(r => {
+              if (r && r.leads && r.leads.length){
+                for (const o of r.leads) all.push(mapRawToCard(o));
+                scheduleSilentUpdate(all);
+              }
+            })
+            .catch(() => null)
+        );
+      }
+      await Promise.all(jobs);
+    }
+
+    allLeadsLoaded = true;
+    clearTimeout(_silentTimer);
+    applyDataSilent(all);
+    buildAllPills();   // أعداد الدول النهائية
+
   }catch(e){
-    console.error('Boot error:', e);
+    console.error('فشل تحميل البيانات:', e);
+    const g = document.getElementById('grid');
+    if (g && !CREATORS.length){
+      g.innerHTML = '<div class="empty" style="display:block"><h3>مش قادر أحمّل البيانات</h3><p>'
+        + String(e.message || e) + '</p></div>';
+      g.style.display = 'block';
+    }
   }finally{
-    isLoading=false;
+    isLoading = false;
   }
 }
 
-async function refreshAllData(){
-  try{
-    const fetchPromises = SHEET_TABS.map(tab => 
-      fetch(gvizUrl(tab))
-        .then(r => r.text())
-        .catch(() => null)
-    );
-    const results = await Promise.all(fetchPromises);
-    let all = [];
-    for (const txt of results) {
-      if (txt) {
-        const rows = parseGviz(txt);
-        if (rows && rows.length) all = all.concat(rows);
-      }
-    }
-    if(all.length > CREATORS.length){
-      allLeadsLoaded = true;
-      applyData(all);
-      writeCache(all);
-    }
-  }catch(e){}
-}
+async function boot(){ return loadAllLeads(); }
 
 function updateUIForRole() {
   const fab = document.getElementById('addLeadFab');
