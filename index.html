@@ -659,6 +659,83 @@
   /* بنستخدم visibility مش display عشان أنيميشن الفتح والقفل يفضل شغال */
   .cf-overlay{ transition:opacity .25s ease, visibility 0s linear .25s }
   .cf-overlay.show{ transition:opacity .25s ease, visibility 0s linear 0s }
+
+  /* ===== إدارة الموظفات ===== */
+  .smrow{
+    display:flex; align-items:center; gap:11px;
+    background:color-mix(in srgb,var(--line) 26%,transparent);
+    border:1px solid var(--line); border-radius:14px;
+    padding:10px 12px; margin-bottom:9px;
+    transition:border-color .15s, background .15s;
+  }
+  .smrow:hover{ border-color:color-mix(in srgb,var(--brand) 35%,var(--line)) }
+  .smrow .smemoji{
+    width:38px; height:38px; border-radius:11px; flex-shrink:0;
+    display:grid; place-items:center; font-size:18px;
+    background:var(--surface); box-shadow:0 2px 6px rgba(0,0,0,.06);
+  }
+  .smrow .smtext{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px }
+  .smrow .smname{
+    font-size:14px; font-weight:800; color:var(--ink);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .smrow .smmail{
+    font-size:11.5px; font-weight:600; color:var(--muted); direction:ltr; text-align:right;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .smrow .smdel{
+    flex:0 0 auto; white-space:nowrap;
+    display:inline-flex; align-items:center; gap:6px;
+    font-family:inherit; font-size:12.5px; font-weight:800;
+    padding:9px 14px; border-radius:11px; cursor:pointer;
+    background:transparent; color:#dc2626; border:1.5px solid #fecaca;
+    transition:.15s;
+  }
+  .smrow .smdel:hover{ background:#dc2626; color:#fff; border-color:#dc2626 }
+  .smrow .smdel:active{ transform:scale(.95) }
+  .smrow .smdel[disabled]{ opacity:.4; pointer-events:none }
+  .smrow .smme{
+    flex:0 0 auto; font-size:11.5px; font-weight:800; white-space:nowrap;
+    padding:9px 13px; border-radius:11px;
+    background:var(--brand-soft); color:var(--brand);
+  }
+
+  /* ===== بلوك إثبات التواصل على الكارت ===== */
+  .pf{
+    margin-top:10px; padding:10px 11px; border-radius:14px;
+    background:color-mix(in srgb,var(--line) 26%,transparent);
+    border:1px solid var(--line);
+  }
+  .pf.is-done{ border-color:#22c55e; background:color-mix(in srgb,#22c55e 9%,transparent) }
+  .pf.is-sub { border-color:#16a34a; background:color-mix(in srgb,#16a34a 13%,transparent);
+               box-shadow:inset 0 0 0 1px rgba(22,163,74,.25) }
+  .pf-head{ display:flex; align-items:center; gap:7px; flex-wrap:wrap }
+  .pf-state{ font-size:11.5px; font-weight:800; padding:4px 10px; border-radius:999px }
+  .pf-state.part{ background:#FEF3C7; color:#B45309 }
+  .pf-state.full{ background:#DCFCE7; color:#15803D }
+  .pf-state.sub { background:#16a34a; color:#fff }
+  body.dark .pf-state.part{ background:#4a3510; color:#fcd34d }
+  body.dark .pf-state.full{ background:#14432a; color:#86efac }
+  .pf-who{ font-size:11.5px; font-weight:800; color:var(--brand) }
+  .pf-when{ font-size:11px; font-weight:600; color:var(--muted); margin-inline-start:auto }
+
+  .pf-shots{ display:flex; align-items:center; gap:7px; margin-top:9px }
+  .pf-shot{
+    position:relative; width:54px; height:54px; flex-shrink:0;
+    border-radius:11px; overflow:hidden; cursor:pointer; padding:0;
+    border:1.5px solid var(--line); background:var(--surface);
+    transition:transform .15s, border-color .15s;
+  }
+  .pf-shot:hover{ transform:translateY(-2px) scale(1.05); border-color:var(--brand) }
+  .pf-shot img{ width:100%; height:100%; object-fit:cover; display:block }
+  .pf-shot.broken img{ display:none }
+  .pf-shot.broken::after{ content:"🖼"; position:absolute; inset:0; display:grid; place-items:center; font-size:20px; opacity:.4 }
+  .pf-num{
+    position:absolute; bottom:2px; inset-inline-start:3px;
+    font-size:9.5px; font-weight:800; color:#fff;
+    background:rgba(0,0,0,.6); padding:1px 5px; border-radius:6px;
+  }
+  .pf-more{ font-size:12px; font-weight:800; color:var(--muted) }
 </style>
 </head>
 <body>
@@ -707,7 +784,7 @@
 
 <div id="staffMgrOverlay" class="cf-overlay">
   <div class="cf-box" style="max-width:460px;text-align:right">
-    <div class="cf-title">👥 إدارة الموظفات</div>
+    <div class="cf-title">👥 إدارة الفريق</div>
     <div class="cf-msg">لما تشيل موظفة، المؤثرين اللي <b>لسه محدش كلّمهم</b> بيتوزعوا على الباقيين. اللي اتبعتلهم رسالة أو اترفعلهم سكرين شوت بيفضلوا مسجّلين باسمها كأرشيف.</div>
     <div id="staffMgrList" style="max-height:44vh;overflow:auto;margin-bottom:14px"></div>
     <div class="lg-err" id="sm-err"></div>
@@ -780,7 +857,7 @@
     <span class="label">لوحة التحكم</span>
     <button class="admin-btn" onclick="openEmployeeModal()">➕ إضافة موظفة</button>
     <button class="admin-btn secondary" onclick="distributeLeads()">🔄 توزيع الـ Leads</button>
-    <button class="admin-btn secondary" onclick="openStaffManager()">👥 إدارة الموظفات</button>
+    <button class="admin-btn secondary" onclick="openStaffManager()">👥 إدارة الفريق</button>
     <span class="spacer"></span>
     <span style="font-size:12px;color:var(--muted);font-weight:600">👤 <span id="adminName">أدمن</span></span>
   </div>
@@ -819,6 +896,8 @@
     <div class="frow"><span class="flabel">المجال</span><div id="f-niche"></div></div>
     <div class="frow"><span class="flabel">المنصة</span><div id="f-platform"></div></div>
     <div class="frow"><span class="flabel">الدولة</span><div id="f-country"></div></div>
+    <div class="frow" id="staffFilterRow" style="display:none"><span class="flabel">الموظفة</span><div id="f-staff"></div></div>
+    <div class="frow" id="proofFilterRow" style="display:none"><span class="flabel">حالة التواصل</span><div id="f-proof"></div></div>
   </div>
 
   <div id="scrapeBanner" class="scrape-banner" style="display:none">
@@ -896,6 +975,7 @@ const FN_MAP = {
   addEmployee:    "add-employee",
   distributeLeads:"distribute-leads",
   removeEmployee: "remove-employee",
+  getProofs:      "get-proofs",
   logAction:      "log-action",
   dashboardStats: "dashboard-stats",
   // الأربعة دول كلهم على نفس الـ function مع اختلاف الـ action جوه الـ body
@@ -926,7 +1006,7 @@ const COUNTRY_SYN={"السعودية":["السعودية","السعوديه","ا
 const COUNTRY_ORDER=["السعودية","الإمارات","الكويت","قطر","مصر","المغرب"];
 function countryBucket(loc){ loc=String(loc||"").toLowerCase(); for(const n of COUNTRY_ORDER){ const syn=COUNTRY_SYN[n]||[n]; if(syn.some(x=>loc.indexOf(String(x).toLowerCase())!==-1)) return n; } return "__other__"; }
 function prioInfo(p){ p=String(p||"").trim().toLowerCase(); if(p==="high"||p==="عالي"||p==="1") return {l:"High",c:"#B8860B"}; if(p==="medium"||p==="متوسط"||p==="2") return {l:"Medium",c:"#f59e0b"}; if(p==="low"||p==="منخفض"||p==="3") return {l:"Low",c:"#9ca3af"}; return null; }
-const state = {niche:"all", platform:"all", country:"all", fol:"all", contact:"all", sort:"fol", q:""};
+const state = {niche:"all", platform:"all", country:"all", fol:"all", contact:"all", staff:"all", proof:"all", sort:"fol", q:""};
 
 // ===== تحسين الأداء =====
 // الفلاتر كانت بتحسب countryBucket لكل صف في كل تفاعل (14,169 صف × 72 مقارنة).
@@ -980,6 +1060,26 @@ function buildAllPills(){
   const data=cleanList();
   const bc={}; for(const c of data){ bc[c._cb]=(bc[c._cb]||0)+1; }
   const cc=(n)=>bc[n]||0;
+  // فلتر الموظفة — للأدمن والمدير بس
+  if(isAdminSession()){
+    const sc={}; data.forEach(c=>{ if(c.assignedTo) sc[c.assignedTo]=(sc[c.assignedTo]||0)+1; });
+    const names=Object.keys(sc).sort();
+    if(names.length){
+      const row=document.getElementById("staffFilterRow"); if(row) row.style.display="";
+      buildPills("f-staff",[{v:"all",l:"الكل ("+data.length+")"}].concat(
+        names.map(n=>({v:n,l:(STAFF_EMOJI[n]||"👤")+" "+n+" ("+sc[n]+")"}))
+      ),"staff");
+    }
+    const prow=document.getElementById("proofFilterRow"); if(prow) prow.style.display="";
+    buildPills("f-proof",[
+      {v:"all",   l:"الكل"},
+      {v:"none",  l:"لسه محدش كلّمه"},
+      {v:"some",  l:"اتبعتله"},
+      {v:"full",  l:"✅ مكتمل (٣ رسايل)"},
+      {v:"sub",   l:"🎉 اشترك"}
+    ],"proof");
+  }
+
   buildPills("f-country",[
     {v:"all",l:"كل الدول ("+data.length+")"},
     {v:"السعودية",l:"🇸🇦 السعودية ("+cc("السعودية")+")"},
@@ -999,6 +1099,7 @@ function applyFilters(){
   // وبيستخدم المفاتيح المحسوبة مسبقًا (_cb / _h / _e / _w)
   const needFilter = scrapingMode || state.niche!=="all" || state.platform!=="all" ||
                      state.country!=="all" || state.fol!=="all" ||
+                     state.staff!=="all" || state.proof!=="all" ||
                      (state.contact && state.contact!=="all") || !!state.q;
 
   if(needFilter){
@@ -1013,6 +1114,15 @@ function applyFilters(){
       if(state.niche!=="all"    && c.niche    !== state.niche)    return false;
       if(state.platform!=="all" && c.platform !== state.platform) return false;
       if(state.country!=="all"  && c._cb      !== state.country)  return false;
+      if(state.staff!=="all"    && c.assignedTo !== state.staff)  return false;
+      if(state.proof!=="all"){
+        const pr = PROOFS[c.uid];
+        const shots = pr ? (pr.shots_count||0) : 0;
+        if(state.proof==="none" && pr)                    return false;
+        if(state.proof==="some" && !pr)                   return false;
+        if(state.proof==="full" && shots < 3)             return false;
+        if(state.proof==="sub"  && !(pr && pr.subscribed_count>0)) return false;
+      }
       if(state.fol!=="all"){
         const snapNoFol = (c.platform==="snapchat" && !c.followers);
         if(!snapNoFol && !(c.followers>=folA && c.followers<folB)) return false;
@@ -1326,6 +1436,7 @@ function card(c){
   html += linksChips(c);
   html += contactRow(c);
   html += crmStatusBadges(c);
+  html += proofHtml(c);
   html += '<div class="actions">';
   html += '<a class="btn primary" href="'+esc(c.url)+'" target="_blank" rel="noopener">زيارة الحساب الرسمي</a>';
   html += '<button class="btn ghost" title="نسخ الحساب" onclick="copyTxt(\'@'+esc(c.handle)+'\',this)">⧉</button>';
@@ -1586,13 +1697,20 @@ async function loadStaffManager(){
     const active=(list||[]).filter(e=>e.active!==false);
     if(!active.length){ box.innerHTML='<div style="padding:18px;text-align:center;color:var(--muted)">مفيش موظفات</div>'; return; }
     box.innerHTML=active.map(e=>{
-      const n=esc(e.name||e.staff_name||'');
-      const me=(SESSION&&SESSION.staffName===((e.name||e.staff_name)))?' disabled title="مينفعش تشيل نفسك"':'';
-      return '<div class="crow" style="margin-bottom:8px">'
-        +'<span class="cic">'+esc(e.emoji||'👤')+'</span>'
-        +'<span class="cval">'+n+(e.username?' <span style="opacity:.55;font-weight:600">· '+esc(e.username)+'</span>':'')+'</span>'
-        +'<button class="cbtn" style="background:#fee2e2;color:#dc2626"'+me
-        +' onclick="removeStaff(this,\''+n+'\')">🗑️ شيل</button></div>';
+      const raw=e.name||e.staff_name||'';
+      const n=esc(raw);
+      const isMe=!!(SESSION && SESSION.staffName===raw);
+      const action = isMe
+        ? '<span class="smme">إنت</span>'
+        : '<button class="smdel" onclick="removeStaff(this,\''+n+'\')">🗑️ حذف</button>';
+      return '<div class="smrow">'
+        +'<span class="smemoji">'+esc(e.emoji||'👤')+'</span>'
+        +'<span class="smtext">'
+          +'<span class="smname">'+n+'</span>'
+          +(e.username?'<span class="smmail">'+esc(e.username)+'</span>':'')
+        +'</span>'
+        + action
+      +'</div>';
     }).join('');
   }catch(err){
     box.innerHTML='';
@@ -1600,22 +1718,22 @@ async function loadStaffManager(){
   }
 }
 async function removeStaff(btn, name){
-  const ok=await showConfirm('تشيل '+name+'؟',
+  const ok=await showConfirm('حذف '+name+' من الفريق؟',
     'المؤثرين اللي لسه محدش كلّمهم هيتوزعوا على الباقيين. اللي اتبعتلهم رسالة هيفضلوا مسجّلين باسمها كأرشيف. وحسابها مش هيقدر يدخل تاني.',
-    'شيلها','danger');
+    'حذف نهائي','danger');
   if(!ok) return;
   btn.disabled=true; btn.textContent='…';
   try{
     const r=await callApi('removeEmployee',{token:SESSION.token,staffName:name});
     const lines=Object.entries(r.staffLeadCount||{}).map(([k,v])=>k+': '+v+' مؤثر').join('\n');
-    alert('✅ اتشالت '+name+'\n\n'
+    alert('✅ اتحذفت '+name+' من الفريق\n\n'
       +'كان عندها: '+(r.hadLeads||0)+' مؤثر\n'
       +'اتوزع على الباقيين: '+(r.redistributed||0)+'\n'
       +'فضل باسمها كأرشيف: '+(r.keptAsHistory||0)+'\n\nالتوزيع الجديد:\n'+lines);
     loadStaffManager();
     boot();
   }catch(err){
-    btn.disabled=false; btn.textContent='🗑️ شيل';
+    btn.disabled=false; btn.textContent='🗑️ حذف';
     document.getElementById('sm-err').textContent=err.message||'حصل خطأ';
   }
 }
@@ -2220,6 +2338,82 @@ function yieldToMain(){ return new Promise(r=>setTimeout(r,0)); }
 // فنطلب كل الصفحات الباقية **مع بعض في نفس الوقت** مش واحدة ورا التانية.
 // النتيجة: المستخدم بيشوف كروت في أقل من ثانية بدل ما يستنى التحميل كله.
 
+// ===== السكرين شوتات =====
+// PROOFS: خريطة uid -> ملخّص الأكشنات (كام رسالة، كام صورة، اشترك ولا لأ)
+// بنجيبها مرة واحدة بعد المؤثرين. المؤثرين اللي لسه محدش لمسهم
+// مش بيرجعوا خالص، فالرد صغير جدًا.
+let PROOFS = {};
+
+async function loadProofs(){
+  try{
+    let page = 0;
+    const map = {};
+    for(;;){
+      const r = await callApi('getProofs', { token: SESSION.token, page });
+      (r.proofs || []).forEach(x => { if(x && x.uid) map[String(x.uid).toLowerCase()] = x; });
+      if(!r.hasMore) break;
+      page++;
+      if(page > 50) break;            // شبكة أمان
+    }
+    PROOFS = map;
+    const n = Object.keys(map).length;
+    if(n){
+      console.log('[adltix] '+n+' مؤثر عليهم أكشنات');
+      render();                        // نعيد الرسم عشان الصور تظهر
+    }
+  }catch(e){
+    console.warn('[adltix] مش قادر أجيب السكرين شوتات:', e.message||e);
+    // مبدأ المشروع: فشل ده مايوقفش الموقع
+  }
+}
+
+function fmtDT(v){
+  if(!v) return '';
+  try{
+    return new Intl.DateTimeFormat('ar-EG',{timeZone:'Africa/Cairo',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(v));
+  }catch(e){ return String(v).slice(0,16); }
+}
+
+// بلوك الإثبات على الكارت
+function proofHtml(c){
+  const pr = PROOFS[c.uid];
+  if(!pr) return '';
+
+  const shots = Array.isArray(pr.shots) ? pr.shots.filter(Boolean) : [];
+  const nShots = pr.shots_count || shots.length || 0;
+  const sent   = pr.sent_count || 0;
+  const fu     = pr.followup_count || 0;
+  const sub    = (pr.subscribed_count || 0) > 0;
+  const done3  = nShots >= 3;
+
+  let head = '';
+  if(sub)         head = '<span class="pf-state sub">🎉 اشترك</span>';
+  else if(done3)  head = '<span class="pf-state full">✅ مكتمل — ٣ رسايل</span>';
+  else            head = '<span class="pf-state part">📩 '+(sent+fu)+' من ٣</span>';
+
+  const who = pr.last_staff ? '<span class="pf-who">'+esc(pr.last_staff)+'</span>' : '';
+  const when = pr.last_action_at ? '<span class="pf-when">'+esc(fmtDT(pr.last_action_at))+'</span>' : '';
+
+  let thumbs = '';
+  if(shots.length){
+    thumbs = '<div class="pf-shots">' + shots.slice(0,3).map((u,i)=>
+      '<button class="pf-shot" title="اضغط للتكبير" onclick="openShot(\''+esc(u)+'\')">'
+      + '<img src="'+esc(u)+'" loading="lazy" decoding="async" onerror="this.parentNode.classList.add(\'broken\')">'
+      + '<span class="pf-num">'+(i+1)+'</span></button>'
+    ).join('') + (shots.length>3 ? '<span class="pf-more">+'+(shots.length-3)+'</span>' : '') + '</div>';
+  }
+
+  return '<div class="pf'+(done3?' is-done':'')+(sub?' is-sub':'')+'">'
+       + '<div class="pf-head">'+head+who+when+'</div>'+thumbs+'</div>';
+}
+
+function openShot(url){
+  const body=document.getElementById("modalBody");
+  document.getElementById("modalTitle").textContent="السكرين شوت";
+  body.innerHTML='<img src="'+esc(url)+'" style="width:100%;border-radius:14px;display:block">';
+  document.getElementById("modal").style.display="flex";
+}
+
 async function fetchLeadsPage(page, pageSize){
   return await callApi('getLeads', { token: SESSION.token, page, pageSize });
 }
@@ -2278,6 +2472,7 @@ async function loadAllLeads(){
       await Promise.all(jobs);
     }
 
+    loadProofs();          // في الخلفية — مش بنستناها
     allLeadsLoaded = true;
     clearTimeout(_silentTimer);
     applyDataSilent(all);
