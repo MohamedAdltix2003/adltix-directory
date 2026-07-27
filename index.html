@@ -613,6 +613,30 @@
 
   /* لمّا الكارت بيتشال، مفيش داعي نستنى أنيميشن طويل */
   .card.removing{ transition-duration:.28s !important }
+
+  /* ===== البوستر البديل لما الصورة تكون منتهية الصلاحية ===== */
+  .media.embed .poster .pfallback{
+    position:absolute; inset:0; z-index:1;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;
+  }
+  .media.embed .poster .pinit{
+    width:96px; height:96px; border-radius:28px;
+    display:grid; place-items:center;
+    font-family:'Space Grotesk','Tajawal',sans-serif;
+    font-size:44px; font-weight:800; color:#fff;
+    background:rgba(255,255,255,.16);
+    box-shadow:inset 0 0 0 2px rgba(255,255,255,.35), 0 12px 30px rgba(0,0,0,.25);
+    backdrop-filter:blur(2px);
+  }
+  .media.embed .poster .phandle{
+    font-size:13.5px; font-weight:800; color:#fff;
+    direction:ltr; letter-spacing:.2px;
+    text-shadow:0 1px 10px rgba(0,0,0,.45);
+    max-width:88%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .media.embed .poster{ cursor:pointer }
+  .media.embed .poster .playbig{ z-index:4 }
+  .media.embed .poster .povl{ z-index:2 }
 </style>
 </head>
 <body>
@@ -849,7 +873,10 @@ const FN_MAP = {
 };
 const ADMIN_ACTIONS = { "delete":"delete", moveToNew:"archive", changeNiche:"changeNiche", approve:"approve", unarchive:"unarchive" };
 
-const LEADS_PAGE_SIZE = 2000;  // أقصى حجم صفحة تسمح بيه الـ backend
+// Supabase بيحدّ أي طلب بـ 1000 صف كحد أقصى (إعداد max-rows).
+// كنا بنطلب 2000 فكان بيرجّع 1000 ويرمي الباقي في صمت —
+// وده اللي كان مخلي الموقع يعرض 7,169 بدل 14,169.
+const LEADS_PAGE_SIZE = 1000;
 const MIN_FOLLOWERS = 0;
 
 const PLAT = {
@@ -1037,14 +1064,41 @@ function dedupeVids(list){
 
 // بوستر خفيف: صورة واحدة (أو تدرّج لوني) + زرار تشغيل.
 // الـ iframe التقيل بيتحمّل بس لما المستخدم يدوس.
+// ===== صور إنستجرام: فحص الصلاحية قبل ما نطلبها =====
+// لينكات CDN بتاعة إنستجرام/فيسبوك فيها بارامتر oe = تاريخ انتهاء
+// مكتوب بالنظام السادس عشر. الصور المخزّنة عندنا انتهت من 30 يونيو،
+// فالمتصفح كان بيبعت آلاف الطلبات وكلها بترجع 403 — ده كان بيخنق الصفحة.
+// دلوقتي بنفحص التاريخ الأول ومنطلبش الميتة خالص.
+const _NOW_TS = Math.floor(Date.now()/1000);
+function avatarUsable(url){
+  if(!url) return false;
+  const u = String(url);
+  const m = u.match(/[?&]oe=([0-9A-Fa-f]+)/);
+  if(m){
+    const exp = parseInt(m[1], 16);
+    if(exp && exp < _NOW_TS) return false;   // منتهية — بلاش نضيّع طلب
+  }
+  return true;
+}
+
+// أول حرف من اسم الحساب — بديل نضيف للصورة الميتة
+function initialOf(c){
+  const h = String(c.handle||'?').replace(/^@/,'');
+  return (h.charAt(0)||'?').toUpperCase();
+}
+
 function posterHtml(c, p){
   const play='<span class="playbig"><svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M8 5v14l11-7z"/></svg></span>';
-  let img='';
-  if(c.avatar_url){
-    img='<img class="pcover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()">';
+  let inner='';
+  if(avatarUsable(c.avatar_url)){
+    inner='<img class="pcover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()">';
+  }else{
+    // بديل بيتفرش فورًا من غير أي طلب شبكة
+    inner='<span class="pfallback"><span class="pinit">'+esc(initialOf(c))+'</span>'
+        + '<span class="phandle">@'+esc(String(c.handle||"").replace(/^@/,""))+'</span></span>';
   }
   return '<div class="poster" onclick="loadEmbed(this.parentNode)" style="background:'+p.g+'">'
-       + img + '<span class="povl"></span>' + play + '</div>';
+       + inner + '<span class="povl"></span>' + play + '</div>';
 }
 
 function stripHtml(c){
@@ -1066,7 +1120,7 @@ function stripHtml(c){
     if(ic){
       return '<div class="media embed ig" data-embed-src="'+esc('https://www.instagram.com/'+ic.kind+'/'+ic.code+'/embed')+'">'+posterHtml(c,p)+'</div>';
     }
-    if(c.avatar_url){
+    if(avatarUsable(c.avatar_url)){
       return '<div class="media shot" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel">انستجرام</span></div>';
     }
     return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="mlabel">انستجرام</span></div>';
@@ -1076,7 +1130,7 @@ function stripHtml(c){
     if(vid){
       return '<div class="media embed tt" data-embed-src="'+esc('https://www.tiktok.com/embed/v2/'+vid)+'">'+posterHtml(c,p)+'</div>';
     }
-    if(c.avatar_url){
+    if(avatarUsable(c.avatar_url)){
       return '<div class="media shot" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel">تيك توك</span></div>';
     }
     return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="mlabel">تيك توك</span></div>';
@@ -1088,7 +1142,7 @@ function stripHtml(c){
       const t='https://i.ytimg.com/vi/'+id[1]+'/hqdefault.jpg';
       return '<div class="media shot" style="background:'+p.g+'" onclick="openVideo(\''+esc(u||c.url)+'\',\'youtube\')"><img class="cover" src="'+esc(t)+'" loading="lazy" onerror="this.remove()"><div class="ovl"></div>'+bigPlay+'</div>';
     }
-    if(c.avatar_url){
+    if(avatarUsable(c.avatar_url)){
       return '<div class="media shot yt" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover ytcover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div>'+bigPlay+'<span class="mlabel">قناة يوتيوب</span></div>';
     }
     return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')">'+bigPlay+'<span class="mlabel">يوتيوب</span></div>';
@@ -1096,7 +1150,7 @@ function stripHtml(c){
   if(c.platform==='snapchat'){
     return '<div class="media snap" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="ghost">👻</span><span class="mlabel dark">افتح سناب</span></div>';
   }
-  if(c.avatar_url){
+  if(avatarUsable(c.avatar_url)){
     return '<div class="media shot" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><img class="cover" src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.remove()"><div class="ovl soft"></div><span class="mlabel">'+p.ar+'</span></div>';
   }
   return '<div class="media fb" style="background:'+p.g+'" onclick="window.open(\''+esc(c.url)+'\',\'_blank\')"><span class="mlabel">'+p.ar+'</span></div>';
@@ -1778,45 +1832,124 @@ async function onApprove(btn){
 }
 
 // ===== Embed loading =====
-const _embedQueue=[]; let _embedActive=0; const EMBED_MAX_CONCURRENT=2;
-function _createIframe(host,src){
-  const f=document.createElement('iframe');
-  f.src=src; f.loading='lazy'; f.className='embedframe';
-  f.setAttribute('scrolling','no'); f.setAttribute('allow','encrypted-media; clipboard-write'); f.setAttribute('allowfullscreen','');
-  host.innerHTML=''; host.appendChild(f);
-  f.addEventListener('load',_embedDone,{once:true});
-  setTimeout(_embedDone,4000);
+// ================================================================
+// تحميل الفيديوهات جوه الكروت — بذكاء
+//
+// المشكلة: كل iframe من إنستجرام/تيك توك بيجيب ~1 ميجا من موقع خارجي.
+// لو حمّلناهم كلهم الصفحة تقف. لو منحمّلهمش، الكروت تبقى فاضية.
+//
+// الحل (زي ما المواقع الكبيرة بتعمل):
+//   • الفيديو بيتحمّل بس لما الكارت يبقى ظاهر فعلاً في الشاشة
+//   • مش بيتحمّل وإنت بتنزّل بسرعة — بيستنى إيدك تقف 250ms
+//   • اتنين في نفس الوقت بحد أقصى
+//   • الفيديو اللي بعُد عن الشاشة شاشتين بيتقفل ويرجع صورة — عشان الذاكرة
+//   • وبرضه تقدر تدوس على أي كارت تشغّله فورًا من غير انتظار
+// ================================================================
+
+const EMBED_MAX_CONCURRENT = 2;
+const EMBED_UNLOAD_DISTANCE = 2.5;      // مضاعفات ارتفاع الشاشة
+const _embedQueue = [];
+const _posterBackup = new WeakMap();    // نحتفظ بالبوستر عشان نرجّعه
+let _embedActive = 0;
+let _scrollIdleTimer = null;
+let _isScrolling = false;
+
+function _createIframe(host, src){
+  const f = document.createElement('iframe');
+  f.src = src; f.loading = 'lazy'; f.className = 'embedframe';
+  f.setAttribute('scrolling','no');
+  f.setAttribute('allow','encrypted-media; clipboard-write');
+  f.setAttribute('allowfullscreen','');
+  const poster = host.querySelector('.poster');
+  if(poster && !_posterBackup.has(host)) _posterBackup.set(host, poster.outerHTML);
+  host.innerHTML = '';
+  host.appendChild(f);
+  f.addEventListener('load', _embedDone, { once:true });
+  setTimeout(_embedDone, 5000);         // شبكة الاحتياط لو الـ iframe معلّق
 }
-function _embedDone(){ _embedActive=Math.max(0,_embedActive-1); _pumpEmbedQueue(); }
+function _embedDone(){ _embedActive = Math.max(0, _embedActive - 1); _pumpEmbedQueue(); }
+
 function _pumpEmbedQueue(){
-  while(_embedActive<EMBED_MAX_CONCURRENT && _embedQueue.length){
-    const {host,src}=_embedQueue.shift();
-    if(!host.isConnected || host.dataset.loaded==='skip') continue;
-    _embedActive++; _createIframe(host,src);
+  while(_embedActive < EMBED_MAX_CONCURRENT && _embedQueue.length){
+    const item = _embedQueue.shift();
+    const host = item.host;
+    if(!host || !host.isConnected){ continue; }
+    if(host.dataset.loaded === 'done'){ continue; }
+    host.dataset.loaded = 'done';
+    _embedActive++;
+    _createIframe(host, item.src);
   }
 }
+
+// بالضغط: أولوية قصوى، بيتخطى الطابور
 function loadEmbed(host){
-  if(!host || host.dataset.loaded) return;
-  const src=host.getAttribute('data-embed-src'); if(!src) return;
-  host.dataset.loaded='1';
-  _embedQueue.push({host,src});
-  requestAnimationFrame(_pumpEmbedQueue);
+  if(!host || host.dataset.loaded === 'done') return;
+  const src = host.getAttribute('data-embed-src'); if(!src) return;
+  host.dataset.loaded = 'done';
+  _embedActive++;
+  _createIframe(host, src);
 }
-let _revealObs=null;
+
+// تلقائي: بيدخل الطابور
+function queueEmbed(host){
+  if(!host || host.dataset.loaded) return;
+  const src = host.getAttribute('data-embed-src'); if(!src) return;
+  host.dataset.loaded = 'queued';
+  _embedQueue.push({ host, src });
+  _pumpEmbedQueue();
+}
+
+// نقفل الفيديوهات البعيدة ونرجّع البوستر — بيحرّر الذاكرة
+function unloadFarEmbeds(){
+  const limit = window.innerHeight * EMBED_UNLOAD_DISTANCE;
+  document.querySelectorAll('.media.embed[data-loaded="done"]').forEach(host => {
+    const r = host.getBoundingClientRect();
+    const dist = (r.top > 0) ? (r.top - window.innerHeight) : -r.bottom;
+    if(dist > limit){
+      const html = _posterBackup.get(host);
+      if(html){ host.innerHTML = html; host.dataset.loaded = ''; }
+    }
+  });
+}
+
+let _revealObs = null, _embedObs = null;
 function ensureObs(){
   if(_revealObs) return;
-  _revealObs=new IntersectionObserver((es)=>{ es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); _revealObs.unobserve(e.target);} }); },{threshold:.08});
-  // _embedObs اتشال — الـ embeds بقت بالضغط بس
+
+  _revealObs = new IntersectionObserver((es)=>{
+    es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); _revealObs.unobserve(e.target); } });
+  }, { threshold:.08 });
+
+  // threshold .25 يعني ربع الكارت على الأقل ظاهر — مش مجرد قرّب
+  _embedObs = new IntersectionObserver((es)=>{
+    es.forEach(e=>{
+      if(!e.isIntersecting) return;
+      if(_isScrolling) return;          // بينزّل بسرعة؟ استنى
+      queueEmbed(e.target);
+    });
+  }, { threshold:.25 });
 }
+
+// لما المستخدم يقف عن التنزيل، نحمّل اللي ظاهر قدامه
+function _onScrollIdle(){
+  _isScrolling = false;
+  document.querySelectorAll('.media.embed:not([data-loaded])').forEach(host=>{
+    const r = host.getBoundingClientRect();
+    if(r.top < window.innerHeight && r.bottom > 0) queueEmbed(host);
+  });
+  unloadFarEmbeds();
+}
+window.addEventListener('scroll', ()=>{
+  _isScrolling = true;
+  clearTimeout(_scrollIdleTimer);
+  _scrollIdleTimer = setTimeout(_onScrollIdle, 250);
+}, { passive:true });
 function observeNew(els){
   ensureObs();
   els.forEach((el,i)=>{
     el.style.transitionDelay=(Math.min(i,6)*30)+'ms';
     _revealObs.observe(el);
-    // ⚠️ اتشال تحميل الـ iframes تلقائيًا هنا.
-    // كان كل كارت يظهر في الشاشة يفتح iframe من instagram.com فورًا،
-    // يعني 20 كارت = 20 طلب لموقع خارجي = الصفحة تقف.
-    // دلوقتي الـ iframe بيتحمّل بس لما المستخدم يدوس على زرار التشغيل.
+    el.querySelectorAll('.media.embed[data-embed-src]').forEach(h=>_embedObs.observe(h));
   });
 }
 
@@ -2022,7 +2155,16 @@ async function loadAllLeads(){
     writeCache(all);         // نكاش دلوقتي وهي لسه صغيرة وسريعة
 
     const total = Number(first.total) || all.length;
-    const pages = Math.ceil(total / LEADS_PAGE_SIZE);
+
+    // الحجم الفعلي اللي السيرفر رضي يرجّعه — مش اللي إحنا طلبناه.
+    // لو Supabase غيّر الحد بعدين، الكود هيتأقلم لوحده بدل ما يفقد بيانات في صمت.
+    const step = (all.length > 0 && all.length < LEADS_PAGE_SIZE && total > all.length)
+                 ? all.length
+                 : LEADS_PAGE_SIZE;
+    const pages = Math.ceil(total / step);
+    if(step !== LEADS_PAGE_SIZE){
+      console.warn('[adltix] السيرفر بيرجّع '+step+' صف بدل '+LEADS_PAGE_SIZE+' — اتأقلمنا.');
+    }
 
     // 3) باقي الصفحات: كلها بالتوازي، وكل واحدة توصل بتحدّث العدد
     //    من غير ما تمسح الشبكة ولا ترجّع المستخدم لفوق
@@ -2030,7 +2172,7 @@ async function loadAllLeads(){
       const jobs = [];
       for (let i = 1; i < pages; i++){
         jobs.push(
-          fetchLeadsPage(i, LEADS_PAGE_SIZE)
+          fetchLeadsPage(i, step)
             .then(r => {
               if (r && r.leads && r.leads.length){
                 for (const o of r.leads) all.push(mapRawToCard(o));
@@ -2047,6 +2189,14 @@ async function loadAllLeads(){
     clearTimeout(_silentTimer);
     applyDataSilent(all);
     buildAllPills();   // أعداد الدول النهائية
+
+    // فحص أمان: لو العدد اللي وصل مش مطابق للعدد في الداتابيز،
+    // يبقى فيه صفحة وقعت. بنكتبها في الـ Console بدل ما تعدّي في صمت.
+    if(all.length !== total){
+      console.warn('[adltix] وصل '+all.length+' من '+total+' — فيه صفحة وقعت.');
+    }else{
+      console.log('[adltix] تمام: '+all.length+' مؤثر اتحمّلوا بالكامل.');
+    }
 
   }catch(e){
     console.error('فشل تحميل البيانات:', e);
