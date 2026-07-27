@@ -637,6 +637,28 @@
   .media.embed .poster{ cursor:pointer }
   .media.embed .poster .playbig{ z-index:4 }
   .media.embed .poster .povl{ z-index:2 }
+
+  /* ==========================================================
+     🔴 إصلاح: الطبقات الشفافة كانت بتبلع كل الضغطات
+     .cf-overlay كانت display:flex + opacity:0 — يعني شفافة
+     بس لسه مفرودة على الشاشة كلها فوق كل حاجة (z-index 9999).
+     addLeadOverlay و employeeOverlay موجودين من أول ما الصفحة
+     تفتح، فكانوا بيمنعوا أي ضغطة توصل للزراير أو الفلاتر.
+     الحل: مختفية بالكامل، وتظهر بس لما تتفتح فعلاً.
+     ========================================================== */
+  .cf-overlay{
+    visibility:hidden !important;      /* مختفية فعليًا */
+    pointer-events:none !important;    /* ومش بتبلع الضغطات */
+    opacity:0;
+  }
+  .cf-overlay.show{
+    visibility:visible !important;
+    pointer-events:auto !important;
+    opacity:1;
+  }
+  /* بنستخدم visibility مش display عشان أنيميشن الفتح والقفل يفضل شغال */
+  .cf-overlay{ transition:opacity .25s ease, visibility 0s linear .25s }
+  .cf-overlay.show{ transition:opacity .25s ease, visibility 0s linear 0s }
 </style>
 </head>
 <body>
@@ -930,7 +952,13 @@ function buildPills(id, items, key){
     const b=document.createElement("button");
     b.className="pill"+(state[key]===it.v?" on":"");
     b.innerHTML = it.dot? '<span class="pdot" style="background:'+it.dot+'"></span>'+it.l : it.l;
-    b.onclick=()=>{ state[key]=it.v; render(); };
+    b.onclick=()=>{
+      state[key]=it.v;
+      // كانت الحالة بتتغيّر بس البيلة مبتتلوّنش، فالمستخدم يحس إن الضغطة ضاعت
+      box.querySelectorAll('.pill').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on');
+      render();
+    };
     box.appendChild(b);
   });
 }
@@ -2221,6 +2249,38 @@ function updateUIForRole() {
     if (fab) fab.style.display = 'none';
   }
 }
+
+// ===== مُبلّغ الأخطاء =====
+// أي خطأ جافاسكريبت بيظهر في شريط أحمر فوق الصفحة بدل ما يعدّي في صمت
+// ويوقف الموقع من غير ما حد يعرف السبب.
+(function(){
+  let bar=null;
+  function show(msg){
+    if(!bar){
+      bar=document.createElement('div');
+      bar.style.cssText='position:fixed;top:0;left:0;right:0;z-index:2147483647;'
+        +'background:#dc2626;color:#fff;font:600 13px/1.5 system-ui,sans-serif;'
+        +'padding:10px 44px 10px 14px;direction:ltr;text-align:left;'
+        +'max-height:32vh;overflow:auto;white-space:pre-wrap;box-shadow:0 4px 20px rgba(0,0,0,.35)';
+      const x=document.createElement('button');
+      x.textContent='×';
+      x.style.cssText='position:absolute;top:6px;right:8px;background:transparent;border:0;'
+        +'color:#fff;font-size:22px;cursor:pointer;line-height:1';
+      x.onclick=()=>bar.remove();
+      bar.appendChild(x);
+      document.body.appendChild(bar);
+    }
+    const line=document.createElement('div');
+    line.textContent='⚠ '+msg;
+    bar.appendChild(line);
+  }
+  window.addEventListener('error', e=>{
+    show((e.message||'خطأ')+'  @'+(e.filename||'').split('/').pop()+':'+e.lineno);
+  });
+  window.addEventListener('unhandledrejection', e=>{
+    show('Promise: '+((e.reason&&(e.reason.message||e.reason))||'مرفوض'));
+  });
+})();
 
 // بدء التطبيق
 (function initAuth(){
