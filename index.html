@@ -1347,6 +1347,57 @@
   /* 9) وصف الهيرو كان باهت */
   .hero p{ color:#5E5763 !important }
   body.dark .hero p{ color:#A39BA5 !important }
+
+  /* ===== نافذة المؤثر الموجود ===== */
+  .dup{ margin-bottom:16px }
+  .dup-card{
+    display:flex; align-items:center; gap:12px;
+    background:color-mix(in srgb,var(--line) 28%,transparent);
+    border:1px solid var(--line); border-radius:15px; padding:12px;
+  }
+  .dup-av{
+    width:58px; height:58px; border-radius:16px; flex-shrink:0; overflow:hidden;
+    display:grid; place-items:center;
+    background:linear-gradient(135deg,var(--brand),var(--brand-2));
+  }
+  .dup-av img{ width:100%; height:100%; object-fit:cover }
+  .dup-init{ color:#fff; font-size:24px; font-weight:800;
+             font-family:'Space Grotesk','Tajawal',sans-serif }
+  .dup-info{ flex:1; min-width:0 }
+  .dup-handle{
+    font-size:15.5px; font-weight:800; color:var(--ink);
+    direction:ltr; text-align:start;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .dup-meta{ font-size:12px; font-weight:600; color:var(--muted); margin-top:2px }
+  .dup-row{ display:flex; align-items:center; gap:7px; margin-top:8px }
+  .dup-lbl{ font-size:11.5px; font-weight:700; color:var(--muted) }
+  .dup-owner{
+    display:inline-flex; align-items:center; gap:5px;
+    font-size:12px; font-weight:800; padding:4px 11px; border-radius:999px;
+    background:var(--brand-soft); color:var(--brand);
+  }
+  .dup-owner.agent{ background:#CCFBF1; color:#0F766E }
+  body.dark .dup-owner.agent{ background:#134E4A; color:#5EEAD4 }
+
+  .dup-state{
+    margin-top:12px; padding:12px 13px; border-radius:13px;
+    font-size:13px; font-weight:700; line-height:1.65;
+  }
+  .dup-state.free  { background:#DCFCE7; color:#15803D }
+  .dup-state.locked{ background:#FEE2E2; color:#B91C1C }
+  .dup-state.mine  { background:var(--brand-soft); color:var(--brand) }
+  body.dark .dup-state.free  { background:#14432a; color:#86efac }
+  body.dark .dup-state.locked{ background:#4a1414; color:#fca5a5 }
+  .dup-why{ font-size:12px; font-weight:600; margin-top:5px; opacity:.9 }
+
+  .dup-link{
+    display:block; text-align:center; margin-top:12px;
+    font-size:12.5px; font-weight:800; color:var(--brand);
+    padding:9px; border-radius:11px; border:1px solid var(--line);
+    transition:.15s;
+  }
+  .dup-link:hover{ background:var(--brand-soft); border-color:var(--brand) }
 </style>
 </head>
 <body>
@@ -1672,6 +1723,7 @@ const FN_MAP = {
   addEmployee:    "add-employee",
   distributeLeads:"distribute-leads",
   removeEmployee: "remove-employee",
+  reassignLead:   "reassign-lead",
   getProofs:      "get-proofs",
   logAction:      "log-action",
   dashboardStats: "dashboard-stats",
@@ -2440,7 +2492,7 @@ async function submitAddLead(){
       manualPhone:     (document.getElementById('al-phone')||{}).value || ''
     });
     btn.disabled=false; btn.textContent='إضافة';
-    if(res.duplicate){ errEl.textContent=res.message||'موجود بالفعل'; return; }
+    if(res.duplicate){ closeAddLeadModal(); showDuplicateBox(res); return; }
     closeAddLeadModal();
     const card=mapRawToCard(res.card);
     CREATORS.unshift(card);
@@ -3249,6 +3301,112 @@ tieScroll();
 
 // شريط تقدّم شخصي للموظفة: بتشوف شغلها في سطر واحد من غير ما تعد بإيدها.
 // وللأدمن مش بيظهر — عنده الفلاتر والداشبورد.
+// ===== نافذة "المؤثر ده موجود بالفعل" =====
+// بدل رسالة خطأ جافة، بنعرض الكارت كامل + صاحبه + حالة التواصل،
+// وزرار نقل لو مسموح. الموظفة تشوف الصورة كاملة وتقرر.
+function showDuplicateBox(res){
+  const c   = res.card || {};
+  const own = res.owner;
+  const la  = res.lastAction;
+
+  const av = avatarUsable(c.avatar_url)
+    ? '<img src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy">'
+    : '<span class="dup-init">'+esc(String(c.handle||'?').replace(/^@/,'').charAt(0).toUpperCase())+'</span>';
+
+  const ownerChip = own
+    ? '<span class="dup-owner"><span>'+(STAFF_EMOJI[own]||'👤')+'</span> '+esc(own)+'</span>'
+    : '<span class="dup-owner agent">🤖 '+AGENT_NAME+'</span>';
+
+  let statusBox;
+  if(res.isMine){
+    statusBox = '<div class="dup-state mine">✅ المؤثر ده معاكي أصلاً — موجود في قايمتك</div>';
+  } else if(res.isLocked){
+    const when = la && la.ts ? fmtDT(la.ts) : '';
+    const who  = (la && la.staff) || own || 'موظفة';
+    statusBox =
+        '<div class="dup-state locked">'
+      +   '<b>🔒 مينفعش يتنقل</b>'
+      +   '<div class="dup-why">'+esc(who)+' تواصلت معاه بالفعل'
+      +     (when ? ' — آخر تحرّك '+esc(when) : '')
+      +     (res.actionCount ? ' · '+res.actionCount+' أكشن مسجّل' : '')
+      +   '</div>'
+      + '</div>';
+  } else {
+    statusBox = '<div class="dup-state free">🟢 لسه محدش كلّمه — تقدر تنقله ليك</div>';
+  }
+
+  const body =
+      '<div class="dup-card">'
+    +   '<div class="dup-av">'+av+'</div>'
+    +   '<div class="dup-info">'
+    +     '<div class="dup-handle">@'+esc(String(c.handle||'').replace(/^@/,''))+'</div>'
+    +     '<div class="dup-meta">'
+    +       ((PLAT[c.platform]||{}).ar || c.platform || '') + ' · '
+    +       fmt(c.followers) + ' متابع'
+    +       (c.location ? ' · '+esc(c.location) : '')
+    +     '</div>'
+    +     '<div class="dup-row"><span class="dup-lbl">مع</span>'+ownerChip+'</div>'
+    +   '</div>'
+    + '</div>'
+    + statusBox
+    + (c.profile_url
+        ? '<a class="dup-link" href="'+esc(c.profile_url)+'" target="_blank" rel="noopener">افتح الحساب ↗</a>'
+        : '');
+
+  showActionBox('المؤثر ده موجود بالفعل', body,
+    res.canReassign ? { label:'🔄 إعادة تخصيص', cls:'ok', fn:()=>doReassign(res.uid) } : null);
+}
+
+async function doReassign(uid, force){
+  try{
+    const r = await callApi('reassignLead', { token: SESSION.token, uid, force: !!force });
+    if(r.alreadyYours){ toastOk(r.message); return; }
+
+    // نحدّث الكارت في الذاكرة فورًا بدل ما نحمّل كل حاجة تاني
+    const item = CREATORS.find(x => x.uid === uid);
+    if(item){ item.assignedTo = r.to; invalidateCache(); }
+    else if(r.card){ CREATORS.unshift(mapRawToCard(r.card)); invalidateCache(); }
+
+    buildAllPills(); renderStats(); renderMyProgress(); render();
+    toastOk(r.message || 'تمت إعادة التخصيص ✅');
+
+    setTimeout(()=>{
+      const el = document.querySelector('.card[data-uid="'+uid+'"]');
+      if(el){ el.classList.add('new-card-flash'); el.scrollIntoView({behavior:'smooth',block:'center'}); }
+    }, 150);
+
+  }catch(e){
+    const msg = String(e.message||'');
+    // الأدمن بينقل مؤثر متواصل معاه؟ نطلب تأكيد صريح
+    if(/أكّد إعادة التخصيص/.test(msg)){
+      showConfirm('إعادة تخصيص رغم التواصل؟',
+        msg.replace(/\s*\[.*?\]$/,''),
+        'أكّد إعادة التخصيص','danger').then(ok=>{ if(ok) doReassign(uid, true); });
+      return;
+    }
+    toastErr(msg);
+  }
+}
+
+// نافذة عامة: محتوى HTML + زرار إجراء اختياري
+function showActionBox(title, innerHtml, action){
+  const ov=document.createElement('div'); ov.className='cf-overlay';
+  ov.innerHTML='<div class="cf-box" style="max-width:420px;text-align:right">'
+    + '<div class="cf-title">'+esc(title)+'</div>'
+    + '<div class="dup">'+innerHtml+'</div>'
+    + '<div class="cf-btns">'
+    +   '<button class="cf-cancel" data-x="0">إغلاق</button>'
+    +   (action ? '<button class="cf-yes '+action.cls+'" data-x="1">'+esc(action.label)+'</button>' : '')
+    + '</div></div>';
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>ov.classList.add('show'));
+  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),220); };
+  ov.addEventListener('click',e=>{ if(e.target===ov) close(); });
+  ov.querySelector('.cf-cancel').onclick=close;
+  const yes=ov.querySelector('.cf-yes');
+  if(yes) yes.onclick=()=>{ close(); if(action&&action.fn) action.fn(); };
+}
+
 // ===== تصدير النتائج المفلترة إلى CSV =====
 // بيصدّر اللي ظاهر قدامك بالظبط بعد الفلترة — مش القاعدة كلها.
 // كله بيحصل في المتصفح: صفر طلبات للسيرفر، وشغّال حتى على 14 ألف صف.
