@@ -1117,14 +1117,7 @@
      ========================================================== */
   /* الويب: عمودين — لوحة تعريفية + كارت الدخول.
      المساحة الفاضية على الجنب كانت شكلها وحش، دلوقتي فيها محتوى مفيد. */
-  #loginGate{
-    display:flex !important;
-    flex-direction:row-reverse !important;
-    align-items:center !important;
-    justify-content:center !important;
-    gap:clamp(24px, 6vw, 90px) !important;
-    padding:24px !important;
-  }
+  
   
   .lg-brand{
     font-size:clamp(26px,3.4vw,38px); font-weight:900; line-height:1.25;
@@ -1363,7 +1356,16 @@
   body.gate-open .to-top,
   body.gate-open .bgfx{ display:none !important }
 
-  #loginGate{ overflow-y:auto }
+  /* عمود واحد: الروبوت فوق، الترحيب، وبعدين الكارت */
+  #loginGate{
+    flex-direction:column !important;
+    align-items:center !important;
+    justify-content:center !important;
+    gap:0 !important;
+    overflow-y:auto;
+  }
+  #loginGate .lg-bot{ margin:0 0 4px }
+  #loginGate .lg-welcome{ margin:0 0 18px }
 
 </style>
 </head>
