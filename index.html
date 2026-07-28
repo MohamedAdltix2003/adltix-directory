@@ -4790,7 +4790,7 @@ async function startImport(){
 
   const total  = _impRows.length;
   const chunks = Math.ceil(total / IMPORT_CHUNK);
-  let batchId = 0, added = 0, dups = 0, bad = 0, done = 0;
+  let batchId = 0, added = 0, dups = 0, bad = 0, done = 0, enriched = 0, toAgent = 0;
   const failed = [];
 
   body.innerHTML =
@@ -4813,6 +4813,9 @@ async function startImport(){
       });
       batchId = r.batchId;
       added += r.chunk.added; dups += r.chunk.duplicates; bad += r.chunk.invalid;
+      // 🐞 دول مكانوش بيتجمّعوا خالص — فالشرايح مكانتش بتظهر
+      enriched += Number(r.chunk.enriched || 0);
+      toAgent  += Number(r.chunk.toAgent  || 0);
       (r.rows||[]).forEach(x=>{ if(x.status !== 'added') failed.push(x); });
     }catch(e){
       // دفعة فشلت؟ نكمّل الباقي بدل ما نوقف كل حاجة
@@ -4825,12 +4828,14 @@ async function startImport(){
     fill.style.width = pct + '%';
     stat.textContent = 'خلصنا ' + done.toLocaleString('en') + ' من ' + total.toLocaleString('en') + ' (' + pct + '%)';
     nums.innerHTML = '<span class="in-ok">✅ '+added+'</span>'
+                   + (enriched ? '<span class="in-enr">✨ '+enriched+'</span>' : '')
+                   + (toAgent  ? '<span class="in-agt">🤖 '+toAgent+'</span>'  : '')
                    + '<span class="in-dup">🔁 '+dups+'</span>'
                    + '<span class="in-bad">⚠️ '+bad+'</span>';
   }
 
   _impBusy = false;
-  showImportResult({ batchId, total, added, dups, bad, failed });
+  showImportResult({ batchId, total, added, dups, bad, enriched, toAgent, failed });
   if(added) boot();          // نحمّل الكروت الجديدة
 }
 
