@@ -1367,6 +1367,89 @@
   #loginGate .lg-bot{ margin:0 0 4px }
   #loginGate .lg-welcome{ margin:0 0 18px }
 
+
+  /* ===== نتيجة البحث العام ===== */
+  .gl{
+    background:var(--surface); border:1px solid var(--line);
+    border-radius:20px; padding:20px; margin-bottom:18px;
+    box-shadow:var(--shadow);
+    animation:glIn .35s cubic-bezier(.2,.7,.2,1);
+  }
+  @keyframes glIn{ from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:none} }
+
+  .gl-head{
+    font-size:11.5px; font-weight:800; color:var(--muted);
+    letter-spacing:.5px; margin-bottom:13px;
+  }
+  .gl-load{
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    padding:14px; font-size:13px; font-weight:700; color:var(--muted);
+  }
+
+  .gl-card{
+    display:flex; align-items:center; gap:13px;
+    background:color-mix(in srgb,var(--line) 26%,transparent);
+    border:1px solid var(--line); border-radius:16px; padding:13px;
+  }
+  .gl-av{
+    width:62px; height:62px; border-radius:17px; flex-shrink:0; overflow:hidden;
+    display:grid; place-items:center;
+    background:linear-gradient(135deg,var(--brand),var(--brand-2));
+  }
+  .gl-av img{ width:100%; height:100%; object-fit:cover }
+  .gl-init{ color:#fff; font-size:26px; font-weight:800;
+            font-family:'Space Grotesk','Tajawal',sans-serif }
+  .gl-info{ flex:1; min-width:0 }
+  .gl-handle{
+    font-size:16px; font-weight:800; color:var(--ink);
+    direction:ltr; text-align:start;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .gl-meta{ font-size:12px; font-weight:600; color:var(--muted); margin-top:3px }
+  .gl-row{ display:flex; align-items:center; gap:7px; margin-top:9px }
+  .gl-lbl{ font-size:11.5px; font-weight:700; color:var(--muted) }
+  .gl-owner{
+    display:inline-flex; align-items:center; gap:5px;
+    font-size:12px; font-weight:800; padding:4px 11px; border-radius:999px;
+    background:var(--brand-soft); color:var(--brand);
+  }
+  .gl-owner.agent{ background:#CCFBF1; color:#0F766E }
+  body.dark .gl-owner.agent{ background:#134E4A; color:#5EEAD4 }
+
+  .gl-note{
+    margin-top:13px; padding:13px 14px; border-radius:14px;
+    font-size:13px; font-weight:700; line-height:1.7;
+  }
+  .gl-note b{ display:block; margin-bottom:3px }
+  .gl-note span{ display:block; font-size:12.5px; font-weight:600; opacity:.9 }
+  .gl-note.locked{ background:#FEE2E2; color:#B91C1C }
+  .gl-note.free  { background:#FEF3C7; color:#92400E }
+  .gl-note.agent { background:#CCFBF1; color:#0F766E }
+  .gl-note.mine  { background:var(--brand-soft); color:var(--brand) }
+  .gl-note.arch  { background:color-mix(in srgb,var(--line) 45%,transparent); color:var(--ink) }
+  body.dark .gl-note.locked{ background:#4a1414; color:#fca5a5 }
+  body.dark .gl-note.free  { background:#4a3510; color:#fcd34d }
+  body.dark .gl-note.agent { background:#134E4A; color:#5EEAD4 }
+
+  .gl-link{
+    display:block; text-align:center; margin-top:13px;
+    font-size:13px; font-weight:800; color:var(--brand);
+    padding:11px; border-radius:12px; border:1px solid var(--line);
+    transition:.15s;
+  }
+  .gl-link:hover{ background:var(--brand-soft); border-color:var(--brand) }
+
+  .gl-none{ text-align:center; padding:12px 8px }
+  .gl-ni{ font-size:34px; margin-bottom:10px }
+  .gl-none h3{ font-size:16px; font-weight:800; color:var(--ink); margin-bottom:7px }
+  .gl-none p{ font-size:13px; font-weight:600; color:var(--muted); line-height:1.75 }
+  .gl-none b{ color:var(--brand) }
+
+  @media (max-width:640px){
+    .gl{ padding:16px }
+    .gl-av{ width:54px; height:54px }
+    .gl-handle{ font-size:14.5px }
+  }
 </style>
 </head>
 <body>
@@ -1621,6 +1704,8 @@
     <span class="lm-spin"></span>
     <span>جاري تحميل المزيد…</span>
   </div>
+  <div id="globalLookup" class="gl" style="display:none"></div>
+
   <div class="empty" id="empty" style="display:none">
     <div class="ei"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#E4553F" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></div>
     <h3>لا توجد نتائج مطابقة</h3>
@@ -1691,6 +1776,7 @@ const FN_MAP = {
   distributeLeads:"distribute-leads",
   removeEmployee: "remove-employee",
   reassignLead:   "reassign-lead",
+  lookupLead:     "lookup-lead",
   getProofs:      "get-proofs",
   logAction:      "log-action",
   dashboardStats: "dashboard-stats",
@@ -1733,9 +1819,39 @@ const state = {niche:"all", platform:"all", country:"all", fol:"all", contact:"a
 // ===== تحسين الأداء =====
 // الفلاتر كانت بتحسب countryBucket لكل صف في كل تفاعل (14,169 صف × 72 مقارنة).
 // دلوقتي بنحسب كل المفاتيح دي مرة واحدة وقت التحميل ونخزّنها على الكائن نفسه.
+// بتحوّل اللي المستخدم كتبه لاسم حساب قابل للمقارنة.
+// بتفهم: @name · name · لينك كامل من إنستجرام/تيك توك/سناب/يوتيوب/تويتر
+function searchKey(v){
+  let t = String(v || "").trim().toLowerCase();
+  if(!t) return "";
+
+  // لينك كامل؟ نطلّع منه اسم الحساب
+  if(/^https?:\/\//.test(t) || /(instagram|tiktok|snapchat|youtube|twitter|x)\.com/.test(t)){
+    let m;
+    if((m = t.match(/tiktok\.com\/@([a-z0-9._-]+)/)))            return m[1];
+    if((m = t.match(/instagram\.com\/([a-z0-9._]+)/)))            return m[1];
+    if((m = t.match(/snapchat\.com\/(?:add\/|@)?([a-z0-9._-]+)/))) return m[1];
+    if((m = t.match(/youtube\.com\/@([a-z0-9._-]+)/)))            return m[1];
+    if((m = t.match(/(?:twitter|x)\.com\/([a-z0-9._]+)/)))        return m[1];
+    // أي لينك تاني: ناخد آخر جزء في المسار
+    t = t.replace(/[?#].*$/, "").replace(/\/+$/, "");
+    const parts = t.split("/");
+    return (parts[parts.length - 1] || "").replace(/^@+/, "");
+  }
+
+  return t.replace(/^@+/, "");
+}
+
 function indexCreator(c){
   c._cb = countryBucket(c.country);                    // الدولة (كانت أغلى عملية)
-  c._h  = String(c.handle||"").toLowerCase();          // للبحث
+  c._h  = String(c.handle||"").toLowerCase();
+  // 🔎 حقل بحث واحد مدموج بدل 4 حقول منفصلة.
+  // السبب: 4 عمليات indexOf على 14 ألف صف = ~19ms لكل حرف تكتبه،
+  // وده فوق حد الإطار (16ms) فبيبان تهزيز. عملية واحدة = ~5ms.
+  c._s  = (c._h + " " +
+           c._h.replace(/^@+/, "") + " " +
+           String(c.full_name||"").toLowerCase() + " " +
+           String(c.uid||"").toLowerCase());
   const e = !!(c.email && String(c.email).trim());
   const w = !!((c.whatsapp && String(c.whatsapp).trim()) || (c.phone && String(c.phone).trim()));
   c._e = e; c._w = w;                                  // وسيلة التواصل
@@ -1877,7 +1993,8 @@ function applyFilters(){
         if(ct==="both"     && !(c._e && c._w)) return false;
         if(ct==="none"     && (c._e || c._w))  return false;
       }
-      if(q && c._h.indexOf(q) === -1) return false;
+      // بحث واحد على الحقل المدموج: الحساب بالـ @ ومن غيره + الاسم + الـ uid
+      if(q && c._s.indexOf(q) === -1) return false;
       return true;
     });
     copied = true;
@@ -3230,7 +3347,110 @@ function render(){
     console.error('Render error:', e);
   }finally{
     isRendering=false;
+    maybeGlobalLookup();
   }
+}
+
+// ===== البحث العام =====
+// الموظفة بتشوف كروتها هي بس. فلو بحثت عن مؤثر عند زميلتها،
+// كان بيطلعلها "مفيش نتايج" فتفتكر إنه مش موجود وتضيفه من الأول.
+// دلوقتي أول ما البحث ميجيبش حاجة، بندوّر في القاعدة كلها ونقولها
+// هو مع مين — كارت للقراءة بس، من غير أي زراير.
+let _glTimer = null, _glLast = "";
+
+function clearGlobalLookup(){
+  const box = document.getElementById('globalLookup');
+  if(box){ box.style.display='none'; box.innerHTML=''; }
+  _glLast = "";
+}
+
+function maybeGlobalLookup(){
+  const box = document.getElementById('globalLookup');
+  if(!box) return;
+
+  const q = state.q || "";
+  // بندوّر بس لو فيه بحث ومفيش أي نتيجة محلية
+  if(!q || q.length < 2 || _list.length){ clearGlobalLookup(); return; }
+  if(q === _glLast) return;              // نفس البحث — منكررش الطلب
+  _glLast = q;
+
+  clearTimeout(_glTimer);
+  _glTimer = setTimeout(async () => {
+    box.style.display = '';
+    box.innerHTML = '<div class="gl-load"><span class="lm-spin"></span> بندوّر في قاعدة البيانات كلها…</div>';
+    try{
+      const r = await callApi('lookupLead', { token: SESSION.token, query: q });
+      if(state.q !== q) return;          // المستخدم غيّر البحث — نتجاهل الرد
+      renderGlobalLookup(r, q);
+    }catch(e){
+      box.innerHTML = '<div class="gl-load">مش قادر أدوّر دلوقتي — جرّب تاني</div>';
+    }
+  }, 450);
+}
+
+function renderGlobalLookup(r, q){
+  const box = document.getElementById('globalLookup');
+  if(!box) return;
+
+  // مش موجود خالص
+  if(!r || !r.found){
+    box.innerHTML =
+        '<div class="gl-none">'
+      +   '<div class="gl-ni">🔍</div>'
+      +   '<h3>المؤثر ده مش موجود عندنا</h3>'
+      +   '<p>مالقيناهوش في قاعدة البيانات. تقدر تضيفه دلوقتي من زرار '
+      +     '<b>إضافة مؤثر</b> فوق، وهيتسجّل باسمك.</p>'
+      + '</div>';
+    return;
+  }
+
+  const c   = r.card || {};
+  const own = r.owner;
+
+  const av = avatarUsable(c.avatar_url)
+    ? '<img src="'+esc(c.avatar_url)+'" referrerpolicy="no-referrer" loading="lazy">'
+    : '<span class="gl-init">'+esc(String(c.handle||'?').replace(/^@/,'').charAt(0).toUpperCase())+'</span>';
+
+  const ownerChip = own
+    ? '<span class="gl-owner"><span>'+(STAFF_EMOJI[own]||'👤')+'</span> '+esc(own)+'</span>'
+    : '<span class="gl-owner agent">🤖 '+AGENT_NAME+'</span>';
+
+  let note;
+  if(r.isMine){
+    note = '<div class="gl-note mine">✅ المؤثر ده معاكي — بس مش ظاهر بسبب الفلاتر الشغالة. جرّب تمسحها.</div>';
+  } else if(r.archived){
+    note = '<div class="gl-note arch">📦 المؤثر ده متأرشف. تقدر ترجّعه لو ضفت اللينك بتاعه من زرار الإضافة.</div>';
+  } else if(r.agentOwned){
+    note = '<div class="gl-note agent">🤖 المؤثر ده محجوز للـ '+AGENT_NAME+' — عنده إيميل أو واتساب والأجنت بيكلّمه أوتوماتيك.</div>';
+  } else if(r.isLocked){
+    const when = r.lastAction && r.lastAction.ts ? fmtDT(r.lastAction.ts) : '';
+    note = '<div class="gl-note locked"><b>🔒 المؤثر ده تبع '+esc(own)+'</b>'
+         + '<span>وبعتتله بالفعل'+(when ? ' — آخر تحرّك '+esc(when) : '')
+         + (r.actionCount ? ' · '+r.actionCount+' أكشن مسجّل' : '')+'</span></div>';
+  } else {
+    note = '<div class="gl-note free"><b>المؤثر ده مع '+esc(own)+'</b>'
+         + '<span>لسه محدش كلّمه. لو محتاجاه، ضيفي اللينك بتاعه من زرار الإضافة واطلبي إعادة تخصيص.</span></div>';
+  }
+
+  box.innerHTML =
+      '<div class="gl-head">نتيجة من قاعدة البيانات</div>'
+    + '<div class="gl-card">'
+    +   '<div class="gl-av">'+av+'</div>'
+    +   '<div class="gl-info">'
+    +     '<div class="gl-handle">@'+esc(String(c.handle||'').replace(/^@/,''))+'</div>'
+    +     '<div class="gl-meta">'
+    +       ((PLAT[c.platform]||{}).ar || c.platform || '')
+    +       ' · '+fmt(c.followers)+' متابع'
+    +       (c.location ? ' · '+esc(c.location) : '')
+    +       (c.niche ? ' · '+esc(NICHE_AR[c.niche]||c.niche) : '')
+    +     '</div>'
+    +     '<div class="gl-row"><span class="gl-lbl">مع</span>'+ownerChip+'</div>'
+    +   '</div>'
+    + '</div>'
+    + note
+    + (c.profile_url
+        ? '<a class="gl-link" href="'+esc(c.profile_url)+'" target="_blank" rel="noopener">زيارة الحساب ↗</a>'
+        : '');
 }
 
 // ⚠️ الاسم كان scrollTop وده متعارض مع خاصية موجودة أصلاً في المتصفح
@@ -3599,7 +3819,7 @@ let _searchDebounce;
 document.getElementById("q").addEventListener("input",e=>{
   const v=e.target.value;
   clearTimeout(_searchDebounce);
-  _searchDebounce=setTimeout(()=>{ state.q=v; render(); },200);
+  _searchDebounce=setTimeout(()=>{ state.q=searchKey(v); render(); },200);
 });
 document.getElementById("f-fol").addEventListener("change",e=>{state.fol=e.target.value;render();});
 document.getElementById("sort").addEventListener("change",e=>{state.sort=e.target.value;render();});
