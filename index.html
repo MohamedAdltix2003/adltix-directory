@@ -1618,6 +1618,25 @@
   body.dark .pf-state.lost{ background:#4a1414; color:#fca5a5 }
   body.dark .pf-state.done{ background:#2E1065; color:#C4B5FD }
   .pf.is-lost{ border-color:#DC2626; background:color-mix(in srgb,#DC2626 8%,transparent) }
+
+  /* ===== موعد المتابعة الجاية ===== */
+  .nf{
+    display:flex; align-items:center; gap:10px;
+    padding:9px 12px; border-radius:12px;
+    font-size:12.5px; font-weight:700;
+  }
+  .nf-i{ font-size:16px; flex-shrink:0 }
+  .nf-t{ display:flex; flex-direction:column; line-height:1.4 }
+  .nf-t b{ font-size:12.5px; font-weight:800 }
+  .nf-t span{
+    font-size:11px; font-weight:600; opacity:.8;
+    direction:ltr; unicode-bidi:isolate; text-align:start;
+  }
+  .nf.due  { background:#FEE2E2; color:#B91C1C }
+  .nf.soon { background:#FEF3C7; color:#B45309 }
+  .nf.later{ background:color-mix(in srgb,var(--line) 34%,transparent); color:var(--muted) }
+  body.dark .nf.due { background:#4a1414; color:#fca5a5 }
+  body.dark .nf.soon{ background:#4a3510; color:#fcd34d }
 </style>
 </head>
 <body>
@@ -1842,7 +1861,7 @@
     <div class="frow"><span class="flabel">المنصة</span><div id="f-platform"></div></div>
     <div class="frow"><span class="flabel">الدولة</span><div id="f-country"></div></div>
     <div class="frow" id="staffFilterRow" style="display:none"><span class="flabel">الموظفة</span><div id="f-staff"></div></div>
-    <div class="frow" id="proofFilterRow" style="display:none"><span class="flabel">حالة التواصل</span><div id="f-proof"></div></div>
+    <div class="frow" id="proofFilterRow" style="display:none"><span class="flabel">واقف عند</span><div id="f-proof"></div></div>
   </div>
 
   <div id="scrapeBanner" class="scrape-banner" style="display:none">
@@ -2083,21 +2102,37 @@ function buildAllPills(){
   }
 
   // ===== فلتر المرحلة =====
-  // بيوضّح كل مؤثر واقف فين في خط سير الصفقة، بالعدد جنب كل مرحلة.
+  // العدّاد بيحسب "مين عدّى المرحلة دي" مش "مين واقف عندها" —
+  // عشان المؤثر اللي اتخصص يفضل محسوب في "اتبعت" برضه.
   {
-    const cnt = { new:0, sent:0, followup:0, subscribed:0, approved:0, allocated:0, not_subscribed:0 };
-    for(const c of data){ const st = leadStage(c); if(cnt[st] !== undefined) cnt[st]++; }
+    let cNew=0, cSent=0, cFu=0, cSub=0, cApp=0, cAlloc=0, cLost=0;
+    for(const c of data){
+      const st = leadStage(c);
+      if(st === 'new'){ cNew++; continue; }
+      if(st === 'not_subscribed'){
+        cLost++;
+        if(reachedRankOf(c) >= 1) cSent++;
+        if(reachedRankOf(c) >= 2) cFu++;
+        continue;
+      }
+      const r = STAGE_RANK[st] ?? 0;
+      if(r >= 1) cSent++;
+      if(r >= 2) cFu++;
+      if(r >= 3) cSub++;
+      if(r >= 4) cApp++;
+      if(r >= 5) cAlloc++;
+    }
 
     const prow=document.getElementById("proofFilterRow"); if(prow) prow.style.display="";
     buildPills("f-proof",[
       {v:"all",            l:"الكل ("+data.length+")"},
-      {v:"new",            l:"⚪ لسه محدش كلّمه ("+cnt.new+")"},
-      {v:"sent",           l:"📩 اتبعت ("+cnt.sent+")"},
-      {v:"followup",       l:"🔄 في المتابعة ("+cnt.followup+")"},
-      {v:"subscribed",     l:"🎉 اشترك ("+cnt.subscribed+")"},
-      {v:"approved",       l:"✅ تمت الموافقة ("+cnt.approved+")"},
-      {v:"allocated",      l:"🎯 تم التخصيص ("+cnt.allocated+")"},
-      {v:"not_subscribed", l:"❌ مفيش اشتراك ("+cnt.not_subscribed+")"}
+      {v:"new",            l:"⚪ لسه محدش كلّمه ("+cNew+")"},
+      {v:"sent",           l:"📩 اتبعت ("+cSent+")"},
+      {v:"followup",       l:"🔄 في المتابعة ("+cFu+")"},
+      {v:"subscribed",     l:"🎉 اشترك ("+cSub+")"},
+      {v:"approved",       l:"✅ تمت الموافقة ("+cApp+")"},
+      {v:"allocated",      l:"🎯 تم التخصيص ("+cAlloc+")"},
+      {v:"not_subscribed", l:"❌ مفيش اشتراك ("+cLost+")"}
     ],"proof");
   }
 
@@ -2141,7 +2176,10 @@ function applyFilters(){
         else if(c.assignedTo !== state.staff) return false;
       }
       // فلتر المرحلة
-      if(state.proof!=="all" && leadStage(c) !== state.proof) return false;
+      if(state.proof!=="all"){
+        if(state.proof === 'new'){ if(leadStage(c) !== 'new') return false; }
+        else if(!reachedStage(c, state.proof)) return false;
+      }
 
       return true;
     });
@@ -2486,6 +2524,55 @@ const STAGE_AR = {
 };
 const REASON_AR = { fixed:'طلب سعر ثابت', gifts:'طلب هدايا', other:'سبب تاني' };
 
+// ===== موعد المتابعة الجاية =====
+// أهم حاجة للموظفة: تعرف تبعت لمين النهاردة من غير ما تفتح كل كارت.
+// الفاصل بين المتابعات يومين — بيتحسب من آخر تحرّك.
+const FOLLOWUP_GAP_DAYS = 2;
+
+function nextFollowupInfo(c){
+  const pr = PROOFS[c.uid] || {};
+  const st = leadStage(c);
+  if(st === 'new' || st === 'subscribed' || st === 'approved'
+     || st === 'allocated' || st === 'not_subscribed') return null;
+
+  const fu = Math.min(5, pr.followup_count || c.followupCount || 0);
+  if(fu >= 5) return null;
+
+  const last = (fu > 0 ? actionDate(c.uid,'followup',fu) : actionDate(c.uid,'sent'))
+             || pr.last_action_at;
+  if(!last) return null;
+
+  const due = new Date(last);
+  due.setDate(due.getDate() + FOLLOWUP_GAP_DAYS);
+
+  const now  = new Date();
+  const ms   = due - now;
+  const days = Math.ceil(ms / 86400000);
+
+  let state, text;
+  if(ms <= 0){
+    const late = Math.abs(Math.floor(ms / 86400000));
+    state = 'due';
+    text  = late >= 1 ? ('متأخرة ' + late + ' يوم') : 'موعدها دلوقتي';
+  } else if(days <= 1){
+    state = 'soon'; text = 'خلال يوم';
+  } else {
+    state = 'later'; text = 'بعد ' + days + ' يوم';
+  }
+  return { n: fu + 1, due, state, text };
+}
+
+function nextFollowupHtml(c){
+  const i = nextFollowupInfo(c);
+  if(!i) return '';
+  const ICON = { due:'🔔', soon:'⏰', later:'📅' };
+  return '<div class="nf '+i.state+'">'
+       +   '<span class="nf-i">'+ICON[i.state]+'</span>'
+       +   '<span class="nf-t"><b>متابعة '+i.n+' — '+esc(i.text)+'</b>'
+       +     '<span>'+esc(fmtShort(i.due))+'</span></span>'
+       + '</div>';
+}
+
 function crmActionsRow(c){
   if (!c || !c.uid) return '';
   const u  = esc(c.uid);
@@ -2551,9 +2638,35 @@ function crmActionsRow(c){
 
   return '<div class="crm-actions">'
     + '<div class="crm-row">' + btn('sent','sent','📩','اتبعت', sentDone) + '</div>'
+    + nextFollowupHtml(c)
     + '<div class="crm-fu"><span class="fulbl">متابعات</span><div class="fulist">'+fus+'</div></div>'
     + finalRow
     + '</div>';
+}
+
+// ترتيب المراحل — الفلتر بيستخدمه عشان يعرف مين "عدّى" المرحلة
+const STAGE_RANK = {
+  new:0, sent:1, followup:2, subscribed:3, approved:4, allocated:5, not_subscribed:3
+};
+
+// هل المؤثر ده وصل للمرحلة دي (أو عدّاها)؟
+// مهم: اللي اتخصص يبقى برضه "اتبعتله" — من غير كده العدّادات بتطلع أصفار
+// مضلّلة زي ما حصل: اتبعت(0) رغم إن التلاتة اتبعتلهم فعلاً.
+function reachedStage(c, stage){
+  const cur = leadStage(c);
+  if(stage === 'not_subscribed') return cur === 'not_subscribed';
+  if(cur === 'not_subscribed'){
+    // اللي ضاع: عدّى الإرسال والمتابعات بس، مش الاشتراك وما بعده
+    return STAGE_RANK[stage] <= 2 && (STAGE_RANK[stage] <= reachedRankOf(c));
+  }
+  return (STAGE_RANK[cur] ?? 0) >= (STAGE_RANK[stage] ?? 0);
+}
+
+function reachedRankOf(c){
+  const pr = PROOFS[c.uid] || {};
+  if((pr.followup_count || c.followupCount || 0) > 0) return 2;
+  if(pr.sent_count || String(c.messageStatus||'').toLowerCase()==='sent') return 1;
+  return 0;
 }
 
 // المرحلة الحالية للمؤثر — بتتحسب محليًا عشان الفلاتر
