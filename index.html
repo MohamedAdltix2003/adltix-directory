@@ -3945,6 +3945,12 @@ function render(){
 let _glTimer = null, _glLast = "";
 
 function clearGlobalLookup(){
+  // ⚠️ لازم نلغي الطلب المجدول كمان.
+  // من غير كده: البحث بيلاقي صفر للحظة (قبل ما البيانات تكمّل تحميل)
+  // فيجدول بحث عام، وبعدين النتيجة الحقيقية بتظهر — والطلب المجدول
+  // بيفضل شغال ويكتب فوقها. ده اللي خلّى كارت البحث العام يظهر
+  // للأدمن مع إن الكارت الحقيقي موجود.
+  clearTimeout(_glTimer);
   const box = document.getElementById('globalLookup');
   if(box){ box.style.display='none'; box.innerHTML=''; }
   _glLast = "";
@@ -3962,11 +3968,14 @@ function maybeGlobalLookup(){
 
   clearTimeout(_glTimer);
   _glTimer = setTimeout(async () => {
+    // آخر فرصة نتراجع: لو ظهرت نتيجة محلية خلال الـ 450ms
+    if(_list.length || state.q !== q){ clearGlobalLookup(); return; }
     box.style.display = '';
     box.innerHTML = '<div class="gl-load"><span class="lm-spin"></span> بندوّر في قاعدة البيانات كلها…</div>';
     try{
       const r = await callApi('lookupLead', { token: SESSION.token, query: q });
-      if(state.q !== q) return;          // المستخدم غيّر البحث — نتجاهل الرد
+      // فحص مزدوج: البحث اتغيّر؟ ولا ظهرت نتايج محلية وإحنا مستنيين؟
+      if(state.q !== q || _list.length){ clearGlobalLookup(); return; }
       renderGlobalLookup(r, q);
     }catch(e){
       box.innerHTML = '<div class="gl-load">مش قادر أدوّر دلوقتي — جرّب تاني</div>';
