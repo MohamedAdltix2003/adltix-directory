@@ -1637,6 +1637,12 @@
   .nf.later{ background:color-mix(in srgb,var(--line) 34%,transparent); color:var(--muted) }
   body.dark .nf.due { background:#4a1414; color:#fca5a5 }
   body.dark .nf.soon{ background:#4a3510; color:#fcd34d }
+
+  .mp-chip.alloc{ background:#EDE9FE; color:#6D28D9 }
+  .mp-chip.lost { background:#FEE2E2; color:#B91C1C }
+  .mp-chip.conv { background:var(--brand-soft); color:var(--brand) }
+  body.dark .mp-chip.alloc{ background:#2E1065; color:#C4B5FD }
+  body.dark .mp-chip.lost { background:#4a1414; color:#fca5a5 }
 </style>
 </head>
 <body>
@@ -1861,7 +1867,8 @@
     <div class="frow"><span class="flabel">المنصة</span><div id="f-platform"></div></div>
     <div class="frow"><span class="flabel">الدولة</span><div id="f-country"></div></div>
     <div class="frow" id="staffFilterRow" style="display:none"><span class="flabel">الموظفة</span><div id="f-staff"></div></div>
-    <div class="frow" id="proofFilterRow" style="display:none"><span class="flabel">واقف عند</span><div id="f-proof"></div></div>
+    <div class="frow" id="proofFilterRow" style="display:none"><span class="flabel">المرحلة</span><div id="f-proof"></div></div>
+    <div class="frow" id="fuFilterRow" style="display:none"><span class="flabel">المتابعات</span><div id="f-fu"></div></div>
   </div>
 
   <div id="scrapeBanner" class="scrape-banner" style="display:none">
@@ -2001,7 +2008,7 @@ const COUNTRY_SYN={"السعودية":["السعودية","السعوديه","ا
 const COUNTRY_ORDER=["السعودية","الإمارات","الكويت","قطر","مصر","المغرب"];
 function countryBucket(loc){ loc=String(loc||"").toLowerCase(); for(const n of COUNTRY_ORDER){ const syn=COUNTRY_SYN[n]||[n]; if(syn.some(x=>loc.indexOf(String(x).toLowerCase())!==-1)) return n; } return "__other__"; }
 function prioInfo(p){ p=String(p||"").trim().toLowerCase(); if(p==="high"||p==="عالي"||p==="1") return {l:"High",c:"#B8860B"}; if(p==="medium"||p==="متوسط"||p==="2") return {l:"Medium",c:"#f59e0b"}; if(p==="low"||p==="منخفض"||p==="3") return {l:"Low",c:"#9ca3af"}; return null; }
-const state = {niche:"all", platform:"all", country:"all", fol:"all", contact:"all", staff:"all", proof:"all", sort:"fol", q:""};
+const state = {niche:"all", platform:"all", country:"all", fol:"all", contact:"all", staff:"all", proof:"all", fu:"all", sort:"fol", q:""};
 
 // ===== تحسين الأداء =====
 // الفلاتر كانت بتحسب countryBucket لكل صف في كل تفاعل (14,169 صف × 72 مقارنة).
@@ -2123,6 +2130,17 @@ function buildAllPills(){
       if(r >= 5) cAlloc++;
     }
 
+    // فلتر فرعي: "متابعة 2" = وصل لمتابعة 2 على الأقل
+    const fuN = [0,0,0,0,0];
+    for(const c of data){
+      const n = followupsOf(c);
+      for(let i=1;i<=5;i++) if(n >= i) fuN[i-1]++;
+    }
+    const frow=document.getElementById("fuFilterRow"); if(frow) frow.style.display="";
+    buildPills("f-fu",[{v:"all",l:"الكل"}].concat(
+      [1,2,3,4,5].map(i=>({v:String(i), l:"متابعة "+i+" ("+fuN[i-1]+")"}))
+    ),"fu");
+
     const prow=document.getElementById("proofFilterRow"); if(prow) prow.style.display="";
     buildPills("f-proof",[
       {v:"all",            l:"الكل ("+data.length+")"},
@@ -2155,7 +2173,7 @@ function applyFilters(){
   // وبيستخدم المفاتيح المحسوبة مسبقًا (_cb / _h / _e / _w)
   const needFilter = scrapingMode || state.niche!=="all" || state.platform!=="all" ||
                      state.country!=="all" || state.fol!=="all" ||
-                     state.staff!=="all" || state.proof!=="all" ||
+                     state.staff!=="all" || state.proof!=="all" || state.fu!=="all" ||
                      (state.contact && state.contact!=="all") || !!state.q;
 
   if(needFilter){
@@ -2180,6 +2198,8 @@ function applyFilters(){
         if(state.proof === 'new'){ if(leadStage(c) !== 'new') return false; }
         else if(!reachedStage(c, state.proof)) return false;
       }
+      // "متابعة 2" = اللي وصلوا لمتابعة 2 أو أكتر
+      if(state.fu!=="all" && followupsOf(c) < parseInt(state.fu,10)) return false;
 
       return true;
     });
@@ -2660,6 +2680,12 @@ function reachedStage(c, stage){
     return STAGE_RANK[stage] <= 2 && (STAGE_RANK[stage] <= reachedRankOf(c));
   }
   return (STAGE_RANK[cur] ?? 0) >= (STAGE_RANK[stage] ?? 0);
+}
+
+// كام متابعة اتعملت للمؤثر ده فعلاً
+function followupsOf(c){
+  const pr = PROOFS[c.uid] || {};
+  return Math.min(5, pr.followup_count || c.followupCount || 0);
 }
 
 function reachedRankOf(c){
@@ -4149,6 +4175,7 @@ function activeFilterList(){
   if(state.contact!=="all")   out.push({k:"contact",  l:CONTACT_LABELS[state.contact]||state.contact});
   if(state.staff!=="all")     out.push({k:"staff",    l:state.staff===AGENT_KEY ? "🤖 "+AGENT_NAME : "الموظفة: "+state.staff});
   if(state.proof!=="all")     out.push({k:"proof",    l:"المرحلة: "+(PROOF_LABELS[state.proof]||state.proof)});
+  if(state.fu!=="all")        out.push({k:"fu",       l:"وصلوا لمتابعة "+state.fu});
   if(scrapingMode)            out.push({k:"scraping", l:"سكرابينج النهاردة"});
   return out;
 }
@@ -4168,7 +4195,7 @@ function clearFilter(key){
 
 function clearAllFilters(){
   state.niche="all"; state.platform="all"; state.country="all";
-  state.fol="all"; state.contact="all"; state.staff="all"; state.proof="all";
+  state.fol="all"; state.contact="all"; state.staff="all"; state.proof="all"; state.fu="all";
   state.q="";
   const q=document.getElementById("q"); if(q) q.value="";
   ["f-fol","f-contact"].forEach(id=>{ const el=document.getElementById(id); if(el) el.value="all"; });
@@ -4199,16 +4226,34 @@ function renderMyProgress(){
   if(!isStaffSession()){ box.style.display='none'; return; }
 
   const mine = cleanList();
-  let sent=0, fu=0, sub=0;
-  for(const c of mine){
-    const pr = PROOFS[c.uid];
-    if(!pr) continue;
-    if((pr.sent_count||0) > 0)       sent++;
-    if((pr.followup_count||0) > 0)   fu++;
-    if((pr.subscribed_count||0) > 0) sub++;
-  }
   const total = mine.length || 1;
-  const pct = Math.min(100, Math.round((sent / total) * 100));
+
+  // ⚠️ النسبة القديمة كانت اتبعت ÷ الإجمالي — يعني 3 من 1960 = 0%
+  // وده بيبان كأن الموقع بايظ. دلوقتي بنعرض:
+  //   • النسبة بكسر عشري لو أقل من 10% (0.2% بدل 0%)
+  //   • وكل مرحلة برقمها
+  let touched=0, sent=0, fu=0, sub=0, alloc=0, lost=0;
+  for(const c of mine){
+    const st = leadStage(c);
+    if(st === 'new') continue;
+    touched++;
+    if(st === 'not_subscribed'){ lost++; if(reachedRankOf(c)>=1) sent++; if(reachedRankOf(c)>=2) fu++; continue; }
+    const r = STAGE_RANK[st] ?? 0;
+    if(r>=1) sent++;
+    if(r>=2) fu++;
+    if(r>=3) sub++;
+    if(r>=5) alloc++;
+  }
+
+  const raw = (touched / total) * 100;
+  const pct = raw > 0 && raw < 10 ? raw.toFixed(1) : Math.round(raw);
+  const barW = Math.max(raw > 0 ? 1.5 : 0, Math.min(100, raw));   // خط رفيع يبان حتى لو النسبة صغيرة
+
+  // معدّل التحويل: كام اشترك من اللي اتكلّمنا معاهم فعلاً
+  const closed = sub + alloc;
+  const conv = touched ? Math.round((sub / touched) * 100) : 0;
+
+  const n = (v) => Number(v).toLocaleString('en');
 
   box.style.display='';
   box.innerHTML =
@@ -4216,13 +4261,16 @@ function renderMyProgress(){
     +   '<span class="mp-title">شغلك لحد دلوقتي</span>'
     +   '<span class="mp-pct">'+pct+'%</span>'
     + '</div>'
-    + '<div class="mp-track"><span class="mp-fill" style="width:'+pct+'%"></span></div>'
+    + '<div class="mp-track"><span class="mp-fill" style="width:'+barW+'%"></span></div>'
     + '<div class="mp-chips">'
-    +   '<span class="mp-chip all">📋 '+mine.length.toLocaleString('en')+' مؤثر</span>'
-    +   '<span class="mp-chip sent">📩 '+sent.toLocaleString('en')+' اتبعتلهم</span>'
-    +   '<span class="mp-chip fu">🔄 '+fu.toLocaleString('en')+' متابعة</span>'
-    +   '<span class="mp-chip sub">🎉 '+sub.toLocaleString('en')+' مشترك</span>'
-    +   '<span class="mp-chip left">⚪ '+(mine.length-sent).toLocaleString('en')+' فاضلين</span>'
+    +   '<span class="mp-chip all">📋 '+n(mine.length)+' مؤثر</span>'
+    +   '<span class="mp-chip sent">📩 '+n(sent)+' اتبعتلهم</span>'
+    +   '<span class="mp-chip fu">🔄 '+n(fu)+' متابعة</span>'
+    +   '<span class="mp-chip sub">🎉 '+n(sub)+' مشترك</span>'
+    +   (alloc ? '<span class="mp-chip alloc">🎯 '+n(alloc)+' اتخصص</span>' : '')
+    +   (lost  ? '<span class="mp-chip lost">❌ '+n(lost)+' مفيش اشتراك</span>' : '')
+    +   '<span class="mp-chip left">⚪ '+n(mine.length - touched)+' فاضلين</span>'
+    +   (touched ? '<span class="mp-chip conv">📈 '+conv+'% تحويل</span>' : '')
     + '</div>';
 }
 
