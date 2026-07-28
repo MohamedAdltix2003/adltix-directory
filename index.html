@@ -1570,6 +1570,22 @@
   .crmbtn.allocated:hover{ background:#6D28D9; color:#fff }
   body.dark .crmbtn.approved{ background:#1e3a5f; color:#93c5fd }
   body.dark .crmbtn.allocated{ background:#2E1065; color:#C4B5FD }
+
+  /* ==========================================================
+     اتجاه التواريخ
+     الصفحة RTL، فأي تاريخ فيه / أو : بيتقلب ترتيبه لما يتعرض.
+     unicode-bidi:isolate بتعزل النص وتخليه يتقرا من الشمال لليمين
+     زي ما هو مكتوب بالظبط.
+     ========================================================== */
+  .crmdate, .fuchip span, .pf-when, .gl-meta, .dr-row,
+  .crm-out, .dup-meta{
+    direction:ltr !important;
+    unicode-bidi:isolate;
+  }
+  /* الشارات فيها عربي + تاريخ مع بعض — بنعزل التاريخ لوحده */
+  .crm-out, .pf-head{ unicode-bidi:isolate-override; direction:rtl !important }
+  .crm-out{ direction:rtl !important; unicode-bidi:plaintext }
+  .crmdate{ text-align:center }
 </style>
 </head>
 <body>
@@ -2416,11 +2432,16 @@ function actionDate(uid, type, seq){
 }
 
 // تاريخ قصير بالإنجليزي — 28 Jul 03:15
+// التاريخ كان بيطلع مقلوب (Jul, 20:25 28) لأن الصفحة RTL والمتصفح
+// بيعكس ترتيب أجزاء التاريخ. بنبنيه بإيدنا بدل Intl عشان يفضل ثابت.
 function fmtShort(v){
   if(!v) return '';
   try{
-    return new Intl.DateTimeFormat('en-GB',{timeZone:'Africa/Cairo',
-      day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(v));
+    const p = new Intl.DateTimeFormat('en-GB',{timeZone:'Africa/Cairo',
+      year:'numeric',month:'2-digit',day:'2-digit',
+      hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(new Date(v));
+    const g = t => (p.find(x=>x.type===t)||{}).value || '';
+    return g('day')+'/'+g('month')+'/'+g('year')+' '+g('hour')+':'+g('minute');
   }catch(e){ return String(v).slice(0,16); }
 }
 
@@ -2712,6 +2733,9 @@ function mapRawToCard(o){
   // نتيجة التفاوض — للعرض على الكارت وفي التصدير
   // indexCreator بتحسب مفاتيح الفلترة مرة واحدة هنا — ده اللي بيخلي الزراير فورية
   return indexCreator({
+    // 🐞 approvalStatus مكانش بيتقرا خالص، فمرحلة "تمت الموافقة"
+    // كانت بتتسجّل في الداتابيز بس الكارت مبيشوفهاش.
+    approvalStatus:o.approval_status||"",
     outcome_type:o.outcome_type||"", outcome_note:o.outcome_note||"", outcome_at:o.outcome_at||"",
     allocation_status:o.allocation_status||"", approved_at:o.approved_at||"", allocated_at:o.allocated_at||"",
     uid:String(o.uid||"").toLowerCase(), discoveredAt:normalizeSheetDate(o.discovered_at), assignedTo:String(o.assigned_to||"").trim(),
