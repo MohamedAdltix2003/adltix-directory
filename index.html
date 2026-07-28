@@ -1643,6 +1643,75 @@
   .mp-chip.conv { background:var(--brand-soft); color:var(--brand) }
   body.dark .mp-chip.alloc{ background:#2E1065; color:#C4B5FD }
   body.dark .mp-chip.lost { background:#4a1414; color:#fca5a5 }
+
+  /* ==========================================================
+     تنظيم الفلاتر
+     كانت 6 صفوف مفرودة مع بعض = زحمة. دلوقتي:
+       ظاهر دايمًا: المرحلة · الموظفة · المجال
+       مطوي:        المنصة · الدولة · المتابعات
+     ========================================================== */
+
+  /* صفوف أنضف ومسافات أقل */
+  .filters{ padding:14px 16px !important }
+  .frow{
+    gap:6px !important;
+    padding:9px 0 !important;
+    align-items:flex-start !important;
+  }
+  .frow:not(.ftop){ border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent) }
+  .frow.ftop{ padding-bottom:12px !important }
+
+  .flabel{
+    min-width:62px !important;
+    font-size:11.5px !important; font-weight:800 !important;
+    color:var(--muted) !important;
+    padding-top:6px;
+  }
+
+  /* البيلات أصغر شوية وأنعم */
+  .pill{
+    padding:6px 12px !important;
+    font-size:12px !important;
+    border-radius:999px !important;
+  }
+
+  /* زرار "فلاتر أكتر" */
+  .fmore{
+    display:flex; align-items:center; gap:7px;
+    width:100%; margin-top:10px;
+    font-family:inherit; font-size:12.5px; font-weight:800;
+    padding:9px 13px; border-radius:12px; cursor:pointer;
+    border:1px dashed var(--line);
+    background:transparent; color:var(--muted);
+    transition:background .15s, border-color .15s, color .15s;
+  }
+  .fmore:hover{ background:var(--brand-soft); border-color:var(--brand); color:var(--brand) }
+  .fmore svg{ transition:transform .22s ease }
+  .fmore.open svg{ transform:rotate(180deg) }
+  .fmore-n{
+    margin-inline-start:auto;
+    min-width:20px; padding:1px 7px; border-radius:999px;
+    font-size:11px; font-weight:800;
+    background:var(--brand); color:#fff;
+  }
+
+  .fextra{
+    margin-top:4px;
+    animation:fexIn .25s cubic-bezier(.2,.7,.2,1);
+  }
+  @keyframes fexIn{ from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:none} }
+
+  @media (max-width:640px){
+    .filters{ padding:11px 12px !important }
+    .flabel{ min-width:auto !important; font-size:11px !important }
+    .pill{ padding:5px 10px !important; font-size:11.5px !important }
+    .frow{ padding:7px 0 !important }
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    .fextra{ animation:none }
+    .fmore svg{ transition:none }
+  }
 </style>
 </head>
 <body>
@@ -1863,12 +1932,23 @@
         </select>
       </div>
     </div>
-    <div class="frow"><span class="flabel">المجال</span><div id="f-niche"></div></div>
-    <div class="frow"><span class="flabel">المنصة</span><div id="f-platform"></div></div>
-    <div class="frow"><span class="flabel">الدولة</span><div id="f-country"></div></div>
-    <div class="frow" id="staffFilterRow" style="display:none"><span class="flabel">الموظفة</span><div id="f-staff"></div></div>
+    <!-- الصفوف الأساسية: ظاهرة دايمًا -->
     <div class="frow" id="proofFilterRow" style="display:none"><span class="flabel">المرحلة</span><div id="f-proof"></div></div>
-    <div class="frow" id="fuFilterRow" style="display:none"><span class="flabel">المتابعات</span><div id="f-fu"></div></div>
+    <div class="frow" id="staffFilterRow" style="display:none"><span class="flabel">الموظفة</span><div id="f-staff"></div></div>
+    <div class="frow"><span class="flabel">المجال</span><div id="f-niche"></div></div>
+
+    <!-- الباقي بيتطوى — عشان الشاشة متبقاش زحمة -->
+    <button class="fmore" id="fmoreBtn" onclick="toggleMoreFilters()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      <span id="fmoreTxt">فلاتر أكتر</span>
+      <span class="fmore-n" id="fmoreN" style="display:none">0</span>
+    </button>
+
+    <div id="moreFilters" class="fextra" style="display:none">
+      <div class="frow"><span class="flabel">المنصة</span><div id="f-platform"></div></div>
+      <div class="frow"><span class="flabel">الدولة</span><div id="f-country"></div></div>
+      <div class="frow" id="fuFilterRow" style="display:none"><span class="flabel">المتابعات</span><div id="f-fu"></div></div>
+    </div>
   </div>
 
   <div id="scrapeBanner" class="scrape-banner" style="display:none">
@@ -3944,6 +4024,7 @@ function renderGlobalLookup(r, q){
         : '');
 }
 
+// ⚠️ الاسم كان scrollTop وده متعارض مع خاصية موجودة أصلاً في المتصفح
 // (Element.scrollTop) — فكان بيرمي "scrollTop is not a function".
 function adltixScrollTop(){
   window.scrollTo({ top:0, behavior:'smooth' });
@@ -4203,7 +4284,33 @@ function clearAllFilters(){
   if(typeof toast==="function") toast("اتشالت كل الفلاتر","info");
 }
 
+// ===== طي الفلاتر الإضافية =====
+// 6 صفوف مفرودة مع بعض بتعمل زحمة. الأساسي بس ظاهر،
+// والباقي بيتفتح بضغطة — مع رقم بيقول كام فلتر شغال جواه.
+let _moreOpen = false;
+function toggleMoreFilters(){
+  _moreOpen = !_moreOpen;
+  const box = document.getElementById('moreFilters');
+  const btn = document.getElementById('fmoreBtn');
+  const txt = document.getElementById('fmoreTxt');
+  if(box) box.style.display = _moreOpen ? '' : 'none';
+  if(btn) btn.classList.toggle('open', _moreOpen);
+  if(txt) txt.textContent = _moreOpen ? 'إخفاء' : 'فلاتر أكتر';
+}
+
+// رقم صغير على الزرار بعدد الفلاتر الشغالة جوه المطوي
+function updateMoreBadge(){
+  const n = (state.platform!=='all'?1:0) + (state.country!=='all'?1:0) + (state.fu!=='all'?1:0);
+  const b = document.getElementById('fmoreN');
+  if(!b) return;
+  b.textContent = n;
+  b.style.display = n ? '' : 'none';
+  // لو فيه فلتر شغال جوه وهو مقفول، نفتحه عشان المستخدم يشوفه
+  if(n && !_moreOpen) toggleMoreFilters();
+}
+
 function renderActiveFilters(){
+  updateMoreBadge();
   const box=document.getElementById("activeFilters");
   if(!box) return;
   const list=activeFilterList();
