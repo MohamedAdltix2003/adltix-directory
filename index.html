@@ -3245,9 +3245,21 @@ async function sendCrmAction(btn,uid,actionType,imageBase64,mode,extra){
     btn.classList.remove('loading'); btn.classList.add('success');
     const item=CREATORS.find(x=>x.uid===uid);
     if(item){
-      if(actionType==='sent') item.messageStatus='sent';
-      if(actionType==='followup') item.followupCount=(item.followupCount||0)+1;
-      if(actionType==='subscribed') item.signupStatus='subscribed';
+      const at = res && res.at ? res.at : new Date().toISOString();
+      // 🐞 المراحل الجديدة مكانتش بتتحدّث محليًا، فالتخصيص والموافقة
+      // كانوا بيتسجّلوا في الداتابيز بس الكارت مبيتغيّرش غير بعد Refresh.
+      if(actionType==='sent'){        item.messageStatus='sent'; item.sent_at=at; }
+      if(actionType==='followup')     item.followupCount=(item.followupCount||0)+1;
+      if(actionType==='subscribed'){  item.signupStatus='subscribed'; item.subscribed_at=at; }
+      if(actionType==='approved'){    item.approvalStatus='approved'; item.approved_at=at; }
+      if(actionType==='allocated'){   item.allocation_status='allocated'; item.allocated_at=at; }
+      if(actionType==='not_subscribed'){
+        item.signupStatus='not_subscribed';
+        item.outcome_type = (res && res.reasonType) || 'other';
+        item.outcome_note = (res && res.reasonNote) || '';
+        item.outcome_at   = at;
+      }
+      invalidateCache();
     }
     // بنحدّث سجل الإثباتات محليًا كمان — من غير كده الكارت يفضل
     // يقول "٢ من ٣" لحد ما تعمل refresh للصفحة
@@ -3256,6 +3268,12 @@ async function sendCrmAction(btn,uid,actionType,imageBase64,mode,extra){
       if(actionType==='sent')       pr.sent_count       = (pr.sent_count||0)+1;
       if(actionType==='followup')   pr.followup_count   = (pr.followup_count||0)+1;
       if(actionType==='subscribed') pr.subscribed_count = (pr.subscribed_count||0)+1;
+      // تواريخ المراحل — عشان تظهر تحت الزرار فورًا من غير Refresh
+      const at2 = res && res.at ? res.at : new Date().toISOString();
+      ACTION_DATES[uid] = ACTION_DATES[uid] || {};
+      if(actionType==='followup') ACTION_DATES[uid]['followup_'+((res&&res.seq)||pr.followup_count)] = at2;
+      else                        ACTION_DATES[uid][actionType] = at2;
+
       if(res && res.screenshotUrl){
         pr.shots = (pr.shots||[]).concat([res.screenshotUrl]);
         pr.shots_count = (pr.shots_count||0)+1;
