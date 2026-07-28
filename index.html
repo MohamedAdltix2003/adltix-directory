@@ -2281,6 +2281,21 @@ function applyFilters(){
       // "متابعة 2" = اللي وصلوا لمتابعة 2 أو أكتر
       if(state.fu!=="all" && followupsOf(c) < parseInt(state.fu,10)) return false;
 
+      // ⚠️ التلات شروط دول اتشالوا بالغلط وقت تعديل فلتر المرحلة،
+      // فالبحث ونطاق المتابعين ووسيلة التواصل بقوا مش شغالين خالص.
+      if(state.fol!=="all"){
+        const f = Number(c.followers) || 0;
+        if(f < folA || f > folB) return false;
+      }
+      if(ct){
+        if(ct === "email"    && !c._e) return false;
+        if(ct === "whatsapp" && !c._w) return false;
+        if(ct === "both"     && !(c._e && c._w)) return false;
+        if(ct === "none"     && (c._e || c._w)) return false;
+      }
+      // البحث: الحساب بالـ @ ومن غيره + الاسم الكامل + الـ uid
+      if(q && c._s.indexOf(q) === -1) return false;
+
       return true;
     });
     copied = true;
