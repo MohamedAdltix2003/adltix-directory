@@ -1953,6 +1953,44 @@
     .vt-t{ display:none }
     .vt-i{ font-size:17px }
   }
+
+  /* ===== منتقي فترة التاريخ ===== */
+  .dwrap{ display:flex; flex-direction:column; gap:9px; flex:1 }
+  .drange{
+    display:flex; align-items:center; gap:7px; flex-wrap:wrap;
+    padding:9px 11px; border-radius:12px;
+    background:color-mix(in srgb,var(--line) 24%,transparent);
+    border:1px solid var(--line);
+  }
+  .drange label{ font-size:11.5px; font-weight:800; color:var(--muted) }
+  .drange input[type="date"]{
+    font-family:inherit; font-size:12.5px; font-weight:700;
+    padding:7px 10px; border-radius:9px;
+    border:1px solid var(--line); background:var(--surface); color:var(--ink);
+    direction:ltr; cursor:pointer;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  .drange input[type="date"]:focus{
+    outline:none; border-color:var(--brand);
+    box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 15%,transparent);
+  }
+  .drange input[type="date"]::-webkit-calendar-picker-indicator{ cursor:pointer; opacity:.6 }
+  .drange input[type="date"]::-webkit-calendar-picker-indicator:hover{ opacity:1 }
+  .dclear{
+    margin-inline-start:auto;
+    width:26px; height:26px; border-radius:8px; cursor:pointer;
+    border:none; background:transparent; color:var(--muted);
+    font-size:14px; line-height:1;
+    transition:background .15s, color .15s;
+  }
+  .dclear:hover{ background:#FEE2E2; color:#DC2626 }
+  body.dark .dclear:hover{ background:#4a1414; color:#fca5a5 }
+
+  @media (max-width:640px){
+    .drange{ padding:8px; gap:5px }
+    .drange input[type="date"]{ font-size:12px; padding:6px 8px; flex:1; min-width:0 }
+    .drange label{ font-size:11px }
+  }
 </style>
 </head>
 <body>
@@ -2208,7 +2246,19 @@
       <div class="frow"><span class="flabel">المنصة</span><div id="f-platform"></div></div>
       <div class="frow"><span class="flabel">الدولة</span><div id="f-country"></div></div>
       <div class="frow" id="fuFilterRow" style="display:none"><span class="flabel">المتابعات</span><div id="f-fu"></div></div>
-      <div class="frow" id="daysFilterRow" style="display:none"><span class="flabel">تاريخ الرفع</span><div id="f-days"></div></div>
+      <div class="frow" id="daysFilterRow" style="display:none">
+        <span class="flabel">تاريخ الرفع</span>
+        <div class="dwrap">
+          <div id="f-days"></div>
+          <div class="drange">
+            <label>من</label>
+            <input type="date" id="dFrom" onchange="applyDateRange()">
+            <label>إلى</label>
+            <input type="date" id="dTo" onchange="applyDateRange()">
+            <button class="dclear" onclick="clearDateRange()" title="مسح الفترة">✕</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -2351,7 +2401,7 @@ const COUNTRY_SYN={"السعودية":["السعودية","السعوديه","ا
 const COUNTRY_ORDER=["السعودية","الإمارات","الكويت","قطر","مصر","المغرب"];
 function countryBucket(loc){ loc=String(loc||"").toLowerCase(); for(const n of COUNTRY_ORDER){ const syn=COUNTRY_SYN[n]||[n]; if(syn.some(x=>loc.indexOf(String(x).toLowerCase())!==-1)) return n; } return "__other__"; }
 function prioInfo(p){ p=String(p||"").trim().toLowerCase(); if(p==="high"||p==="عالي"||p==="1") return {l:"High",c:"#B8860B"}; if(p==="medium"||p==="متوسط"||p==="2") return {l:"Medium",c:"#f59e0b"}; if(p==="low"||p==="منخفض"||p==="3") return {l:"Low",c:"#9ca3af"}; return null; }
-const state = {niche:"all", platform:"all", country:"all", fol:"all", contact:"all", staff:"all", proof:"all", fu:"all", batch:0, view:"assigned", days:"all", sort:"fol", q:""};
+const state = {niche:"all", platform:"all", country:"all", fol:"all", contact:"all", staff:"all", proof:"all", fu:"all", batch:0, view:"assigned", days:"all", from:"", to:"", sort:"fol", q:""};
 
 // ===== تحسين الأداء =====
 // الفلاتر كانت بتحسب countryBucket لكل صف في كل تفاعل (14,169 صف × 72 مقارنة).
@@ -2533,7 +2583,7 @@ function applyFilters(){
                      state.country!=="all" || state.fol!=="all" ||
                      state.staff!=="all" || state.proof!=="all" || state.fu!=="all" ||
                      (state.contact && state.contact!=="all") || !!state.q || !!state.batch
-                     || state.view!=="all" || state.days!=="all";
+                     || state.view!=="all" || state.days!=="all" || !!state.from || !!state.to;
 
   if(needFilter){
     const today = scrapingMode ? cairoTodayStr() : null;
@@ -2567,7 +2617,10 @@ function applyFilters(){
       if(state.view === 'assigned' && isImported) return false;
       if(state.view === 'imported' && !isImported) return false;
 
-      // فلتر تاريخ الرفع
+      // فلتر الفترة المحددة
+      if((state.from || state.to) && isImported && !inDateRange(c.imported_at)) return false;
+
+      // فلتر تاريخ الرفع السريع
       if(state.days !== 'all' && isImported){
         const d = c.imported_at ? new Date(c.imported_at) : null;
         if(!d) return false;
@@ -4953,7 +5006,9 @@ function showBatchCards(id){
 function clearAllFiltersKeepBatch(){
   state.niche="all"; state.platform="all"; state.country="all";
   state.fol="all"; state.contact="all"; state.staff="all";
-  state.proof="all"; state.fu="all"; state.batch=0; state.days="all"; state.q="";
+  state.proof="all"; state.fu="all"; state.batch=0; state.days="all";
+  state.from=""; state.to="";
+  ["dFrom","dTo"].forEach(id=>{ const e=document.getElementById(id); if(e) e.value=""; }); state.q="";
   const q=document.getElementById("q"); if(q) q.value="";
   buildAllPills(); render();
 }
@@ -5049,6 +5104,11 @@ function activeFilterList(){
   if(state.fu!=="all")        out.push({k:"fu",       l:"وصلوا لمتابعة "+state.fu});
   if(state.batch)             out.push({k:"batch",    l:"📄 رفعة رقم "+state.batch});
   if(state.days!=="all")      out.push({k:"days",     l:"آخر "+state.days+" يوم"});
+  if(state.from || state.to){
+    const L = state.from && state.to ? (state.from+" ← "+state.to)
+            : state.from ? ("من "+state.from) : ("لحد "+state.to);
+    out.push({k:"range", l:"📅 "+L});
+  }
   if(scrapingMode)            out.push({k:"scraping", l:"سكرابينج النهاردة"});
   return out;
 }
@@ -5060,6 +5120,8 @@ function clearFilter(key){
     state.batch=0;
   } else if(key==="days"){
     state.days="all";
+  } else if(key==="range"){
+    clearDateRange(); return;
   } else if(key==="scraping"){
     toggleScrapingView(); return;              // بتعمل render بنفسها
   } else {
@@ -5073,6 +5135,8 @@ function clearFilter(key){
 function clearAllFilters(){
   state.niche="all"; state.platform="all"; state.country="all";
   state.fol="all"; state.contact="all"; state.staff="all"; state.proof="all"; state.fu="all"; state.batch=0; state.days="all";
+  state.from=""; state.to="";
+  ["dFrom","dTo"].forEach(id=>{ const e=document.getElementById(id); if(e) e.value=""; });
   state.q="";
   const q=document.getElementById("q"); if(q) q.value="";
   ["f-fol","f-contact"].forEach(id=>{ const el=document.getElementById(id); if(el) el.value="all"; });
@@ -5104,6 +5168,33 @@ function updateMoreBadge(){
   b.style.display = n ? '' : 'none';
   // لو فيه فلتر شغال جوه وهو مقفول، نفتحه عشان المستخدم يشوفه
   if(n && !_moreOpen) toggleMoreFilters();
+}
+
+function applyDateRange(){
+  const f = document.getElementById('dFrom');
+  const t = document.getElementById('dTo');
+  state.from = f ? f.value : '';
+  state.to   = t ? t.value : '';
+  if(state.from || state.to) state.days = 'all';
+  buildAllPills(); render();
+}
+
+function clearDateRange(){
+  state.from = ''; state.to = '';
+  const f = document.getElementById('dFrom'); if(f) f.value = '';
+  const t = document.getElementById('dTo');   if(t) t.value = '';
+  buildAllPills(); render();
+}
+
+function inDateRange(v){
+  if(!state.from && !state.to) return true;
+  if(!v) return false;
+  const d = new Date(v);
+  if(isNaN(d)) return false;
+  const day = d.toISOString().slice(0,10);
+  if(state.from && day < state.from) return false;
+  if(state.to   && day > state.to)   return false;
+  return true;
 }
 
 function setView(v){
