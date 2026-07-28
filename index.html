@@ -1917,6 +1917,42 @@
     transition:background .15s, transform .15s;
   }
   .imp-tpl:hover{ background:var(--brand); color:#fff; transform:translateY(-1px) }
+
+  /* ==========================================================
+     تبويبات العرض — فصل المرفوعين عن الموزّعين
+     ========================================================== */
+  .vtabs{
+    display:flex; gap:7px; margin-bottom:14px;
+    background:var(--surface); border:1px solid var(--line);
+    border-radius:16px; padding:6px;
+  }
+  .vtab{
+    flex:1; display:flex; align-items:center; justify-content:center; gap:7px;
+    font-family:inherit; font-size:13px; font-weight:800; cursor:pointer;
+    padding:11px 10px; border-radius:12px; border:none;
+    background:transparent; color:var(--muted);
+    transition:background .16s, color .16s, transform .14s;
+  }
+  .vtab:hover{ background:color-mix(in srgb,var(--line) 40%,transparent); color:var(--ink) }
+  .vtab:active{ transform:scale(.97) }
+  .vtab.on{
+    background:var(--brand); color:#fff;
+    box-shadow:0 4px 14px rgba(228,85,63,.32);
+  }
+  .vt-i{ font-size:15px }
+  .vt-n{
+    font-size:11px; font-weight:800; padding:2px 8px; border-radius:999px;
+    background:color-mix(in srgb,var(--line) 55%,transparent); color:var(--muted);
+    font-family:'Space Grotesk','Tajawal',sans-serif;
+  }
+  .vtab.on .vt-n{ background:rgba(255,255,255,.24); color:#fff }
+
+  @media (max-width:640px){
+    .vtabs{ padding:5px; gap:5px }
+    .vtab{ padding:9px 6px; font-size:12px; gap:5px }
+    .vt-t{ display:none }
+    .vt-i{ font-size:17px }
+  }
 </style>
 </head>
 <body>
@@ -2112,6 +2148,19 @@
     <span style="font-size:12px;color:var(--muted);font-weight:600">👤 <span id="adminName">أدمن</span></span>
   </div>
 
+  <!-- تبويبات العرض: المؤثرين الموزّعين | اللي اترفعوا من ملفات -->
+  <div class="vtabs" id="viewTabs">
+    <button class="vtab on" data-v="assigned" onclick="setView('assigned')">
+      <span class="vt-i">👥</span><span class="vt-t">مؤثريني</span><span class="vt-n" id="vnAssigned">0</span>
+    </button>
+    <button class="vtab" data-v="imported" onclick="setView('imported')">
+      <span class="vt-i">📄</span><span class="vt-t">اللي رفعتهم</span><span class="vt-n" id="vnImported">0</span>
+    </button>
+    <button class="vtab" data-v="all" onclick="setView('all')">
+      <span class="vt-i">🗂️</span><span class="vt-t">الكل</span><span class="vt-n" id="vnAll">0</span>
+    </button>
+  </div>
+
   <div class="filters">
     <div class="frow ftop">
       <span class="ftitle">تصفية النتائج</span>
@@ -2159,6 +2208,7 @@
       <div class="frow"><span class="flabel">المنصة</span><div id="f-platform"></div></div>
       <div class="frow"><span class="flabel">الدولة</span><div id="f-country"></div></div>
       <div class="frow" id="fuFilterRow" style="display:none"><span class="flabel">المتابعات</span><div id="f-fu"></div></div>
+      <div class="frow" id="daysFilterRow" style="display:none"><span class="flabel">تاريخ الرفع</span><div id="f-days"></div></div>
     </div>
   </div>
 
@@ -2301,7 +2351,7 @@ const COUNTRY_SYN={"السعودية":["السعودية","السعوديه","ا
 const COUNTRY_ORDER=["السعودية","الإمارات","الكويت","قطر","مصر","المغرب"];
 function countryBucket(loc){ loc=String(loc||"").toLowerCase(); for(const n of COUNTRY_ORDER){ const syn=COUNTRY_SYN[n]||[n]; if(syn.some(x=>loc.indexOf(String(x).toLowerCase())!==-1)) return n; } return "__other__"; }
 function prioInfo(p){ p=String(p||"").trim().toLowerCase(); if(p==="high"||p==="عالي"||p==="1") return {l:"High",c:"#B8860B"}; if(p==="medium"||p==="متوسط"||p==="2") return {l:"Medium",c:"#f59e0b"}; if(p==="low"||p==="منخفض"||p==="3") return {l:"Low",c:"#9ca3af"}; return null; }
-const state = {niche:"all", platform:"all", country:"all", fol:"all", contact:"all", staff:"all", proof:"all", fu:"all", batch:0, sort:"fol", q:""};
+const state = {niche:"all", platform:"all", country:"all", fol:"all", contact:"all", staff:"all", proof:"all", fu:"all", batch:0, view:"assigned", days:"all", sort:"fol", q:""};
 
 // ===== تحسين الأداء =====
 // الفلاتر كانت بتحسب countryBucket لكل صف في كل تفاعل (14,169 صف × 72 مقارنة).
@@ -2380,6 +2430,7 @@ function buildPills(id, items, key){
   });
 }
 function buildAllPills(){
+  updateViewCounts();
   buildPills("f-niche",[{v:"all",l:"الكل"},{v:"fashion",l:"فاشن"},{v:"luxury",l:"لاكشري"},{v:"moms",l:"عائلة وأمومة"},{v:"sports",l:"رياضة ولياقة"},{v:"food",l:"طعام وطبخ"},{v:"gaming",l:"جيمنج"},{v:"business",l:"أعمال"},{v:"tech",l:"تقنية"},{v:"entertainment",l:"ترفيه"},{v:"other",l:"أخرى"}],"niche");
   buildPills("f-platform",[{v:"all",l:"الكل"},{v:"instagram",l:"انستجرام",dot:PLAT.instagram.c},{v:"tiktok",l:"تيك توك",dot:"#25F4EE"},{v:"youtube",l:"يوتيوب",dot:PLAT.youtube.c},{v:"x",l:"تويتر",dot:"#555"},{v:"snapchat",l:"سناب",dot:PLAT.snapchat.c}],"platform");
   const data=cleanList();
@@ -2430,6 +2481,20 @@ function buildAllPills(){
       const n = followupsOf(c);
       for(let i=1;i<=5;i++) if(n >= i) fuN[i-1]++;
     }
+    const drow=document.getElementById("daysFilterRow");
+    if(drow) drow.style.display = (state.view === 'imported') ? "" : "none";
+    if(state.view === 'imported'){
+      const imported = data.filter(c => Number(c.import_batch_id));
+      const within = (n) => imported.filter(c => c.imported_at &&
+        (Date.now() - new Date(c.imported_at).getTime())/86400000 <= n).length;
+      buildPills("f-days",[
+        {v:"all", l:"الكل ("+imported.length+")"},
+        {v:"1",   l:"النهاردة ("+within(1)+")"},
+        {v:"7",   l:"آخر ٧ أيام ("+within(7)+")"},
+        {v:"30",  l:"آخر ٣٠ يوم ("+within(30)+")"}
+      ],"days");
+    }
+
     const frow=document.getElementById("fuFilterRow"); if(frow) frow.style.display="";
     buildPills("f-fu",[{v:"all",l:"الكل"}].concat(
       [1,2,3,4,5].map(i=>({v:String(i), l:"متابعة "+i+" ("+fuN[i-1]+")"}))
@@ -2467,7 +2532,8 @@ function applyFilters(){
   const needFilter = scrapingMode || state.niche!=="all" || state.platform!=="all" ||
                      state.country!=="all" || state.fol!=="all" ||
                      state.staff!=="all" || state.proof!=="all" || state.fu!=="all" ||
-                     (state.contact && state.contact!=="all") || !!state.q || !!state.batch;
+                     (state.contact && state.contact!=="all") || !!state.q || !!state.batch
+                     || state.view!=="all" || state.days!=="all";
 
   if(needFilter){
     const today = scrapingMode ? cairoTodayStr() : null;
@@ -2495,6 +2561,19 @@ function applyFilters(){
       if(state.fu!=="all" && followupsOf(c) < parseInt(state.fu,10)) return false;
       // فلتر رفعة معيّنة
       if(state.batch && Number(c.import_batch_id) !== Number(state.batch)) return false;
+
+      // 📄 فصل المرفوعين عن الموزّعين — عشان ميتخلطوش
+      const isImported = !!Number(c.import_batch_id);
+      if(state.view === 'assigned' && isImported) return false;
+      if(state.view === 'imported' && !isImported) return false;
+
+      // فلتر تاريخ الرفع
+      if(state.days !== 'all' && isImported){
+        const d = c.imported_at ? new Date(c.imported_at) : null;
+        if(!d) return false;
+        const ageDays = (Date.now() - d.getTime()) / 86400000;
+        if(ageDays > parseInt(state.days, 10)) return false;
+      }
 
       // ⚠️ التلات شروط دول اتشالوا بالغلط وقت تعديل فلتر المرحلة،
       // فالبحث ونطاق المتابعين ووسيلة التواصل بقوا مش شغالين خالص.
@@ -3214,7 +3293,7 @@ function mapRawToCard(o){
   // نتيجة التفاوض — للعرض على الكارت وفي التصدير
   // indexCreator بتحسب مفاتيح الفلترة مرة واحدة هنا — ده اللي بيخلي الزراير فورية
   return indexCreator({
-    import_batch_id:o.import_batch_id||0,
+    import_batch_id:o.import_batch_id||0, imported_at:o.imported_at||"",
     outcome_type:o.outcome_type||"", outcome_note:o.outcome_note||"", outcome_at:o.outcome_at||"",
     allocation_status:o.allocation_status||"", allocated_at:o.allocated_at||"",
     uid:String(o.uid||"").toLowerCase(), discoveredAt:normalizeSheetDate(o.discovered_at), assignedTo:String(o.assigned_to||"").trim(),
@@ -4864,6 +4943,9 @@ async function openImportsListInline(){
 function showBatchCards(id){
   closeImportsList();
   state.batch = id;
+  state.view  = 'imported';
+  document.querySelectorAll('.vtab').forEach(b =>
+    b.classList.toggle('on', b.getAttribute('data-v') === 'imported'));
   clearAllFiltersKeepBatch();
   toastOk('بنعرض كروت الرفعة دي بس');
 }
@@ -4871,7 +4953,7 @@ function showBatchCards(id){
 function clearAllFiltersKeepBatch(){
   state.niche="all"; state.platform="all"; state.country="all";
   state.fol="all"; state.contact="all"; state.staff="all";
-  state.proof="all"; state.fu="all"; state.batch=0; state.q="";
+  state.proof="all"; state.fu="all"; state.batch=0; state.days="all"; state.q="";
   const q=document.getElementById("q"); if(q) q.value="";
   buildAllPills(); render();
 }
@@ -4966,6 +5048,7 @@ function activeFilterList(){
   if(state.proof!=="all")     out.push({k:"proof",    l:"المرحلة: "+(PROOF_LABELS[state.proof]||state.proof)});
   if(state.fu!=="all")        out.push({k:"fu",       l:"وصلوا لمتابعة "+state.fu});
   if(state.batch)             out.push({k:"batch",    l:"📄 رفعة رقم "+state.batch});
+  if(state.days!=="all")      out.push({k:"days",     l:"آخر "+state.days+" يوم"});
   if(scrapingMode)            out.push({k:"scraping", l:"سكرابينج النهاردة"});
   return out;
 }
@@ -4975,6 +5058,8 @@ function clearFilter(key){
     state.q=""; const q=document.getElementById("q"); if(q) q.value="";
   } else if(key==="batch"){
     state.batch=0;
+  } else if(key==="days"){
+    state.days="all";
   } else if(key==="scraping"){
     toggleScrapingView(); return;              // بتعمل render بنفسها
   } else {
@@ -4987,7 +5072,7 @@ function clearFilter(key){
 
 function clearAllFilters(){
   state.niche="all"; state.platform="all"; state.country="all";
-  state.fol="all"; state.contact="all"; state.staff="all"; state.proof="all"; state.fu="all"; state.batch=0;
+  state.fol="all"; state.contact="all"; state.staff="all"; state.proof="all"; state.fu="all"; state.batch=0; state.days="all";
   state.q="";
   const q=document.getElementById("q"); if(q) q.value="";
   ["f-fol","f-contact"].forEach(id=>{ const el=document.getElementById(id); if(el) el.value="all"; });
@@ -5019,6 +5104,29 @@ function updateMoreBadge(){
   b.style.display = n ? '' : 'none';
   // لو فيه فلتر شغال جوه وهو مقفول، نفتحه عشان المستخدم يشوفه
   if(n && !_moreOpen) toggleMoreFilters();
+}
+
+function setView(v){
+  state.view = v;
+  state.batch = 0;
+  if(v !== 'imported') state.days = 'all';
+  document.querySelectorAll('.vtab').forEach(b =>
+    b.classList.toggle('on', b.getAttribute('data-v') === v));
+  buildAllPills();
+  render();
+}
+
+function updateViewCounts(){
+  const all = cleanList();
+  let imp = 0;
+  for(const c of all) if(Number(c.import_batch_id)) imp++;
+  const set = (id, n) => { const e = document.getElementById(id); if(e) e.textContent = n.toLocaleString('en'); };
+  set('vnAssigned', all.length - imp);
+  set('vnImported', imp);
+  set('vnAll', all.length);
+  const tabs = document.getElementById('viewTabs');
+  if(tabs) tabs.style.display = imp ? '' : 'none';
+  if(!imp && state.view === 'imported') state.view = 'assigned';
 }
 
 function renderActiveFilters(){
