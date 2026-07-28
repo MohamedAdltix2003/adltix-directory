@@ -1564,11 +1564,8 @@
     color:var(--muted) !important;
   }
   /* ===== مراحل الموافقة والتخصيص ===== */
-  .crmbtn.approved{ background:#DBEAFE; color:#1D4ED8 }
-  .crmbtn.approved:hover{ background:#1D4ED8; color:#fff }
   .crmbtn.allocated{ background:#EDE9FE; color:#6D28D9 }
   .crmbtn.allocated:hover{ background:#6D28D9; color:#fff }
-  body.dark .crmbtn.approved{ background:#1e3a5f; color:#93c5fd }
   body.dark .crmbtn.allocated{ background:#2E1065; color:#C4B5FD }
 
   /* ==========================================================
@@ -2192,7 +2189,7 @@ function buildAllPills(){
   // العدّاد بيحسب "مين عدّى المرحلة دي" مش "مين واقف عندها" —
   // عشان المؤثر اللي اتخصص يفضل محسوب في "اتبعت" برضه.
   {
-    let cNew=0, cSent=0, cFu=0, cSub=0, cApp=0, cAlloc=0, cLost=0;
+    let cNew=0, cSent=0, cFu=0, cSub=0, cAlloc=0, cLost=0;
     for(const c of data){
       const st = leadStage(c);
       if(st === 'new'){ cNew++; continue; }
@@ -2206,8 +2203,7 @@ function buildAllPills(){
       if(r >= 1) cSent++;
       if(r >= 2) cFu++;
       if(r >= 3) cSub++;
-      if(r >= 4) cApp++;
-      if(r >= 5) cAlloc++;
+      if(r >= 4) cAlloc++;
     }
 
     // فلتر فرعي: "متابعة 2" = وصل لمتابعة 2 على الأقل
@@ -2228,7 +2224,6 @@ function buildAllPills(){
       {v:"sent",           l:"📩 اتبعت ("+cSent+")"},
       {v:"followup",       l:"🔄 في المتابعة ("+cFu+")"},
       {v:"subscribed",     l:"🎉 اشترك ("+cSub+")"},
-      {v:"approved",       l:"✅ تمت الموافقة ("+cApp+")"},
       {v:"allocated",      l:"🎯 تم التخصيص ("+cAlloc+")"},
       {v:"not_subscribed", l:"❌ مفيش اشتراك ("+cLost+")"}
     ],"proof");
@@ -2631,11 +2626,11 @@ function fmtShort(v){
 }
 
 // ===== خط سير الصفقة =====
-// اتبعت → متابعة ①..⑤ → اشترك → تمت الموافقة → تم التخصيص
+// اتبعت → متابعة ①..⑤ → اشترك → تم التخصيص
 //                            ↘ مفيش اشتراك (نهاية)
 const STAGE_AR = {
   sent:'اتبعت', followup:'في المتابعة', subscribed:'اشترك',
-  approved:'تمت الموافقة', allocated:'تم التخصيص', not_subscribed:'مفيش اشتراك'
+  allocated:'تم التخصيص', not_subscribed:'مفيش اشتراك'
 };
 const REASON_AR = { fixed:'طلب سعر ثابت', gifts:'طلب هدايا', other:'سبب تاني' };
 
@@ -2647,7 +2642,7 @@ const FOLLOWUP_GAP_DAYS = 2;
 function nextFollowupInfo(c){
   const pr = PROOFS[c.uid] || {};
   const st = leadStage(c);
-  if(st === 'new' || st === 'subscribed' || st === 'approved'
+  if(st === 'new' || st === 'subscribed'
      || st === 'allocated' || st === 'not_subscribed') return null;
 
   const fu = Math.min(5, pr.followup_count || c.followupCount || 0);
@@ -2696,7 +2691,6 @@ function crmActionsRow(c){
   const sentDone  = !!(pr.sent_count) || String(c.messageStatus||'').toLowerCase()==='sent';
   const subDone   = String(c.signupStatus||'').toLowerCase()==='subscribed';
   const lost      = String(c.outcome_type||'') && c.outcome_type!=='subscribed';
-  const appDone   = String(c.approvalStatus||'').toLowerCase()==='approved' && subDone;
   const allocDone = String(c.allocation_status||'').toLowerCase()==='allocated';
   const fuCount   = Math.min(5, pr.followup_count || c.followupCount || 0);
 
@@ -2744,11 +2738,7 @@ function crmActionsRow(c){
              + '</div>';
   } else {
     finalRow = '<div class="crm-row">' + btn('subscribed','subscribed','🎉','اشترك', true) + '</div>'
-             + '<div class="crm-row">'
-             +   btn('approved','approved','✅','تمت الموافقة', appDone)
-             +   (appDone ? btn('allocated','allocated','🎯','تم التخصيص', allocDone)
-                          : locked('لازم تتم الموافقة الأول'))
-             + '</div>';
+             + '<div class="crm-row">' + btn('allocated','allocated','🎯','تم التخصيص', allocDone) + '</div>';
   }
 
   return '<div class="crm-actions">'
@@ -2760,8 +2750,10 @@ function crmActionsRow(c){
 }
 
 // ترتيب المراحل — الفلتر بيستخدمه عشان يعرف مين "عدّى" المرحلة
+// ⚠️ "تمت الموافقة" اتشالت — كانت بتكرّر الاشتراك من غير قيمة مضافة.
+// خط السير بقى: اتبعت → متابعة ①→⑤ → اشترك → تم التخصيص
 const STAGE_RANK = {
-  new:0, sent:1, followup:2, subscribed:3, approved:4, allocated:5, not_subscribed:3
+  new:0, sent:1, followup:2, subscribed:3, allocated:4, not_subscribed:3
 };
 
 // هل المؤثر ده وصل للمرحلة دي (أو عدّاها)؟
@@ -2794,7 +2786,6 @@ function reachedRankOf(c){
 function leadStage(c){
   if(String(c.allocation_status||'').toLowerCase()==='allocated') return 'allocated';
   const sub = String(c.signupStatus||'').toLowerCase()==='subscribed';
-  if(sub && String(c.approvalStatus||'').toLowerCase()==='approved') return 'approved';
   if(sub) return 'subscribed';
   if(c.outcome_type && c.outcome_type!=='subscribed') return 'not_subscribed';
   const pr = PROOFS[c.uid] || {};
@@ -2816,14 +2807,12 @@ function card(c){
   let cls = 'card';
   if(_stage === 'not_subscribed')  cls += ' is-lost';
   else if(_stage === 'allocated')  cls += ' is-allocated';
-  else if(_stage === 'approved')   cls += ' is-complete';
   else if(_d.subscribed)           cls += ' is-subscribed';
   else if(_n > 0)                  cls += ' is-progress';
 
   let html = '<div class="'+cls+'"'+uidAttr+'>';
   if(_stage === 'not_subscribed')  html += '<span class="win-ribbon lost">❌ مفيش اشتراك</span>';
   else if(_stage === 'allocated')   html += '<span class="win-ribbon alloc">🎯 تم التخصيص</span>';
-  else if(_stage === 'approved')    html += '<span class="win-ribbon done">✅ تمت الموافقة</span>';
   else if(_d.subscribed)            html += '<span class="win-ribbon">🎁 مشترك معانا</span>';
   html += stripHtml(c);
   html += '<div class="body">';
@@ -3005,11 +2994,8 @@ function mapRawToCard(o){
   // نتيجة التفاوض — للعرض على الكارت وفي التصدير
   // indexCreator بتحسب مفاتيح الفلترة مرة واحدة هنا — ده اللي بيخلي الزراير فورية
   return indexCreator({
-    // 🐞 approvalStatus مكانش بيتقرا خالص، فمرحلة "تمت الموافقة"
-    // كانت بتتسجّل في الداتابيز بس الكارت مبيشوفهاش.
-    approvalStatus:o.approval_status||"",
     outcome_type:o.outcome_type||"", outcome_note:o.outcome_note||"", outcome_at:o.outcome_at||"",
-    allocation_status:o.allocation_status||"", approved_at:o.approved_at||"", allocated_at:o.allocated_at||"",
+    allocation_status:o.allocation_status||"", allocated_at:o.allocated_at||"",
     uid:String(o.uid||"").toLowerCase(), discoveredAt:normalizeSheetDate(o.discovered_at), assignedTo:String(o.assigned_to||"").trim(),
     handle:String(o.handle||"").replace(/^@/,""), platform:o.platform||"",
     followers:Number(o.followers)||0, niche:String(o.niche||"").toLowerCase(),
@@ -3523,7 +3509,6 @@ async function sendCrmAction(btn,uid,actionType,imageBase64,mode,extra){
       if(actionType==='sent'){        item.messageStatus='sent'; item.sent_at=at; }
       if(actionType==='followup')     item.followupCount=(item.followupCount||0)+1;
       if(actionType==='subscribed'){  item.signupStatus='subscribed'; item.subscribed_at=at; }
-      if(actionType==='approved'){    item.approvalStatus='approved'; item.approved_at=at; }
       if(actionType==='allocated'){   item.allocation_status='allocated'; item.allocated_at=at; }
       if(actionType==='not_subscribed'){
         item.signupStatus='not_subscribed';
@@ -3566,6 +3551,24 @@ async function sendCrmAction(btn,uid,actionType,imageBase64,mode,extra){
         fresh.classList.add('in');
         cardEl.replaceWith(fresh);
         if(wasSub) celebrate(fresh);
+      }
+    }
+
+    // 🔄 نحدّث الفلاتر والإحصائيات فورًا.
+    // من غير كده العدّادات تفضل قديمة (اتبعت 0) لحد ما تعمل Refresh —
+    // ومحصلش على الموبايل إن الموظفة تعمل Refresh كل شوية.
+    buildAllPills();
+    renderStats();
+    renderMyProgress();
+    renderActiveFilters();
+
+    // لو الكارت مبقاش مطابق للفلتر الشغال، نقوله بدل ما يختفي فجأة
+    if(typeof _list !== 'undefined' && state.proof !== 'all'){
+      const stillMatches = (state.proof === 'new')
+        ? leadStage(item) === 'new'
+        : reachedStage(item, state.proof);
+      if(item && !stillMatches){
+        toast('الكارت اتنقل لمرحلة تانية — شيلي الفلتر عشان تشوفيه','info',5000);
       }
     }
   }catch(e){
@@ -4210,7 +4213,7 @@ function exportCSV(){
                    "البريد","واتساب","تليفون",
                    "المرحلة","تاريخ الإرسال","عدد المتابعات",
                    "متابعة 1","متابعة 2","متابعة 3","متابعة 4","متابعة 5",
-                   "تاريخ الاشتراك","تاريخ الموافقة","تاريخ التخصيص",
+                   "تاريخ الاشتراك","تاريخ التخصيص",
                    "سبب عدم الاشتراك","شرح السبب",
                    "رابط الحساب","تاريخ الإضافة"];
 
@@ -4231,7 +4234,6 @@ function exportCSV(){
       pr.followup_count || 0,
       d(pr.followup_1), d(pr.followup_2), d(pr.followup_3), d(pr.followup_4), d(pr.followup_5),
       d(pr.subscribed_at || c.subscribed_at),
-      d(c.approved_at),
       d(c.allocated_at),
       REASON_AR[c.outcome_type] || "",
       c.outcome_note || "",
@@ -4265,7 +4267,7 @@ const CONTACT_LABELS = {
 };
 const PROOF_LABELS = {
   new:"لسه محدش كلّمه", sent:"اتبعت", followup:"في المتابعة",
-  subscribed:"اشترك", approved:"تمت الموافقة",
+  subscribed:"اشترك",
   allocated:"تم التخصيص", not_subscribed:"مفيش اشتراك"
 };
 
@@ -4372,7 +4374,7 @@ function renderMyProgress(){
     if(r>=1) sent++;
     if(r>=2) fu++;
     if(r>=3) sub++;
-    if(r>=5) alloc++;
+    if(r>=4) alloc++;
   }
 
   const raw = (touched / total) * 100;
@@ -4625,7 +4627,6 @@ function proofHtml(c){
   const stg = leadStage(c);
   const ST = {
     allocated:      ['done','🎯 تم التخصيص'],
-    approved:       ['done','✅ تمت الموافقة'],
     subscribed:     ['sub','🎉 اشترك'],
     not_subscribed: ['lost','❌ مفيش اشتراك'],
     followup:       ['part','🔄 متابعة '+fu+' من ٥'],
