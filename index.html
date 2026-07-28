@@ -1757,6 +1757,69 @@
     .lg-main .lg-box{ padding:32px 32px 28px !important }
     .lg-logo{ width:84px !important; height:84px !important; margin-bottom:14px !important }
   }
+
+  /* ==========================================================
+     إصلاح القطع من تحت + لوجو بعرض الكارت
+     المشكلة: المحتوى (روبوت + ترحيب + كارت) أطول من شاشة اللاب،
+     والبوابة flex بـ align-items:center فبتقص من فوق وتحت.
+     ========================================================== */
+
+  #loginGate{
+    /* flex-start بدل center + هوامش تلقائية = يتوسّط لو فيه مساحة،
+       ويتمرّر من غير قص لو المحتوى أطول */
+    align-items:flex-start !important;
+    padding:0 !important;
+  }
+  .lg-main{
+    margin:auto !important;          /* توسيط رأسي آمن */
+    padding:24px 16px 32px !important;
+  }
+  .lg-side{ margin:auto 0 !important }
+
+  /* ===== اللوجو بعرض الكارت ===== */
+  .lg-logo{
+    width:100% !important;
+    height:auto !important;
+    aspect-ratio:auto !important;
+    border-radius:20px !important;
+    margin:0 0 24px !important;
+    padding:18px 22px !important;
+    background:#111 !important;
+    box-shadow:0 12px 30px rgba(0,0,0,.35), 0 0 0 1px rgba(228,85,63,.22) !important;
+    display:block !important;
+    animation:none !important;
+  }
+  .lg-logo img{
+    width:100% !important; height:auto !important;
+    max-height:74px; object-fit:contain !important;
+    padding:0 !important;
+  }
+
+  /* ===== تصغير باقي العناصر عشان يقصر الطول ===== */
+  .lg-title{ font-size:24px !important }
+  .lg-sub{ margin-bottom:24px !important }
+  .lg-field{ margin-bottom:15px !important }
+  .lg-main .lg-box{ padding:32px 32px 28px !important }
+  .lg-hint{ margin-top:18px !important }
+
+  /* ===== شاشات اللاب القصيرة: الروبوت والترحيب يختفوا ===== */
+  @media (max-height:820px) and (min-width:641px){
+    .lg-bot{ display:none !important }
+    .lg-welcome{ margin:0 0 16px !important; font-size:16px !important }
+  }
+  @media (max-height:680px) and (min-width:641px){
+    .lg-welcome{ display:none !important }
+    .lg-logo{ padding:14px 18px !important; margin-bottom:18px !important }
+    .lg-logo img{ max-height:58px }
+    .lg-main .lg-box{ padding:26px 30px 24px !important }
+  }
+
+  /* ===== الموبايل زي ما هو — كان تمام ===== */
+  @media (max-width:640px){
+    .lg-main{ padding:16px 14px 24px !important }
+    .lg-logo{ padding:16px 20px !important; margin-bottom:20px !important }
+    .lg-logo img{ max-height:66px }
+  }
 </style>
 </head>
 <body>
