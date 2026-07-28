@@ -1709,6 +1709,214 @@
     .fextra{ animation:none }
     .fmore svg{ transition:none }
   }
+
+  /* ==========================================================
+     رفع المؤثرين بالجملة
+     ========================================================== */
+  .imp-box{ max-width:560px !important; text-align:right }
+
+  .imp-drop{
+    display:flex; flex-direction:column; align-items:center; gap:7px;
+    padding:34px 20px; border-radius:18px; cursor:pointer;
+    border:2px dashed var(--line); background:color-mix(in srgb,var(--line) 20%,transparent);
+    transition:border-color .18s, background .18s, transform .15s;
+  }
+  .imp-drop:hover{ border-color:var(--brand); background:var(--brand-soft); transform:translateY(-2px) }
+  .imp-ico{ font-size:38px }
+  .imp-drop b{ font-size:15px; font-weight:800; color:var(--ink) }
+  .imp-drop span:last-child{ font-size:12px; font-weight:600; color:var(--muted) }
+
+  .imp-hint{
+    margin-top:13px; padding:12px 14px; border-radius:13px;
+    background:color-mix(in srgb,var(--brand) 7%,transparent);
+    font-size:12px; font-weight:600; color:var(--muted); line-height:1.8;
+  }
+  .imp-hint b{ color:var(--ink) }
+
+  .imp-load, .imp-busy{
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    padding:22px; font-size:13.5px; font-weight:700; color:var(--muted);
+  }
+
+  .imp-file{
+    display:flex; align-items:center; gap:9px;
+    padding:12px 14px; border-radius:13px; margin-bottom:12px;
+    background:var(--brand-soft); font-size:13.5px; font-weight:800; color:var(--brand);
+  }
+  .imp-file b{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+  .imp-count{ font-size:12px; font-weight:800 }
+
+  .imp-cols{ font-size:12.5px; font-weight:700; color:var(--muted); margin-bottom:10px }
+  .imp-tags{ display:flex; flex-wrap:wrap; gap:6px; margin-top:7px }
+  .imp-tag{
+    font-size:11.5px; font-weight:800; padding:4px 11px; border-radius:999px;
+    background:#DCFCE7; color:#15803D;
+  }
+  body.dark .imp-tag{ background:#14432a; color:#86efac }
+
+  .imp-warn{
+    padding:11px 13px; border-radius:12px; margin-bottom:11px;
+    background:#FEF3C7; color:#92400E; font-size:12.5px; font-weight:700;
+  }
+  body.dark .imp-warn{ background:#4a3510; color:#fcd34d }
+
+  .imp-prev{ font-size:12.5px; font-weight:700; color:var(--muted) }
+  .imp-table{ margin-top:8px; max-height:150px; overflow:auto }
+  .imp-r{
+    display:flex; gap:9px; padding:7px 10px; border-radius:9px;
+    background:color-mix(in srgb,var(--line) 22%,transparent); margin-bottom:5px;
+    font-size:11.5px; font-weight:600;
+  }
+  .imp-l{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis;
+          white-space:nowrap; direction:ltr; text-align:start; color:var(--ink) }
+  .imp-f{ font-weight:800; color:var(--brand) }
+
+  /* شريط التقدّم */
+  .imp-prog{ padding:14px 0 }
+  .imp-bar{ height:10px; border-radius:99px; overflow:hidden;
+            background:color-mix(in srgb,var(--line) 55%,transparent) }
+  .imp-bar span{ display:block; height:100%; border-radius:99px;
+                 background:linear-gradient(90deg,var(--brand),var(--brand-2));
+                 transition:width .3s ease }
+  .imp-stat{ text-align:center; margin-top:11px; font-size:13px; font-weight:800; color:var(--ink) }
+  .imp-nums{ display:flex; justify-content:center; gap:9px; margin-top:9px }
+  .imp-nums span, .ib-nums span{
+    font-size:11.5px; font-weight:800; padding:4px 11px; border-radius:999px;
+  }
+  .in-ok { background:#DCFCE7; color:#15803D }
+  .in-dup{ background:#FEF3C7; color:#B45309 }
+  .in-bad{ background:#FEE2E2; color:#B91C1C }
+  .in-tot{ background:color-mix(in srgb,var(--line) 40%,transparent); color:var(--muted) }
+  body.dark .in-ok { background:#14432a; color:#86efac }
+  body.dark .in-dup{ background:#4a3510; color:#fcd34d }
+  body.dark .in-bad{ background:#4a1414; color:#fca5a5 }
+
+  /* النتيجة */
+  .imp-done{ text-align:center; padding:8px 0 16px }
+  .imp-big{ font-size:44px; margin-bottom:8px }
+  .imp-done h3{ font-size:17px; font-weight:800; color:var(--ink); margin-bottom:14px }
+  .imp-sum{ display:flex; gap:9px; justify-content:center }
+  .is-c{ flex:1; padding:13px 8px; border-radius:14px; text-align:center }
+  .is-c b{ display:block; font-size:22px; font-weight:800;
+           font-family:'Space Grotesk','Tajawal',sans-serif }
+  .is-c span{ display:block; font-size:11px; font-weight:700; margin-top:3px }
+  .is-c.ok { background:#DCFCE7; color:#15803D }
+  .is-c.dup{ background:#FEF3C7; color:#B45309 }
+  .is-c.bad{ background:#FEE2E2; color:#B91C1C }
+  body.dark .is-c.ok { background:#14432a; color:#86efac }
+  body.dark .is-c.dup{ background:#4a3510; color:#fcd34d }
+  body.dark .is-c.bad{ background:#4a1414; color:#fca5a5 }
+
+  .imp-fail{ margin-top:14px; font-size:12.5px; font-weight:700; color:var(--muted) }
+  .imp-flist{ margin-top:8px; max-height:190px; overflow:auto }
+  .imp-fr{
+    display:flex; gap:8px; align-items:center;
+    padding:7px 10px; border-radius:9px; margin-bottom:5px;
+    background:color-mix(in srgb,var(--line) 22%,transparent); font-size:11.5px;
+  }
+  .imp-fr > span:first-child{ flex:1; min-width:0; overflow:hidden;
+    text-overflow:ellipsis; white-space:nowrap; direction:ltr; text-align:start; color:var(--ink) }
+  .fr-duplicate{ color:#B45309; font-weight:800; flex-shrink:0 }
+  .fr-invalid  { color:#B91C1C; font-weight:800; flex-shrink:0 }
+  .fr-why{ font-size:10.5px; color:var(--muted); flex-shrink:0; max-width:150px;
+           overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+  .imp-more{ text-align:center; font-size:11.5px; color:var(--muted); padding:7px }
+
+  /* قايمة الاستيرادات */
+  .imp-empty{ text-align:center; padding:26px 10px }
+  .imp-empty h3{ font-size:16px; font-weight:800; color:var(--ink); margin-bottom:6px }
+  .imp-empty p{ font-size:13px; color:var(--muted); line-height:1.7 }
+
+  .ib-list{ max-height:56vh; overflow:auto; display:flex; flex-direction:column; gap:9px }
+  .ib{
+    padding:13px; border-radius:15px; cursor:pointer;
+    border:1px solid var(--line); background:var(--surface);
+    transition:border-color .15s, transform .15s, box-shadow .15s;
+  }
+  .ib:hover{ border-color:var(--brand); transform:translateY(-2px); box-shadow:var(--shadow) }
+  .ib-top{ display:flex; align-items:center; justify-content:space-between; gap:8px }
+  .ib-name{ font-size:13.5px; font-weight:800; color:var(--ink);
+            flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+  .ib-date{ font-size:11px; font-weight:700; color:var(--muted);
+            direction:ltr; unicode-bidi:isolate; flex-shrink:0 }
+  .ib-mid{ display:flex; justify-content:space-between; margin-top:6px;
+           font-size:11.5px; font-weight:700; color:var(--muted) }
+  .ib-nums{ display:flex; gap:6px; margin-top:9px; flex-wrap:wrap }
+  .ib-nums.big span{ font-size:12.5px; padding:6px 13px }
+
+  .ib-back{
+    font-family:inherit; font-size:12.5px; font-weight:800; cursor:pointer;
+    background:transparent; border:none; color:var(--brand); padding:0 0 11px;
+  }
+  .ib-head{ margin-bottom:11px }
+  .ib-head b{ display:block; font-size:14.5px; color:var(--ink) }
+  .ib-head span{ font-size:11.5px; font-weight:700; color:var(--muted) }
+  .ib-show{
+    display:block; width:100%; margin:13px 0;
+    font-family:inherit; font-size:13px; font-weight:800; cursor:pointer;
+    padding:11px; border-radius:12px; border:none;
+    background:var(--brand); color:#fff;
+    transition:filter .15s, transform .15s;
+  }
+  .ib-show:hover{ filter:brightness(1.06); transform:translateY(-1px) }
+
+  .ib-rows{ max-height:42vh; overflow:auto }
+  .ib-row{
+    display:flex; gap:8px; align-items:center;
+    padding:7px 10px; border-radius:9px; margin-bottom:4px;
+    font-size:11.5px; background:color-mix(in srgb,var(--line) 20%,transparent);
+  }
+  .ib-row.added     { background:color-mix(in srgb,#16A34A 10%,transparent) }
+  .ib-row.duplicate { background:color-mix(in srgb,#D97706 10%,transparent) }
+  .ib-row.invalid   { background:color-mix(in srgb,#DC2626 10%,transparent) }
+  .ibr-n{ font-weight:800; color:var(--muted); min-width:26px }
+  .ibr-h{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis;
+          white-space:nowrap; direction:ltr; text-align:start; font-weight:700; color:var(--ink) }
+  .ibr-s{ font-weight:800; flex-shrink:0 }
+  .ibr-w{ font-size:10.5px; color:var(--muted); flex-shrink:0;
+          max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+
+  /* زرار الرفع في الهيدر */
+  .hdr-imp{
+    display:inline-flex; align-items:center; gap:7px; flex-shrink:0;
+    font-family:inherit; font-size:13px; font-weight:800;
+    padding:11px 15px; border-radius:13px; cursor:pointer;
+    border:1.5px solid var(--line); background:var(--surface); color:var(--ink);
+    transition:border-color .15s, background .15s, transform .15s;
+  }
+  .hdr-imp:hover{ border-color:var(--brand); background:var(--brand-soft); color:var(--brand); transform:translateY(-2px) }
+
+  @media (max-width:640px){
+    .imp-box{ max-width:100% !important }
+    .hdr-imp span{ display:none }
+    .hdr-imp{ padding:10px 12px }
+    .imp-drop{ padding:26px 14px }
+    .is-c b{ font-size:19px }
+  }
+
+  /* نتيجة الاستيراد — الجلب والأجنت */
+  .imp-extra{ display:flex; gap:8px; justify-content:center; margin-top:11px; flex-wrap:wrap }
+  .ie{ font-size:12px; font-weight:800; padding:6px 13px; border-radius:999px }
+  .ie.ok{ background:var(--brand-soft); color:var(--brand) }
+  .ie.agent{ background:#CCFBF1; color:#0F766E }
+  body.dark .ie.agent{ background:#134E4A; color:#5EEAD4 }
+  .imp-note{
+    margin-top:11px; padding:11px 13px; border-radius:12px;
+    background:color-mix(in srgb,var(--line) 30%,transparent);
+    font-size:12px; font-weight:600; color:var(--muted); line-height:1.7; text-align:center;
+  }
+  .in-enr{ background:var(--brand-soft); color:var(--brand) }
+  .in-agt{ background:#CCFBF1; color:#0F766E }
+  body.dark .in-agt{ background:#134E4A; color:#5EEAD4 }
+
+  .imp-tpl{
+    display:block; width:100%; margin-top:11px;
+    font-family:inherit; font-size:12.5px; font-weight:800; cursor:pointer;
+    padding:9px; border-radius:11px;
+    border:1px dashed var(--brand); background:transparent; color:var(--brand);
+    transition:background .15s, transform .15s;
+  }
+  .imp-tpl:hover{ background:var(--brand); color:#fff; transform:translateY(-1px) }
 </style>
 </head>
 <body>
@@ -1857,6 +2065,10 @@
       <input id="q" type="search" placeholder="ابحث بالاسم أو الحساب أو اللينك…">
     </div>
     <button class="themebtn" id="themebtn" onclick="toggleTheme()" title="تبديل الوضع (أبيض/أسود)">🌙</button>
+    <button class="hdr-imp" id="hdrImpBtn" style="display:none" onclick="openImportModal()" title="رفع ملف مؤثرين">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <span>رفع ملف</span>
+    </button>
     <button class="hdr-add" id="hdrAddBtn" style="display:none" onclick="openAddLeadModal()" title="إضافة مؤثر جديد">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       <span>إضافة مؤثر</span>
@@ -1892,6 +2104,8 @@
     <button class="admin-btn" onclick="openEmployeeModal()">➕ إضافة موظفة</button>
     <button class="admin-btn secondary" onclick="distributeLeads()">🔄 توزيع الـ Leads</button>
     <button class="admin-btn" onclick="openAddLeadModal()">⭐ إضافة مؤثر</button>
+    <button class="admin-btn secondary" onclick="openImportModal()">📄 رفع ملف</button>
+    <button class="admin-btn secondary" onclick="openImportsList()">📂 الاستيرادات</button>
     <button class="admin-btn secondary" onclick="openStaffManager()">👥 إدارة الفريق</button>
     <button class="admin-btn secondary" onclick="exportCSV()">⬇️ تصدير النتائج</button>
     <span class="spacer"></span>
@@ -2048,6 +2262,8 @@ const FN_MAP = {
   removeEmployee: "remove-employee",
   reassignLead:   "reassign-lead",
   lookupLead:     "lookup-lead",
+  bulkImport:     "bulk-import",
+  getImports:     "get-imports",
   getProofs:      "get-proofs",
   logAction:      "log-action",
   dashboardStats: "dashboard-stats",
@@ -2085,7 +2301,7 @@ const COUNTRY_SYN={"السعودية":["السعودية","السعوديه","ا
 const COUNTRY_ORDER=["السعودية","الإمارات","الكويت","قطر","مصر","المغرب"];
 function countryBucket(loc){ loc=String(loc||"").toLowerCase(); for(const n of COUNTRY_ORDER){ const syn=COUNTRY_SYN[n]||[n]; if(syn.some(x=>loc.indexOf(String(x).toLowerCase())!==-1)) return n; } return "__other__"; }
 function prioInfo(p){ p=String(p||"").trim().toLowerCase(); if(p==="high"||p==="عالي"||p==="1") return {l:"High",c:"#B8860B"}; if(p==="medium"||p==="متوسط"||p==="2") return {l:"Medium",c:"#f59e0b"}; if(p==="low"||p==="منخفض"||p==="3") return {l:"Low",c:"#9ca3af"}; return null; }
-const state = {niche:"all", platform:"all", country:"all", fol:"all", contact:"all", staff:"all", proof:"all", fu:"all", sort:"fol", q:""};
+const state = {niche:"all", platform:"all", country:"all", fol:"all", contact:"all", staff:"all", proof:"all", fu:"all", batch:0, sort:"fol", q:""};
 
 // ===== تحسين الأداء =====
 // الفلاتر كانت بتحسب countryBucket لكل صف في كل تفاعل (14,169 صف × 72 مقارنة).
@@ -2175,7 +2391,9 @@ function buildAllPills(){
     const names=Object.keys(sc).sort();
     const agentCount = data.filter(c=>!c.assignedTo).length;
 
-    if(names.length || agentCount){
+    // فلتر الموظفة للأدمن بس — عند الموظفة كان بيظهر صف فاضي
+    // (هي شايفة كروتها هي بس) وياخد مساحة من غير فايدة.
+    if(isAdminSession() && (names.length || agentCount)){
       const row=document.getElementById("staffFilterRow"); if(row) row.style.display="";
       const pills=[{v:"all",l:"الكل ("+data.length+")"}];
       names.forEach(n=>pills.push({v:n,l:(STAFF_EMOJI[n]||"👤")+" "+n+" ("+sc[n]+")"}));
@@ -2249,7 +2467,7 @@ function applyFilters(){
   const needFilter = scrapingMode || state.niche!=="all" || state.platform!=="all" ||
                      state.country!=="all" || state.fol!=="all" ||
                      state.staff!=="all" || state.proof!=="all" || state.fu!=="all" ||
-                     (state.contact && state.contact!=="all") || !!state.q;
+                     (state.contact && state.contact!=="all") || !!state.q || !!state.batch;
 
   if(needFilter){
     const today = scrapingMode ? cairoTodayStr() : null;
@@ -2275,6 +2493,8 @@ function applyFilters(){
       }
       // "متابعة 2" = اللي وصلوا لمتابعة 2 أو أكتر
       if(state.fu!=="all" && followupsOf(c) < parseInt(state.fu,10)) return false;
+      // فلتر رفعة معيّنة
+      if(state.batch && Number(c.import_batch_id) !== Number(state.batch)) return false;
 
       // ⚠️ التلات شروط دول اتشالوا بالغلط وقت تعديل فلتر المرحلة،
       // فالبحث ونطاق المتابعين ووسيلة التواصل بقوا مش شغالين خالص.
@@ -2994,6 +3214,7 @@ function mapRawToCard(o){
   // نتيجة التفاوض — للعرض على الكارت وفي التصدير
   // indexCreator بتحسب مفاتيح الفلترة مرة واحدة هنا — ده اللي بيخلي الزراير فورية
   return indexCreator({
+    import_batch_id:o.import_batch_id||0,
     outcome_type:o.outcome_type||"", outcome_note:o.outcome_note||"", outcome_at:o.outcome_at||"",
     allocation_status:o.allocation_status||"", allocated_at:o.allocated_at||"",
     uid:String(o.uid||"").toLowerCase(), discoveredAt:normalizeSheetDate(o.discovered_at), assignedTo:String(o.assigned_to||"").trim(),
@@ -4193,6 +4414,468 @@ function showActionBox(title, innerHtml, action){
   if(yes) yes.onclick=()=>{ close(); if(action&&action.fn) action.fn(); };
 }
 
+
+// ==========================================================
+// رفع مؤثرين بالجملة من ملف
+// ==========================================================
+const XLSX_URL = "https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js";
+const IMPORT_CHUNK = 200;
+
+let _impRows = [], _impFile = '', _impBusy = false;
+
+// SheetJS بيتحمّل أول مرة بس — مش عايزين نضيف 900KB على كل زيارة
+function loadXLSX(){
+  if(window.XLSX) return Promise.resolve(window.XLSX);
+  return new Promise((res, rej)=>{
+    const sc = document.createElement('script');
+    sc.src = XLSX_URL;
+    sc.onload  = ()=> res(window.XLSX);
+    sc.onerror = ()=> rej(new Error('مش قادر أحمّل قارئ ملفات Excel — اتأكد من النت'));
+    document.head.appendChild(sc);
+  });
+}
+
+// 🧠 التعرّف التلقائي على الأعمدة — عربي وإنجليزي
+const COL_MAP = {
+  link:      ['link','url','profile','profile_url','رابط','اللينك','لينك','الرابط','رابط الحساب','حساب'],
+  username:  ['username','handle','account','user','اسم الحساب','الحساب','اليوزر','يوزر'],
+  platform:  ['platform','المنصة','منصة','النوع'],
+  followers: ['followers','follower','متابعين','المتابعين','عدد المتابعين','متابع'],
+  name:      ['name','full_name','fullname','الاسم','الاسم الكامل','اسم'],
+  email:     ['email','mail','ايميل','الايميل','إيميل','الإيميل','بريد','البريد'],
+  whatsapp:  ['whatsapp','phone','mobile','واتساب','الواتساب','رقم','التليفون','موبايل','جوال'],
+  niche:     ['niche','category','المجال','مجال','التصنيف','الفئة'],
+  country:   ['country','location','الدولة','دولة','البلد','المدينة','الموقع'],
+  bio:       ['bio','biography','description','البايو','الوصف','نبذة']
+};
+
+function detectColumn(header){
+  const h = String(header||'').trim().toLowerCase().replace(/[_\-\s]+/g,' ');
+  for(const key in COL_MAP){
+    for(const alias of COL_MAP[key]){
+      if(h === alias || h.includes(alias)) return key;
+    }
+  }
+  return null;
+}
+
+// نحوّل صفوف الملف لشكل موحّد
+function normalizeRows(raw){
+  if(!raw.length) return { rows:[], mapping:{}, headers:[] };
+
+  const headers = Object.keys(raw[0]);
+  const mapping = {};
+  headers.forEach(h => { const k = detectColumn(h); if(k && !mapping[k]) mapping[k] = h; });
+
+  // مفيش عمود لينك؟ ندوّر على أي عمود فيه لينكات فعلاً
+  if(!mapping.link && !mapping.username){
+    for(const h of headers){
+      const sample = raw.slice(0,20).map(r => String(r[h]||''));
+      const hits = sample.filter(v => /instagram\.com|tiktok\.com|snapchat\.com|youtube\.com|^@/i.test(v)).length;
+      if(hits >= Math.min(3, sample.length)){ mapping.link = h; break; }
+    }
+  }
+
+  const rows = raw.map((r, i) => {
+    const o = { __row: i + 2 };   // +2 لأن الصف 1 عناوين
+    for(const key in mapping) o[key] = String(r[mapping[key]] ?? '').trim();
+    if(!o.link && o.username) o.link = o.username;
+    return o;
+  }).filter(o => o.link);
+
+  return { rows, mapping, headers };
+}
+
+// ===== قراءة الملف =====
+async function readImportFile(file){
+  const name = (file.name||'').toLowerCase();
+  if(name.endsWith('.csv') || name.endsWith('.txt')){
+    const text = await file.text();
+    return parseCSV(text);
+  }
+  const XLSX = await loadXLSX();
+  const buf  = await file.arrayBuffer();
+  const wb   = XLSX.read(buf, { type:'array' });
+  const ws   = wb.Sheets[wb.SheetNames[0]];
+  return XLSX.utils.sheet_to_json(ws, { defval:'' });
+}
+
+// قارئ CSV بسيط بيتعامل مع التنصيص والفواصل جوه الخلايا
+function parseCSV(text){
+  const t = text.replace(/^\uFEFF/, '');
+  const rows = []; let row = [], cell = '', q = false;
+  for(let i=0;i<t.length;i++){
+    const c = t[i];
+    if(q){
+      if(c === '"'){ if(t[i+1] === '"'){ cell += '"'; i++; } else q = false; }
+      else cell += c;
+    } else {
+      if(c === '"') q = true;
+      else if(c === ','){ row.push(cell); cell = ''; }
+      else if(c === '\n'){ row.push(cell); rows.push(row); row = []; cell = ''; }
+      else if(c !== '\r') cell += c;
+    }
+  }
+  if(cell || row.length){ row.push(cell); rows.push(row); }
+  if(!rows.length) return [];
+  const head = rows[0].map(h => String(h||'').trim());
+  return rows.slice(1)
+    .filter(r => r.some(v => String(v||'').trim()))
+    .map(r => { const o = {}; head.forEach((h,i) => o[h] = r[i] ?? ''); return o; });
+}
+
+
+// قالب جاهز — بيتولّد في المتصفح، مفيش ملف مرفوع على السيرفر
+function downloadTemplate(e){
+  if(e) e.stopPropagation();
+  const rows = [
+    ['رابط الحساب','عدد المتابعين','الاسم الكامل','الايميل','واتساب','المجال','الدولة'],
+    ['https://www.instagram.com/chef.wasan/','500000','Chef Wasan','','','طعام وطبخ','الإمارات'],
+    ['https://www.tiktok.com/@khaby.lame','162500000','Khabane Lame','','','ترفيه','إيطاليا'],
+    ['https://www.snapchat.com/add/username','250000','اسم المؤثر','name@mail.com','+971501234567','فاشن','السعودية'],
+    ['https://www.youtube.com/@channelname','400000','اسم القناة','','','تقنية','مصر']
+  ];
+  const csv = rows.map(r => r.map(csvCell).join(',')).join('\r\n');
+  const blob = new Blob(['\uFEFF' + csv], { type:'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'adltix_template.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 1500);
+  toastOk('نزّل القالب، امسح صفوف الأمثلة وحط بياناتك');
+}
+
+// ===== نافذة الرفع =====
+function openImportModal(){
+  _impRows = []; _impFile = ''; _impBusy = false;
+  const ov = document.createElement('div');
+  ov.className = 'cf-overlay'; ov.id = 'impOverlay';
+  ov.innerHTML =
+      '<div class="cf-box imp-box">'
+    +   '<div class="cf-title">📄 رفع مؤثرين من ملف</div>'
+    +   '<div class="cf-msg">ارفع ملف Excel أو CSV. الموقع هيتعرّف على الأعمدة لوحده، '
+    +     'ويفحص كل حساب — الموجود هيترفض والجديد هيتضاف.</div>'
+    +   '<div id="impBody">'
+    +     '<label class="imp-drop" id="impDrop">'
+    +       '<input type="file" id="impFile" accept=".csv,.txt,.xlsx,.xls" hidden>'
+    +       '<span class="imp-ico">📂</span>'
+    +       '<b>اضغط لاختيار الملف</b>'
+    +       '<span>Excel (.xlsx) أو CSV — أقصى 5000 صف</span>'
+    +     '</label>'
+    +     '<div class="imp-hint">'
+    +       '<b>الأعمدة اللي الموقع بيفهمها:</b><br>'
+    +       'رابط الحساب (إجباري) · المتابعين · الاسم · الإيميل · واتساب · المجال · الدولة'
+    +       '<button class="imp-tpl" onclick="downloadTemplate(event)">⬇️ نزّل قالب جاهز (CSV)</button>'
+    +     '</div>'
+    +   '</div>'
+    +   '<div class="lg-err" id="impErr"></div>'
+    +   '<div class="cf-btns" id="impBtns">'
+    +     '<button class="cf-cancel" onclick="closeImportModal()">إلغاء</button>'
+    +   '</div>'
+    + '</div>';
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>ov.classList.add('show'));
+
+  const inp = ov.querySelector('#impFile');
+  ov.querySelector('#impDrop').onclick = ()=> inp.click();
+  inp.onchange = (e)=>{ const f = e.target.files[0]; if(f) handleImportFile(f); };
+
+  ov.addEventListener('click', e=>{ if(e.target===ov && !_impBusy) closeImportModal(); });
+}
+
+function closeImportModal(){
+  if(_impBusy) return;
+  const ov = document.getElementById('impOverlay');
+  if(!ov) return;
+  ov.classList.remove('show'); setTimeout(()=>ov.remove(),220);
+}
+
+// ===== قراءة الملف وعرض المعاينة =====
+async function handleImportFile(file){
+  const err  = document.getElementById('impErr');
+  const body = document.getElementById('impBody');
+  err.textContent = '';
+  body.innerHTML = '<div class="imp-load"><span class="lm-spin"></span> بنقرا الملف…</div>';
+
+  try{
+    const raw = await readImportFile(file);
+    if(!raw.length) throw new Error('الملف فاضي أو مفيش فيه صفوف');
+    if(raw.length > 5000) throw new Error('الملف كبير أوي — أقصى 5000 صف في المرة');
+
+    const { rows, mapping } = normalizeRows(raw);
+    if(!rows.length) throw new Error('مالقيتش عمود فيه روابط أو أسماء حسابات. اتأكد إن فيه عمود اسمه "رابط الحساب" أو "link"');
+
+    _impRows = rows; _impFile = file.name;
+
+    // معاينة سريعة: نفحص التكرار جوه الملف نفسه محليًا
+    const seen = new Set(); let dupInFile = 0;
+    for(const r of rows){
+      const k = String(r.link||'').toLowerCase().replace(/\/+$/,'');
+      if(seen.has(k)) dupInFile++; else seen.add(k);
+    }
+
+    const found = Object.keys(mapping);
+    const AR = { link:'الرابط', username:'اسم الحساب', platform:'المنصة', followers:'المتابعين',
+                 name:'الاسم', email:'الإيميل', whatsapp:'واتساب', niche:'المجال',
+                 country:'الدولة', bio:'البايو' };
+
+    body.innerHTML =
+        '<div class="imp-file"><span>📄</span><b>'+esc(file.name)+'</b>'
+      +   '<span class="imp-count">'+rows.length.toLocaleString('en')+' صف</span></div>'
+      + '<div class="imp-cols"><b>الأعمدة اللي اتعرف عليها:</b><div class="imp-tags">'
+      +   found.map(k=>'<span class="imp-tag">'+esc(AR[k]||k)+'</span>').join('')
+      + '</div></div>'
+      + (dupInFile ? '<div class="imp-warn">⚠️ '+dupInFile+' صف مكرر جوه الملف نفسه — هيتضاف مرة واحدة بس</div>' : '')
+      + '<div class="imp-prev"><b>أول 5 صفوف:</b>'
+      +   '<div class="imp-table">'
+      +     rows.slice(0,5).map(r =>
+            '<div class="imp-r"><span class="imp-l">'+esc(r.link||'')+'</span>'
+          + (r.followers ? '<span class="imp-f">'+esc(r.followers)+'</span>' : '')+'</div>').join('')
+      +   '</div>'
+      + '</div>';
+
+    document.getElementById('impBtns').innerHTML =
+        '<button class="cf-cancel" onclick="closeImportModal()">إلغاء</button>'
+      + '<button class="cf-yes ok" onclick="startImport()">🚀 ابدأ الاستيراد ('+rows.length.toLocaleString('en')+')</button>';
+
+  }catch(e){
+    body.innerHTML = '';
+    err.textContent = e.message || 'مش قادر أقرا الملف';
+    document.getElementById('impBtns').innerHTML =
+      '<button class="cf-cancel" onclick="closeImportModal()">إغلاق</button>'
+      + '<button class="cf-yes ok" onclick="openImportModal()">جرّب ملف تاني</button>';
+  }
+}
+
+// ===== الاستيراد على دفعات =====
+async function startImport(){
+  if(_impBusy || !_impRows.length) return;
+  _impBusy = true;
+
+  const body = document.getElementById('impBody');
+  const btns = document.getElementById('impBtns');
+  btns.innerHTML = '<span class="imp-busy">جاري الاستيراد… متقفلش الصفحة</span>';
+
+  const total  = _impRows.length;
+  const chunks = Math.ceil(total / IMPORT_CHUNK);
+  let batchId = 0, added = 0, dups = 0, bad = 0, done = 0;
+  const failed = [];
+
+  body.innerHTML =
+      '<div class="imp-prog">'
+    +   '<div class="imp-bar"><span id="impFill" style="width:0%"></span></div>'
+    +   '<div class="imp-stat" id="impStat">بنبدأ…</div>'
+    +   '<div class="imp-nums" id="impNums"></div>'
+    + '</div>';
+
+  const fill = document.getElementById('impFill');
+  const stat = document.getElementById('impStat');
+  const nums = document.getElementById('impNums');
+
+  for(let i=0;i<chunks;i++){
+    const slice = _impRows.slice(i*IMPORT_CHUNK, (i+1)*IMPORT_CHUNK);
+    try{
+      const r = await callApi('bulkImport', {
+        token: SESSION.token, rows: slice, batchId: batchId || undefined,
+        filename: _impFile, isLast: (i === chunks - 1)
+      });
+      batchId = r.batchId;
+      added += r.chunk.added; dups += r.chunk.duplicates; bad += r.chunk.invalid;
+      (r.rows||[]).forEach(x=>{ if(x.status !== 'added') failed.push(x); });
+    }catch(e){
+      // دفعة فشلت؟ نكمّل الباقي بدل ما نوقف كل حاجة
+      bad += slice.length;
+      failed.push({ handle:'(دفعة كاملة)', status:'invalid', reason:e.message });
+    }
+
+    done += slice.length;
+    const pct = Math.round((done/total)*100);
+    fill.style.width = pct + '%';
+    stat.textContent = 'خلصنا ' + done.toLocaleString('en') + ' من ' + total.toLocaleString('en') + ' (' + pct + '%)';
+    nums.innerHTML = '<span class="in-ok">✅ '+added+'</span>'
+                   + '<span class="in-dup">🔁 '+dups+'</span>'
+                   + '<span class="in-bad">⚠️ '+bad+'</span>';
+  }
+
+  _impBusy = false;
+  showImportResult({ batchId, total, added, dups, bad, failed });
+  if(added) boot();          // نحمّل الكروت الجديدة
+}
+
+// ===== نتيجة الاستيراد =====
+function showImportResult(r){
+  const body = document.getElementById('impBody');
+  const btns = document.getElementById('impBtns');
+  if(!body) return;
+
+  const AR = { duplicate:'موجود قبل كده', invalid:'صف غلط' };
+
+  body.innerHTML =
+      '<div class="imp-done">'
+    +   '<div class="imp-big">✅</div>'
+    +   '<h3>خلص الاستيراد</h3>'
+    +   '<div class="imp-sum">'
+    +     '<div class="is-c ok"><b>'+r.added.toLocaleString('en')+'</b><span>اتضافوا</span></div>'
+    +     '<div class="is-c dup"><b>'+r.dups.toLocaleString('en')+'</b><span>موجودين قبل كده</span></div>'
+    +     '<div class="is-c bad"><b>'+r.bad.toLocaleString('en')+'</b><span>صفوف غلط</span></div>'
+    +   '</div>'
+    +   ((r.enriched || r.toAgent)
+        ? '<div class="imp-extra">'
+          + (r.enriched ? '<span class="ie ok">✨ '+Number(r.enriched).toLocaleString('en')+' اتجابت بياناتهم</span>' : '')
+          + (r.toAgent  ? '<span class="ie agent">🤖 '+Number(r.toAgent).toLocaleString('en')+' راحوا للـ '+AGENT_NAME+'</span>' : '')
+          + '</div>'
+        : '')
+    +   ((r.added - (r.enriched||0)) > 0
+        ? '<div class="imp-note">ℹ️ باقي '+(r.added-(r.enriched||0)).toLocaleString('en')
+          + ' كارت هتتجاب بياناتهم تلقائي خلال شوية — الكروت شغالة عادي لحد وقتها.</div>'
+        : '')
+    + '</div>'
+    + (r.failed.length
+        ? '<div class="imp-fail"><b>تفاصيل اللي مادخلش ('+r.failed.length+'):</b><div class="imp-flist">'
+          + r.failed.slice(0,60).map(x =>
+              '<div class="imp-fr"><span>'+esc(x.handle||'—')+'</span>'
+            + '<span class="fr-'+x.status+'">'+esc(AR[x.status]||x.status)+'</span>'
+            + '<span class="fr-why">'+esc(x.reason||'')+(x.owner?' · مع '+esc(x.owner):'')+'</span></div>').join('')
+          + (r.failed.length > 60 ? '<div class="imp-more">+ '+(r.failed.length-60)+' كمان — شوفهم في صفحة الاستيرادات</div>' : '')
+          + '</div></div>'
+        : '');
+
+  btns.innerHTML =
+      '<button class="cf-cancel" onclick="closeImportModal()">تمام</button>'
+    + '<button class="cf-yes ok" onclick="closeImportModal();openImportsList()">📂 شوف الاستيرادات</button>';
+
+  if(r.added) toastOk('اتضاف '+r.added.toLocaleString('en')+' مؤثر جديد');
+}
+
+
+// ==========================================================
+// صفحة الاستيرادات
+// ==========================================================
+async function openImportsList(){
+  const ov = document.createElement('div');
+  ov.className = 'cf-overlay'; ov.id = 'impListOv';
+  ov.innerHTML =
+      '<div class="cf-box imp-box">'
+    +   '<div class="cf-title">📂 الاستيرادات</div>'
+    +   '<div id="impListBody"><div class="imp-load"><span class="lm-spin"></span> بنحمّل…</div></div>'
+    +   '<div class="cf-btns"><button class="cf-cancel" onclick="closeImportsList()">إغلاق</button></div>'
+    + '</div>';
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>ov.classList.add('show'));
+  ov.addEventListener('click', e=>{ if(e.target===ov) closeImportsList(); });
+
+  try{
+    const r = await callApi('getImports', { token: SESSION.token });
+    renderImportsList(r.batches || []);
+  }catch(e){
+    document.getElementById('impListBody').innerHTML =
+      '<div class="imp-warn">'+esc(e.message||'مش قادر أحمّل الاستيرادات')+'</div>';
+  }
+}
+
+function closeImportsList(){
+  const ov = document.getElementById('impListOv');
+  if(!ov) return;
+  ov.classList.remove('show'); setTimeout(()=>ov.remove(),220);
+}
+
+function renderImportsList(list){
+  const box = document.getElementById('impListBody');
+  if(!box) return;
+
+  if(!list.length){
+    box.innerHTML =
+        '<div class="imp-empty"><div class="imp-big">📂</div>'
+      +   '<h3>مفيش استيرادات لسه</h3>'
+      +   '<p>ارفع ملف Excel أو CSV وهيظهر هنا بكل تفاصيله.</p></div>';
+    return;
+  }
+
+  box.innerHTML = '<div class="ib-list">' + list.map(b =>
+      '<div class="ib" onclick="openBatchDetail('+b.id+')">'
+    +   '<div class="ib-top">'
+    +     '<span class="ib-name">📄 '+esc(b.filename)+'</span>'
+    +     '<span class="ib-date">'+esc(fmtShort(b.at))+'</span>'
+    +   '</div>'
+    +   '<div class="ib-mid">'
+    +     '<span class="ib-staff">'+(STAFF_EMOJI[b.staff]||'👤')+' '+esc(b.staff||'')+'</span>'
+    +     '<span class="ib-live">'+Number(b.live_now||0).toLocaleString('en')+' كارت شغال</span>'
+    +   '</div>'
+    +   '<div class="ib-nums">'
+    +     '<span class="in-ok">✅ '+Number(b.added||0).toLocaleString('en')+'</span>'
+    +     '<span class="in-dup">🔁 '+Number(b.duplicates||0).toLocaleString('en')+'</span>'
+    +     '<span class="in-bad">⚠️ '+Number(b.invalid||0).toLocaleString('en')+'</span>'
+    +     '<span class="in-tot">من '+Number(b.total_rows||0).toLocaleString('en')+'</span>'
+    +   '</div>'
+    + '</div>').join('') + '</div>';
+}
+
+// تفاصيل رفعة واحدة
+async function openBatchDetail(id){
+  const box = document.getElementById('impListBody');
+  box.innerHTML = '<div class="imp-load"><span class="lm-spin"></span> بنحمّل التفاصيل…</div>';
+  try{
+    const r = await callApi('getImports', { token: SESSION.token, batchId: id });
+    const b = r.batch, rows = r.rows || [];
+    const AR = { added:'اتضاف', duplicate:'موجود قبل كده', invalid:'صف غلط' };
+
+    box.innerHTML =
+        '<button class="ib-back" onclick="openImportsListInline()">← رجوع للقايمة</button>'
+      + '<div class="ib-head">'
+      +   '<b>📄 '+esc(b.filename)+'</b>'
+      +   '<span>'+esc(fmtShort(b.at))+' · '+(STAFF_EMOJI[b.staff]||'👤')+' '+esc(b.staff||'')+'</span>'
+      + '</div>'
+      + '<div class="ib-nums big">'
+      +   '<span class="in-ok">✅ '+Number(b.added||0)+' اتضافوا</span>'
+      +   '<span class="in-dup">🔁 '+Number(b.duplicates||0)+' مكررين</span>'
+      +   '<span class="in-bad">⚠️ '+Number(b.invalid||0)+' غلط</span>'
+      + '</div>'
+      + (Number(b.live_now) > 0
+          ? '<button class="ib-show" onclick="showBatchCards('+id+')">👁️ شوف الـ '
+            + Number(b.live_now).toLocaleString('en')+' كارت بتوع الرفعة دي</button>'
+          : '')
+      + '<div class="ib-rows">'
+      +   rows.slice(0,300).map(x =>
+          '<div class="ib-row '+x.status+'">'
+        +   '<span class="ibr-n">'+x.row_no+'</span>'
+        +   '<span class="ibr-h">'+esc(x.handle || x.raw_input || '—')+'</span>'
+        +   '<span class="ibr-s">'+esc(AR[x.status]||x.status)+'</span>'
+        +   '<span class="ibr-w">'+esc(x.reason||'')+(x.owner?' · مع '+esc(x.owner):'')+'</span>'
+        + '</div>').join('')
+      +   (rows.length > 300 ? '<div class="imp-more">+ '+(rows.length-300)+' صف كمان</div>' : '')
+      + '</div>';
+  }catch(e){
+    box.innerHTML = '<div class="imp-warn">'+esc(e.message)+'</div>';
+  }
+}
+
+async function openImportsListInline(){
+  const box = document.getElementById('impListBody');
+  box.innerHTML = '<div class="imp-load"><span class="lm-spin"></span> بنحمّل…</div>';
+  try{
+    const r = await callApi('getImports', { token: SESSION.token });
+    renderImportsList(r.batches || []);
+  }catch(e){
+    box.innerHTML = '<div class="imp-warn">'+esc(e.message)+'</div>';
+  }
+}
+
+// عرض كروت رفعة معيّنة في الشبكة
+function showBatchCards(id){
+  closeImportsList();
+  state.batch = id;
+  clearAllFiltersKeepBatch();
+  toastOk('بنعرض كروت الرفعة دي بس');
+}
+
+function clearAllFiltersKeepBatch(){
+  state.niche="all"; state.platform="all"; state.country="all";
+  state.fol="all"; state.contact="all"; state.staff="all";
+  state.proof="all"; state.fu="all"; state.batch=0; state.q="";
+  const q=document.getElementById("q"); if(q) q.value="";
+  buildAllPills(); render();
+}
+
 // ===== تصدير النتائج المفلترة إلى CSV =====
 // بيصدّر اللي ظاهر قدامك بالظبط بعد الفلترة — مش القاعدة كلها.
 // كله بيحصل في المتصفح: صفر طلبات للسيرفر، وشغّال حتى على 14 ألف صف.
@@ -4282,6 +4965,7 @@ function activeFilterList(){
   if(state.staff!=="all")     out.push({k:"staff",    l:state.staff===AGENT_KEY ? "🤖 "+AGENT_NAME : "الموظفة: "+state.staff});
   if(state.proof!=="all")     out.push({k:"proof",    l:"المرحلة: "+(PROOF_LABELS[state.proof]||state.proof)});
   if(state.fu!=="all")        out.push({k:"fu",       l:"وصلوا لمتابعة "+state.fu});
+  if(state.batch)             out.push({k:"batch",    l:"📄 رفعة رقم "+state.batch});
   if(scrapingMode)            out.push({k:"scraping", l:"سكرابينج النهاردة"});
   return out;
 }
@@ -4289,6 +4973,8 @@ function activeFilterList(){
 function clearFilter(key){
   if(key==="q"){
     state.q=""; const q=document.getElementById("q"); if(q) q.value="";
+  } else if(key==="batch"){
+    state.batch=0;
   } else if(key==="scraping"){
     toggleScrapingView(); return;              // بتعمل render بنفسها
   } else {
@@ -4301,7 +4987,7 @@ function clearFilter(key){
 
 function clearAllFilters(){
   state.niche="all"; state.platform="all"; state.country="all";
-  state.fol="all"; state.contact="all"; state.staff="all"; state.proof="all"; state.fu="all";
+  state.fol="all"; state.contact="all"; state.staff="all"; state.proof="all"; state.fu="all"; state.batch=0;
   state.q="";
   const q=document.getElementById("q"); if(q) q.value="";
   ["f-fol","f-contact"].forEach(id=>{ const el=document.getElementById(id); if(el) el.value="all"; });
@@ -4767,14 +5453,14 @@ function updateUIForRole() {
   if (fab) fab.style.display = logged ? '' : 'none';
   const hdrAdd = document.getElementById('hdrAddBtn');
   if (hdrAdd) hdrAdd.style.display = logged ? '' : 'none';
+  const hdrImp = document.getElementById('hdrImpBtn');
+  if (hdrImp) hdrImp.style.display = logged ? '' : 'none';
 
   // صفوف الفلاتر دي للأدمن بس — بنخفيها عن الموظفة
   // عشان ماتاخدش مساحة فاضية وتزوّد التمرير من غير فايدة
   if (!isAdminSession()){
     const r1 = document.getElementById('staffFilterRow');
-    const r2 = document.getElementById('proofFilterRow');
     if (r1) r1.style.display = 'none';
-    if (r2) r2.style.display = 'none';
   }
 }
 
