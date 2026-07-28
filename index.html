@@ -1111,90 +1111,6 @@
   }
 
   /* ==========================================================
-     شاشة الدخول — إعادة تصميم
-     الخلفية القديمة كانت بنفسجي غامق مش ماشي مع اللوجو.
-     دلوقتي: كحلي دافي + توهّجين برتقاليين خفيفين من لون العلامة.
-     ========================================================== */
-  #loginGate{
-    /* 🐞 كان مكتوب position:relative هنا — وده ألغى fixed الأصلية
-       فالشاشة بقت مش مغطية والموقع بان تحتها. */
-    position:fixed !important; inset:0 !important;
-    background:#141017 !important;
-    overflow:auto;
-    z-index:99999 !important;
-  }
-  #loginGate::before{
-    content:""; position:absolute; inset:0;
-    background:
-      radial-gradient(60% 55% at 18% 12%, rgba(228,85,63,.30), transparent 62%),
-      radial-gradient(55% 50% at 84% 88%, rgba(255,129,99,.22), transparent 62%),
-      linear-gradient(150deg,#1A1116 0%,#241419 45%,#14100F 100%);
-  }
-  #loginGate::after{
-    content:""; position:absolute; inset:0; opacity:.32;
-    background-image:
-      linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px);
-    background-size:54px 54px;
-    mask-image:radial-gradient(circle at 50% 45%, #000, transparent 72%);
-    -webkit-mask-image:radial-gradient(circle at 50% 45%, #000, transparent 72%);
-  }
-
-  .lg-box{
-    position:relative; z-index:2;
-    background:rgba(255,255,255,.97);
-    border:1px solid rgba(255,255,255,.55);
-    border-radius:26px !important;
-    padding:38px 30px 32px !important;
-    box-shadow:0 30px 90px rgba(0,0,0,.55), 0 0 0 1px rgba(228,85,63,.12);
-    backdrop-filter:blur(8px);
-  }
-  body.dark .lg-box{
-    background:rgba(26,20,24,.96);
-    border-color:rgba(255,255,255,.08);
-  }
-
-  .lg-logo{
-    width:92px !important; height:92px !important;
-    border-radius:24px !important; margin:0 auto 20px !important;
-    background:#fff !important;
-    box-shadow:0 14px 38px rgba(228,85,63,.30), 0 0 0 5px rgba(228,85,63,.10) !important;
-  }
-  .lg-title{ font-size:21px !important; letter-spacing:-.3px }
-  .lg-sub{
-    font-size:12px !important; font-weight:700; letter-spacing:.6px;
-    text-transform:uppercase; color:var(--brand) !important;
-    margin-bottom:26px !important;
-  }
-
-  .lg-field input{
-    padding:13px 15px !important; border-radius:13px !important;
-    border:1.5px solid var(--line) !important;
-    transition:border-color .16s, box-shadow .16s !important;
-  }
-  .lg-field input:focus{
-    border-color:var(--brand) !important;
-    box-shadow:0 0 0 4px rgba(228,85,63,.14) !important;
-  }
-  .lg-field label{ font-size:12px !important; margin-bottom:6px !important }
-
-  .lg-btn{
-    padding:14px !important; border-radius:13px !important;
-    margin-top:10px !important; font-size:15px !important;
-    box-shadow:0 10px 26px rgba(228,85,63,.35) !important;
-    transition:transform .15s, box-shadow .15s, filter .15s !important;
-  }
-  .lg-btn:hover{ transform:translateY(-2px); box-shadow:0 14px 34px rgba(228,85,63,.45) !important; filter:brightness(1.05) }
-
-  .lg-hint{
-    margin-top:20px !important; font-size:10.5px !important;
-    letter-spacing:1.2px; text-transform:uppercase; font-weight:700;
-    color:var(--muted) !important;
-  }
-
-  @media (prefers-reduced-motion:reduce){ .lg-logo{ animation:none !important } }
-
-  /* ==========================================================
      روبوت الترحيب + الرسالة المتحركة
      كل الحركة transform/opacity بس — دي الخصائص الوحيدة اللي
      المتصفح بينفذها على كارت الجرافيكس من غير إعادة رسم للصفحة.
@@ -1210,8 +1126,6 @@
     padding:24px !important;
   }
   
-  .lg-side .lg-bot{ margin:0 0 6px }
-  .lg-side .lg-welcome{ margin:0 0 20px }
   .lg-brand{
     font-size:clamp(26px,3.4vw,38px); font-weight:900; line-height:1.25;
     letter-spacing:-.6px; margin-bottom:12px;
@@ -1235,7 +1149,6 @@
     #loginGate{ flex-direction:column !important; gap:0 !important; padding:20px !important }
     
     .lg-brand, .lg-tag, .lg-feats{ display:none }
-    .lg-side .lg-welcome{ margin:2px 0 16px }
   }
 
   .lg-bot{
@@ -1438,10 +1351,10 @@
   .dup-link:hover{ background:var(--brand-soft); border-color:var(--brand) }
 
   /* ==========================================================
-     شاشة الدخول — تغطية كاملة + لوحة جانبية
+  /* ==========================================================
+     شاشة الدخول تغطي كل حاجة
+     من غير ده الموقع بيبان تحتها لما المحتوى يبقى أطول من الشاشة.
      ========================================================== */
-
-  /* 1) قفل الصفحة وإخفاء الموقع تحت شاشة الدخول */
   body.gate-open{ overflow:hidden !important }
   body.gate-open header,
   body.gate-open .wrap,
@@ -1450,429 +1363,46 @@
   body.gate-open .to-top,
   body.gate-open .bgfx{ display:none !important }
 
-  /* 2) البوابة نفسها: تغطي كل الشاشة وتتمرّر جواها لو المحتوى طويل */
-  #loginGate{
-    position:fixed !important; inset:0 !important;
-    overflow-y:auto !important;
-    padding:28px 20px !important;
-    align-items:center !important; justify-content:center !important;
-    flex-direction:row !important;
-    gap:56px !important;
-    flex-wrap:wrap;
-  }
+  #loginGate{ overflow-y:auto }
 
-  /* 3) اللوحة الجانبية — بتملا الفراغ على الشاشات الكبيرة */
-  
-  
-  
-  
-  
-  
-  
-  
-
-  /* 4) العمود بتاع الروبوت + الكارت */
-  
-  
-
-  @media (min-width:1000px){
-    
-    #loginGate{ gap:64px !important }
-    /* الروبوت والترحيب فوق الكارت في عمود واحد */
-    .lg-bot, .lg-welcome{ flex-basis:100%; display:flex; justify-content:center }
-    .lg-bot{ order:0 }
-    .lg-welcome{ order:0 }
-  }
-
-  /* 5) الموبايل: الكارت بس، من غير لوحة جانبية */
-  @media (max-width:640px){
-    #loginGate{ padding:20px 16px !important; gap:0 !important }
-    
-    .lg-box{ padding:30px 22px !important }
-  }
-
-  /* ==========================================================
-     اللوحة الجانبية: أشكال متحركة بدل كلام
-     مدارات بتلف + أيقونات المنصات + أعمدة بيانات بتنبض.
-     كل الحركة transform/opacity — على كارت الجرافيكس، صفر إعادة رسم.
-     ========================================================== */
-  
-
-  .lg-orbit{ position:relative; width:250px; height:250px; display:grid; place-items:center }
-
-  .lg-core{
-    position:relative; z-index:3;
-    width:74px; height:74px; border-radius:22px;
-    display:grid; place-items:center;
-    font-family:'Space Grotesk','Tajawal',sans-serif;
-    font-size:32px; font-weight:800; color:#fff;
-    background:linear-gradient(135deg,#E4553F,#FF8163);
-    box-shadow:0 14px 40px rgba(228,85,63,.5);
-    animation:coreBeat 3s ease-in-out infinite;
-  }
-  @keyframes coreBeat{ 0%,100%{transform:scale(1)} 50%{transform:scale(1.07)} }
-
-  .lg-ring{
-    position:absolute; border-radius:50%;
-    border:1px solid rgba(255,255,255,.14);
-  }
-  .lg-ring.r1{ width:130px; height:130px; animation:spin 14s linear infinite }
-  .lg-ring.r2{ width:186px; height:186px; border-style:dashed; border-color:rgba(255,129,99,.22); animation:spin 22s linear infinite reverse }
-  .lg-ring.r3{ width:246px; height:246px; border-color:rgba(255,255,255,.07); animation:spin 34s linear infinite }
-  @keyframes spin{ to{ transform:rotate(360deg) } }
-
-  /* الأيقونات بتلف حوالين المركز */
-  .lg-dot{
-    position:absolute; inset:0; margin:auto;
-    width:42px; height:42px; border-radius:13px;
-    display:grid; place-items:center; font-size:18px;
-    background:rgba(255,255,255,.10);
-    border:1px solid rgba(255,255,255,.16);
-    backdrop-filter:blur(6px);
-    animation:orbit 18s linear infinite;
-  }
-  .lg-dot.d1{ --r:93px;  animation-delay:0s }
-  .lg-dot.d2{ --r:93px;  animation-delay:-4.5s }
-  .lg-dot.d3{ --r:123px; animation-delay:-9s;  animation-duration:24s }
-  .lg-dot.d4{ --r:123px; animation-delay:-16s; animation-duration:24s }
-  @keyframes orbit{
-    from{ transform:rotate(0deg) translateX(var(--r)) rotate(0deg) }
-    to  { transform:rotate(360deg) translateX(var(--r)) rotate(-360deg) }
-  }
-
-  /* أعمدة بيانات بتنبض */
-  .lg-bars{
-    display:flex; align-items:flex-end; gap:7px; height:64px;
-  }
-  .lg-bars span{
-    display:block; width:11px; border-radius:6px;
-    height:var(--h);
-    background:linear-gradient(180deg,#FF8163,rgba(228,85,63,.35));
-    transform-origin:bottom;
-    animation:barPulse 2.4s ease-in-out infinite;
-    animation-delay:var(--d);
-  }
-  @keyframes barPulse{
-    0%,100%{ transform:scaleY(.55); opacity:.55 }
-    50%    { transform:scaleY(1);   opacity:1 }
-  }
-
-  @media (min-width:1000px){  }
-  @media (max-width:999px){  }
-
-  @media (prefers-reduced-motion:reduce){
-    .lg-core,.lg-ring,.lg-dot,.lg-bars span{ animation:none !important }
-  }
-
-  /* ==========================================================
-     تخطيط شاشة الدخول — 3 أعمدة
-       شمال: أشكال متحركة  |  نص: الكارت  |  يمين: روبوت + جُمل
-     الكارت بمقاسه الأصلي، مش بيتمدّ ولا بيتغيّر.
-     ========================================================== */
-  #loginGate{
-    position:fixed !important; inset:0 !important;
-    display:flex !important; flex-direction:row !important;
-    align-items:center !important; justify-content:center !important;
-    gap:clamp(24px, 4vw, 64px) !important;
-    padding:28px 24px !important;
-    overflow-y:auto !important;
-  }
-
-  
-  
-  .lg-box{
-    width:380px; max-width:100%;
-    margin:0 !important;
-  }
-
-  /* ===== عمود الأشكال ===== */
-  
-  .lg-orbit{ position:relative; width:240px; height:240px; display:grid; place-items:center }
-
-  /* ===== عمود الروبوت والجُمل ===== */
-  
-  
-  
-
-  .lg-points{ display:flex; flex-direction:column; gap:11px; width:100% }
-  .lg-pt{
-    display:flex; align-items:center; gap:11px;
-    background:rgba(255,255,255,.055);
-    border:1px solid rgba(255,255,255,.10);
-    border-radius:14px; padding:11px 13px;
-    font-size:13px; font-weight:700; color:rgba(255,255,255,.88);
-    backdrop-filter:blur(6px);
-    opacity:0; transform:translateY(10px);
-    animation:ptIn .55s cubic-bezier(.2,.7,.2,1) forwards;
-  }
-  .lg-pt:nth-child(1){ animation-delay:.15s }
-  .lg-pt:nth-child(2){ animation-delay:.28s }
-  .lg-pt:nth-child(3){ animation-delay:.41s }
-  .lg-pt:nth-child(4){ animation-delay:.54s }
-  @keyframes ptIn{ to{ opacity:1; transform:none } }
-
-  .lg-pi{
-    width:34px; height:34px; border-radius:11px; flex-shrink:0;
-    display:grid; place-items:center; font-size:16px;
-    background:rgba(228,85,63,.22);
-  }
-
-  /* ===== الشاشات المتوسطة: نشيل عمود الأشكال ===== */
-  
-
-  /* ===== الموبايل: الكارت بس ===== */
-  @media (max-width:860px){
-    #loginGate{ flex-direction:column !important; gap:0 !important; padding:22px 16px !important }
-    
-    
-    .lg-points{ display:none }          /* الجُمل تختفي — الشاشة صغيرة */
-    
-    .lg-box{ width:100%; max-width:400px }
-  }
-
-  @media (prefers-reduced-motion:reduce){
-    .lg-pt{ animation:none; opacity:1; transform:none }
-  }
-
-  /* ==========================================================
-     تخطيط شاشة الدخول
-       النص: روبوت + ترحيب + كارت (زي الأصل بالظبط)
-       الطرفين: أشكال متحركة (شمال) · 4 جمل (يمين)
-     ========================================================== */
-  #loginGate{
-    position:fixed !important; inset:0 !important;
-    display:flex !important; flex-direction:row !important;
-    align-items:center !important; justify-content:center !important;
-    gap:clamp(20px, 4vw, 60px) !important;
-    padding:28px 24px !important;
-    overflow-y:auto !important;
-  }
-
-  /* العمود الأوسط — الروبوت فوق الكارت زي الأول */
-  .lg-main{
-    position:relative; z-index:2;
-    display:flex; flex-direction:column; align-items:center;
-    flex:0 0 auto;
-  }
-  .lg-main .lg-box{ width:380px; max-width:100%; margin:0 !important }
-
-  /* الطرفين */
-  .lg-side{
-    position:relative; z-index:2;
-    flex:0 0 auto; width:290px;
-    display:flex; flex-direction:column; align-items:center; gap:26px;
-  }
-  .lg-left .lg-orbit{ position:relative; width:238px; height:238px; display:grid; place-items:center }
-
-  .lg-points{ display:flex; flex-direction:column; gap:11px; width:100% }
-  .lg-pt{
-    display:flex; align-items:center; gap:11px;
-    background:rgba(255,255,255,.055);
-    border:1px solid rgba(255,255,255,.10);
-    border-radius:14px; padding:12px 13px;
-    font-size:13px; font-weight:700; color:rgba(255,255,255,.88);
-    backdrop-filter:blur(6px);
-    opacity:0; transform:translateY(10px);
-    animation:ptIn .55s cubic-bezier(.2,.7,.2,1) forwards;
-  }
-  .lg-pt:nth-child(1){ animation-delay:.15s }
-  .lg-pt:nth-child(2){ animation-delay:.28s }
-  .lg-pt:nth-child(3){ animation-delay:.41s }
-  .lg-pt:nth-child(4){ animation-delay:.54s }
-  @keyframes ptIn{ to{ opacity:1; transform:none } }
-  .lg-pi{
-    width:34px; height:34px; border-radius:11px; flex-shrink:0;
-    display:grid; place-items:center; font-size:16px;
-    background:rgba(228,85,63,.22);
-  }
-
-  /* شاشات متوسطة: نشيل الأشكال ونسيب الجُمل */
-  @media (max-width:1280px){ .lg-left{ display:none } }
-  /* أصغر: الكارت والروبوت بس */
-  @media (max-width:940px){
-    #loginGate{ gap:0 !important }
-    .lg-side{ display:none !important }
-  }
-  @media (max-width:640px){
-    #loginGate{ padding:22px 16px !important }
-    .lg-main .lg-box{ width:100%; max-width:400px }
-  }
-
-  @media (prefers-reduced-motion:reduce){
-    .lg-pt{ animation:none; opacity:1; transform:none }
-  }
-
-  /* ==========================================================
-     تكبير شاشة الدخول — الكارت كان صغير وبيحتاج zoom
-     ========================================================== */
-
-  /* ===== الكمبيوتر ===== */
-  .lg-main .lg-box{
-    width:440px !important;
-    padding:44px 38px 38px !important;
-    border-radius:30px !important;
-  }
-  .lg-logo{ width:112px !important; height:112px !important; border-radius:28px !important; margin-bottom:22px !important }
-  .lg-title{ font-size:27px !important }
-  .lg-sub{ font-size:13px !important; margin-bottom:30px !important; letter-spacing:1px }
-  .lg-field{ margin-bottom:18px !important }
-  .lg-field label{ font-size:14px !important; margin-bottom:8px !important }
-  .lg-field input{ padding:16px 18px !important; font-size:16px !important; border-radius:15px !important }
-  .lg-btn{ padding:17px !important; font-size:18px !important; border-radius:15px !important }
-  .lg-hint{ font-size:11.5px !important; margin-top:24px !important }
-  .lg-err{ font-size:14px !important }
-
-  /* الروبوت والترحيب أكبر معاه */
-  .lg-bot svg{ width:132px !important; height:132px !important }
-  .lg-welcome{ font-size:18px !important; margin:8px 0 22px !important }
-  .lg-wave{ font-size:21px !important }
-  .lg-caret{ height:19px !important }
-
-  /* ===== الموبايل: أكبر وبيملا العرض ===== */
-  @media (max-width:640px){
-    #loginGate{ padding:16px 14px !important }
-    .lg-main{ width:100% }
-    .lg-main .lg-box{
-      width:100% !important; max-width:none !important;
-      padding:34px 24px 30px !important;
-      border-radius:26px !important;
-    }
-    .lg-logo{ width:96px !important; height:96px !important; margin-bottom:18px !important }
-    .lg-title{ font-size:25px !important }
-    .lg-sub{ font-size:12px !important; margin-bottom:26px !important }
-    .lg-field input{
-      padding:17px 16px !important;
-      font-size:16px !important;   /* 16px مهمة: أقل منها آيفون بيعمل zoom لوحده */
-    }
-    .lg-field label{ font-size:14px !important }
-    .lg-btn{ padding:18px !important; font-size:18px !important }
-    .lg-bot svg{ width:112px !important; height:112px !important }
-    .lg-welcome{ font-size:16px !important }
-  }
-
-  /* ===== شاشات قصيرة: نصغّر الروبوت عشان كل حاجة تبان من غير تمرير ===== */
-  @media (max-height:760px){
-    .lg-bot svg{ width:92px !important; height:92px !important }
-    .lg-welcome{ margin:4px 0 14px !important }
-    .lg-main .lg-box{ padding:32px 32px 28px !important }
-    .lg-logo{ width:84px !important; height:84px !important; margin-bottom:14px !important }
-  }
-
-
-  /* ==========================================================
-     اللوجو بعرض الكارت
-     كان مربّع صغير 112px في النص. دلوقتي شريط بعرض الكارت كله.
-     الصورة نفسها خلفيتها سودا، فخلّينا خلفية الشريط سودا كمان
-     عشان تندمج معاها ومتبانش حواف بيضا حواليها.
-     ========================================================== */
-  .lg-logo{
-    width:100% !important;
-    height:auto !important;
-    aspect-ratio:auto !important;
-    display:flex !important;
-    align-items:center; justify-content:center;
-    margin:0 0 26px !important;
-    padding:20px 26px !important;
-    border-radius:20px !important;
-    background:#0E0E10 !important;
-    box-shadow:0 14px 34px rgba(0,0,0,.30),
-               0 0 0 1px rgba(228,85,63,.20) !important;
-    animation:none !important;          /* الطفو كان مناسب للمربع الصغير بس */
-    overflow:hidden !important;
-  }
-  .lg-logo img{
-    width:100% !important;
-    height:auto !important;
-    max-height:78px;
-    object-fit:contain !important;
-    padding:0 !important;
-  }
-
-  @media (max-width:640px){
-    .lg-logo{ padding:17px 22px !important; margin-bottom:22px !important }
-    .lg-logo img{ max-height:66px }
-  }
-  /* شاشات قصيرة: نصغّره شوية عشان الكارت ميتقطعش */
-  @media (max-height:760px){
-    .lg-logo{ padding:14px 20px !important; margin-bottom:16px !important;
-              width:100% !important; height:auto !important }
-    .lg-logo img{ max-height:56px }
-  }
 </style>
 </head>
 <body>
 
 <div id="loginGate">
-
-  <!-- الطرف الشمال: أشكال متحركة -->
-  <div class="lg-side lg-left" aria-hidden="true">
-    <div class="lg-orbit">
-      <span class="lg-core">A</span>
-      <span class="lg-ring r1"></span>
-      <span class="lg-ring r2"></span>
-      <span class="lg-ring r3"></span>
-      <span class="lg-dot d1">📸</span>
-      <span class="lg-dot d2">🎵</span>
-      <span class="lg-dot d3">👻</span>
-      <span class="lg-dot d4">🤖</span>
-    </div>
-    <div class="lg-bars">
-      <span style="--h:34%;--d:0s"></span>
-      <span style="--h:62%;--d:.15s"></span>
-      <span style="--h:46%;--d:.3s"></span>
-      <span style="--h:82%;--d:.45s"></span>
-      <span style="--h:55%;--d:.6s"></span>
-      <span style="--h:70%;--d:.75s"></span>
-      <span style="--h:40%;--d:.9s"></span>
-    </div>
+  <div class="lg-bot" aria-hidden="true">
+    <svg viewBox="0 0 120 120" width="120" height="120">
+      <ellipse class="bot-shadow" cx="60" cy="112" rx="26" ry="5"/>
+      <g class="bot-body">
+        <line class="bot-ant" x1="60" y1="16" x2="60" y2="28"/>
+        <circle class="bot-antdot" cx="60" cy="13" r="4.5"/>
+        <rect class="bot-head" x="26" y="28" width="68" height="54" rx="18"/>
+        <rect class="bot-face" x="35" y="40" width="50" height="30" rx="13"/>
+        <circle class="bot-eye" cx="49" cy="55" r="5"/>
+        <circle class="bot-eye e2" cx="71" cy="55" r="5"/>
+        <path class="bot-smile" d="M50 65 Q60 71 70 65"/>
+        <rect class="bot-ear" x="18" y="45" width="7" height="18" rx="3.5"/>
+        <rect class="bot-ear" x="95" y="45" width="7" height="18" rx="3.5"/>
+        <rect class="bot-neck" x="52" y="82" width="16" height="8" rx="4"/>
+        <rect class="bot-torso" x="34" y="88" width="52" height="20" rx="9"/>
+      </g>
+    </svg>
   </div>
 
-  <!-- النص: الروبوت + الترحيب + الكارت (زي الأول بالظبط) -->
-  <div class="lg-main">
-    <div class="lg-bot" aria-hidden="true">
-      <svg viewBox="0 0 120 120" width="120" height="120">
-        <ellipse class="bot-shadow" cx="60" cy="112" rx="26" ry="5"/>
-        <g class="bot-body">
-          <line class="bot-ant" x1="60" y1="16" x2="60" y2="28"/>
-          <circle class="bot-antdot" cx="60" cy="13" r="4.5"/>
-          <rect class="bot-head" x="26" y="28" width="68" height="54" rx="18"/>
-          <rect class="bot-face" x="35" y="40" width="50" height="30" rx="13"/>
-          <circle class="bot-eye" cx="49" cy="55" r="5"/>
-          <circle class="bot-eye e2" cx="71" cy="55" r="5"/>
-          <path class="bot-smile" d="M50 65 Q60 71 70 65"/>
-          <rect class="bot-ear" x="18" y="45" width="7" height="18" rx="3.5"/>
-          <rect class="bot-ear" x="95" y="45" width="7" height="18" rx="3.5"/>
-          <rect class="bot-neck" x="52" y="82" width="16" height="8" rx="4"/>
-          <rect class="bot-torso" x="34" y="88" width="52" height="20" rx="9"/>
-        </g>
-      </svg>
-    </div>
-
-    <div class="lg-welcome">
-      <span class="lg-wave">👋</span>
-      <span class="lg-typed" id="lgTyped"></span><span class="lg-caret"></span>
-    </div>
-
-    <div class="lg-box">
-      <div class="lg-logo"><img src="https://www.image2url.com/r2/default/images/1784674121200-8960a1dc-1274-453d-9821-2fc581d7076b.jpg" alt="Adltix" referrerpolicy="no-referrer"></div>
-      <div class="lg-title">تسجيل الدخول</div>
-      <div class="lg-sub">Adltix Creator Platform</div>
-      <div class="lg-field"><label>اسم المستخدم</label><input id="lg-user" type="text" autocomplete="username"></div>
-      <div class="lg-field"><label>كلمة المرور</label><input id="lg-pass" type="password" autocomplete="current-password"></div>
-      <button class="lg-btn" onclick="doLogin()">دخول</button>
-      <div class="lg-err" id="lg-err"></div>
-      <div class="lg-hint">Adltix Team Only</div>
-    </div>
+  <div class="lg-welcome">
+    <span class="lg-wave">👋</span>
+    <span class="lg-typed" id="lgTyped"></span><span class="lg-caret"></span>
   </div>
 
-  <!-- الطرف اليمين: 4 جمل -->
-  <div class="lg-side lg-right">
-    <div class="lg-points">
-      <div class="lg-pt"><span class="lg-pi">🎯</span><span>توزيع تلقائي وعادل على الفريق</span></div>
-      <div class="lg-pt"><span class="lg-pi">🤖</span><span>أجنت ذكي بيتولّى التواصل المباشر</span></div>
-      <div class="lg-pt"><span class="lg-pi">📸</span><span>إثبات كل رسالة بالسكرين شوت</span></div>
-      <div class="lg-pt"><span class="lg-pi">📊</span><span>متابعة لحظية لأداء كل موظفة</span></div>
-    </div>
+  <div class="lg-box">
+    <div class="lg-logo"><img src="https://www.image2url.com/r2/default/images/1784674121200-8960a1dc-1274-453d-9821-2fc581d7076b.jpg" alt="Adltix" referrerpolicy="no-referrer"></div>
+    <div class="lg-title">تسجيل الدخول</div>
+    <div class="lg-sub">Adltix Creator Platform</div>
+    <div class="lg-field"><label>اسم المستخدم</label><input id="lg-user" type="text" autocomplete="username"></div>
+    <div class="lg-field"><label>كلمة المرور</label><input id="lg-pass" type="password" autocomplete="current-password"></div>
+    <button class="lg-btn" onclick="doLogin()">دخول</button>
+    <div class="lg-err" id="lg-err"></div>
+    <div class="lg-hint">Adltix Team Only</div>
   </div>
 
 </div>
