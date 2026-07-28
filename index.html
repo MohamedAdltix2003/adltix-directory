@@ -1757,47 +1757,6 @@
     .lg-main .lg-box{ padding:32px 32px 28px !important }
     .lg-logo{ width:84px !important; height:84px !important; margin-bottom:14px !important }
   }
-
-
-  /* ==========================================================
-     اللوجو بعرض الكارت
-     كان مربّع صغير 112px في النص. دلوقتي شريط بعرض الكارت كله.
-     الصورة نفسها خلفيتها سودا، فخلّينا خلفية الشريط سودا كمان
-     عشان تندمج معاها ومتبانش حواف بيضا حواليها.
-     ========================================================== */
-  .lg-logo{
-    width:100% !important;
-    height:auto !important;
-    aspect-ratio:auto !important;
-    display:flex !important;
-    align-items:center; justify-content:center;
-    margin:0 0 26px !important;
-    padding:20px 26px !important;
-    border-radius:20px !important;
-    background:#0E0E10 !important;
-    box-shadow:0 14px 34px rgba(0,0,0,.30),
-               0 0 0 1px rgba(228,85,63,.20) !important;
-    animation:none !important;          /* الطفو كان مناسب للمربع الصغير بس */
-    overflow:hidden !important;
-  }
-  .lg-logo img{
-    width:100% !important;
-    height:auto !important;
-    max-height:78px;
-    object-fit:contain !important;
-    padding:0 !important;
-  }
-
-  @media (max-width:640px){
-    .lg-logo{ padding:17px 22px !important; margin-bottom:22px !important }
-    .lg-logo img{ max-height:66px }
-  }
-  /* شاشات قصيرة: نصغّره شوية عشان الكارت ميتقطعش */
-  @media (max-height:760px){
-    .lg-logo{ padding:14px 20px !important; margin-bottom:16px !important;
-              width:100% !important; height:auto !important }
-    .lg-logo img{ max-height:56px }
-  }
 </style>
 </head>
 <body>
