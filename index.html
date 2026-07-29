@@ -5700,13 +5700,20 @@ async function loadStaffReport(){
 function rpShift(d){ _rpState.offset += d; loadStaffReport(); }
 function rpPeriod(p){ _rpState.period = p; _rpState.offset = 0; loadStaffReport(); }
 
+// ⚠️ أي قيمة ناقصة أو نص غلط لازم ترجع 0 — مش NaN.
+// التقرير بيروح للمدير، ومينفعش يشوف فيه NaN ولا undefined.
+// معرّفة بره الدالة عشان الدوال المساعدة جواها توصلها.
+const num   = v => { const x = Number(v); return Number.isFinite(x) ? x : 0; };
+const n     = v => num(v).toLocaleString('en');
+const pctOf = (a, b) => { const d = num(b); return d > 0 ? Math.round((num(a)/d)*100) : 0; };
+
 function renderStaffReport(r){
+  r = r || {};
   const box = document.querySelector('#rpOverlay .rp-box');
   if(!box) return;
 
   const T = r.totals || {}, P = r.previous || {}, A = r.team_avg || {};
   const G = r.gaps || {}, PF = r.portfolio || {}, RT = r.rates || {};
-  const n = v => Number(v||0).toLocaleString('en');
 
   // فرق مقارنة بالفترة السابقة
   const delta = (cur, prev) => {
@@ -5788,11 +5795,11 @@ function renderStaffReport(r){
     +   scoreCard(r.score, r.extra)
     +   '<div class="rp-kpis">'
     +     kpi('📩','رسايل اتبعتت', T.sent, delta(T.sent,P.sent))
-    +     + kpi('🔄','متابعات', T.followups, delta(T.followups,P.followups))
-    +     + kpi('💬','ردّوا', T.responded, '<span class="dl flat">'+RT.response+'% معدل رد</span>')
-    +     + kpi('🎉','اشتركوا', T.subscribed, delta(T.subscribed,P.subscribed))
-    +     + kpi('🎯','اتخصصوا', T.allocated, '')
-    +     + kpi('❌','مفيش اشتراك', T.not_subscribed, '')
+    +     kpi('🔄','متابعات', T.followups, delta(T.followups,P.followups))
+    +     kpi('💬','ردّوا', T.responded, '<span class="dl flat">'+num(RT.response)+'% معدل رد</span>')
+    +     kpi('🎉','اشتركوا', T.subscribed, delta(T.subscribed,P.subscribed))
+    +     kpi('🎯','اتخصصوا', T.allocated, '')
+    +     kpi('❌','مفيش اشتراك', T.not_subscribed, '')
     +   '</div>'
 
     +   '<div class="rp-sec"><h4>📅 النشاط اليومي</h4>'+chart+fuRow+'</div>'
@@ -5803,14 +5810,14 @@ function renderStaffReport(r){
 
     +   '<div class="rp-sec"><h4>📊 مقارنة</h4><div class="rp-cmp">'
     +     cmp('الرسايل', T.sent, A.sent, 'متوسط الفريق')
-    +     + cmp('المتابعات', T.followups, A.followups, 'متوسط الفريق')
-    +     + cmp('الاشتراكات', T.subscribed, A.subscribed, 'متوسط الفريق')
+    +     cmp('المتابعات', T.followups, A.followups, 'متوسط الفريق')
+    +     cmp('الاشتراكات', T.subscribed, A.subscribed, 'متوسط الفريق')
     +   '</div></div>'
 
     +   '<div class="rp-sec"><h4>📋 المحفظة الحالية</h4><div class="rp-pf">'
     +     pf('الإجمالي', PF.total, '') + pf('لسه محدش كلّمهم', PF.untouched, 'gray')
-    +     + pf('شغّالة عليهم', PF.in_progress, 'blue') + pf('اشتركوا', PF.won, 'green')
-    +     + pf('مفيش اشتراك', PF.lost, 'red')
+    +     pf('شغّالة عليهم', PF.in_progress, 'blue') + pf('اشتركوا', PF.won, 'green')
+    +     pf('مفيش اشتراك', PF.lost, 'red')
     +   '</div></div>'
 
     +   advancedBlock(r.extra, r)
@@ -5861,11 +5868,14 @@ function renderStaffReport(r){
       + '<th>الإجمالي</th></tr>';
 
     const body = rows.map(x=>{
-      const d = new Date(x.day+'T00:00:00Z');
-      const empty = Number(x.total||0) === 0 && Number(x.imported||0) === 0;
+      // التاريخ ممكن يجي فاضي — منعرضش NaN
+      const d = x.day ? new Date(x.day+'T00:00:00Z') : null;
+      const dateTxt = (d && !isNaN(d)) ? (d.getUTCDate()+' '+AR_M[d.getUTCMonth()]) : '—';
+      const dowTxt  = AR_D[num(x.dow)] || '—';
+      const empty = num(x.total) === 0 && num(x.imported) === 0;
       return '<tr'+(empty?' class="rt-empty"':'')+'>'
-        + '<td class="rt-day">'+AR_D[Number(x.dow)]+'</td>'
-        + '<td class="rt-date">'+d.getUTCDate()+' '+AR_M[d.getUTCMonth()]+'</td>'
+        + '<td class="rt-day">'+dowTxt+'</td>'
+        + '<td class="rt-date">'+dateTxt+'</td>'
         + '<td>'+cell(x.sent)+'</td>'
         + fuCols.map(i=>'<td>'+cell(x['fu'+i])+'</td>').join('')
         + (has('fu_total') && !fuCols.length ? '<td>'+cell(x.fu_total)+'</td>' : '')
@@ -5913,7 +5923,7 @@ function renderStaffReport(r){
     return '<div class="rp-sec"><h4>📆 مقارنة أسابيع الشهر</h4><div class="rw-list">'
       + rows.map((x,i)=>{
           const t = Number(x.total)||0;
-          const h = Math.round((t/maxT)*100);
+          const h = pctOf(t, maxT);
           const rr = Number(x.sent)>0 ? Math.round((Number(x.responded)/Number(x.sent))*100) : 0;
           return '<div class="rw'+(i===bestI&&t>0?' best':'')+'">'
             + '<div class="rw-h"><b>الأسبوع '+x.week+'</b>'
@@ -5940,9 +5950,9 @@ function renderStaffReport(r){
     const rk = ex && ex.rank;
     return '<div class="rp-score '+(GC[sc.grade]||'c')+'">'
       + '<div class="rs-main">'
-      +   '<div class="rs-num"><b>'+sc.total+'</b><span>/100</span></div>'
+      +   '<div class="rs-num"><b>'+num(sc.total)+'</b><span>/100</span></div>'
       +   '<div class="rs-txt">'
-      +     '<span class="rs-grade">'+sc.grade+' · '+esc(sc.gradeLabel)+'</span>'
+      +     '<span class="rs-grade">'+esc(sc.grade||'—')+' · '+esc(sc.gradeLabel||'')+'</span>'
       +     (rk && rk.team_size>1
           ? '<span class="rs-rank">الترتيب '+rk.total+' من '+rk.team_size+' في الفريق</span>'
           : '')
@@ -5951,8 +5961,8 @@ function renderStaffReport(r){
       + '<div class="rs-parts">'
       +   (sc.parts||[]).map(x =>
           '<div class="rs-p" title="'+esc(x.note)+'">'
-          + '<div class="rs-pt"><span>'+esc(x.label)+'</span><b>'+x.score+'/'+x.max+'</b></div>'
-          + '<div class="rs-pb"><span style="width:'+Math.round(x.score/x.max*100)+'%"></span></div>'
+          + '<div class="rs-pt"><span>'+esc(x.label)+'</span><b>'+num(x.score)+'/'+num(x.max)+'</b></div>'
+          + '<div class="rs-pb"><span style="width:'+pctOf(x.score, x.max)+'%"></span></div>'
           + '<div class="rs-pn">'+esc(x.note)+'</div></div>').join('')
       + '</div></div>';
   }
@@ -5969,9 +5979,9 @@ function renderStaffReport(r){
 
     // سرعة المتابعة
     out += '<div class="ra"><span class="ra-i">⚡</span><div>'
-        +  '<b>' + (sp.samples ? sp.avg_days + ' يوم' : '—') + '</b>'
+        +  '<b>' + (num(sp.samples) ? num(sp.avg_days) + ' يوم' : '—') + '</b>'
         +  '<span>متوسط سرعة المتابعة</span>'
-        +  (sp.samples ? '<i>أسرع '+sp.fastest+' · أبطأ '+sp.slowest+' يوم</i>' : '<i>مفيش متابعات لسه</i>')
+        +  (sp.samples ? '<i>أسرع '+num(sp.fastest)+' · أبطأ '+num(sp.slowest)+' يوم</i>' : '<i>مفيش متابعات لسه</i>')
         +  '</div></div>';
 
     // الترتيب
@@ -5985,19 +5995,19 @@ function renderStaffReport(r){
     // جودة المحفظة
     if(q.total){
       out += '<div class="ra"><span class="ra-i">💎</span><div>'
-          +  '<b>' + Number(q.big_pct||0) + '%</b><span>حسابات كبيرة في محفظتها</span>'
-          +  '<i>' + Number(q.big_accounts||0).toLocaleString('en') + ' حساب +50 ألف · متوسط '
-          +  Number(q.avg_followers||0).toLocaleString('en') + ' متابع</i>'
+          +  '<b>' + num(q.big_pct) + '%</b><span>حسابات كبيرة في محفظتها</span>'
+          +  '<i>' + n(q.big_accounts) + ' حساب +50 ألف · متوسط '
+          +  n(q.avg_followers) + ' متابع</i>'
           +  '</div></div>';
     }
 
     // بيانات التواصل
     if(q.total){
-      const wc = Math.round((Number(q.with_contact||0)/q.total)*100);
+      const wc = pctOf(q.with_contact, q.total);
       out += '<div class="ra"><span class="ra-i">📇</span><div>'
           +  '<b>' + wc + '%</b><span>عندهم بيانات تواصل</span>'
-          +  '<i>' + Number(q.with_contact||0).toLocaleString('en') + ' من '
-          +  Number(q.total).toLocaleString('en') + ' مؤثر</i>'
+          +  '<i>' + n(q.with_contact) + ' من '
+          +  n(q.total) + ' مؤثر</i>'
           +  '</div></div>';
     }
 
@@ -6009,7 +6019,7 @@ function renderStaffReport(r){
           +  [0,1,2,3,4,5,6].map(d=>{
               const it = dow.find(x=>Number(x.dow)===d);
               const c  = it ? Number(it.count) : 0;
-              const h  = Math.round((c/maxD)*100);
+              const h  = pctOf(c, maxD);
               const best = ex.best_day != null && Number(ex.best_day)===d && c>0;
               return '<div class="rd'+(best?' best':'')+'">'
                    + '<span class="rd-b" style="height:'+Math.max(4,h)+'%"></span>'
@@ -6028,11 +6038,11 @@ function renderStaffReport(r){
          + (dl?'<span class="rk-d">'+dl+'</span>':'')+'</div>';
   }
   function cmp(lbl, mine, avg, note){
-    mine = Number(mine||0); avg = Number(avg||0);
+    mine = num(mine); avg = num(avg);
     const max = Math.max(mine, avg, 1);
     return '<div class="rc"><div class="rc-t">'+lbl+'</div>'
-      + '<div class="rc-b"><span class="rc-me" style="width:'+Math.round(mine/max*100)+'%"></span></div>'
-      + '<div class="rc-b"><span class="rc-av" style="width:'+Math.round(avg/max*100)+'%"></span></div>'
+      + '<div class="rc-b"><span class="rc-me" style="width:'+pctOf(mine, max)+'%"></span></div>'
+      + '<div class="rc-b"><span class="rc-av" style="width:'+pctOf(avg, max)+'%"></span></div>'
       + '<div class="rc-n"><span>هي <b>'+n(mine)+'</b></span><span>'+note+' <b>'+n(avg)+'</b></span></div></div>';
   }
   function pf(lbl, val, cls){
