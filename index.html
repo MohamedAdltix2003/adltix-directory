@@ -6088,7 +6088,7 @@ async function startImport(){
   const total  = _impRows.length;
   const chunks = Math.ceil(total / IMPORT_CHUNK);
   let batchId = 0, added = 0, dups = 0, bad = 0, done = 0, enriched = 0, toAgent = 0;
-  let notFound = 0, tempFail = 0, quotaHit = false;
+  let notFound = 0, tempFail = 0, quotaHit = false, staffUpload = false;
   const failed = [];
 
   body.innerHTML =
@@ -6117,6 +6117,7 @@ async function startImport(){
       notFound += Number(r.chunk.notFound || 0);
       tempFail += Number(r.chunk.tempFail || 0);
       if(r.chunk.quotaHit) quotaHit = true;
+      if(r.chunk.uploaderIsStaff) staffUpload = true;
       (r.rows||[]).forEach(x=>{ if(x.status !== 'added') failed.push(x); });
     }catch(e){
       // دفعة فشلت؟ نكمّل الباقي بدل ما نوقف كل حاجة
@@ -6136,7 +6137,7 @@ async function startImport(){
   }
 
   _impBusy = false;
-  showImportResult({ batchId, total, added, dups, bad, enriched, toAgent, notFound, tempFail, quotaHit, failed });
+  showImportResult({ batchId, total, added, dups, bad, enriched, toAgent, notFound, tempFail, quotaHit, staffUpload, failed });
   if(added) boot();          // نحمّل الكروت الجديدة
   refreshQuota();            // الرصيد اتغيّر — نحدّثه
 }
@@ -6167,21 +6168,31 @@ function showImportResult(r){
                 + '<span>المتابعين والصورة والبايو والفيديوهات</span></span>'
                 + '</div>'
               : '')
-          + (r.toAgent
-              ? '<div class="ir-row agt">'
-                + '<span class="ir-i">🤖</span>'
-                + '<span class="ir-t"><b>'+Number(r.toAgent).toLocaleString('en')+' راحوا للـ '+AGENT_NAME+'</b>'
-                + '<span>عندهم إيميل أو واتساب — الأجنت هو اللي هيكلّمهم أوتوماتيك، '
-                + 'فمش هيظهروا في قايمتك</span></span>'
-                + '</div>'
-              : '')
-          + ((r.added - Number(r.toAgent||0)) > 0
-              ? '<div class="ir-row mine">'
-                + '<span class="ir-i">👤</span>'
-                + '<span class="ir-t"><b>'+(r.added - Number(r.toAgent||0)).toLocaleString('en')+' اتضافوا في قايمتك</b>'
-                + '<span>تقدري تبعتيلهم وتتابعيهم عادي</span></span>'
-                + '</div>'
-              : '')
+          + (r.staffUpload
+              // 👩 الموظفة رفعت — كلهم عندها، مفيش توجيه
+              ? (r.added > 0
+                  ? '<div class="ir-row mine">'
+                    + '<span class="ir-i">👤</span>'
+                    + '<span class="ir-t"><b>'+Number(r.added).toLocaleString('en')+' كلهم اتضافوا في قايمتك</b>'
+                    + '<span>سواء عندهم بيانات تواصل أو لأ — كلهم عندك '
+                    + 'وتقدري تبعتيلهم وتتابعيهم عادي</span></span>'
+                    + '</div>'
+                  : '')
+              // 👔 الأدمن رفع — توزيع ذكي
+              : (r.toAgent
+                  ? '<div class="ir-row agt">'
+                    + '<span class="ir-i">🤖</span>'
+                    + '<span class="ir-t"><b>'+Number(r.toAgent).toLocaleString('en')+' راحوا للـ '+AGENT_NAME+'</b>'
+                    + '<span>عندهم إيميل أو واتساب — الأجنت هو اللي هيكلّمهم أوتوماتيك</span></span>'
+                    + '</div>'
+                  : '')
+                + ((r.added - Number(r.toAgent||0)) > 0
+                    ? '<div class="ir-row mine">'
+                      + '<span class="ir-i">👥</span>'
+                      + '<span class="ir-t"><b>'+(r.added - Number(r.toAgent||0)).toLocaleString('en')+' اتوزّعوا على الفريق</b>'
+                      + '<span>مفيهمش بيانات تواصل — اتوزّعوا على أقل الموظفات تحميلاً</span></span>'
+                      + '</div>'
+                    : ''))
           + '</div>'
         : '')
     +   (function(){
