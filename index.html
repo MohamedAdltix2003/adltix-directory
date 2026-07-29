@@ -2591,6 +2591,42 @@
     body.printing-report .rt tr{ break-inside:avoid }
     body.printing-report .rp-sign{ break-before:avoid }
   }
+
+  /* ==========================================================
+     ستايلات نسخة الـ PDF
+     ⚠️ html2pdf بيستخدم html2canvas اللي بتقع مع color-mix() —
+     وإحنا مستخدمينها في 86 مكان. هنا بنستبدلها بألوان ثابتة
+     **جوه النسخة المصدّرة بس**، والموقع نفسه مايتأثرش.
+     ========================================================== */
+  .pdf-export{ background:#fff !important; color:#171319 !important }
+  .pdf-export *{ color-scheme:light !important }
+
+  .pdf-export .rk,
+  .pdf-export .ra,
+  .pdf-export .rpf,
+  .pdf-export .rp-chip,
+  .pdf-export .rp-empty,
+  .pdf-export .rp-gap,
+  .pdf-export .rd-list,
+  .pdf-export .rp-chart,
+  .pdf-export .rw{ background:#F4F2F0 !important; border-color:#E6E0DC !important }
+
+  .pdf-export .rt tbody tr:nth-child(even){ background:#FAFAF9 !important }
+  .pdf-export .rt-sum td{ background:#FFF1ED !important }
+  .pdf-export .rc-b{ background:#EDE9E6 !important }
+  .pdf-export .rc-av{ background:#B9B2AC !important }
+  .pdf-export .rs-pb{ background:rgba(0,0,0,.13) !important }
+  .pdf-export .rs-p{ background:rgba(255,255,255,.6) !important }
+  .pdf-export .ri.info{ background:#FFF1ED !important; border-color:#F5C4B8 !important }
+  .pdf-export .rp-sec h4,
+  .pdf-export .rp-title h2{ color:#171319 !important }
+  .pdf-export .rd-b{ background:#F0A896 !important }
+  .pdf-export .rd.best .rd-b{ background:#E4553F !important }
+  .pdf-export .rw.best{ background:#FFEDE7 !important; border-color:#E4553F !important }
+
+  /* الظلال بتبوّظ الصورة — بنشيلها */
+  .pdf-export *{ box-shadow:none !important; text-shadow:none !important }
+  .pdf-export .rp-doc{ padding:0 !important }
 </style>
 </head>
 <body>
@@ -5887,9 +5923,7 @@ function renderStaffReport(r){
     +     '<button class="rp-btn sm'+(_rpState.period==='month'?' on':'')+'" onclick="rpPeriod(\'month\')">شهري</button>'
     +   '</div>'
     +   '<span class="rp-sp"></span>'
-    +   '<button class="rp-btn" onclick="downloadReport()">⬇️ تحميل التقرير</button>'
-    +   '<button class="rp-btn main" onclick="downloadReportPDF()">⬇️ تنزيل PDF</button>'
-    +   '<button class="rp-btn" onclick="downloadReportHTML()" title="حفظ نسخة">💾</button>' 
+    +   '<button class="rp-btn main" id="rpDl" onclick="downloadReportPDF()">⬇️ تنزيل التقرير PDF</button>' 
     +   '<button class="rp-btn ghost" onclick="closeStaffReport()">إغلاق</button>'
     + '</div>';
 
@@ -6103,112 +6137,69 @@ function renderStaffReport(r){
 // تحميل التقرير كملف HTML مستقل
 // بنحفظه HTML مش PDF عشان يفتح في أي جهاز بنفس الشكل بالظبط،
 // والمستخدم يقدر يطبعه PDF من المتصفح لو حب.
-function downloadReport(){
-  const doc = document.getElementById('rpDoc');
-  if(!doc){ toastErr('مفيش تقرير مفتوح'); return; }
+// ==========================================================
+// تنزيل التقرير كملف PDF حقيقي
+// ==========================================================
+// بنستخدم html2pdf (بتجمع html2canvas + jsPDF) — بتصوّر التقرير
+// وتحوّله لـ PDF فعلي ينزل على طول، من غير نافذة طباعة ولا اختيارات.
+//
+// المكتبة بتتحمّل أول مرة بس (~700KB) وبعدها بتفضل في الذاكرة.
+const H2PDF_URL = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
 
-  // نجمّع ستايلات الصفحة عشان الملف يبقى مستقل تمامًا
-  let css = '';
-  for(const sheet of document.styleSheets){
-    try{ for(const rule of sheet.cssRules) css += rule.cssText + '\n'; }
-    catch(e){ /* ستايل من نطاق تاني — نتخطاه */ }
-  }
-
-  const r = _rpState.data || {};
-  const kindAr = _rpState.period==='month' ? 'شهري' : 'أسبوعي';
-  const title = 'تقرير ' + kindAr + ' — ' + (r.staff||'') + ' — ' + (r.periodTitle||'');
-
-  const html =
-      '<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8">'
-    + '<meta name="viewport" content="width=device-width,initial-scale=1">'
-    + '<title>'+esc(title)+'</title>'
-    + '<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">'
-    + '<style>'+css+'</style>'
-    + '<style>'
-    +   'body{margin:0;padding:24px;background:#F6F4F2;'
-    +   "font-family:'Tajawal',system-ui,sans-serif;direction:rtl}"
-    +   '.rp-doc{max-width:860px;margin:auto;background:#fff;'
-    +   'border-radius:18px;box-shadow:0 4px 24px rgba(0,0,0,.08)}'
-    +   '@media print{body{padding:0;background:#fff}'
-    +   '.rp-doc{box-shadow:none;border-radius:0}}'
-    + '</style></head><body>'
-    + doc.outerHTML
-    + '</body></html>';
-
-  const blob = new Blob([html], { type:'text/html;charset=utf-8' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  const safe = String(r.staff||'staff').replace(/[^\w\u0600-\u06FF-]/g,'');
-  a.href = url;
-  a.download = 'تقرير-'+(_rpState.period==='month'?'شهري':'اسبوعي')+'-'+safe+'-'
-             + new Date().toISOString().slice(0,10)+'.html';
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url), 2000);
-
-  toastOk('التقرير اتحمّل — افتحه من ملفاتك');
+function loadH2PDF(){
+  if(window.html2pdf) return Promise.resolve(window.html2pdf);
+  return new Promise((res, rej)=>{
+    const sc = document.createElement('script');
+    sc.src = H2PDF_URL;
+    sc.onload  = ()=> res(window.html2pdf);
+    sc.onerror = ()=> rej(new Error('مش قادر أحمّل مولّد الـ PDF — اتأكد من النت'));
+    document.head.appendChild(sc);
+  });
 }
 
-// ===== تنزيل التقرير PDF =====
-// المتصفح مفيهوش "احفظ كـ PDF" مباشر — بيتم عن طريق نافذة الطباعة
-// مع اختيار "Save as PDF" كطابعة. بنظبّط اسم الملف من عنوان الصفحة.
-function downloadReportPDF(){
-  const tag = (_rpState.data && _rpState.data.periodTag) || '';
-  const name = 'تقرير-' + (_rpState.staff||'') + '-' + tag.replace(/\s+/g,'-');
-
-  const oldTitle = document.title;
-  document.title = name;                    // ده بيبقى اسم ملف الـ PDF
-
-  document.body.classList.add('printing-report');
-  setTimeout(()=>{
-    window.print();
-    setTimeout(()=>{
-      document.body.classList.remove('printing-report');
-      document.title = oldTitle;
-    }, 500);
-  }, 80);
-
-  toast('اختار "Save as PDF" من قايمة الطابعة','info',6000);
-}
-
-// ===== حفظ نسخة HTML =====
-// ملف واحد يفتح في أي متصفح — بيحتفظ بالألوان كاملة
-function downloadReportHTML(){
+async function downloadReportPDF(){
   const doc = document.getElementById('rpDoc');
+  const btn = document.getElementById('rpDl');
   if(!doc) return;
 
-  let css = '';
-  for(const sheet of document.styleSheets){
-    try{ for(const rule of sheet.cssRules) css += rule.cssText + '\n'; }
-    catch(e){ /* ستايل من دومين تاني */ }
+  const tag  = (_rpState.data && _rpState.data.periodTag) || '';
+  const name = 'تقرير-' + (_rpState.staff || '') + '-' + tag.replace(/\s+/g,'-') + '.pdf';
+
+  if(btn){ btn.disabled = true; btn.textContent = '⏳ بنجهّز الملف…'; }
+
+  try{
+    const html2pdf = await loadH2PDF();
+
+    // نسخة معزولة بخلفية بيضا — الوضع الليلي مش هينفع في PDF
+    const clone = doc.cloneNode(true);
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'position:fixed;left:-99999px;top:0;width:820px;'
+                       + 'background:#fff;padding:24px;direction:rtl';
+    wrap.className = 'pdf-export';
+    wrap.appendChild(clone);
+    document.body.appendChild(wrap);
+
+    await html2pdf().set({
+      margin:      [8, 8, 8, 8],
+      filename:    name,
+      image:       { type:'jpeg', quality: 0.96 },
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false },
+      jsPDF:       { unit:'mm', format:'a4', orientation:'portrait' },
+      // منع قطع الأقسام في نص الصفحة
+      pagebreak:   { mode:['css','legacy'], avoid:['.rp-score','.rp-sec','.rk','.ri','.rw','tr'] }
+    }).from(wrap).save();
+
+    wrap.remove();
+    toastOk('التقرير اتنزّل ✅');
+
+  }catch(e){
+    toastErr(e.message || 'مش قادر أنزّل الـ PDF');
+  }finally{
+    if(btn){ btn.disabled = false; btn.textContent = '⬇️ تنزيل التقرير PDF'; }
   }
-
-  const tag = (_rpState.data && _rpState.data.periodTag) || '';
-  const name = 'تقرير-' + (_rpState.staff||'') + '-' + tag.replace(/\s+/g,'-');
-
-  const html = '<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8">'
-    + '<title>'+esc(name)+'</title>'
-    + '<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">'
-    + '<style>'+css+'\nbody{background:#F6F4F2;padding:24px;font-family:Tajawal,sans-serif;margin:0}'
-    + '.rp-box{max-width:860px;margin:auto;background:#fff;border-radius:20px;'
-    + 'box-shadow:0 8px 40px rgba(0,0,0,.08);overflow:hidden}</style></head>'
-    + '<body><div class="rp-box">' + doc.outerHTML + '</div></body></html>';
-
-  const blob = new Blob([html], { type:'text/html;charset=utf-8' });
-  const url  = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = name + '.html';
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url), 1500);
-  toastOk('اتحفظ — تقدر تفتحه في أي متصفح');
 }
 
-function printReport(){
-  document.body.classList.add('printing-report');
-  setTimeout(()=>{
-    window.print();
-    setTimeout(()=>document.body.classList.remove('printing-report'), 400);
-  }, 60);
-}
+
 
 
 // ==========================================================
