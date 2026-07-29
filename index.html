@@ -2092,6 +2092,21 @@
     .qb-txt b{ font-size:12.5px }
     .qb-txt span{ font-size:11px }
   }
+
+  /* ===== زرار وتبديل مفتاح الـ API ===== */
+  .qb-k{
+    width:30px; height:30px; border-radius:9px; flex-shrink:0; cursor:pointer;
+    border:1px solid var(--line); background:transparent;
+    font-size:14px; line-height:1;
+    transition:background .15s, border-color .15s, transform .14s;
+  }
+  .qb-k:hover{ background:var(--brand-soft); border-color:var(--brand); transform:translateY(-1px) }
+  .kb-note{
+    font-size:11.5px; font-weight:600; color:var(--muted); line-height:1.75;
+    background:color-mix(in srgb,var(--brand) 7%,transparent);
+    padding:10px 12px; border-radius:11px; margin-bottom:12px;
+  }
+  #apiKeyIn{ direction:ltr; text-align:start; font-family:'Space Grotesk',monospace; letter-spacing:.4px }
 </style>
 </head>
 <body>
@@ -5366,6 +5381,66 @@ function inDateRange(v){
 // بيتحدّث أول ما تفتح الموقع وبعد كل رفعة ملف.
 let QUOTA = null;
 
+// ===== تبديل مفتاح الـ API =====
+// 🔒 للأدمن بس. المفتاح بيتفحص على Scrapingdog الأول — لو مش شغال
+// مبيتحفظش، عشان محدش يوقّف النظام بمفتاح غلط من غير ما يعرف.
+function openKeyBox(){
+  if(!isAdminSession()) return;
+  const tail = QUOTA && QUOTA.keyTail ? QUOTA.keyTail : '••••';
+
+  const ov = document.createElement('div');
+  ov.className = 'cf-overlay';
+  ov.innerHTML =
+      '<div class="cf-box" style="max-width:440px;text-align:right">'
+    +   '<div class="cf-title">🔑 مفتاح الـ API</div>'
+    +   '<div class="cf-msg">المفتاح الحالي بينتهي بـ <b>••••'+esc(tail)+'</b>'
+    +     (QUOTA ? ' · فاضل '+Number(QUOTA.left).toLocaleString('en')+' طلب من '
+                 + Number(QUOTA.limit).toLocaleString('en') : '')
+    +   '</div>'
+    +   '<div class="lg-field"><label>المفتاح الجديد</label>'
+    +     '<input id="apiKeyIn" type="text" placeholder="الصق المفتاح هنا" autocomplete="off" spellcheck="false" dir="ltr">'
+    +   '</div>'
+    +   '<div class="kb-note">هنتأكد إنه شغال على Scrapingdog قبل ما نحفظه. '
+    +     'وأول ما يتحفظ، المؤثرين اللي مستنيين بياناتهم هتيجي تلقائي.</div>'
+    +   '<div class="lg-err" id="keyErr"></div>'
+    +   '<div class="cf-btns">'
+    +     '<button class="cf-cancel" data-x="0">إلغاء</button>'
+    +     '<button class="cf-yes ok" id="keyOk">تأكيد وحفظ</button>'
+    +   '</div>'
+    + '</div>';
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>ov.classList.add('show'));
+  setTimeout(()=>{ const i=ov.querySelector('#apiKeyIn'); if(i) i.focus(); }, 100);
+
+  const close = ()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),220); };
+  ov.querySelector('.cf-cancel').onclick = close;
+  ov.addEventListener('click', e=>{ if(e.target===ov) close(); });
+
+  ov.querySelector('#keyOk').onclick = async ()=>{
+    const inp = ov.querySelector('#apiKeyIn');
+    const err = ov.querySelector('#keyErr');
+    const btn = ov.querySelector('#keyOk');
+    const val = (inp.value || '').trim();
+    err.textContent = '';
+    if(val.length < 10){ err.textContent = 'المفتاح قصير أوي — اتأكد منه'; return; }
+
+    btn.disabled = true; btn.textContent = 'بنتأكد منه…';
+    try{
+      const q = await callApi('checkQuota', { token: SESSION.token, newKey: val });
+      QUOTA = q; renderQuotaBar();
+      close();
+      toastOk('المفتاح اتغيّر ✅ — فاضل '+Number(q.left).toLocaleString('en')+' طلب');
+      if(q.pendingLeads){
+        setTimeout(()=>toast(Number(q.pendingLeads).toLocaleString('en')
+          + ' مؤثر هتتجاب بياناتهم تلقائي','info',6000), 900);
+      }
+    }catch(e){
+      err.textContent = e.message || 'مش قادر أتأكد من المفتاح';
+      btn.disabled = false; btn.textContent = 'تأكيد وحفظ';
+    }
+  };
+}
+
 async function refreshQuota(silent){
   if(!isAdminSession()) return;
   try{
@@ -5407,6 +5482,7 @@ function renderQuotaBar(){
     +       (q.pendingLeads ? ' · '+Number(q.pendingLeads).toLocaleString('en')+' مؤثر مستني بيانات' : '')
     +     '</span>'
     +   '</div>'
+    +   '<button class="qb-k" onclick="openKeyBox()" title="تغيير مفتاح الـ API">🔑</button>'
     +   '<button class="qb-r" onclick="refreshQuota()" title="تحديث">↻</button>'
     + '</div>'
     + '<div class="qb-track"><span style="width:'+Math.max(1,q.pct)+'%"></span></div>'
