@@ -2045,6 +2045,53 @@
 
   .ir-row.nf{ background:#FEE2E2; color:#B91C1C; border-color:#FCA5A5 }
   body.dark .ir-row.nf{ background:#4a1414; color:#fca5a5; border-color:#B91C1C }
+
+  /* ==========================================================
+     شريط رصيد الـ API — للأدمن بس
+     ========================================================== */
+  .qbar{
+    border-radius:15px; padding:12px 14px; margin-bottom:13px;
+    border:1px solid var(--line); background:var(--surface);
+  }
+  .qb-main{ display:flex; align-items:center; gap:11px }
+  .qb-i{ font-size:19px; flex-shrink:0 }
+  .qb-txt{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px }
+  .qb-txt b{ font-size:13px; font-weight:800; color:var(--ink) }
+  .qb-txt span{ font-size:11.5px; font-weight:600; color:var(--muted) }
+  .qb-r{
+    width:30px; height:30px; border-radius:9px; flex-shrink:0; cursor:pointer;
+    border:1px solid var(--line); background:transparent; color:var(--muted);
+    font-size:15px; line-height:1;
+    transition:background .15s, color .15s, transform .3s;
+  }
+  .qb-r:hover{ background:var(--brand-soft); color:var(--brand); transform:rotate(180deg) }
+
+  .qb-track{
+    height:6px; border-radius:99px; margin-top:10px; overflow:hidden;
+    background:color-mix(in srgb,var(--line) 60%,transparent);
+  }
+  .qb-track span{ display:block; height:100%; border-radius:99px; transition:width .5s ease }
+
+  .qbar.ok   { border-color:#86EFAC }
+  .qbar.ok   .qb-track span{ background:linear-gradient(90deg,#16A34A,#4ADE80) }
+  .qbar.low  { border-color:#FCD34D; background:color-mix(in srgb,#D97706 6%,var(--surface)) }
+  .qbar.low  .qb-track span{ background:linear-gradient(90deg,#B45309,#FBBF24) }
+  .qbar.crit { border-color:#FCA5A5; background:color-mix(in srgb,#DC2626 7%,var(--surface)) }
+  .qbar.crit .qb-track span{ background:linear-gradient(90deg,#B91C1C,#F87171) }
+  .qbar.out  { border-color:#DC2626; background:color-mix(in srgb,#DC2626 11%,var(--surface)) }
+  .qbar.out  .qb-track span{ background:#DC2626 }
+
+  .qb-warn{
+    margin-top:10px; padding:9px 12px; border-radius:11px;
+    background:#FEE2E2; color:#B91C1C; font-size:12px; font-weight:700; line-height:1.6;
+  }
+  body.dark .qb-warn{ background:#4a1414; color:#fca5a5 }
+
+  @media (max-width:640px){
+    .qbar{ padding:11px 12px }
+    .qb-txt b{ font-size:12.5px }
+    .qb-txt span{ font-size:11px }
+  }
 </style>
 </head>
 <body>
@@ -2253,6 +2300,9 @@
   </div>
 
   <!-- شريط بيظهر في تبويب المرفوعين بس -->
+  <!-- شريط رصيد الـ API — للأدمن والمدير بس -->
+  <div class="qbar" id="quotaBar" style="display:none"></div>
+
   <div class="ibar" id="importBar" style="display:none">
     <span class="ibar-t">📄 المؤثرين اللي اترفعوا من ملفات</span>
     <button class="ibar-b" onclick="openImportsList()">📂 سجل الاستيرادات</button>
@@ -2424,6 +2474,7 @@ const FN_MAP = {
   lookupLead:     "lookup-lead",
   bulkImport:     "bulk-import",
   getImports:     "get-imports",
+  checkQuota:     "check-quota",
   getProofs:      "get-proofs",
   logAction:      "log-action",
   dashboardStats: "dashboard-stats",
@@ -4901,6 +4952,7 @@ async function startImport(){
   _impBusy = false;
   showImportResult({ batchId, total, added, dups, bad, enriched, toAgent, notFound, tempFail, quotaHit, failed });
   if(added) boot();          // نحمّل الكروت الجديدة
+  refreshQuota();            // الرصيد اتغيّر — نحدّثه
 }
 
 // ===== نتيجة الاستيراد =====
@@ -5309,6 +5361,61 @@ function inDateRange(v){
   return true;
 }
 
+// ===== رصيد الـ API =====
+// 🔒 للأدمن والمدير بس — الموظفة ملهاش دعوة بالأرقام دي.
+// بيتحدّث أول ما تفتح الموقع وبعد كل رفعة ملف.
+let QUOTA = null;
+
+async function refreshQuota(silent){
+  if(!isAdminSession()) return;
+  try{
+    const q = await callApi('checkQuota', { token: SESSION.token });
+    QUOTA = q;
+    renderQuotaBar();
+    // تنبيه لو الرصيد قرب يخلص
+    if(!silent && (q.level === 'critical' || q.level === 'empty')){
+      toastErr(q.level === 'empty'
+        ? 'رصيد الـ API خلص — لازم تجدّده عشان البيانات تكمّل'
+        : 'رصيد الـ API قرب يخلص — فاضل ' + q.left + ' طلب بس');
+    }
+  }catch(e){ /* مايوقفش الموقع */ }
+}
+
+function renderQuotaBar(){
+  const box = document.getElementById('quotaBar');
+  if(!box) return;
+  if(!QUOTA || !isAdminSession()){ box.style.display='none'; return; }
+
+  const q = QUOTA;
+  const LV = {
+    ok:       ['ok',   '✅', 'الرصيد كويس'],
+    low:      ['low',  '⚡', 'الرصيد قرب يخلص'],
+    critical: ['crit', '⚠️', 'الرصيد شبه خلصان'],
+    empty:    ['out',  '🔴', 'الرصيد خلص']
+  };
+  const lv = LV[q.level] || LV.ok;
+
+  box.style.display = '';
+  box.className = 'qbar ' + lv[0];
+  box.innerHTML =
+      '<div class="qb-main">'
+    +   '<span class="qb-i">'+lv[1]+'</span>'
+    +   '<div class="qb-txt">'
+    +     '<b>'+lv[2]+' — فاضل '+Number(q.left).toLocaleString('en')+' طلب من '
+    +       Number(q.limit).toLocaleString('en')+'</b>'
+    +     '<span>باقة '+esc(q.pack||'')+' · تنتهي بعد '+q.validity+' يوم'
+    +       (q.pendingLeads ? ' · '+Number(q.pendingLeads).toLocaleString('en')+' مؤثر مستني بيانات' : '')
+    +     '</span>'
+    +   '</div>'
+    +   '<button class="qb-r" onclick="refreshQuota()" title="تحديث">↻</button>'
+    + '</div>'
+    + '<div class="qb-track"><span style="width:'+Math.max(1,q.pct)+'%"></span></div>'
+    + (!q.enough && q.pendingLeads
+        ? '<div class="qb-warn">⚠️ الرصيد مش كفاية للـ '+Number(q.pendingLeads).toLocaleString('en')
+          + ' مؤثر المستنيين — محتاج '+Number(q.pendingLeads - q.left).toLocaleString('en')+' طلب زيادة</div>'
+        : '');
+}
+
 function setView(v){
   state.view = v;
   const bar = document.getElementById('importBar');
@@ -5509,6 +5616,7 @@ function applyData(all){
   if(filtered.length) CREATORS=filtered;
   invalidateCache();
   buildAllPills(); renderStats(); renderMyProgress(); render(); updateScrapeCount();
+  refreshQuota(true);
 }
 
 // تحديث في الخلفية من غير ما نمسح الشبكة أو نرجّع المستخدم لفوق.
