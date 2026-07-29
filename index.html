@@ -2453,6 +2453,73 @@
     .rt{ font-size:11px }
     .rt th, .rt td{ padding:7px 5px }
   }
+
+  /* ===== إعدادات تقارير الإيميل ===== */
+  .ms-box{ max-width:560px !important; text-align:right; max-height:88vh; overflow-y:auto }
+  .ms-status{ padding:12px 14px; border-radius:13px; margin-bottom:16px;
+              font-size:13px; font-weight:700; line-height:1.7 }
+  .ms-status.ok  { background:#DCFCE7; color:#15803D }
+  .ms-status.wait{ background:#FEF3C7; color:#92400E }
+  body.dark .ms-status.ok{ background:#14432a; color:#86efac }
+  body.dark .ms-status.wait{ background:#4a3510; color:#fcd34d }
+
+  .ms-sec{ margin-bottom:20px; padding-bottom:18px; border-bottom:1px solid var(--line) }
+  .ms-sec:last-of-type{ border-bottom:none }
+  .ms-sec h4{ font-size:14px; font-weight:800; color:var(--ink); margin-bottom:11px }
+  .ms-note{ font-size:11.5px; font-weight:600; color:var(--muted); line-height:1.8;
+            background:color-mix(in srgb,var(--brand) 7%,transparent);
+            padding:10px 12px; border-radius:11px; margin-bottom:11px }
+  .ms-note b{ color:var(--brand); direction:ltr; display:inline-block }
+  .ms-saved{ font-style:normal; font-size:10.5px; color:#15803D; font-weight:800 }
+
+  .ms-save{ width:100%; font-family:inherit; font-size:13px; font-weight:800; cursor:pointer;
+            padding:11px; border-radius:12px; border:none;
+            background:var(--brand); color:#fff; transition:filter .15s, transform .14s }
+  .ms-save:hover{ filter:brightness(1.07); transform:translateY(-1px) }
+
+  .ms-add{ display:flex; gap:6px; margin-bottom:11px; flex-wrap:wrap }
+  .ms-add input{ flex:1; min-width:110px; font-family:inherit; font-size:13px;
+                 padding:10px 12px; border-radius:11px;
+                 border:1px solid var(--line); background:var(--bg); color:var(--ink) }
+  .ms-add input:focus{ outline:none; border-color:var(--brand) }
+  .ms-add button{ font-family:inherit; font-size:12.5px; font-weight:800; cursor:pointer;
+                  padding:10px 15px; border-radius:11px; border:none;
+                  background:var(--brand); color:#fff; flex-shrink:0;
+                  transition:filter .15s, transform .14s }
+  .ms-add button:hover:not(:disabled){ filter:brightness(1.07); transform:translateY(-1px) }
+  .ms-add button:disabled{ opacity:.4; cursor:not-allowed }
+
+  .ms-list{ display:flex; flex-direction:column; gap:7px }
+  .ms-r{ display:flex; align-items:center; gap:9px; flex-wrap:wrap;
+         padding:11px 12px; border-radius:12px;
+         border:1px solid var(--line); background:color-mix(in srgb,var(--line) 20%,transparent) }
+  .ms-info{ flex:1; min-width:120px; display:flex; flex-direction:column }
+  .ms-info b{ font-size:13px; font-weight:800; color:var(--ink) }
+  .ms-info span{ font-size:11px; color:var(--muted); direction:ltr; text-align:start }
+  .ms-chk{ display:flex; align-items:center; gap:5px; font-size:11.5px;
+           font-weight:700; color:var(--muted); cursor:pointer }
+  .ms-chk input{ accent-color:var(--brand); cursor:pointer }
+  .ms-del{ width:30px; height:30px; border-radius:9px; cursor:pointer;
+           border:none; background:transparent; font-size:14px;
+           transition:background .15s }
+  .ms-del:hover{ background:#FEE2E2 }
+  body.dark .ms-del:hover{ background:#4a1414 }
+  .ms-empty{ padding:18px; text-align:center; font-size:12.5px; color:var(--muted);
+             background:color-mix(in srgb,var(--line) 22%,transparent); border-radius:12px }
+
+  .ms-sends{ display:flex; flex-direction:column; gap:6px }
+  .ms-s{ display:flex; justify-content:space-between; align-items:center; gap:9px;
+         padding:9px 11px; border-radius:10px; font-size:12px; font-weight:700 }
+  .ms-s.ok { background:#DCFCE7; color:#15803D }
+  .ms-s.bad{ background:#FEE2E2; color:#B91C1C }
+  body.dark .ms-s.ok{ background:#14432a; color:#86efac }
+  body.dark .ms-s.bad{ background:#4a1414; color:#fca5a5 }
+  .ms-s i{ font-style:normal; font-size:10.5px; opacity:.8; direction:ltr }
+
+  @media (max-width:640px){
+    .ms-add input{ min-width:100% }
+    .ms-add button{ width:100% }
+  }
 </style>
 </head>
 <body>
@@ -2644,6 +2711,7 @@
     <button class="admin-btn" onclick="openAddLeadModal()">⭐ إضافة مؤثر</button>
 
     <button class="admin-btn secondary" onclick="openStaffManager()">👥 إدارة الفريق</button>
+    <button class="admin-btn secondary" onclick="openMailSettings()">📧 تقارير الإيميل</button>
     <button class="admin-btn secondary" onclick="exportCSV()">⬇️ تصدير النتائج</button>
     <span class="spacer"></span>
     <span style="font-size:12px;color:var(--muted);font-weight:600">👤 <span id="adminName">أدمن</span></span>
@@ -2839,6 +2907,8 @@ const FN_MAP = {
   getImports:     "get-imports",
   checkQuota:     "check-quota",
   staffReport:    "staff-report",
+  sendReport:     "send-report",
+  reportSettings: "report-settings",
   getProofs:      "get-proofs",
   logAction:      "log-action",
   dashboardStats: "dashboard-stats",
@@ -5953,6 +6023,169 @@ function printReport(){
     window.print();
     setTimeout(()=>document.body.classList.remove('printing-report'), 400);
   }, 60);
+}
+
+
+// ==========================================================
+// إعدادات تقارير الإيميل — للأدمن والمدير بس
+// ==========================================================
+let _mailState = null;
+
+async function openMailSettings(){
+  if(!isAdminSession()) return;
+  const ov = document.createElement('div');
+  ov.className = 'cf-overlay'; ov.id = 'mailOv';
+  ov.innerHTML = '<div class="cf-box ms-box"><div class="cf-title">📧 تقارير الإيميل</div>'
+    + '<div id="msBody"><div class="imp-load"><span class="lm-spin"></span> بنحمّل…</div></div>'
+    + '<div class="cf-btns"><button class="cf-cancel" onclick="closeMailSettings()">إغلاق</button></div></div>';
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>ov.classList.add('show'));
+  ov.addEventListener('click', e=>{ if(e.target===ov) closeMailSettings(); });
+  loadMailSettings();
+}
+
+function closeMailSettings(){
+  const ov = document.getElementById('mailOv');
+  if(!ov) return;
+  ov.classList.remove('show'); setTimeout(()=>ov.remove(),220);
+}
+
+async function loadMailSettings(){
+  const box = document.getElementById('msBody');
+  if(!box) return;
+  try{
+    const r = await callApi('reportSettings', { token: SESSION.token });
+    _mailState = r;
+    renderMailSettings(r);
+  }catch(e){
+    box.innerHTML = '<div class="imp-warn">'+esc(e.message||'مش قادر أحمّل الإعدادات')+'</div>';
+  }
+}
+
+function renderMailSettings(r){
+  const box = document.getElementById('msBody');
+  if(!box) return;
+  const ready = !!(r.fromEmail && r.hasPassword);
+
+  const list = (r.recipients||[]).length
+    ? (r.recipients||[]).map(x =>
+        '<div class="ms-r">'
+        + '<div class="ms-info">'
+        +   '<b>'+esc(x.name || x.email)+'</b>'
+        +   (x.name ? '<span>'+esc(x.email)+'</span>' : '')
+        + '</div>'
+        + '<label class="ms-chk"><input type="checkbox" '+(x.weekly?'checked':'')
+        +   ' onchange="toggleRecipient('+x.id+',\'weekly\',this.checked)"> أسبوعي</label>'
+        + '<label class="ms-chk"><input type="checkbox" '+(x.monthly?'checked':'')
+        +   ' onchange="toggleRecipient('+x.id+',\'monthly\',this.checked)"> شهري</label>'
+        + '<button class="ms-del" onclick="removeRecipient('+x.id+')" title="حذف">🗑️</button>'
+        + '</div>').join('')
+    : '<div class="ms-empty">مفيش مستقبلين لسه — ضيف إيميل المدير عشان يبدأ يستلم</div>';
+
+  const sends = (r.recentSends||[]).length
+    ? '<div class="ms-sec"><h4>📬 آخر إرسالات</h4><div class="ms-sends">'
+      + r.recentSends.map(x =>
+        '<div class="ms-s '+(x.status==='ok'?'ok':'bad')+'">'
+        + '<span>'+(x.kind==='monthly'?'📅 شهري':'📊 أسبوعي')+' · '+esc(x.period_tag||'')+'</span>'
+        + '<i>'+esc(fmtShort(x.ts))+' · '+((x.recipients||[]).length)+' مستقبِل</i>'
+        + '</div>').join('')
+      + '</div></div>'
+    : '';
+
+  box.innerHTML =
+      '<div class="ms-status '+(ready?'ok':'wait')+'">'
+    +   (ready
+        ? '✅ جاهز — الإرسال من <b>'+esc(r.fromEmail)+'</b>'
+        : '⚠️ لسه ناقص إعداد الإرسال — املا الخانتين تحت')
+    + '</div>'
+
+    + '<div class="ms-sec"><h4>⚙️ إعداد الإرسال</h4>'
+    +   '<div class="lg-field"><label>الإيميل اللي هيتبعت منه</label>'
+    +     '<input id="msFrom" type="email" dir="ltr" placeholder="mohamed@adltix.com" value="'+esc(r.fromEmail||'')+'"></div>'
+    +   '<div class="lg-field"><label>App Password من جوجل'
+    +     (r.hasPassword?' <i class="ms-saved">✅ متسجّل</i>':'')+'</label>'
+    +     '<input id="msPass" type="password" dir="ltr" placeholder="'+(r.hasPassword?'••••••••••••••••':'16 حرف من جوجل')+'" autocomplete="off"></div>'
+    +   '<div class="ms-note">الـ App Password مش باسورد الإيميل العادي — بتعمله من '
+    +     '<b>myaccount.google.com/apppasswords</b></div>'
+    +   '<button class="ms-save" onclick="saveSmtp()">حفظ الإعدادات</button>'
+    + '</div>'
+
+    + '<div class="ms-sec"><h4>👤 مين يستلم التقارير</h4>'
+    +   '<div class="ms-add">'
+    +     '<input id="msName"  type="text"  placeholder="الاسم">'
+    +     '<input id="msEmail" type="email" dir="ltr" placeholder="email@example.com">'
+    +     '<button onclick="addRecipient()">＋ إضافة</button>'
+    +   '</div>'
+    +   '<div class="ms-list">'+list+'</div>'
+    + '</div>'
+
+    + '<div class="ms-sec"><h4>🚀 إرسال تجريبي</h4>'
+    +   '<div class="ms-note">ابعت لنفسك الأول عشان تشوف الشكل قبل ما يوصل للمدير.</div>'
+    +   '<div class="ms-add">'
+    +     '<input id="msTest" type="email" dir="ltr" placeholder="ابعتهولي على..." value="'+esc(r.fromEmail||'')+'">'
+    +     '<button onclick="sendTest(\'weekly\')" '+(ready?'':'disabled')+'>📊 أسبوعي</button>'
+    +     '<button onclick="sendTest(\'monthly\')" '+(ready?'':'disabled')+'>📅 شهري</button>'
+    +   '</div>'
+    + '</div>'
+
+    + sends
+    + '<div class="lg-err" id="msErr"></div>';
+}
+
+async function saveSmtp(){
+  const err = document.getElementById('msErr');
+  err.textContent = '';
+  const fromEmail   = (document.getElementById('msFrom')||{}).value || '';
+  const appPassword = (document.getElementById('msPass')||{}).value || '';
+  if(!fromEmail.trim()){ err.textContent = 'اكتب الإيميل الأول'; return; }
+  try{
+    const r = await callApi('reportSettings', {
+      token: SESSION.token, action:'saveSmtp', fromEmail, appPassword
+    });
+    _mailState = r; renderMailSettings(r);
+    toastOk('الإعدادات اتحفظت ✅');
+  }catch(e){ err.textContent = e.message; }
+}
+
+async function addRecipient(){
+  const err = document.getElementById('msErr'); err.textContent = '';
+  const email = (document.getElementById('msEmail')||{}).value || '';
+  const name  = (document.getElementById('msName')||{}).value  || '';
+  if(!email.trim()){ err.textContent = 'اكتب الإيميل'; return; }
+  try{
+    const r = await callApi('reportSettings', { token: SESSION.token, action:'add', email, name });
+    _mailState = r; renderMailSettings(r);
+    toastOk('اتضاف ✅ — هيبدأ يستلم التقارير تلقائي');
+  }catch(e){ err.textContent = e.message; }
+}
+
+async function removeRecipient(id){
+  const ok = await showConfirm('حذف المستقبِل؟','مش هيستلم أي تقارير بعد كده.','حذف','danger');
+  if(!ok) return;
+  try{
+    const r = await callApi('reportSettings', { token: SESSION.token, action:'remove', id });
+    _mailState = r; renderMailSettings(r);
+    toastOk('اتشال');
+  }catch(e){ toastErr(e.message); }
+}
+
+async function toggleRecipient(id, field, val){
+  try{
+    const body = { token: SESSION.token, action:'toggle', id };
+    body[field] = val;
+    await callApi('reportSettings', body);
+  }catch(e){ toastErr(e.message); }
+}
+
+async function sendTest(kind){
+  const err = document.getElementById('msErr'); err.textContent = '';
+  const testTo = (document.getElementById('msTest')||{}).value || '';
+  if(!testTo.trim()){ err.textContent = 'اكتب إيميل تبعتله'; return; }
+  toast('بنبعت…','info',3000);
+  try{
+    const r = await callApi('sendReport', { token: SESSION.token, kind, testTo });
+    toastOk('اتبعت ✅ — ' + (r.period||'') + ' · شوف بريدك');
+  }catch(e){ err.textContent = e.message; toastErr('الإرسال فشل'); }
 }
 
 // ===== تصدير النتائج المفلترة إلى CSV =====
