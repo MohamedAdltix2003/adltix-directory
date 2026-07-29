@@ -2627,6 +2627,13 @@
   /* الظلال بتبوّظ الصورة — بنشيلها */
   .pdf-export *{ box-shadow:none !important; text-shadow:none !important }
   .pdf-export .rp-doc{ padding:0 !important }
+
+  /* التذييل بقى فيه 3 أزرار تنزيل — نظبّطه على الموبايل */
+  @media (max-width:640px){
+    .rp-foot{ gap:6px }
+    .rp-sp{ flex-basis:100%; height:0 }
+    .rp-foot .rp-btn:not(.sm){ flex:1; min-width:78px; padding:9px 8px; font-size:12px }
+  }
 </style>
 </head>
 <body>
@@ -5923,7 +5930,9 @@ function renderStaffReport(r){
     +     '<button class="rp-btn sm'+(_rpState.period==='month'?' on':'')+'" onclick="rpPeriod(\'month\')">شهري</button>'
     +   '</div>'
     +   '<span class="rp-sp"></span>'
-    +   '<button class="rp-btn main" id="rpDl" onclick="downloadReportPDF()">⬇️ تنزيل التقرير PDF</button>' 
+    +   '<button class="rp-btn main" id="rpDl" onclick="downloadReportPDF()">⬇️ PDF</button>'
+    +   '<button class="rp-btn" onclick="downloadReportWord()">📝 Word</button>'
+    +   '<button class="rp-btn" onclick="downloadReportHTML()">🌐 HTML</button>' 
     +   '<button class="rp-btn ghost" onclick="closeStaffReport()">إغلاق</button>'
     + '</div>';
 
@@ -6202,6 +6211,95 @@ function flattenColors(original, clone){
 
   clone.style.background = '#ffffff';
   clone.style.color = '#171319';
+}
+
+// بتجمع كل ستايلات الصفحة — عشان الملف يفتح مظبوط لوحده
+function collectCSS(){
+  let css = '';
+  for(const sheet of document.styleSheets){
+    try{ for(const rule of sheet.cssRules) css += rule.cssText + '\n'; }
+    catch(e){ /* ستايل من دومين تاني — مش هينفع نقراه */ }
+  }
+  return css;
+}
+
+function reportFileName(ext){
+  const tag = (_rpState.data && _rpState.data.periodTag) || '';
+  return 'تقرير-' + (_rpState.staff || '') + '-' + tag.replace(/\s+/g,'-') + '.' + ext;
+}
+
+function saveBlob(content, type, filename){
+  const blob = new Blob([content], { type });
+  const url  = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 1500);
+}
+
+// ===== تنزيل HTML =====
+// ملف واحد يفتح في أي متصفح — **مطابق للموقع 100%** لأنه نفس
+// الـ HTML والـ CSS بالظبط، من غير أي تحويل لصورة.
+function downloadReportHTML(){
+  const doc = document.getElementById('rpDoc');
+  if(!doc) return;
+
+  const html = '<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8">'
+    + '<meta name="viewport" content="width=device-width,initial-scale=1">'
+    + '<title>' + esc(reportFileName('').slice(0,-1)) + '</title>'
+    + '<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900'
+    + '&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">'
+    + '<style>' + collectCSS()
+    + '\nbody{background:#F6F4F2;margin:0;padding:24px 14px;font-family:Tajawal,sans-serif}'
+    + '\n.rp-box{max-width:880px;margin:auto;background:#fff;border-radius:20px;'
+    + 'box-shadow:0 8px 40px rgba(0,0,0,.08);overflow:hidden}'
+    + '</style></head><body><div class="rp-box">'
+    + doc.outerHTML + '</div></body></html>';
+
+  saveBlob(html, 'text/html;charset=utf-8', reportFileName('html'));
+  toastOk('اتنزّل ✅ — يفتح في أي متصفح');
+}
+
+// ===== تنزيل Word =====
+// Word بيفتح ملفات HTML لو ليها امتداد .doc وفيها الهيدرز الصح.
+// الجداول والألوان بتتنقل، والملف قابل للتعديل.
+function downloadReportWord(){
+  const doc = document.getElementById('rpDoc');
+  if(!doc) return;
+
+  // Word مبيفهمش المتغيرات ولا color-mix — بنثبّت الألوان المحسوبة
+  const clone = doc.cloneNode(true);
+  const MODERN = /color-mix|oklch|oklab|\blch\(|\blab\(|\bcolor\(|var\(/i;
+  const PROPS  = ['color','backgroundColor','borderTopColor','borderRightColor',
+                  'borderBottomColor','borderLeftColor','fontSize','fontWeight',
+                  'textAlign','padding','borderRadius'];
+
+  const orig  = [doc, ...doc.querySelectorAll('*')];
+  const copy  = [clone, ...clone.querySelectorAll('*')];
+  for(let i = 0; i < orig.length && i < copy.length; i++){
+    let cs; try{ cs = getComputedStyle(orig[i]); }catch(e){ continue; }
+    for(const prop of PROPS){
+      const v = cs[prop];
+      if(v && !MODERN.test(v)) copy[i].style[prop] = v;
+    }
+    copy[i].style.boxShadow = 'none';
+  }
+
+  const html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" '
+    + 'xmlns:w="urn:schemas-microsoft-com:office:word" '
+    + 'xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8">'
+    + '<title>' + esc(reportFileName('').slice(0,-1)) + '</title>'
+    + '<!--[if gte mso 9]><xml><w:WordDocument>'
+    + '<w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]-->'
+    + '<style>@page{size:A4;margin:1.5cm}'
+    + 'body{font-family:"Segoe UI",Tahoma,Arial,sans-serif;direction:rtl}'
+    + 'table{border-collapse:collapse;width:100%}'
+    + 'td,th{padding:6px;border:1px solid #E6E0DC}'
+    + '</style></head><body dir="rtl">'
+    + clone.outerHTML + '</body></html>';
+
+  saveBlob('\ufeff' + html, 'application/msword', reportFileName('doc'));
+  toastOk('اتنزّل ✅ — يفتح في Word');
 }
 
 async function downloadReportPDF(){
