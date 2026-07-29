@@ -1991,6 +1991,34 @@
     .drange input[type="date"]{ font-size:12px; padding:6px 8px; flex:1; min-width:0 }
     .drange label{ font-size:11px }
   }
+
+  /* ===== تفاصيل نتيجة الاستيراد ===== */
+  .ir-rows{ display:flex; flex-direction:column; gap:8px; margin-top:14px }
+  .ir-row{
+    display:flex; align-items:flex-start; gap:11px;
+    padding:12px 13px; border-radius:14px; text-align:right;
+    border:1px solid transparent;
+  }
+  .ir-i{ font-size:19px; line-height:1.3; flex-shrink:0 }
+  .ir-t{ display:flex; flex-direction:column; gap:3px; flex:1; min-width:0 }
+  .ir-t b{ font-size:13.5px; font-weight:800; line-height:1.5 }
+  .ir-t span{ font-size:11.5px; font-weight:600; line-height:1.7; opacity:.82 }
+
+  .ir-row.enr { background:var(--brand-soft); color:var(--brand);
+                border-color:color-mix(in srgb,var(--brand) 22%,transparent) }
+  .ir-row.agt { background:#CCFBF1; color:#0F766E; border-color:#5EEAD4 }
+  .ir-row.mine{ background:#DCFCE7; color:#15803D; border-color:#86EFAC }
+  .ir-row.wait{ background:#FEF3C7; color:#92400E; border-color:#FCD34D; margin-top:8px }
+
+  body.dark .ir-row.agt { background:#134E4A; color:#5EEAD4; border-color:#0F766E }
+  body.dark .ir-row.mine{ background:#14432a; color:#86efac; border-color:#15803D }
+  body.dark .ir-row.wait{ background:#4a3510; color:#fcd34d; border-color:#B45309 }
+
+  @media (max-width:640px){
+    .ir-row{ padding:10px 11px; gap:9px }
+    .ir-t b{ font-size:12.5px }
+    .ir-t span{ font-size:11px }
+  }
 </style>
 </head>
 <body>
@@ -4857,14 +4885,37 @@ function showImportResult(r){
     +     '<div class="is-c bad"><b>'+r.bad.toLocaleString('en')+'</b><span>صفوف غلط</span></div>'
     +   '</div>'
     +   ((r.enriched || r.toAgent)
-        ? '<div class="imp-extra">'
-          + (r.enriched ? '<span class="ie ok">✨ '+Number(r.enriched).toLocaleString('en')+' اتجابت بياناتهم</span>' : '')
-          + (r.toAgent  ? '<span class="ie agent">🤖 '+Number(r.toAgent).toLocaleString('en')+' راحوا للـ '+AGENT_NAME+'</span>' : '')
+        ? '<div class="ir-rows">'
+          + (r.enriched
+              ? '<div class="ir-row enr">'
+                + '<span class="ir-i">✨</span>'
+                + '<span class="ir-t"><b>'+Number(r.enriched).toLocaleString('en')+' مؤثر اتجابت بياناتهم كاملة</b>'
+                + '<span>المتابعين والصورة والبايو والفيديوهات</span></span>'
+                + '</div>'
+              : '')
+          + (r.toAgent
+              ? '<div class="ir-row agt">'
+                + '<span class="ir-i">🤖</span>'
+                + '<span class="ir-t"><b>'+Number(r.toAgent).toLocaleString('en')+' راحوا للـ '+AGENT_NAME+'</b>'
+                + '<span>عندهم إيميل أو واتساب — الأجنت هو اللي هيكلّمهم أوتوماتيك، '
+                + 'فمش هيظهروا في قايمتك</span></span>'
+                + '</div>'
+              : '')
+          + ((r.added - Number(r.toAgent||0)) > 0
+              ? '<div class="ir-row mine">'
+                + '<span class="ir-i">👤</span>'
+                + '<span class="ir-t"><b>'+(r.added - Number(r.toAgent||0)).toLocaleString('en')+' اتضافوا في قايمتك</b>'
+                + '<span>تقدري تبعتيلهم وتتابعيهم عادي</span></span>'
+                + '</div>'
+              : '')
           + '</div>'
         : '')
     +   ((r.added - (r.enriched||0)) > 0
-        ? '<div class="imp-note">ℹ️ باقي '+(r.added-(r.enriched||0)).toLocaleString('en')
-          + ' كارت هتتجاب بياناتهم تلقائي خلال شوية — الكروت شغالة عادي لحد وقتها.</div>'
+        ? '<div class="ir-row wait">'
+          + '<span class="ir-i">⏳</span>'
+          + '<span class="ir-t"><b>'+(r.added-(r.enriched||0)).toLocaleString('en')+' لسه بياناتهم في الطريق</b>'
+          + '<span>هتوصل تلقائي خلال شوية — الكروت شغالة عادي لحد وقتها</span></span>'
+          + '</div>'
         : '')
     + '</div>'
     + (r.failed.length
