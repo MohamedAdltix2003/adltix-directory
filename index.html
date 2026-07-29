@@ -2632,6 +2632,289 @@
     .rp-sp{ flex-basis:100%; height:0 }
     .rp-foot .rp-btn:not(.sm){ flex:1; min-width:78px; padding:9px 8px; font-size:12px }
   }
+
+  /* ==========================================================
+     الداشبورد
+     ========================================================== */
+  body.db-open{ overflow:hidden }
+  .db-ov{ align-items:stretch !important; padding:0 !important }
+  .db-shell{
+    width:100%; height:100vh; overflow-y:auto; position:relative; z-index:2;
+    background:var(--bg);
+  }
+  .db-load, .db-err{
+    display:flex; align-items:center; justify-content:center; gap:11px;
+    height:60vh; font-size:15px; font-weight:700; color:var(--muted);
+  }
+  .db-err{ color:#B91C1C }
+
+  /* الشريط العلوي */
+  .db-top{
+    position:sticky; top:0; z-index:5;
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+    padding:14px 20px; background:var(--surface);
+    border-bottom:1px solid var(--line);
+  }
+  .db-brand{ display:flex; align-items:center; gap:11px; flex:1; min-width:190px }
+  .db-brand img{ width:42px; height:42px; border-radius:11px; background:#0E0E10; padding:5px }
+  .db-brand b{ display:block; font-size:16px; font-weight:900; color:var(--ink) }
+  .db-brand span{ display:block; font-size:11.5px; font-weight:600; color:var(--muted) }
+  .db-range{ display:flex; gap:5px }
+  .db-r{
+    font-family:inherit; font-size:12px; font-weight:800; cursor:pointer;
+    padding:7px 13px; border-radius:10px;
+    border:1px solid var(--line); background:transparent; color:var(--muted);
+    transition:background .15s, color .15s, border-color .15s;
+  }
+  .db-r:hover{ border-color:var(--brand); color:var(--brand) }
+  .db-r.on{ background:var(--brand); color:#fff; border-color:var(--brand) }
+  .db-x{
+    width:34px; height:34px; border-radius:10px; cursor:pointer; flex-shrink:0;
+    border:1px solid var(--line); background:transparent; color:var(--muted);
+    font-size:16px; transition:background .15s, color .15s;
+  }
+  .db-x:hover{ background:#FEE2E2; color:#DC2626; border-color:#DC2626 }
+
+  /* التابات */
+  .db-tabs{
+    position:sticky; top:71px; z-index:4;
+    display:flex; gap:4px; overflow-x:auto; padding:10px 20px;
+    background:var(--surface); border-bottom:1px solid var(--line);
+    scrollbar-width:none;
+  }
+  .db-tabs::-webkit-scrollbar{ display:none }
+  .db-tab{
+    display:flex; align-items:center; gap:7px; flex-shrink:0;
+    font-family:inherit; font-size:13px; font-weight:800; cursor:pointer;
+    padding:9px 15px; border-radius:11px; border:none;
+    background:transparent; color:var(--muted);
+    transition:background .16s, color .16s;
+  }
+  .db-tab span{ font-size:15px }
+  .db-tab:hover{ background:color-mix(in srgb,var(--line) 45%,transparent); color:var(--ink) }
+  .db-tab.on{ background:var(--brand); color:#fff }
+
+  .db-body{ padding:20px; max-width:1240px; margin:auto }
+
+  /* الملاحظات الذكية */
+  .db-ins{ display:grid; grid-template-columns:repeat(auto-fit,minmax(290px,1fr));
+           gap:10px; margin-bottom:20px }
+  .db-i{ display:flex; gap:12px; align-items:flex-start;
+         padding:14px; border-radius:15px; border:1.5px solid }
+  .db-ii{ font-size:20px; flex-shrink:0; line-height:1.2 }
+  .db-it{ flex:1; min-width:0 }
+  .db-it b{ display:block; font-size:13.5px; font-weight:800; line-height:1.5 }
+  .db-it span{ display:block; font-size:12px; font-weight:600; opacity:.85; margin-top:3px; line-height:1.6 }
+  .db-it i{ display:block; font-style:normal; font-size:11.5px; font-weight:700;
+            margin-top:7px; opacity:.9 }
+  .db-i.good{ background:#DCFCE7; border-color:#86EFAC; color:#15803D }
+  .db-i.warn{ background:#FEF3C7; border-color:#FCD34D; color:#92400E }
+  .db-i.bad { background:#FEE2E2; border-color:#FCA5A5; color:#B91C1C }
+  .db-i.info{ background:var(--brand-soft); border-color:color-mix(in srgb,var(--brand) 30%,transparent);
+              color:var(--brand) }
+  body.dark .db-i.good{ background:#14432a; color:#86efac }
+  body.dark .db-i.warn{ background:#4a3510; color:#fcd34d }
+  body.dark .db-i.bad { background:#4a1414; color:#fca5a5 }
+
+  /* المؤشرات */
+  .db-kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+            gap:10px; margin-bottom:20px }
+  .db-grid4{ display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px }
+  .db-k{ padding:15px 12px; border-radius:16px; text-align:center;
+         background:var(--surface); border:1px solid var(--line) }
+  .db-k.good{ border-color:#86EFAC } .db-k.bad{ border-color:#FCA5A5 }
+  .db-k.warn{ border-color:#FCD34D }
+  .db-ki{ font-size:19px; display:block; margin-bottom:5px }
+  .db-k b{ display:block; font-size:27px; font-weight:800; color:var(--ink);
+           font-family:'Space Grotesk','Tajawal',sans-serif; line-height:1.05 }
+  .db-kl{ display:block; font-size:11.5px; font-weight:700; color:var(--muted); margin-top:4px }
+  .db-kx{ display:block; margin-top:7px }
+  .db-kp{ font-size:15px; opacity:.6 }
+  .db-d{ font-size:11px; font-weight:800; padding:2px 9px; border-radius:999px }
+  .db-d.up{ background:#DCFCE7; color:#15803D }
+  .db-d.down{ background:#FEE2E2; color:#B91C1C }
+  .db-d.flat{ background:color-mix(in srgb,var(--line) 50%,transparent); color:var(--muted) }
+  body.dark .db-d.up{ background:#14432a; color:#86efac }
+  body.dark .db-d.down{ background:#4a1414; color:#fca5a5 }
+
+  /* الأقسام */
+  .db-sec{ background:var(--surface); border:1px solid var(--line);
+           border-radius:18px; padding:18px; margin-bottom:16px }
+  .db-sh{ display:flex; align-items:baseline; gap:10px; margin-bottom:14px }
+  .db-sh h3{ font-size:15px; font-weight:800; color:var(--ink) }
+  .db-sh span{ font-size:12px; font-weight:600; color:var(--muted) }
+  .db-empty{ padding:26px; text-align:center; font-size:13px; color:var(--muted);
+             background:color-mix(in srgb,var(--line) 22%,transparent); border-radius:13px }
+  .db-note{ font-size:12.5px; font-weight:600; color:var(--muted); margin-top:12px }
+  .db-note b{ color:var(--ink) }
+  .db-note.warn{ color:#92400E }
+
+  /* الأشرطة */
+  .db-list, .db-funnel{ display:flex; flex-direction:column; gap:12px }
+  .db-bar{ }
+  .db-bt{ display:flex; justify-content:space-between; align-items:baseline;
+          font-size:12.5px; font-weight:700; color:var(--ink); margin-bottom:5px }
+  .db-bt b{ font-family:'Space Grotesk','Tajawal',sans-serif; font-weight:800 }
+  .db-bb{ height:9px; border-radius:99px; overflow:hidden;
+          background:color-mix(in srgb,var(--line) 50%,transparent) }
+  .db-bb span{ display:block; height:100%; border-radius:99px;
+               background:linear-gradient(90deg,var(--brand),var(--brand-2));
+               transition:width .5s ease }
+  .db-bn{ font-size:10.5px; color:var(--muted); margin-top:4px }
+
+  /* الرسم اليومي */
+  .db-chart{ display:flex; align-items:flex-end; gap:4px; height:150px;
+             padding:12px 8px; border-radius:14px;
+             background:color-mix(in srgb,var(--line) 20%,transparent); overflow-x:auto }
+  .db-c{ flex:1; min-width:14px; display:flex; flex-direction:column;
+         align-items:center; justify-content:flex-end; height:100%; gap:4px }
+  .db-cv{ font-size:9.5px; font-weight:800; color:var(--muted) }
+  .db-cb{ width:100%; max-width:30px; border-radius:5px 5px 2px 2px; min-height:3px;
+          background:linear-gradient(180deg,var(--brand),var(--brand-2)) }
+  .db-cd{ font-size:9px; font-weight:700; color:var(--muted) }
+
+  /* التوقّع */
+  .db-fc{ display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:11px }
+  .db-fi{ padding:15px 11px; border-radius:14px; text-align:center;
+          background:var(--brand-soft) }
+  .db-fi b{ display:block; font-size:26px; font-weight:800; color:var(--brand);
+            font-family:'Space Grotesk','Tajawal',sans-serif }
+  .db-fi span{ display:block; font-size:11.5px; font-weight:700; color:var(--brand); margin-top:3px }
+  .db-fi i{ display:block; font-style:normal; font-size:10.5px; color:var(--muted); margin-top:5px }
+
+  /* الفريق */
+  .db-team{ display:flex; flex-direction:column; gap:10px; margin-bottom:18px }
+  .db-st{ display:flex; align-items:center; gap:13px; cursor:pointer;
+          padding:14px; border-radius:16px;
+          background:var(--surface); border:1.5px solid var(--line);
+          transition:transform .15s, box-shadow .15s, border-color .15s }
+  .db-st:hover{ transform:translateY(-2px); box-shadow:var(--shadow) }
+  .db-st.a{ border-color:#16A34A } .db-st.b{ border-color:#2563EB }
+  .db-st.c{ border-color:#D97706 } .db-st.d{ border-color:#EA580C }
+  .db-st.e{ border-color:#DC2626 }
+  .db-sr{ width:28px; height:28px; border-radius:9px; flex-shrink:0;
+          display:grid; place-items:center; font-size:13px; font-weight:800;
+          background:color-mix(in srgb,var(--line) 50%,transparent); color:var(--muted) }
+  .db-sm{ flex:1; min-width:0 }
+  .db-sn{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:14px }
+  .db-sn b{ font-weight:800; color:var(--ink) }
+  .db-sg{ font-size:10.5px; font-weight:800; padding:2px 9px; border-radius:999px;
+          background:color-mix(in srgb,var(--line) 45%,transparent); color:var(--muted) }
+  .db-sb{ height:6px; border-radius:99px; margin:8px 0; overflow:hidden;
+          background:color-mix(in srgb,var(--line) 50%,transparent) }
+  .db-sb span{ display:block; height:100%; border-radius:99px;
+               background:linear-gradient(90deg,var(--brand),var(--brand-2)) }
+  .db-sx{ display:flex; flex-wrap:wrap; gap:11px; font-size:11.5px;
+          font-weight:600; color:var(--muted) }
+  .db-sx b{ color:var(--ink); font-weight:800;
+            font-family:'Space Grotesk','Tajawal',sans-serif }
+  .db-sx .warn b{ color:#B91C1C }
+  .db-ss{ flex-shrink:0; text-align:center }
+  .db-ss b{ display:block; font-size:24px; font-weight:800; color:var(--ink);
+            font-family:'Space Grotesk','Tajawal',sans-serif; line-height:1 }
+  .db-ss span{ font-size:10px; font-weight:700; color:var(--muted) }
+
+  .db-cmp{ display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:20px }
+  .db-cg h4{ font-size:13px; font-weight:800; color:var(--ink); margin-bottom:11px }
+  .db-cg .db-bar{ margin-bottom:10px }
+
+  .db-pf{ display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:10px }
+  .db-pi{ padding:13px; border-radius:13px;
+          background:color-mix(in srgb,var(--line) 24%,transparent) }
+  .db-pn{ font-size:13px; font-weight:800; color:var(--ink) }
+  .db-pv{ font-size:12px; color:var(--muted); margin-top:5px }
+  .db-pv b{ font-size:18px; color:var(--ink);
+            font-family:'Space Grotesk','Tajawal',sans-serif }
+  .db-pu{ font-size:10.5px; color:var(--muted); margin-top:3px }
+
+  /* مسار التحويل */
+  .db-path{ display:flex; flex-direction:column; gap:11px }
+  .db-ps{ }
+  .db-pb{ height:34px; border-radius:10px; display:flex; align-items:center;
+          padding:0 13px; min-width:60px;
+          background:linear-gradient(90deg,var(--brand),var(--brand-2));
+          transition:width .6s ease }
+  .db-pb b{ color:#fff; font-size:14px; font-weight:800;
+            font-family:'Space Grotesk','Tajawal',sans-serif }
+  .db-pl{ font-size:12px; font-weight:700; color:var(--muted); margin-top:5px }
+  .db-pl span{ font-weight:800; color:var(--brand) }
+
+  /* أسباب الرفض */
+  .db-reasons{ display:flex; flex-direction:column; gap:12px }
+  .db-rn{ display:flex; align-items:center; gap:12px }
+  .db-ri{ font-size:20px; flex-shrink:0 }
+  .db-rt{ flex:1; min-width:0 }
+  .db-rt b{ font-size:12.5px; font-weight:800; color:var(--ink) }
+  .db-rb{ height:8px; border-radius:99px; margin-top:5px; overflow:hidden;
+          background:color-mix(in srgb,var(--line) 50%,transparent) }
+  .db-rb span{ display:block; height:100%; border-radius:99px; background:#DC2626 }
+  .db-rv{ text-align:center; flex-shrink:0 }
+  .db-rv b{ display:block; font-size:17px; font-weight:800; color:var(--ink);
+            font-family:'Space Grotesk','Tajawal',sans-serif }
+  .db-rv span{ font-size:10px; color:var(--muted) }
+
+  /* سجل الحركات */
+  .db-feed{ display:flex; flex-direction:column; gap:7px; max-height:400px; overflow-y:auto }
+  .db-fe{ display:flex; align-items:center; gap:11px; padding:10px 12px; border-radius:11px;
+          background:color-mix(in srgb,var(--line) 22%,transparent) }
+  .db-fi{ font-size:16px; flex-shrink:0 }
+  .db-ft{ flex:1; min-width:0; font-size:12.5px; font-weight:600; color:var(--muted) }
+  .db-ft b{ color:var(--ink); font-weight:800 }
+  .db-ft span{ display:block; font-size:11px; direction:ltr; text-align:start; opacity:.75 }
+  .db-fd{ font-size:10.5px; color:var(--muted); direction:ltr;
+          unicode-bidi:isolate; flex-shrink:0 }
+
+  /* الاستيرادات */
+  .db-imports{ display:flex; flex-direction:column; gap:8px }
+  .db-im{ display:flex; align-items:center; justify-content:space-between; gap:12px;
+          flex-wrap:wrap; padding:12px; border-radius:12px;
+          background:color-mix(in srgb,var(--line) 22%,transparent) }
+  .db-imt b{ font-size:13px; font-weight:800; color:var(--ink) }
+  .db-imt span{ display:block; font-size:11px; color:var(--muted); margin-top:2px }
+  .db-imn{ display:flex; gap:7px }
+  .db-imn span{ font-size:11.5px; font-weight:800; padding:4px 10px; border-radius:9px }
+  .db-imn .ok{ background:#DCFCE7; color:#15803D }
+  .db-imn .dup{ background:#FEF3C7; color:#B45309 }
+  .db-imn .bad{ background:#FEE2E2; color:#B91C1C }
+
+  /* رصيد الـ API */
+  .db-api{ padding:18px; border-radius:16px; border:2px solid }
+  .db-api.good{ background:#DCFCE7; border-color:#16A34A }
+  .db-api.warn{ background:#FEF3C7; border-color:#D97706 }
+  .db-api.bad { background:#FEE2E2; border-color:#DC2626 }
+  body.dark .db-api.good{ background:#14432a } body.dark .db-api.warn{ background:#4a3510 }
+  body.dark .db-api.bad{ background:#4a1414 }
+  .db-at{ display:flex; align-items:baseline; gap:10px }
+  .db-at b{ font-size:34px; font-weight:800;
+            font-family:'Space Grotesk','Tajawal',sans-serif; line-height:1 }
+  .db-at span{ font-size:13px; font-weight:700; opacity:.85 }
+  .db-ab{ height:8px; border-radius:99px; margin:13px 0 10px; overflow:hidden;
+          background:rgba(0,0,0,.13) }
+  .db-ab span{ display:block; height:100%; border-radius:99px; background:currentColor; opacity:.7 }
+  .db-an{ display:flex; flex-wrap:wrap; gap:14px; font-size:11.5px; font-weight:700; opacity:.85 }
+  .db-aw{ margin-top:12px; padding:10px 12px; border-radius:11px;
+          background:rgba(0,0,0,.08); font-size:12px; font-weight:700 }
+
+  .db-acts{ display:flex; gap:9px; flex-wrap:wrap; margin-top:14px }
+  .db-a{ font-family:inherit; font-size:12.5px; font-weight:800; cursor:pointer;
+         padding:10px 16px; border-radius:12px;
+         border:1px solid var(--line); background:transparent; color:var(--ink);
+         transition:background .15s, border-color .15s, color .15s }
+  .db-a:hover{ background:var(--brand-soft); border-color:var(--brand); color:var(--brand) }
+
+  @media (max-width:640px){
+    .db-top{ padding:11px 13px; gap:10px }
+    .db-brand img{ width:36px; height:36px }
+    .db-brand b{ font-size:14px }
+    .db-tabs{ top:64px; padding:8px 13px }
+    .db-tab{ padding:8px 11px; font-size:12px }
+    .db-tab span{ font-size:14px }
+    .db-body{ padding:14px 13px }
+    .db-k b{ font-size:22px }
+    .db-st{ padding:12px; gap:10px }
+    .db-ss b{ font-size:20px }
+    .db-at b{ font-size:27px }
+  }
 </style>
 </head>
 <body>
@@ -2823,6 +3106,7 @@
     <button class="admin-btn" onclick="openAddLeadModal()">⭐ إضافة مؤثر</button>
 
     <button class="admin-btn secondary" onclick="openStaffManager()">👥 إدارة الفريق</button>
+    <button class="admin-btn primary" onclick="openDashboard()">📊 الداشبورد</button>
     <button class="admin-btn secondary" onclick="openMailSettings()">📧 تقارير الإيميل</button>
     <button class="admin-btn secondary" onclick="exportCSV()">⬇️ تصدير النتائج</button>
     <span class="spacer"></span>
@@ -3019,6 +3303,7 @@ const FN_MAP = {
   getImports:     "get-imports",
   checkQuota:     "check-quota",
   staffReport:    "staff-report",
+  dashboard:      "dashboard",
   sendReport:     "send-report",
   reportSettings: "report-settings",
   getProofs:      "get-proofs",
@@ -6512,6 +6797,558 @@ async function sendTest(kind){
     const r = await callApi('sendReport', body);
     toastOk('اتبعت ✅ — ' + (r.period||'') + ' · شوف بريدك');
   }catch(e){ err.textContent = e.message; toastErr('الإرسال فشل'); }
+}
+
+
+// ==========================================================
+// الداشبورد
+// ==========================================================
+let _dash = { data:null, tab:'overview', from:'', to:'', preset:'30' };
+
+async function openDashboard(){
+  if(!isAdminSession()) return;
+  const ov = document.createElement('div');
+  ov.className = 'cf-overlay db-ov'; ov.id = 'dbOv';
+  ov.innerHTML = '<div class="db-shell"><div class="db-load">'
+    + '<span class="lm-spin"></span> بنجهّز الداشبورد…</div></div>';
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>ov.classList.add('show'));
+  document.body.classList.add('db-open');
+  loadDashboard();
+}
+
+function closeDashboard(){
+  const ov = document.getElementById('dbOv');
+  if(!ov) return;
+  ov.classList.remove('show');
+  document.body.classList.remove('db-open');
+  setTimeout(()=>ov.remove(), 240);
+}
+
+async function loadDashboard(){
+  const shell = document.querySelector('#dbOv .db-shell');
+  if(!shell) return;
+  shell.innerHTML = '<div class="db-load"><span class="lm-spin"></span> بنجهّز الداشبورد…</div>';
+  try{
+    const body = { token: SESSION.token };
+    if(_dash.from && _dash.to){ body.from = _dash.from; body.to = _dash.to; }
+    const r = await callApi('dashboard', body);
+    _dash.data = r;
+    renderDashboard();
+  }catch(e){
+    shell.innerHTML = '<div class="db-err">'+esc(e.message||'مش قادر أحمّل الداشبورد')+'</div>'
+      + '<div style="text-align:center;padding:14px"><button class="rp-btn" onclick="closeDashboard()">إغلاق</button></div>';
+  }
+}
+
+function dbPreset(days){
+  _dash.preset = String(days);
+  if(days === 'all'){ _dash.from=''; _dash.to=''; }
+  else{
+    const to = new Date();
+    const from = new Date(); from.setDate(to.getDate() - (Number(days)-1));
+    _dash.from = from.toISOString().slice(0,10);
+    _dash.to   = to.toISOString().slice(0,10);
+  }
+  loadDashboard();
+}
+
+function dbTab(t){
+  _dash.tab = t;
+  renderDashboard();
+}
+
+// ===== الرسم الرئيسي =====
+function renderDashboard(){
+  const shell = document.querySelector('#dbOv .db-shell');
+  const r = _dash.data;
+  if(!shell || !r) return;
+
+  const TABS = [
+    ['overview', '📊', 'نظرة عامة'],
+    ['team',     '👥', 'الفريق'],
+    ['deals',    '🎯', 'الصفقات'],
+    ['leads',    '📇', 'المؤثرين'],
+    ['activity', '⚡', 'النشاط'],
+    ['system',   '⚙️', 'النظام']
+  ];
+
+  const P = r.period || {};
+  const periodTxt = P.from && P.to
+    ? dbDate(P.from) + ' — ' + dbDate(P.to)
+    : 'كل الفترات';
+
+  shell.innerHTML =
+      '<div class="db-top">'
+    +   '<div class="db-brand">'
+    +     '<img src="'+REPORT_LOGO+'" alt="Adltix" referrerpolicy="no-referrer">'
+    +     '<div><b>لوحة التحكم</b><span>'+esc(periodTxt)+'</span></div>'
+    +   '</div>'
+    +   '<div class="db-range">'
+    +     ['7','30','90','all'].map(d =>
+        '<button class="db-r'+(_dash.preset===d?' on':'')+'" onclick="dbPreset(\''+d+'\')">'
+        + (d==='all'?'الكل':d+' يوم')+'</button>').join('')
+    +   '</div>'
+    +   '<button class="db-x" onclick="closeDashboard()">✕</button>'
+    + '</div>'
+
+    + '<div class="db-tabs">'
+    +   TABS.map(([k,i,l]) =>
+        '<button class="db-tab'+(_dash.tab===k?' on':'')+'" onclick="dbTab(\''+k+'\')">'
+        + '<span>'+i+'</span>'+l+'</button>').join('')
+    + '</div>'
+
+    + '<div class="db-body">' + dbTabContent(r) + '</div>';
+
+  shell.scrollTop = 0;
+}
+
+function dbTabContent(r){
+  switch(_dash.tab){
+    case 'team':     return dbTeam(r);
+    case 'deals':    return dbDeals(r);
+    case 'leads':    return dbLeads(r);
+    case 'activity': return dbActivity(r);
+    case 'system':   return dbSystem(r);
+    default:         return dbOverview(r);
+  }
+}
+
+// ===== أدوات مشتركة =====
+const dbN = v => { const x = Number(v); return Number.isFinite(x) ? x : 0; };
+const dbF = v => dbN(v).toLocaleString('en');
+
+function dbDate(v){
+  if(!v) return '';
+  const M = ['يناير','فبراير','مارس','إبريل','مايو','يونيو',
+             'يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  const d = new Date(v + (String(v).length===10 ? 'T00:00:00Z' : ''));
+  if(isNaN(d)) return String(v);
+  return d.getUTCDate() + ' ' + M[d.getUTCMonth()];
+}
+
+function dbDelta(v){
+  const d = dbN(v);
+  if(d === 0) return '<span class="db-d flat">ثابت</span>';
+  return '<span class="db-d '+(d>0?'up':'down')+'">'+(d>0?'▲':'▼')+' '+Math.abs(d)+'%</span>';
+}
+
+function dbCard(icon, label, val, extra, cls){
+  return '<div class="db-k'+(cls?' '+cls:'')+'">'
+    + '<span class="db-ki">'+icon+'</span>'
+    + '<b>'+dbF(val)+'</b>'
+    + '<span class="db-kl">'+label+'</span>'
+    + (extra ? '<span class="db-kx">'+extra+'</span>' : '')
+    + '</div>';
+}
+
+function dbSection(title, content, sub){
+  return '<div class="db-sec">'
+    + '<div class="db-sh"><h3>'+title+'</h3>'+(sub?'<span>'+sub+'</span>':'')+'</div>'
+    + content + '</div>';
+}
+
+// شريط أفقي
+function dbBar(label, val, max, color, note){
+  const w = dbN(max) > 0 ? Math.round((dbN(val)/dbN(max))*100) : 0;
+  return '<div class="db-bar">'
+    + '<div class="db-bt"><span>'+label+'</span><b>'+dbF(val)+'</b></div>'
+    + '<div class="db-bb"><span style="width:'+Math.max(w?2:0,w)+'%'
+    + (color?';background:'+color:'')+'"></span></div>'
+    + (note ? '<div class="db-bn">'+note+'</div>' : '')
+    + '</div>';
+}
+
+
+// ==========================================================
+// تاب: نظرة عامة
+// ==========================================================
+function dbOverview(r){
+  const K = r.kpis||{}, D = r.deltas||{}, RT = r.rates||{}, F = r.funnel||{};
+  let out = '';
+
+  // ── الملاحظات الذكية — أول حاجة يشوفها ──
+  const ins = r.insights || [];
+  if(ins.length){
+    const M = { good:'good', warn:'warn', bad:'bad', info:'info' };
+    out += '<div class="db-ins">'
+      + ins.map(i =>
+        '<div class="db-i '+(M[i.level]||'info')+'">'
+        + '<span class="db-ii">'+i.icon+'</span>'
+        + '<div class="db-it"><b>'+esc(i.title)+'</b>'
+        + '<span>'+esc(i.detail)+'</span>'
+        + (i.action ? '<i>→ '+esc(i.action)+'</i>' : '')
+        + '</div></div>').join('')
+      + '</div>';
+  }
+
+  // ── المؤشرات ──
+  out += '<div class="db-kpis">'
+    + dbCard('📩','رسايل اتبعتت', K.sent, dbDelta(D.sent))
+    + dbCard('🔄','متابعات', K.followups, dbDelta(D.followups))
+    + dbCard('💬','ردّوا', K.responded, '<span class="db-d flat">'+dbN(RT.response)+'% رد</span>')
+    + dbCard('🎉','اشتراكات', K.subscribed, dbDelta(D.subscribed), 'good')
+    + dbCard('🎯','اتخصصوا', K.allocated, '')
+    + dbCard('❌','مفيش اشتراك', K.lost, dbDelta(D.lost), 'bad')
+    + '</div>';
+
+  // ── القمع ──
+  const steps = [
+    ['⚪ لسه محدش كلّمه', F.untouched, '#B9B2AC'],
+    ['📩 اتبعتلهم',      F.sent,      '#E4553F'],
+    ['🔄 في المتابعة',   F.followup,  '#D97706'],
+    ['🎉 اشتركوا',       F.subscribed,'#16A34A'],
+    ['🎯 اتخصصوا',       F.allocated, '#7C3AED'],
+    ['❌ مفيش اشتراك',   F.lost,      '#DC2626']
+  ];
+  const fmax = Math.max(1, ...steps.map(x=>dbN(x[1])));
+  out += dbSection('🔻 قمع الصفقة',
+    '<div class="db-funnel">' + steps.map(([l,v,c]) => {
+      const p = dbN(F.total) > 0 ? Math.round((dbN(v)/dbN(F.total))*1000)/10 : 0;
+      return dbBar(l, v, fmax, c, p + '% من القاعدة');
+    }).join('') + '</div>',
+    dbF(F.total) + ' مؤثر');
+
+  // ── النشاط اليومي ──
+  out += dbSection('📅 النشاط اليومي', dbDailyChart(r.daily||[]));
+
+  // ── التوقّع ──
+  const fc = r.forecast;
+  if(fc && fc.daysLeft > 0){
+    out += dbSection('🔮 توقّع آخر الشهر',
+      '<div class="db-fc">'
+      + '<div class="db-fi"><b>'+dbF(fc.projected.sent)+'</b><span>رسالة متوقّعة</span>'
+      +   '<i>بمعدل '+fc.perDay.sent+' في اليوم</i></div>'
+      + '<div class="db-fi"><b>'+dbF(fc.projected.subscribed)+'</b><span>اشتراك متوقّع</span>'
+      +   '<i>بمعدل '+fc.perDay.subscribed+' في اليوم</i></div>'
+      + '<div class="db-fi"><b>'+fc.daysLeft+'</b><span>يوم فاضل</span></div>'
+      + '</div>',
+      'بناءً على المعدل الحالي');
+  }
+
+  return out;
+}
+
+// رسم النشاط اليومي
+function dbDailyChart(daily){
+  if(!daily.length) return '<div class="db-empty">مفيش نشاط في الفترة دي</div>';
+  const max = Math.max(1, ...daily.map(x=>dbN(x.total)));
+  const AR = ['أحد','اتنين','تلات','أربع','خميس','جمعة','سبت'];
+  const show = daily.length > 31 ? daily.slice(-31) : daily;
+
+  return '<div class="db-chart">' + show.map(x => {
+    const h = Math.round((dbN(x.total)/max)*100);
+    const d = new Date(x.day+'T00:00:00Z');
+    const tip = dbDate(x.day) + ' · ' + dbF(x.total) + ' حركة';
+    return '<div class="db-c" title="'+esc(tip)+'">'
+      + '<span class="db-cv">'+(dbN(x.total)||'')+'</span>'
+      + '<span class="db-cb" style="height:'+Math.max(3,h)+'%"></span>'
+      + '<span class="db-cd">'+(show.length<=14 ? AR[d.getUTCDay()] : d.getUTCDate())+'</span>'
+      + '</div>';
+  }).join('') + '</div>';
+}
+
+// ==========================================================
+// تاب: الفريق
+// ==========================================================
+function dbTeam(r){
+  const staff = r.staff || [];
+  if(!staff.length) return '<div class="db-empty">مفيش موظفات</div>';
+
+  // درجة كل واحدة — نفس منطق التقارير
+  const scored = staff.map(s => {
+    const sent = dbN(s.sent), fu = dbN(s.followups);
+    const sub = dbN(s.subscribed), lost = dbN(s.lost), gaps = dbN(s.gaps);
+    const responded = sub + lost;
+    const avgSent = staff.reduce((a,x)=>a+dbN(x.sent),0) / Math.max(1,staff.length);
+
+    const activity = avgSent > 0 ? Math.min(25, Math.round((sent/avgSent)*20)) : (sent?20:0);
+    const disc     = sent > 0 ? Math.max(0, 20 - Math.round((gaps/Math.max(1,sent))*40)) : 0;
+    const resp     = sent > 0 ? Math.min(20, Math.round((responded/sent*100)/30*20)) : 0;
+    const close    = responded > 0 ? Math.min(25, Math.round((sub/responded*100)/30*25)) : 0;
+    const days     = Math.min(10, Math.round((dbN(s.active_days)/Math.max(1,dbN(r.period?.days)))*10));
+    const total    = activity + disc + resp + close + days;
+
+    let grade, label;
+    if(total>=85){grade='A';label='ممتازة';}
+    else if(total>=70){grade='B';label='كويسة';}
+    else if(total>=55){grade='C';label='مقبولة';}
+    else if(total>=35){grade='D';label='محتاجة تحسين';}
+    else {grade='E';label='مقصّرة';}
+
+    return {...s, sent, fu, sub, lost, gaps, responded, score:total, grade, label,
+            rr: sent?Math.round(responded/sent*100):0,
+            cv: responded?Math.round(sub/responded*100):0};
+  }).sort((a,b)=> b.score - a.score);
+
+  const maxSent = Math.max(1, ...scored.map(x=>x.sent));
+  const GC = {A:'a',B:'b',C:'c',D:'d',E:'e'};
+
+  let out = '<div class="db-team">' + scored.map((s,i) =>
+    '<div class="db-st '+GC[s.grade]+'" onclick="closeDashboard();openStaffReport(\''+esc(s.name)+'\',\'week\')">'
+    + '<div class="db-sr">'+(i+1)+'</div>'
+    + '<div class="db-sm">'
+    +   '<div class="db-sn">'+esc(s.emoji||'👤')+' <b>'+esc(s.name)+'</b>'
+    +     '<span class="db-sg">'+s.grade+' · '+s.label+'</span></div>'
+    +   '<div class="db-sb"><span style="width:'+Math.round(s.sent/maxSent*100)+'%"></span></div>'
+    +   '<div class="db-sx">'
+    +     '<span>📩 <b>'+dbF(s.sent)+'</b></span>'
+    +     '<span>🔄 <b>'+dbF(s.fu)+'</b></span>'
+    +     '<span>🎉 <b>'+dbF(s.sub)+'</b></span>'
+    +     '<span>💬 <b>'+s.rr+'%</b></span>'
+    +     '<span>🎯 <b>'+s.cv+'%</b></span>'
+    +     (s.gaps ? '<span class="warn">🕳️ <b>'+dbF(s.gaps)+'</b></span>' : '')
+    +   '</div>'
+    + '</div>'
+    + '<div class="db-ss"><b>'+s.score+'</b><span>/100</span></div>'
+    + '</div>').join('') + '</div>';
+
+  // مقارنة بصرية
+  out += dbSection('📊 مقارنة الفريق',
+    '<div class="db-cmp">'
+    + ['sent','fu','sub'].map((k,idx) => {
+        const L = ['📩 الرسايل','🔄 المتابعات','🎉 الاشتراكات'][idx];
+        const mx = Math.max(1, ...scored.map(x=>dbN(x[k])));
+        return '<div class="db-cg"><h4>'+L+'</h4>'
+          + scored.map(s => dbBar((s.emoji||'')+' '+s.name, s[k], mx)).join('')
+          + '</div>';
+      }).join('')
+    + '</div>');
+
+  // المحفظة
+  out += dbSection('📋 المحفظة',
+    '<div class="db-pf">' + scored.map(s =>
+      '<div class="db-pi">'
+      + '<div class="db-pn">'+esc(s.emoji||'')+' '+esc(s.name)+'</div>'
+      + '<div class="db-pv"><b>'+dbF(s.portfolio)+'</b> مؤثر</div>'
+      + '<div class="db-pu">'+dbF(s.untouched)+' لسه محدش كلّمهم</div>'
+      + '</div>').join('') + '</div>');
+
+  return out;
+}
+
+
+// ==========================================================
+// تاب: الصفقات
+// ==========================================================
+function dbDeals(r){
+  const K = r.kpis||{}, RT = r.rates||{}, F = r.funnel||{};
+  const REASON = { fixed:['💰','طلب سعر ثابت'], gifts:['🎁','طلب هدايا'], other:['✍️','سبب تاني'] };
+  let out = '';
+
+  // معدلات التحويل
+  out += '<div class="db-kpis">'
+    + dbCard('💬','معدل الرد', RT.response, '<span class="db-kp">%</span>')
+    + dbCard('🎯','معدل الإقفال', RT.conversion, '<span class="db-kp">%</span>', 'good')
+    + dbCard('🏁','معدل التخصيص', RT.allocation, '<span class="db-kp">%</span>')
+    + dbCard('⚡','حركة/يوم', RT.perDay, '')
+    + '</div>';
+
+  // مسار التحويل
+  const path = [
+    ['اتبعتلهم', K.sent, 100],
+    ['ردّوا', K.responded, dbN(RT.response)],
+    ['اشتركوا', K.subscribed, dbN(K.sent)?Math.round(dbN(K.subscribed)/dbN(K.sent)*100):0],
+    ['اتخصصوا', K.allocated, dbN(K.sent)?Math.round(dbN(K.allocated)/dbN(K.sent)*100):0]
+  ];
+  out += dbSection('🔻 مسار التحويل',
+    '<div class="db-path">' + path.map(([l,v,p],i) =>
+      '<div class="db-ps">'
+      + '<div class="db-pb" style="width:'+Math.max(8,p)+'%"><b>'+dbF(v)+'</b></div>'
+      + '<div class="db-pl">'+l+' <span>'+p+'%</span></div>'
+      + '</div>').join('') + '</div>');
+
+  // أسباب عدم الاشتراك
+  const rs = r.reasons || [];
+  if(rs.length){
+    const tot = rs.reduce((a,x)=>a+dbN(x.count),0);
+    out += dbSection('❌ أسباب عدم الاشتراك',
+      '<div class="db-reasons">' + rs.map(x => {
+        const [ic,lb] = REASON[x.type] || ['•', x.type];
+        const p = tot ? Math.round(dbN(x.count)/tot*100) : 0;
+        return '<div class="db-rn">'
+          + '<span class="db-ri">'+ic+'</span>'
+          + '<div class="db-rt"><b>'+lb+'</b>'
+          +   '<div class="db-rb"><span style="width:'+p+'%"></span></div></div>'
+          + '<div class="db-rv"><b>'+dbF(x.count)+'</b><span>'+p+'%</span></div>'
+          + '</div>';
+      }).join('') + '</div>',
+      dbF(tot) + ' حالة');
+  } else {
+    out += dbSection('❌ أسباب عدم الاشتراك',
+      '<div class="db-empty">مفيش حالات رفض مسجّلة في الفترة دي</div>');
+  }
+
+  // الوضع الحالي للقاعدة
+  out += dbSection('📊 وضع القاعدة',
+    '<div class="db-grid4">'
+    + dbCard('⚪','لسه محدش كلّمهم', F.untouched, '')
+    + dbCard('📩','اتبعتلهم', F.sent, '')
+    + dbCard('🎉','مشتركين', F.subscribed, '', 'good')
+    + dbCard('❌','مرفوضين', F.lost, '', 'bad')
+    + '</div>');
+
+  return out;
+}
+
+// ==========================================================
+// تاب: المؤثرين
+// ==========================================================
+function dbLeads(r){
+  const D = r.distribution||{}, Q = r.quality||{}, K = r.kpis||{};
+  const PL = { instagram:['📸','انستجرام'], tiktok:['🎵','تيك توك'],
+               snapchat:['👻','سناب'], youtube:['▶️','يوتيوب'], twitter:['🐦','تويتر'] };
+  let out = '';
+
+  out += '<div class="db-kpis">'
+    + dbCard('📇','إجمالي المؤثرين', K.total_leads, '')
+    + dbCard('🤖','مع الأجنت', K.agent_leads, '')
+    + dbCard('👥','مع الموظفات', K.staff_leads, '')
+    + dbCard('📞','عندهم تواصل', Q.with_contact, '')
+    + '</div>';
+
+  // المنصات
+  const pl = D.platform || [];
+  if(pl.length){
+    const mx = Math.max(1, ...pl.map(x=>dbN(x.v)));
+    out += dbSection('📱 المنصات',
+      '<div class="db-list">' + pl.map(x => {
+        const [ic,lb] = PL[x.k] || ['•', x.k||'—'];
+        return dbBar(ic+' '+lb, x.v, mx);
+      }).join('') + '</div>');
+  }
+
+  // شرايح المتابعين
+  const F = D.followers || {};
+  const tiers = [
+    ['أقل من 10 آلاف', F.tier1],
+    ['10 — 50 ألف',    F.tier2],
+    ['50 — 200 ألف',   F.tier3],
+    ['200 ألف — مليون',F.tier4],
+    ['أكتر من مليون',  F.tier5]
+  ];
+  const tmax = Math.max(1, ...tiers.map(x=>dbN(x[1])));
+  out += dbSection('📈 شرايح المتابعين',
+    '<div class="db-list">' + tiers.map(([l,v]) => dbBar(l, v, tmax)).join('') + '</div>');
+
+  // المجالات
+  const nc = D.niche || [];
+  if(nc.length){
+    const mx = Math.max(1, ...nc.map(x=>dbN(x.v)));
+    out += dbSection('🏷️ المجالات',
+      '<div class="db-list">' + nc.map(x =>
+        dbBar(esc(NICHE_AR[x.k] || x.k || '—'), x.v, mx)).join('') + '</div>');
+  }
+
+  // الدول
+  const co = D.country || [];
+  if(co.length){
+    const mx = Math.max(1, ...co.map(x=>dbN(x.v)));
+    out += dbSection('🌍 الدول',
+      '<div class="db-list">' + co.map(x => dbBar(esc(x.k||'—'), x.v, mx)).join('') + '</div>');
+  }
+
+  // جودة البيانات
+  const tot = dbN(K.total_leads) || 1;
+  out += dbSection('💎 جودة البيانات',
+    '<div class="db-grid4">'
+    + dbCard('✨','اتجابت بياناتهم', Q.enriched, Math.round(dbN(Q.enriched)/tot*100)+'%')
+    + dbCard('⏳','مستنيين بيانات', Q.needs_enrich, Math.round(dbN(Q.needs_enrich)/tot*100)+'%',
+             dbN(Q.needs_enrich)?'warn':'')
+    + dbCard('🖼️','عندهم صورة', Q.has_avatar, Math.round(dbN(Q.has_avatar)/tot*100)+'%')
+    + dbCard('📊','متوسط المتابعين', Q.avg_followers, '')
+    + '</div>');
+
+  return out;
+}
+
+// ==========================================================
+// تاب: النشاط
+// ==========================================================
+function dbActivity(r){
+  const AT = { sent:['📩','بعت'], followup:['🔄','متابعة'], subscribed:['🎉','اشترك'],
+               allocated:['🎯','تخصيص'], not_subscribed:['❌','مفيش اشتراك'] };
+  let out = '';
+
+  out += dbSection('📅 النشاط اليومي', dbDailyChart(r.daily||[]));
+
+  // آخر الأكشنات
+  const rec = r.recent || [];
+  if(rec.length){
+    out += dbSection('⚡ آخر الحركات',
+      '<div class="db-feed">' + rec.map(x => {
+        const [ic,lb] = AT[x.type] || ['•', x.type];
+        const handle = String(x.uid||'').split(':')[1] || x.uid || '';
+        return '<div class="db-fe">'
+          + '<span class="db-fi">'+ic+'</span>'
+          + '<div class="db-ft"><b>'+esc(x.staff||'')+'</b> '+lb
+          +   (x.seq ? ' '+x.seq : '')
+          +   '<span>@'+esc(handle)+'</span></div>'
+          + '<span class="db-fd">'+esc(fmtShort(x.ts))+'</span>'
+          + '</div>';
+      }).join('') + '</div>');
+  } else {
+    out += dbSection('⚡ آخر الحركات', '<div class="db-empty">مفيش حركات لسه</div>');
+  }
+
+  // الاستيرادات
+  const im = r.imports || [];
+  if(im.length){
+    out += dbSection('📄 آخر الاستيرادات',
+      '<div class="db-imports">' + im.map(x =>
+        '<div class="db-im">'
+        + '<div class="db-imt"><b>'+esc(x.file||'ملف')+'</b>'
+        +   '<span>'+esc(x.staff||'')+' · '+esc(fmtShort(x.at))+'</span></div>'
+        + '<div class="db-imn">'
+        +   '<span class="ok">✅ '+dbF(x.added)+'</span>'
+        +   '<span class="dup">🔁 '+dbF(x.dups)+'</span>'
+        +   '<span class="bad">⚠️ '+dbF(x.invalid)+'</span>'
+        + '</div></div>').join('') + '</div>');
+  }
+
+  return out;
+}
+
+// ==========================================================
+// تاب: النظام
+// ==========================================================
+function dbSystem(r){
+  const S = r.system||{}, Q = r.quality||{};
+  const left = dbN(S.api_left), lim = dbN(S.api_limit), used = dbN(S.api_used);
+  const p = lim ? Math.round(left/lim*100) : 0;
+  const lvl = left<=0 ? 'bad' : p<=10 ? 'bad' : p<=25 ? 'warn' : 'good';
+  let out = '';
+
+  // رصيد الـ API
+  out += dbSection('🔑 رصيد الـ API',
+    '<div class="db-api '+lvl+'">'
+    + '<div class="db-at"><b>'+dbF(left)+'</b><span>طلب فاضل من '+dbF(lim)+'</span></div>'
+    + '<div class="db-ab"><span style="width:'+Math.max(1,p)+'%"></span></div>'
+    + '<div class="db-an">'
+    +   '<span>باقة '+esc(S.api_pack||'—')+'</span>'
+    +   '<span>مستهلك '+dbF(used)+'</span>'
+    +   (dbN(S.api_validity) ? '<span>تنتهي بعد '+dbN(S.api_validity)+' يوم</span>' : '')
+    + '</div>'
+    + (dbN(Q.needs_enrich) > left
+        ? '<div class="db-aw">⚠️ '+dbF(Q.needs_enrich)+' مؤثر مستني بيانات — الرصيد مش كفاية</div>'
+        : '')
+    + '</div>');
+
+  // التقارير
+  out += dbSection('📧 التقارير',
+    '<div class="db-grid4">'
+    + dbCard('👤','مستقبلين', S.recipients, '', dbN(S.recipients)?'':'warn')
+    + dbCard('⏰','مهام مجدولة', S.cron_jobs, '', dbN(S.cron_jobs)?'good':'bad')
+    + '</div>'
+    + (S.last_report
+        ? '<div class="db-note">آخر إرسال ناجح: <b>'+esc(fmtShort(S.last_report))+'</b></div>'
+        : '<div class="db-note warn">مفيش أي تقرير اتبعت لحد دلوقتي</div>')
+    + '<div class="db-acts">'
+    +   '<button class="db-a" onclick="closeDashboard();openMailSettings()">📧 إعدادات التقارير</button>'
+    +   '<button class="db-a" onclick="closeDashboard();openStaffManager()">👥 إدارة الفريق</button>'
+    + '</div>');
+
+  return out;
 }
 
 // ===== تصدير النتائج المفلترة إلى CSV =====
