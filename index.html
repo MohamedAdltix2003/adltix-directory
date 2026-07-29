@@ -2525,6 +2525,25 @@
   .ms-alt summary{ font-size:12.5px; font-weight:700; color:var(--muted); cursor:pointer }
   .ms-alt summary:hover{ color:var(--brand) }
   .ms-alt[open] summary{ margin-bottom:4px }
+
+  .ms-range{ display:flex; align-items:center; gap:7px; flex-wrap:wrap;
+             padding:10px 12px; border-radius:12px; margin-top:9px;
+             background:color-mix(in srgb,var(--line) 24%,transparent);
+             border:1px solid var(--line) }
+  .ms-range label{ font-size:11.5px; font-weight:800; color:var(--muted) }
+  .ms-range input[type="date"]{
+    font-family:inherit; font-size:12.5px; font-weight:700;
+    padding:7px 10px; border-radius:9px; direction:ltr; cursor:pointer;
+    border:1px solid var(--line); background:var(--surface); color:var(--ink) }
+  .ms-range input[type="date"]:focus{ outline:none; border-color:var(--brand) }
+  .ms-today{ font-family:inherit; font-size:11.5px; font-weight:800; cursor:pointer;
+             padding:7px 12px; border-radius:9px; border:1px solid var(--line);
+             background:transparent; color:var(--brand); transition:.15s }
+  .ms-today:hover{ background:var(--brand); color:#fff; border-color:var(--brand) }
+  @media (max-width:640px){
+    .ms-range input[type="date"]{ flex:1; min-width:0 }
+    .ms-today{ flex:1 }
+  }
 </style>
 </head>
 <body>
@@ -6135,14 +6154,22 @@ function renderMailSettings(r){
     +   '<div class="ms-list">'+list+'</div>'
     + '</div>'
 
-    + '<div class="ms-sec"><h4>🚀 إرسال تجريبي</h4>'
-    +   '<div class="ms-note">ابعت لنفسك الأول عشان تشوف الشكل قبل ما يوصل للمدير.</div>'
+    + '<div class="ms-sec"><h4>🚀 إرسال</h4>'
+    +   '<div class="ms-note">التقرير التلقائي بيغطي <b>الفترة المكتملة</b> — يعني السبت بيبعت عن الأسبوع اللي خلص. لو عايز فترة تانية، حددها تحت.</div>'
     +   '<div class="ms-add">'
     +     '<input id="msTest" type="email" dir="ltr" placeholder="ابعتهولي على..." value="'+esc(r.fromEmail||'')+'">'
+    +   '</div>'
+    +   '<div class="ms-range">'
+    +     '<label>من</label><input type="date" id="msFrom2">'
+    +     '<label>إلى</label><input type="date" id="msTo2">'
+    +     '<button class="ms-today" onclick="msSetToday()">النهاردة</button>'
+    +     '<button class="ms-today" onclick="msSetWeek()">آخر ٧ أيام</button>'
+    +   '</div>'
+    +   '<div class="ms-add" style="margin-top:9px">'
     +     '<button onclick="sendTest(\'weekly\')" '+(ready?'':'disabled')+'>📊 أسبوعي</button>'
     +     '<button onclick="sendTest(\'monthly\')" '+(ready?'':'disabled')+'>📅 شهري</button>'
     +   '</div>'
-    + '</div>'
+    + '</div>' 
 
     + sends
     + '<div class="lg-err" id="msErr"></div>';
@@ -6194,13 +6221,34 @@ async function toggleRecipient(id, field, val){
   }catch(e){ toastErr(e.message); }
 }
 
+function msSetToday(){
+  const t = new Date().toISOString().slice(0,10);
+  const a = document.getElementById('msFrom2'), b = document.getElementById('msTo2');
+  if(a) a.value = t; if(b) b.value = t;
+}
+function msSetWeek(){
+  const to = new Date(), from = new Date(Date.now() - 6*86400000);
+  const a = document.getElementById('msFrom2'), b = document.getElementById('msTo2');
+  if(a) a.value = from.toISOString().slice(0,10);
+  if(b) b.value = to.toISOString().slice(0,10);
+}
+
 async function sendTest(kind){
   const err = document.getElementById('msErr'); err.textContent = '';
   const testTo = (document.getElementById('msTest')||{}).value || '';
   if(!testTo.trim()){ err.textContent = 'اكتب إيميل تبعتله'; return; }
-  toast('بنبعت…','info',3000);
+
+  const f = (document.getElementById('msFrom2')||{}).value || '';
+  const t = (document.getElementById('msTo2')||{}).value   || '';
+  // التجربة بتغطي الفترة **الجارية** — عشان تشوف شغل النهاردة.
+  // الإرسال التلقائي بيغطي الفترة المكتملة (الأسبوع/الشهر اللي فات).
+  const body = { token: SESSION.token, kind, testTo, current: true };
+  if(f && t){ body.from = f; body.to = t; delete body.current; }
+  else if(f || t){ err.textContent = 'حدد التاريخين مع بعض'; return; }
+
+  toast('بنبعت…','info',4000);
   try{
-    const r = await callApi('sendReport', { token: SESSION.token, kind, testTo });
+    const r = await callApi('sendReport', body);
     toastOk('اتبعت ✅ — ' + (r.period||'') + ' · شوف بريدك');
   }catch(e){ err.textContent = e.message; toastErr('الإرسال فشل'); }
 }
