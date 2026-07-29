@@ -2544,6 +2544,32 @@
     .ms-range input[type="date"]{ flex:1; min-width:0 }
     .ms-today{ flex:1 }
   }
+
+  /* ===== تحذير التقارير المتأخرة ===== */
+  .ms-alert{
+    background:#FEE2E2; border:2px solid #DC2626; border-radius:14px;
+    padding:14px; margin-bottom:16px;
+  }
+  .ms-alert > b{ display:block; font-size:14px; font-weight:800; color:#B91C1C; margin-bottom:9px }
+  .ms-alert > div{ font-size:12.5px; font-weight:700; color:#B91C1C; margin-bottom:6px }
+  .ms-alert span{ display:block; font-size:11px; font-weight:600; opacity:.8; margin-top:3px; direction:ltr }
+  .ms-fix{
+    width:100%; margin-top:9px; font-family:inherit; font-size:13px; font-weight:800;
+    cursor:pointer; padding:10px; border-radius:11px; border:none;
+    background:#DC2626; color:#fff; transition:filter .15s;
+  }
+  .ms-fix:hover{ filter:brightness(1.1) }
+  body.dark .ms-alert{ background:#4a1414 }
+  body.dark .ms-alert > b, body.dark .ms-alert > div{ color:#fca5a5 }
+
+  .ms-sched{
+    padding:11px 13px; border-radius:12px; margin-top:14px;
+    background:#DCFCE7; color:#15803D; font-size:12.5px; font-weight:800;
+  }
+  .ms-sched span{ display:block; font-size:11px; font-weight:600; opacity:.85; margin-top:3px }
+  .ms-sched.off{ background:#FEF3C7; color:#92400E }
+  body.dark .ms-sched{ background:#14432a; color:#86efac }
+  body.dark .ms-sched.off{ background:#4a3510; color:#fcd34d }
 </style>
 </head>
 <body>
@@ -6099,7 +6125,7 @@ async function loadMailSettings(){
 function renderMailSettings(r){
   const box = document.getElementById('msBody');
   if(!box) return;
-  const ready = !!(r.fromEmail && (r.hasResend || r.hasPassword));
+  const ready = !!(r.fromEmail && (r.hasBrevo || r.hasResend || r.hasPassword));
 
   const list = (r.recipients||[]).length
     ? (r.recipients||[]).map(x =>
@@ -6126,30 +6152,56 @@ function renderMailSettings(r){
       + '</div></div>'
     : '';
 
+  // 🚨 تحذير لو تقرير المفروض اتبعت ومتبعتش
+  const problems = (r.health||[]).filter(h => String(h['الحالة']||'').includes('🚨'));
+  const healthBox = problems.length
+    ? '<div class="ms-alert">'
+      + '<b>🚨 فيه تقارير متبعتتش</b>'
+      + problems.map(h =>
+          '<div>' + (h['النوع']==='monthly'?'الشهري':'الأسبوعي')
+          + ' — فترة ' + esc(h['الفترة'])
+          + (h['آخر_خطأ'] ? '<span>' + esc(String(h['آخر_خطأ']).slice(0,120)) + '</span>' : '')
+          + '</div>').join('')
+      + '<button class="ms-fix" onclick="sendMissing()">📤 ابعتهم دلوقتي</button>'
+      + '</div>'
+    : '';
+
+  // حالة الجدولة
+  const sch = (r.schedule||[]).filter(x => x['شغالة']);
+  const schBox = sch.length
+    ? '<div class="ms-sched">⏰ الجدولة شغالة — ' + sch.length + ' مهمة'
+      + '<span>كل سبت 9ص · أول كل شهر 9ص · مع محاولة تانية 11ص</span></div>'
+    : '<div class="ms-sched off">⚠️ الجدولة مش مفعّلة — شغّل ملف 33_report_cron.sql</div>';
+
   box.innerHTML =
-      '<div class="ms-status '+(ready?'ok':'wait')+'">'
+      healthBox
+    + '<div class="ms-status '+(ready?'ok':'wait')+'">'
     +   (ready
-        ? '✅ جاهز — عن طريق '+(r.hasResend?'Resend':'Gmail SMTP')+' من <b>'+esc(r.fromEmail)+'</b>'
+        ? '✅ جاهز — عن طريق '+(r.hasBrevo?'Brevo':r.hasResend?'Resend':'Gmail SMTP')+' من <b>'+esc(r.fromEmail)+'</b>'
         : '⚠️ لسه ناقص إعداد الإرسال — املا الخانتين تحت')
     + '</div>'
 
     + '<div class="ms-sec"><h4>⚙️ إعداد الإرسال</h4>'
     +   '<div class="lg-field"><label>الإيميل اللي هيتبعت منه</label>'
     +     '<input id="msFrom" type="email" dir="ltr" placeholder="mohamed@adltix.com" value="'+esc(r.fromEmail||'')+'"></div>'
-    +   '<div class="lg-field"><label>مفتاح Resend'
-    +     (r.hasResend?' <i class="ms-saved">✅ متسجّل</i>':'')+'</label>'
-    +     '<input id="msResend" type="password" dir="ltr" placeholder="'+(r.hasResend?'••••••••••••':'re_...')+'" autocomplete="off"></div>'
-    +   '<div class="ms-note">⚡ <b>ده الطريق الموصى بيه</b> — Supabase بيقفل منافذ SMTP، '
-    +     'و Resend بيشتغل عن طريق HTTPS. المفتاح من <b>resend.com/api-keys</b>.'
-    +     (r.hasResend && !r.domainVerified
-        ? '<br><br>الدومين لسه مش متحقّق منه، فالإرسال هيبقى من <b>onboarding@resend.dev</b> والرد هيروح على إيميلك.'
-        : '')
+    +   '<div class="lg-field"><label>مفتاح Brevo'
+    +     (r.hasBrevo?' <i class="ms-saved">✅ متسجّل</i>':'')+'</label>'
+    +     '<input id="msBrevo" type="password" dir="ltr" placeholder="'+(r.hasBrevo?'••••••••••••':'xkeysib-...')+'" autocomplete="off"></div>'
+    +   '<div class="ms-note">⭐ <b>ده الطريق الأسهل</b> — Brevo بيتحقق من الإيميل نفسه '
+    +     'بضغطة لينك، من غير أي إعدادات دومين. و300 إيميل/يوم مجانًا.'
+    +     '<br><br><b>الخطوات:</b> سجّل في <b>brevo.com</b> ← Senders ← Add Sender ← '
+    +     'حط <b>'+esc(r.fromEmail||'mohamed@adltix.com')+'</b> ← افتح بريدك ودوس على لينك التأكيد ← '
+    +     'SMTP & API ← Generate a new API key ← الصقه هنا.'
     +   '</div>'
-    +   '<details class="ms-alt"><summary>أو استخدم Gmail SMTP (بديل)</summary>'
-    +     '<div class="lg-field" style="margin-top:10px"><label>App Password من جوجل'
-    +       (r.hasPassword?' <i class="ms-saved">✅ متسجّل</i>':'')+'</label>'
-    +       '<input id="msPass" type="password" dir="ltr" placeholder="'+(r.hasPassword?'••••••••••••••••':'16 حرف')+'" autocomplete="off"></div>'
-    +     '<div class="ms-note">ممكن ميشتغلش لو Supabase قافل المنفذ.</div>'
+    +   '<details class="ms-alt"><summary>طرق تانية (متقدّم)</summary>'
+    +     '<div class="lg-field" style="margin-top:10px"><label>مفتاح Resend'
+    +       (r.hasResend?' <i class="ms-saved">✅</i>':'')+'</label>'
+    +       '<input id="msResend" type="password" dir="ltr" placeholder="re_..." autocomplete="off"></div>'
+    +     '<div class="ms-note">بيطلب تحقق من الدومين كامل (سجلات DNS).</div>'
+    +     '<div class="lg-field"><label>App Password من جوجل'
+    +       (r.hasPassword?' <i class="ms-saved">✅</i>':'')+'</label>'
+    +       '<input id="msPass" type="password" dir="ltr" placeholder="16 حرف" autocomplete="off"></div>'
+    +     '<div class="ms-note">Supabase بيقفل منافذ SMTP — غالبًا مش هيشتغل.</div>'
     +   '</details>' 
     +     '<b>myaccount.google.com/apppasswords</b></div>'
     +   '<button class="ms-save" onclick="saveSmtp()">حفظ الإعدادات</button>'
@@ -6181,6 +6233,7 @@ function renderMailSettings(r){
     +   '</div>'
     + '</div>' 
 
+    + schBox
     + sends
     + '<div class="lg-err" id="msErr"></div>';
 }
@@ -6191,10 +6244,11 @@ async function saveSmtp(){
   const fromEmail   = (document.getElementById('msFrom')||{}).value || '';
   const appPassword = (document.getElementById('msPass')||{}).value || '';
   const resendKey   = (document.getElementById('msResend')||{}).value || '';
+  const brevoKey    = (document.getElementById('msBrevo')||{}).value  || '';
   if(!fromEmail.trim()){ err.textContent = 'اكتب الإيميل الأول'; return; }
   try{
     const r = await callApi('reportSettings', {
-      token: SESSION.token, action:'saveSmtp', fromEmail, appPassword, resendKey
+      token: SESSION.token, action:'saveSmtp', fromEmail, appPassword, resendKey, brevoKey
     });
     _mailState = r; renderMailSettings(r);
     toastOk('الإعدادات اتحفظت ✅');
@@ -6241,6 +6295,23 @@ function msSetWeek(){
   const a = document.getElementById('msFrom2'), b = document.getElementById('msTo2');
   if(a) a.value = from.toISOString().slice(0,10);
   if(b) b.value = to.toISOString().slice(0,10);
+}
+
+// إرسال التقارير المتأخرة يدويًا
+async function sendMissing(){
+  const problems = (_mailState?.health||[]).filter(h => String(h['الحالة']||'').includes('🚨'));
+  if(!problems.length) return;
+  toast('بنبعت…','info',4000);
+  let ok=0, fail=0;
+  for(const h of problems){
+    try{
+      await callApi('sendReport', { token: SESSION.token, kind: h['النوع'], force: true });
+      ok++;
+    }catch(e){ fail++; }
+  }
+  if(ok) toastOk('اتبعت '+ok+' تقرير');
+  if(fail) toastErr(fail+' فشلوا');
+  loadMailSettings();
 }
 
 async function sendTest(kind){
