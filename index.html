@@ -2520,6 +2520,11 @@
     .ms-add input{ min-width:100% }
     .ms-add button{ width:100% }
   }
+
+  .ms-alt{ margin-top:12px; border:1px solid var(--line); border-radius:11px; padding:10px 12px }
+  .ms-alt summary{ font-size:12.5px; font-weight:700; color:var(--muted); cursor:pointer }
+  .ms-alt summary:hover{ color:var(--brand) }
+  .ms-alt[open] summary{ margin-bottom:4px }
 </style>
 </head>
 <body>
@@ -6065,7 +6070,7 @@ async function loadMailSettings(){
 function renderMailSettings(r){
   const box = document.getElementById('msBody');
   if(!box) return;
-  const ready = !!(r.fromEmail && r.hasPassword);
+  const ready = !!(r.fromEmail && (r.hasResend || r.hasPassword));
 
   const list = (r.recipients||[]).length
     ? (r.recipients||[]).map(x =>
@@ -6095,17 +6100,28 @@ function renderMailSettings(r){
   box.innerHTML =
       '<div class="ms-status '+(ready?'ok':'wait')+'">'
     +   (ready
-        ? '✅ جاهز — الإرسال من <b>'+esc(r.fromEmail)+'</b>'
+        ? '✅ جاهز — عن طريق '+(r.hasResend?'Resend':'Gmail SMTP')+' من <b>'+esc(r.fromEmail)+'</b>'
         : '⚠️ لسه ناقص إعداد الإرسال — املا الخانتين تحت')
     + '</div>'
 
     + '<div class="ms-sec"><h4>⚙️ إعداد الإرسال</h4>'
     +   '<div class="lg-field"><label>الإيميل اللي هيتبعت منه</label>'
     +     '<input id="msFrom" type="email" dir="ltr" placeholder="mohamed@adltix.com" value="'+esc(r.fromEmail||'')+'"></div>'
-    +   '<div class="lg-field"><label>App Password من جوجل'
-    +     (r.hasPassword?' <i class="ms-saved">✅ متسجّل</i>':'')+'</label>'
-    +     '<input id="msPass" type="password" dir="ltr" placeholder="'+(r.hasPassword?'••••••••••••••••':'16 حرف من جوجل')+'" autocomplete="off"></div>'
-    +   '<div class="ms-note">الـ App Password مش باسورد الإيميل العادي — بتعمله من '
+    +   '<div class="lg-field"><label>مفتاح Resend'
+    +     (r.hasResend?' <i class="ms-saved">✅ متسجّل</i>':'')+'</label>'
+    +     '<input id="msResend" type="password" dir="ltr" placeholder="'+(r.hasResend?'••••••••••••':'re_...')+'" autocomplete="off"></div>'
+    +   '<div class="ms-note">⚡ <b>ده الطريق الموصى بيه</b> — Supabase بيقفل منافذ SMTP، '
+    +     'و Resend بيشتغل عن طريق HTTPS. المفتاح من <b>resend.com/api-keys</b>.'
+    +     (r.hasResend && !r.domainVerified
+        ? '<br><br>الدومين لسه مش متحقّق منه، فالإرسال هيبقى من <b>onboarding@resend.dev</b> والرد هيروح على إيميلك.'
+        : '')
+    +   '</div>'
+    +   '<details class="ms-alt"><summary>أو استخدم Gmail SMTP (بديل)</summary>'
+    +     '<div class="lg-field" style="margin-top:10px"><label>App Password من جوجل'
+    +       (r.hasPassword?' <i class="ms-saved">✅ متسجّل</i>':'')+'</label>'
+    +       '<input id="msPass" type="password" dir="ltr" placeholder="'+(r.hasPassword?'••••••••••••••••':'16 حرف')+'" autocomplete="off"></div>'
+    +     '<div class="ms-note">ممكن ميشتغلش لو Supabase قافل المنفذ.</div>'
+    +   '</details>' 
     +     '<b>myaccount.google.com/apppasswords</b></div>'
     +   '<button class="ms-save" onclick="saveSmtp()">حفظ الإعدادات</button>'
     + '</div>'
@@ -6137,10 +6153,11 @@ async function saveSmtp(){
   err.textContent = '';
   const fromEmail   = (document.getElementById('msFrom')||{}).value || '';
   const appPassword = (document.getElementById('msPass')||{}).value || '';
+  const resendKey   = (document.getElementById('msResend')||{}).value || '';
   if(!fromEmail.trim()){ err.textContent = 'اكتب الإيميل الأول'; return; }
   try{
     const r = await callApi('reportSettings', {
-      token: SESSION.token, action:'saveSmtp', fromEmail, appPassword
+      token: SESSION.token, action:'saveSmtp', fromEmail, appPassword, resendKey
     });
     _mailState = r; renderMailSettings(r);
     toastOk('الإعدادات اتحفظت ✅');
