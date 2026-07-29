@@ -2570,6 +2570,27 @@
   .ms-sched.off{ background:#FEF3C7; color:#92400E }
   body.dark .ms-sched{ background:#14432a; color:#86efac }
   body.dark .ms-sched.off{ background:#4a3510; color:#fcd34d }
+
+  .ms-hint{
+    font-size:11.5px; font-weight:600; color:var(--muted);
+    background:color-mix(in srgb,var(--brand) 8%,transparent);
+    padding:8px 11px; border-radius:10px; margin:-6px 0 11px; line-height:1.7;
+  }
+  .rp-btn.main{ background:var(--brand); color:#fff; border-color:var(--brand) }
+  .rp-btn.main:hover{ filter:brightness(1.08); background:var(--brand); color:#fff }
+
+  /* ===== إعدادات صفحة الـ PDF ===== */
+  @page{ size:A4; margin:12mm 10mm }
+  @media print{
+    /* الألوان لازم تتطبع — من غير كده الجداول تطلع أبيض وأسود */
+    *{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important }
+    body.printing-report .rp-doc{ font-size:11px }
+    body.printing-report .rp-head{ break-after:avoid }
+    body.printing-report .rp-score,
+    body.printing-report .rp-sec{ break-inside:avoid }
+    body.printing-report .rt tr{ break-inside:avoid }
+    body.printing-report .rp-sign{ break-before:avoid }
+  }
 </style>
 </head>
 <body>
@@ -5866,7 +5887,9 @@ function renderStaffReport(r){
     +     '<button class="rp-btn sm'+(_rpState.period==='month'?' on':'')+'" onclick="rpPeriod(\'month\')">شهري</button>'
     +   '</div>'
     +   '<span class="rp-sp"></span>'
-    +   '<button class="rp-btn" onclick="printReport()">🖨️ طباعة / PDF</button>'
+    +   '<button class="rp-btn" onclick="downloadReport()">⬇️ تحميل التقرير</button>'
+    +   '<button class="rp-btn main" onclick="downloadReportPDF()">⬇️ تنزيل PDF</button>'
+    +   '<button class="rp-btn" onclick="downloadReportHTML()" title="حفظ نسخة">💾</button>' 
     +   '<button class="rp-btn ghost" onclick="closeStaffReport()">إغلاق</button>'
     + '</div>';
 
@@ -6077,6 +6100,108 @@ function renderStaffReport(r){
 }
 
 // طباعة التقرير — الصفحة كلها بتتخفي والتقرير بس اللي بيطبع
+// تحميل التقرير كملف HTML مستقل
+// بنحفظه HTML مش PDF عشان يفتح في أي جهاز بنفس الشكل بالظبط،
+// والمستخدم يقدر يطبعه PDF من المتصفح لو حب.
+function downloadReport(){
+  const doc = document.getElementById('rpDoc');
+  if(!doc){ toastErr('مفيش تقرير مفتوح'); return; }
+
+  // نجمّع ستايلات الصفحة عشان الملف يبقى مستقل تمامًا
+  let css = '';
+  for(const sheet of document.styleSheets){
+    try{ for(const rule of sheet.cssRules) css += rule.cssText + '\n'; }
+    catch(e){ /* ستايل من نطاق تاني — نتخطاه */ }
+  }
+
+  const r = _rpState.data || {};
+  const kindAr = _rpState.period==='month' ? 'شهري' : 'أسبوعي';
+  const title = 'تقرير ' + kindAr + ' — ' + (r.staff||'') + ' — ' + (r.periodTitle||'');
+
+  const html =
+      '<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8">'
+    + '<meta name="viewport" content="width=device-width,initial-scale=1">'
+    + '<title>'+esc(title)+'</title>'
+    + '<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">'
+    + '<style>'+css+'</style>'
+    + '<style>'
+    +   'body{margin:0;padding:24px;background:#F6F4F2;'
+    +   "font-family:'Tajawal',system-ui,sans-serif;direction:rtl}"
+    +   '.rp-doc{max-width:860px;margin:auto;background:#fff;'
+    +   'border-radius:18px;box-shadow:0 4px 24px rgba(0,0,0,.08)}'
+    +   '@media print{body{padding:0;background:#fff}'
+    +   '.rp-doc{box-shadow:none;border-radius:0}}'
+    + '</style></head><body>'
+    + doc.outerHTML
+    + '</body></html>';
+
+  const blob = new Blob([html], { type:'text/html;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const safe = String(r.staff||'staff').replace(/[^\w\u0600-\u06FF-]/g,'');
+  a.href = url;
+  a.download = 'تقرير-'+(_rpState.period==='month'?'شهري':'اسبوعي')+'-'+safe+'-'
+             + new Date().toISOString().slice(0,10)+'.html';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 2000);
+
+  toastOk('التقرير اتحمّل — افتحه من ملفاتك');
+}
+
+// ===== تنزيل التقرير PDF =====
+// المتصفح مفيهوش "احفظ كـ PDF" مباشر — بيتم عن طريق نافذة الطباعة
+// مع اختيار "Save as PDF" كطابعة. بنظبّط اسم الملف من عنوان الصفحة.
+function downloadReportPDF(){
+  const tag = (_rpState.data && _rpState.data.periodTag) || '';
+  const name = 'تقرير-' + (_rpState.staff||'') + '-' + tag.replace(/\s+/g,'-');
+
+  const oldTitle = document.title;
+  document.title = name;                    // ده بيبقى اسم ملف الـ PDF
+
+  document.body.classList.add('printing-report');
+  setTimeout(()=>{
+    window.print();
+    setTimeout(()=>{
+      document.body.classList.remove('printing-report');
+      document.title = oldTitle;
+    }, 500);
+  }, 80);
+
+  toast('اختار "Save as PDF" من قايمة الطابعة','info',6000);
+}
+
+// ===== حفظ نسخة HTML =====
+// ملف واحد يفتح في أي متصفح — بيحتفظ بالألوان كاملة
+function downloadReportHTML(){
+  const doc = document.getElementById('rpDoc');
+  if(!doc) return;
+
+  let css = '';
+  for(const sheet of document.styleSheets){
+    try{ for(const rule of sheet.cssRules) css += rule.cssText + '\n'; }
+    catch(e){ /* ستايل من دومين تاني */ }
+  }
+
+  const tag = (_rpState.data && _rpState.data.periodTag) || '';
+  const name = 'تقرير-' + (_rpState.staff||'') + '-' + tag.replace(/\s+/g,'-');
+
+  const html = '<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8">'
+    + '<title>'+esc(name)+'</title>'
+    + '<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">'
+    + '<style>'+css+'\nbody{background:#F6F4F2;padding:24px;font-family:Tajawal,sans-serif;margin:0}'
+    + '.rp-box{max-width:860px;margin:auto;background:#fff;border-radius:20px;'
+    + 'box-shadow:0 8px 40px rgba(0,0,0,.08);overflow:hidden}</style></head>'
+    + '<body><div class="rp-box">' + doc.outerHTML + '</div></body></html>';
+
+  const blob = new Blob([html], { type:'text/html;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name + '.html';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 1500);
+  toastOk('اتحفظ — تقدر تفتحه في أي متصفح');
+}
+
 function printReport(){
   document.body.classList.add('printing-report');
   setTimeout(()=>{
@@ -6186,7 +6311,11 @@ function renderMailSettings(r){
     +     '<input id="msFrom" type="email" dir="ltr" placeholder="mohamed@adltix.com" value="'+esc(r.fromEmail||'')+'"></div>'
     +   '<div class="lg-field"><label>مفتاح Brevo'
     +     (r.hasBrevo?' <i class="ms-saved">✅ متسجّل</i>':'')+'</label>'
-    +     '<input id="msBrevo" type="password" dir="ltr" placeholder="'+(r.hasBrevo?'••••••••••••':'xkeysib-...')+'" autocomplete="off"></div>'
+    +     '<input id="msBrevo" type="password" dir="ltr" placeholder="'
+    +       (r.hasBrevo?'الصق مفتاح جديد هنا عشان تستبدله':'xkeysib-...')+'" autocomplete="off"></div>'
+    +   (r.hasBrevo
+        ? '<div class="ms-hint">💡 المفتاح متسجّل. عايز تغيّره؟ الصق الجديد فوق واضغط حفظ.</div>'
+        : '')
     +   '<div class="ms-note">⭐ <b>ده الطريق الأسهل</b> — Brevo بيتحقق من الإيميل نفسه '
     +     'بضغطة لينك، من غير أي إعدادات دومين. و300 إيميل/يوم مجانًا.'
     +     '<br><br><b>الخطوات:</b> سجّل في <b>brevo.com</b> ← Senders ← Add Sender ← '
