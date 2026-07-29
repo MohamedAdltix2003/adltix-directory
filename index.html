@@ -7338,7 +7338,9 @@ function dbSystem(r){
   out += dbSection('📧 التقارير',
     '<div class="db-grid4">'
     + dbCard('👤','مستقبلين', S.recipients, '', dbN(S.recipients)?'':'warn')
-    + dbCard('⏰','مهام مجدولة', S.cron_jobs, '', dbN(S.cron_jobs)?'good':'bad')
+    + (dbN(S.cron_jobs) < 0
+        ? dbCard('⏰','مهام مجدولة', '—', 'مش قادر أقراها', '')
+        : dbCard('⏰','مهام مجدولة', S.cron_jobs, '', dbN(S.cron_jobs)?'good':'bad'))
     + '</div>'
     + (S.last_report
         ? '<div class="db-note">آخر إرسال ناجح: <b>'+esc(fmtShort(S.last_report))+'</b></div>'
