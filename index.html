@@ -6157,6 +6157,53 @@ function loadH2PDF(){
   });
 }
 
+// ⚠️ html2canvas مش فاهمة color-mix() وبترمي
+// "unsupported color function". الستايلات وحدها مش كفاية لأن
+// القيمة بتفضل color-mix في الـ CSS.
+//
+// الحل: نقرا اللون **المحسوب** من العنصر الأصلي (المتصفح بيرجّعه
+// rgb عادي)، ونثبّته inline على النسخة. كده المكتبة بتشوف rgb بس.
+function flattenColors(original, clone){
+  const PROPS = ['color','backgroundColor','borderTopColor','borderRightColor',
+                 'borderBottomColor','borderLeftColor','outlineColor',
+                 'textDecorationColor','columnRuleColor','caretColor'];
+  const MODERN = /color-mix|oklch|oklab|\blch\(|\blab\(|\bcolor\(/i;
+
+  const origNodes  = [original, ...original.querySelectorAll('*')];
+  const cloneNodes = [clone,    ...clone.querySelectorAll('*')];
+
+  for(let i = 0; i < origNodes.length && i < cloneNodes.length; i++){
+    let cs;
+    try{ cs = getComputedStyle(origNodes[i]); }catch(e){ continue; }
+    const t = cloneNodes[i];
+
+    for(const prop of PROPS){
+      const v = cs[prop];
+      if(v && !MODERN.test(v)){
+        t.style[prop] = v;
+      } else if(MODERN.test(v || '')){
+        // المتصفح رجّع color-mix زي ما هي بدل ما يحسبها.
+        // بدل ما نخليها شفافة (فالتقرير يطلع باهت)، بنحط بديل معقول.
+        t.style[prop] = (prop === 'color') ? '#171319'
+                      : (prop === 'backgroundColor') ? '#F4F2F0'
+                      : '#E6E0DC';
+      }
+    }
+
+    // التدرّجات ممكن تبقى فيها color-mix كمان
+    const bg = cs.backgroundImage;
+    if(bg && bg !== 'none'){
+      t.style.backgroundImage = MODERN.test(bg) ? 'none' : bg;
+    }
+
+    t.style.boxShadow = 'none';
+    t.style.textShadow = 'none';
+  }
+
+  clone.style.background = '#ffffff';
+  clone.style.color = '#171319';
+}
+
 async function downloadReportPDF(){
   const doc = document.getElementById('rpDoc');
   const btn = document.getElementById('rpDl');
@@ -6178,6 +6225,14 @@ async function downloadReportPDF(){
     wrap.className = 'pdf-export';
     wrap.appendChild(clone);
     document.body.appendChild(wrap);
+
+    // ⚠️ html2canvas مش فاهمة color-mix() ولا أي دالة لون حديثة،
+    // وبترمي "unsupported color function". الستايلات وحدها مش كفاية
+    // لأن المتصفح بيحسبها قبل ما المكتبة تشوفها.
+    //
+    // الحل: نمشي على كل عنصر في النسخة، نقرا اللون **المحسوب**
+    // من المتصفح (اللي بيبقى rgb عادي)، ونثبّته inline.
+    flattenColors(doc, clone);
 
     await html2pdf().set({
       margin:      [8, 8, 8, 8],
