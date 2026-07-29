@@ -2594,9 +2594,7 @@
 
   /* ==========================================================
      ستايلات نسخة الـ PDF
-     ⚠️ html2pdf بيستخدم html2canvas اللي بتقع مع color-mix() —
-     وإحنا مستخدمينها في 86 مكان. هنا بنستبدلها بألوان ثابتة
-     **جوه النسخة المصدّرة بس**، والموقع نفسه مايتأثرش.
+     بتتطبق على النسخة المصدّرة بس — الموقع نفسه مايتأثرش.
      ========================================================== */
   .pdf-export{ background:#fff !important; color:#171319 !important }
   .pdf-export *{ color-scheme:light !important }
@@ -5930,9 +5928,8 @@ function renderStaffReport(r){
     +     '<button class="rp-btn sm'+(_rpState.period==='month'?' on':'')+'" onclick="rpPeriod(\'month\')">شهري</button>'
     +   '</div>'
     +   '<span class="rp-sp"></span>'
-    +   '<button class="rp-btn main" id="rpDl" onclick="downloadReportPDF()">⬇️ PDF</button>'
-    +   '<button class="rp-btn" onclick="downloadReportWord()">📝 Word</button>'
-    +   '<button class="rp-btn" onclick="downloadReportHTML()">🌐 HTML</button>' 
+    +   '<button class="rp-btn main" id="rpDl" onclick="downloadReportPDF()">⬇️ تنزيل PDF</button>'
+    +   '<button class="rp-btn" onclick="downloadReportHTML()" title="نسخة تفتح في المتصفح">🌐 HTML</button>' 
     +   '<button class="rp-btn ghost" onclick="closeStaffReport()">إغلاق</button>'
     + '</div>';
 
@@ -6149,70 +6146,6 @@ function renderStaffReport(r){
 // ==========================================================
 // تنزيل التقرير كملف PDF حقيقي
 // ==========================================================
-// بنستخدم html2pdf (بتجمع html2canvas + jsPDF) — بتصوّر التقرير
-// وتحوّله لـ PDF فعلي ينزل على طول، من غير نافذة طباعة ولا اختيارات.
-//
-// المكتبة بتتحمّل أول مرة بس (~700KB) وبعدها بتفضل في الذاكرة.
-const H2PDF_URL = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
-
-function loadH2PDF(){
-  if(window.html2pdf) return Promise.resolve(window.html2pdf);
-  return new Promise((res, rej)=>{
-    const sc = document.createElement('script');
-    sc.src = H2PDF_URL;
-    sc.onload  = ()=> res(window.html2pdf);
-    sc.onerror = ()=> rej(new Error('مش قادر أحمّل مولّد الـ PDF — اتأكد من النت'));
-    document.head.appendChild(sc);
-  });
-}
-
-// ⚠️ html2canvas مش فاهمة color-mix() وبترمي
-// "unsupported color function". الستايلات وحدها مش كفاية لأن
-// القيمة بتفضل color-mix في الـ CSS.
-//
-// الحل: نقرا اللون **المحسوب** من العنصر الأصلي (المتصفح بيرجّعه
-// rgb عادي)، ونثبّته inline على النسخة. كده المكتبة بتشوف rgb بس.
-function flattenColors(original, clone){
-  const PROPS = ['color','backgroundColor','borderTopColor','borderRightColor',
-                 'borderBottomColor','borderLeftColor','outlineColor',
-                 'textDecorationColor','columnRuleColor','caretColor'];
-  const MODERN = /color-mix|oklch|oklab|\blch\(|\blab\(|\bcolor\(/i;
-
-  const origNodes  = [original, ...original.querySelectorAll('*')];
-  const cloneNodes = [clone,    ...clone.querySelectorAll('*')];
-
-  for(let i = 0; i < origNodes.length && i < cloneNodes.length; i++){
-    let cs;
-    try{ cs = getComputedStyle(origNodes[i]); }catch(e){ continue; }
-    const t = cloneNodes[i];
-
-    for(const prop of PROPS){
-      const v = cs[prop];
-      if(v && !MODERN.test(v)){
-        t.style[prop] = v;
-      } else if(MODERN.test(v || '')){
-        // المتصفح رجّع color-mix زي ما هي بدل ما يحسبها.
-        // بدل ما نخليها شفافة (فالتقرير يطلع باهت)، بنحط بديل معقول.
-        t.style[prop] = (prop === 'color') ? '#171319'
-                      : (prop === 'backgroundColor') ? '#F4F2F0'
-                      : '#E6E0DC';
-      }
-    }
-
-    // التدرّجات ممكن تبقى فيها color-mix كمان
-    const bg = cs.backgroundImage;
-    if(bg && bg !== 'none'){
-      t.style.backgroundImage = MODERN.test(bg) ? 'none' : bg;
-    }
-
-    t.style.boxShadow = 'none';
-    t.style.textShadow = 'none';
-  }
-
-  clone.style.background = '#ffffff';
-  clone.style.color = '#171319';
-}
-
 // بتجمع كل ستايلات الصفحة — عشان الملف يفتح مظبوط لوحده
 function collectCSS(){
   let css = '';
@@ -6238,176 +6171,92 @@ function saveBlob(content, type, filename){
 }
 
 // ===== تنزيل HTML =====
-// ملف واحد يفتح في أي متصفح — **مطابق للموقع 100%** لأنه نفس
-// الـ HTML والـ CSS بالظبط، من غير أي تحويل لصورة.
+// نفس القالب بتاع الـ PDF بالظبط — فالشكل واحد في الحالتين
 function downloadReportHTML(){
   const doc = document.getElementById('rpDoc');
   if(!doc) return;
-
-  const html = '<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8">'
-    + '<meta name="viewport" content="width=device-width,initial-scale=1">'
-    + '<title>' + esc(reportFileName('').slice(0,-1)) + '</title>'
-    + '<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900'
-    + '&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">'
-    + '<style>' + collectCSS()
-    + '\nbody{background:#F6F4F2;margin:0;padding:24px 14px;font-family:Tajawal,sans-serif}'
-    + '\n.rp-box{max-width:880px;margin:auto;background:#fff;border-radius:20px;'
-    + 'box-shadow:0 8px 40px rgba(0,0,0,.08);overflow:hidden}'
-    + '</style></head><body><div class="rp-box">'
-    + doc.outerHTML + '</div></body></html>';
-
-  saveBlob(html, 'text/html;charset=utf-8', reportFileName('html'));
+  const name = reportFileName('').slice(0, -1);
+  saveBlob(reportStandaloneHTML(doc, name, false),
+           'text/html;charset=utf-8', reportFileName('html'));
   toastOk('اتنزّل ✅ — يفتح في أي متصفح');
 }
 
-// ===== تنزيل Word =====
-// Word بيفتح ملفات HTML لو ليها امتداد .doc وفيها الهيدرز الصح.
-// الجداول والألوان بتتنقل، والملف قابل للتعديل.
-function downloadReportWord(){
+// ===== تنزيل PDF =====
+// ⚠️ الطريقة القديمة (html2canvas) كانت بتحوّل التقرير لصورة —
+// والنتيجة وحشة: النص مش واضح، الملف تقيل، والألوان بتبوظ.
+//
+// دلوقتي بنفتح نافذة فيها نفس الـ HTML والـ CSS بالظبط، والمتصفح
+// هو اللي بيرسم الـ PDF. النتيجة:
+//   • مطابق للموقع 100% — نفس التصميم
+//   • النص قابل للنسخ والبحث (مش صورة)
+//   • الملف خفيف
+//   • بيتفتح على أي جهاز
+function downloadReportPDF(){
   const doc = document.getElementById('rpDoc');
   if(!doc) return;
 
-  // Word مبيفهمش المتغيرات ولا color-mix — بنثبّت الألوان المحسوبة
-  const clone = doc.cloneNode(true);
-  const MODERN = /color-mix|oklch|oklab|\blch\(|\blab\(|\bcolor\(|var\(/i;
-  const PROPS  = ['color','backgroundColor','borderTopColor','borderRightColor',
-                  'borderBottomColor','borderLeftColor','fontSize','fontWeight',
-                  'textAlign','padding','borderRadius'];
+  const name = reportFileName('').slice(0, -1);
+  const win = window.open('', '_blank', 'width=900,height=1000');
 
-  const orig  = [doc, ...doc.querySelectorAll('*')];
-  const copy  = [clone, ...clone.querySelectorAll('*')];
-  for(let i = 0; i < orig.length && i < copy.length; i++){
-    let cs; try{ cs = getComputedStyle(orig[i]); }catch(e){ continue; }
-    for(const prop of PROPS){
-      const v = cs[prop];
-      if(v && !MODERN.test(v)) copy[i].style[prop] = v;
-    }
-    copy[i].style.boxShadow = 'none';
+  if(!win){
+    toastErr('المتصفح منع فتح النافذة — اسمح بالنوافذ المنبثقة وجرّب تاني');
+    return;
   }
 
-  const html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" '
-    + 'xmlns:w="urn:schemas-microsoft-com:office:word" '
-    + 'xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8">'
-    + '<title>' + esc(reportFileName('').slice(0,-1)) + '</title>'
-    + '<!--[if gte mso 9]><xml><w:WordDocument>'
-    + '<w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]-->'
-    + '<style>@page{size:A4;margin:1.5cm}'
-    + 'body{font-family:"Segoe UI",Tahoma,Arial,sans-serif;direction:rtl}'
-    + 'table{border-collapse:collapse;width:100%}'
-    + 'td,th{padding:6px;border:1px solid #E6E0DC}'
-    + '</style></head><body dir="rtl">'
-    + clone.outerHTML + '</body></html>';
+  win.document.write(reportStandaloneHTML(doc, name, true));
+  win.document.close();
 
-  saveBlob('\ufeff' + html, 'application/msword', reportFileName('doc'));
-  toastOk('اتنزّل ✅ — يفتح في Word');
-}
-
-async function downloadReportPDF(){
-  const doc = document.getElementById('rpDoc');
-  const btn = document.getElementById('rpDl');
-  if(!doc) return;
-
-  const tag  = (_rpState.data && _rpState.data.periodTag) || '';
-  const name = 'تقرير-' + (_rpState.staff || '') + '-' + tag.replace(/\s+/g,'-') + '.pdf';
-
-  if(btn){ btn.disabled = true; btn.textContent = '⏳ بنجهّز الملف…'; }
-
-  // ⚠️ الطريقة القديمة كانت بتعمل نسخة مخفية وتصوّرها — والنتيجة PDF فاضي،
-  // لأن المتصفح مبيرسمش العناصر المخفية بشكل يعتمد عليه.
-  //
-  // دلوقتي بنصوّر **التقرير الأصلي نفسه** وهو ظاهر قدام المستخدم.
-  // بنثبّت ألوانه inline مؤقتًا (عشان color-mix)، نصوّره، وبعدين
-  // نرجّع كل حاجة زي ما كانت.
-  const undo = [];      // بنسجّل كل تعديل عشان نلغيه بعدين
-  const wasDark = document.body.classList.contains('dark');
-
-  const setStyle = (el, prop, val) => {
-    undo.push([el, prop, el.style[prop]]);
-    el.style[prop] = val;
+  // نستنى الخطوط والصور تحمّل قبل الطباعة
+  win.onload = () => {
+    const go = () => {
+      win.focus();
+      win.print();
+    };
+    // الخطوط بتاخد وقت — لو المتصفح بيدعم fonts.ready نستناها
+    if(win.document.fonts && win.document.fonts.ready){
+      win.document.fonts.ready.then(()=> setTimeout(go, 350));
+    } else {
+      setTimeout(go, 700);
+    }
   };
 
-  try{
-    const html2pdf = await loadH2PDF();
+  toast('اختار "حفظ كـ PDF" من قايمة الطابعة','info',7000);
+}
 
-    // الوضع الليلي مش مناسب لـ PDF
-    if(wasDark) document.body.classList.remove('dark');
+// ===== قالب الملف المستقل =====
+// بيستخدمه التنزيل بنوعيه (PDF و HTML) — نفس الشكل بالظبط
+function reportStandaloneHTML(doc, title, forPrint){
+  const printCSS = forPrint ? `
+    @page{ size:A4; margin:10mm 8mm }
+    @media print{
+      html,body{ background:#fff !important; margin:0; padding:0 }
+      .rp-box{ box-shadow:none !important; border-radius:0 !important; max-width:100% !important }
+      .rp-doc{ padding:0 !important }
+      /* الألوان لازم تتطبع */
+      *{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important }
+      /* منع قطع الأقسام في نص الصفحة */
+      .rp-score, .rp-sec, .rk, .ri, .rw, .ra, .rpf{ break-inside:avoid }
+      .rt tr{ break-inside:avoid }
+      .rp-head{ break-after:avoid }
+      .rp-sign{ break-before:avoid }
+      .rt-wrap{ overflow:visible !important }
+      .rt{ min-width:0 !important }
+    }` : '';
 
-    // نثبّت الألوان المحسوبة — html2canvas مش فاهمة color-mix()
-    const MODERN = /color-mix|oklch|oklab|\blch\(|\blab\(|\bcolor\(/i;
-    const PROPS  = ['color','backgroundColor','borderTopColor','borderRightColor',
-                    'borderBottomColor','borderLeftColor','outlineColor'];
-
-    const nodes = [doc, ...doc.querySelectorAll('*')];
-    for(const el of nodes){
-      let cs; try{ cs = getComputedStyle(el); }catch(e){ continue; }
-
-      for(const prop of PROPS){
-        const v = cs[prop];
-        if(v && !MODERN.test(v)) setStyle(el, prop, v);
-        else if(MODERN.test(v || '')){
-          setStyle(el, prop, prop === 'color' ? '#171319'
-                           : prop === 'backgroundColor' ? '#F4F2F0' : '#E6E0DC');
-        }
-      }
-      const bg = cs.backgroundImage;
-      if(bg && bg !== 'none' && MODERN.test(bg)) setStyle(el, 'backgroundImage', 'none');
-      if(cs.boxShadow && cs.boxShadow !== 'none') setStyle(el, 'boxShadow', 'none');
-    }
-
-    setStyle(doc, 'background', '#ffffff');
-
-    // ⚠️ النافذة فيها overflow:hidden و overflow-y:auto — دول بيقصّوا
-    // المحتوى وقت التصوير فالناتج يطلع فاضي أو ناقص.
-    // بنفتحهم مؤقتًا وبنرجّعهم في finally.
-    const box = doc.closest('.rp-box');
-    const ov  = doc.closest('.rp-ov');
-    if(box){ setStyle(box, 'overflow', 'visible'); setStyle(box, 'maxHeight', 'none'); }
-    if(ov){
-      setStyle(ov, 'overflow', 'visible');
-      setStyle(ov, 'position', 'absolute');
-      setStyle(ov, 'height', 'auto');
-    }
-
-    // نستنى الرسم
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-
-    if(!doc.offsetHeight){
-      throw new Error('التقرير لسه بيتحمّل — استنى ثانية وجرّب تاني');
-    }
-
-    await html2pdf().set({
-      margin:      [8, 8, 8, 8],
-      filename:    name,
-      image:       { type:'jpeg', quality: 0.96 },
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-        scrollX: 0,
-        scrollY: -window.scrollY,     // بيمنع القص لو الصفحة متزحلقة
-        windowWidth:  doc.scrollWidth,
-        windowHeight: doc.scrollHeight
-      },
-      jsPDF:     { unit:'mm', format:'a4', orientation:'portrait' },
-      pagebreak: { mode:['css','legacy'], avoid:['.rp-score','.rp-sec','.rk','.ri','.rw','tr'] }
-    }).from(doc).save();
-
-    toastOk('التقرير اتنزّل ✅');
-
-  }catch(e){
-    toastErr(e.message || 'مش قادر أنزّل الـ PDF');
-  }finally{
-    // نرجّع كل حاجة زي ما كانت — بالعكس عشان الترتيب يفضل صح
-    for(let i = undo.length - 1; i >= 0; i--){
-      const [el, prop, val] = undo[i];
-      el.style[prop] = val || '';
-    }
-    if(wasDark) document.body.classList.add('dark');
-    document.querySelectorAll('.pdf-export').forEach(el => el.remove());
-    if(btn){ btn.disabled = false; btn.textContent = '⬇️ تنزيل التقرير PDF'; }
-  }
+  return '<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8">'
+    + '<meta name="viewport" content="width=device-width,initial-scale=1">'
+    + '<title>' + esc(title) + '</title>'
+    + '<link rel="preconnect" href="https://fonts.googleapis.com">'
+    + '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
+    + '<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900'
+    + '&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">'
+    + '<style>' + collectCSS()
+    + '\nbody{background:#F6F4F2;margin:0;padding:22px 12px;font-family:Tajawal,sans-serif}'
+    + '\n.rp-box{max-width:880px;margin:auto;background:#fff;border-radius:20px;'
+    + 'box-shadow:0 8px 40px rgba(0,0,0,.08);overflow:hidden}'
+    + printCSS
+    + '</style></head><body><div class="rp-box">'
+    + doc.outerHTML + '</div></body></html>';
 }
 
 
