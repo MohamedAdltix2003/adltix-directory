@@ -6214,57 +6214,99 @@ async function downloadReportPDF(){
 
   if(btn){ btn.disabled = true; btn.textContent = '⏳ بنجهّز الملف…'; }
 
+  // ⚠️ الطريقة القديمة كانت بتعمل نسخة مخفية وتصوّرها — والنتيجة PDF فاضي،
+  // لأن المتصفح مبيرسمش العناصر المخفية بشكل يعتمد عليه.
+  //
+  // دلوقتي بنصوّر **التقرير الأصلي نفسه** وهو ظاهر قدام المستخدم.
+  // بنثبّت ألوانه inline مؤقتًا (عشان color-mix)، نصوّره، وبعدين
+  // نرجّع كل حاجة زي ما كانت.
+  const undo = [];      // بنسجّل كل تعديل عشان نلغيه بعدين
+  const wasDark = document.body.classList.contains('dark');
+
+  const setStyle = (el, prop, val) => {
+    undo.push([el, prop, el.style[prop]]);
+    el.style[prop] = val;
+  };
+
   try{
     const html2pdf = await loadH2PDF();
 
-    // نسخة معزولة بخلفية بيضا — الوضع الليلي مش هينفع في PDF
-    const clone = doc.cloneNode(true);
-    const wrap = document.createElement('div');
-    // ⚠️ left:-99999px كان بيخلي المتصفح يعتبر العنصر بره الشاشة
-    // تمامًا فمبيرسمهوش — والنتيجة PDF فاضي.
-    //
-    // الحل: نسيبه في مكانه الطبيعي بس مخفي بصريًا (opacity:0 وتحت
-    // كل حاجة). كده المتصفح بيرسمه فعليًا و html2canvas بتشوفه.
-    wrap.style.cssText = 'position:fixed;left:0;top:0;width:820px;'
-                       + 'background:#fff;padding:24px;direction:rtl;'
-                       + 'opacity:0;pointer-events:none;z-index:-1;overflow:visible';
-    wrap.className = 'pdf-export';
-    wrap.appendChild(clone);
-    document.body.appendChild(wrap);
+    // الوضع الليلي مش مناسب لـ PDF
+    if(wasDark) document.body.classList.remove('dark');
 
-    // ⚠️ html2canvas مش فاهمة color-mix() ولا أي دالة لون حديثة،
-    // وبترمي "unsupported color function". الستايلات وحدها مش كفاية
-    // لأن المتصفح بيحسبها قبل ما المكتبة تشوفها.
-    //
-    // الحل: نمشي على كل عنصر في النسخة، نقرا اللون **المحسوب**
-    // من المتصفح (اللي بيبقى rgb عادي)، ونثبّته inline.
-    flattenColors(doc, clone);
+    // نثبّت الألوان المحسوبة — html2canvas مش فاهمة color-mix()
+    const MODERN = /color-mix|oklch|oklab|\blch\(|\blab\(|\bcolor\(/i;
+    const PROPS  = ['color','backgroundColor','borderTopColor','borderRightColor',
+                    'borderBottomColor','borderLeftColor','outlineColor'];
 
-    // نستنى المتصفح يرسم العنصر فعلاً قبل التصوير —
-    // من غير كده ممكن يتصوّر وهو لسه فاضي.
+    const nodes = [doc, ...doc.querySelectorAll('*')];
+    for(const el of nodes){
+      let cs; try{ cs = getComputedStyle(el); }catch(e){ continue; }
+
+      for(const prop of PROPS){
+        const v = cs[prop];
+        if(v && !MODERN.test(v)) setStyle(el, prop, v);
+        else if(MODERN.test(v || '')){
+          setStyle(el, prop, prop === 'color' ? '#171319'
+                           : prop === 'backgroundColor' ? '#F4F2F0' : '#E6E0DC');
+        }
+      }
+      const bg = cs.backgroundImage;
+      if(bg && bg !== 'none' && MODERN.test(bg)) setStyle(el, 'backgroundImage', 'none');
+      if(cs.boxShadow && cs.boxShadow !== 'none') setStyle(el, 'boxShadow', 'none');
+    }
+
+    setStyle(doc, 'background', '#ffffff');
+
+    // ⚠️ النافذة فيها overflow:hidden و overflow-y:auto — دول بيقصّوا
+    // المحتوى وقت التصوير فالناتج يطلع فاضي أو ناقص.
+    // بنفتحهم مؤقتًا وبنرجّعهم في finally.
+    const box = doc.closest('.rp-box');
+    const ov  = doc.closest('.rp-ov');
+    if(box){ setStyle(box, 'overflow', 'visible'); setStyle(box, 'maxHeight', 'none'); }
+    if(ov){
+      setStyle(ov, 'overflow', 'visible');
+      setStyle(ov, 'position', 'absolute');
+      setStyle(ov, 'height', 'auto');
+    }
+
+    // نستنى الرسم
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
-    if(!wrap.offsetHeight){
-      throw new Error('مش قادر أجهّز التقرير — جرّب تاني');
+    if(!doc.offsetHeight){
+      throw new Error('التقرير لسه بيتحمّل — استنى ثانية وجرّب تاني');
     }
 
     await html2pdf().set({
       margin:      [8, 8, 8, 8],
       filename:    name,
       image:       { type:'jpeg', quality: 0.96 },
-      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false },
-      jsPDF:       { unit:'mm', format:'a4', orientation:'portrait' },
-      // منع قطع الأقسام في نص الصفحة
-      pagebreak:   { mode:['css','legacy'], avoid:['.rp-score','.rp-sec','.rk','.ri','.rw','tr'] }
-    }).from(wrap).save();
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        scrollX: 0,
+        scrollY: -window.scrollY,     // بيمنع القص لو الصفحة متزحلقة
+        windowWidth:  doc.scrollWidth,
+        windowHeight: doc.scrollHeight
+      },
+      jsPDF:     { unit:'mm', format:'a4', orientation:'portrait' },
+      pagebreak: { mode:['css','legacy'], avoid:['.rp-score','.rp-sec','.rk','.ri','.rw','tr'] }
+    }).from(doc).save();
 
     toastOk('التقرير اتنزّل ✅');
 
   }catch(e){
     toastErr(e.message || 'مش قادر أنزّل الـ PDF');
   }finally{
-    // ⚠️ التنضيف في finally مش في try — لو التصوير فشل،
-    // العنصر المخفي كان هيفضل في الصفحة للأبد.
+    // نرجّع كل حاجة زي ما كانت — بالعكس عشان الترتيب يفضل صح
+    for(let i = undo.length - 1; i >= 0; i--){
+      const [el, prop, val] = undo[i];
+      el.style[prop] = val || '';
+    }
+    if(wasDark) document.body.classList.add('dark');
     document.querySelectorAll('.pdf-export').forEach(el => el.remove());
     if(btn){ btn.disabled = false; btn.textContent = '⬇️ تنزيل التقرير PDF'; }
   }
