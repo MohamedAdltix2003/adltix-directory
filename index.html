@@ -2107,6 +2107,22 @@
     padding:10px 12px; border-radius:11px; margin-bottom:12px;
   }
   #apiKeyIn{ direction:ltr; text-align:start; font-family:'Space Grotesk',monospace; letter-spacing:.4px }
+
+  /* ===== توزيع الرفعة ===== */
+  .rt-box{ margin:13px 0 }
+  .rt-box > b{ display:block; font-size:12.5px; font-weight:800; color:var(--ink); margin-bottom:8px }
+  .rt-list{ display:flex; flex-direction:column; gap:5px }
+  .rt-row{
+    display:flex; align-items:center; gap:9px;
+    padding:8px 11px; border-radius:10px;
+    background:color-mix(in srgb,var(--line) 26%,transparent);
+    font-size:12px; font-weight:700;
+  }
+  .rt-row.agent{ background:#CCFBF1; color:#0F766E }
+  body.dark .rt-row.agent{ background:#134E4A; color:#5EEAD4 }
+  .rt-w{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+  .rt-n{ font-weight:800; font-family:'Space Grotesk','Tajawal',sans-serif }
+  .rt-e{ font-size:11px; opacity:.8; flex-shrink:0 }
 </style>
 </head>
 <body>
@@ -2660,7 +2676,9 @@ function buildAllPills(){
     const drow=document.getElementById("daysFilterRow");
     if(drow) drow.style.display = (state.view === 'imported') ? "" : "none";
     if(state.view === 'imported'){
-      const imported = data.filter(c => Number(c.import_batch_id));
+      const myN = (SESSION && (SESSION.staffName || SESSION.username)) || '';
+      const imported = data.filter(c => Number(c.import_batch_id) &&
+        String(c.imported_by||'').toLowerCase() === String(myN).toLowerCase());
       const within = (n) => imported.filter(c => c.imported_at &&
         (Date.now() - new Date(c.imported_at).getTime())/86400000 <= n).length;
       buildPills("f-days",[
@@ -2738,8 +2756,13 @@ function applyFilters(){
       // فلتر رفعة معيّنة
       if(state.batch && Number(c.import_batch_id) !== Number(state.batch)) return false;
 
-      // 📄 فصل المرفوعين عن الموزّعين — عشان ميتخلطوش
-      const isImported = !!Number(c.import_batch_id);
+      // 📄 "اللي رفعتهم" = اللي **أنا** رفعتهم أنا.
+      // لو الأدمن رفع ملف والمؤثرين اتوزّعوا على الموظفات، الموظفة
+      // بتلاقيهم في "مؤثريني" زي أي مؤثر — مش في "اللي رفعتهم"
+      // لأنها مرفعتش حاجة أصلاً.
+      const myName = (SESSION && (SESSION.staffName || SESSION.username)) || '';
+      const isImported = !!Number(c.import_batch_id) &&
+                         String(c.imported_by||'').toLowerCase() === String(myName).toLowerCase();
       if(state.view === 'assigned' && isImported) return false;
       if(state.view === 'imported' && !isImported) return false;
 
@@ -3472,7 +3495,7 @@ function mapRawToCard(o){
   // نتيجة التفاوض — للعرض على الكارت وفي التصدير
   // indexCreator بتحسب مفاتيح الفلترة مرة واحدة هنا — ده اللي بيخلي الزراير فورية
   return indexCreator({
-    import_batch_id:o.import_batch_id||0, imported_at:o.imported_at||"",
+    import_batch_id:o.import_batch_id||0, imported_at:o.imported_at||"", imported_by:o.imported_by||"",
     outcome_type:o.outcome_type||"", outcome_note:o.outcome_note||"", outcome_at:o.outcome_at||"",
     allocation_status:o.allocation_status||"", allocated_at:o.allocated_at||"",
     uid:String(o.uid||"").toLowerCase(), discoveredAt:normalizeSheetDate(o.discovered_at), assignedTo:String(o.assigned_to||"").trim(),
@@ -5141,6 +5164,16 @@ async function openBatchDetail(id){
       +   '<span class="in-dup">🔁 '+Number(b.duplicates||0)+' مكررين</span>'
       +   '<span class="in-bad">⚠️ '+Number(b.invalid||0)+' غلط</span>'
       + '</div>'
+      + ((r.routing && r.routing.length)
+          ? '<div class="rt-box"><b>📊 راحوا لمين</b><div class="rt-list">'
+            + r.routing.map(x =>
+              '<div class="rt-row'+(String(x['راح_لمين']).includes('الأجنت')?' agent':'')+'">'
+              + '<span class="rt-w">'+(STAFF_EMOJI[x['راح_لمين']]||'')+' '+esc(x['راح_لمين'])+'</span>'
+              + '<span class="rt-n">'+Number(x['العدد']).toLocaleString('en')+'</span>'
+              + '<span class="rt-e">✨ '+Number(x['اتجابت_بياناتهم']||0).toLocaleString('en')+'</span>'
+              + '</div>').join('')
+            + '</div></div>'
+          : '')
       + (Number(b.live_now) > 0
           ? '<button class="ib-show" onclick="showBatchCards('+id+')">👁️ شوف الـ '
             + Number(b.live_now).toLocaleString('en')+' كارت بتوع الرفعة دي</button>'
@@ -5506,8 +5539,12 @@ function setView(v){
 
 function updateViewCounts(){
   const all = cleanList();
+  const myName = (SESSION && (SESSION.staffName || SESSION.username)) || '';
   let imp = 0;
-  for(const c of all) if(Number(c.import_batch_id)) imp++;
+  for(const c of all){
+    if(Number(c.import_batch_id) &&
+       String(c.imported_by||'').toLowerCase() === String(myName).toLowerCase()) imp++;
+  }
   const set = (id, n) => { const e = document.getElementById(id); if(e) e.textContent = n.toLocaleString('en'); };
   set('vnAssigned', all.length - imp);
   set('vnImported', imp);
