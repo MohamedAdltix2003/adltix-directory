@@ -2042,6 +2042,9 @@
     .ibar-t{ flex-basis:100%; font-size:12.5px; margin-bottom:3px }
     .ibar-b{ flex:1; font-size:12px; padding:8px 10px; text-align:center }
   }
+
+  .ir-row.nf{ background:#FEE2E2; color:#B91C1C; border-color:#FCA5A5 }
+  body.dark .ir-row.nf{ background:#4a1414; color:#fca5a5; border-color:#B91C1C }
 </style>
 </head>
 <body>
@@ -4848,6 +4851,7 @@ async function startImport(){
   const total  = _impRows.length;
   const chunks = Math.ceil(total / IMPORT_CHUNK);
   let batchId = 0, added = 0, dups = 0, bad = 0, done = 0, enriched = 0, toAgent = 0;
+  let notFound = 0, tempFail = 0, quotaHit = false;
   const failed = [];
 
   body.innerHTML =
@@ -4873,6 +4877,9 @@ async function startImport(){
       // 🐞 دول مكانوش بيتجمّعوا خالص — فالشرايح مكانتش بتظهر
       enriched += Number(r.chunk.enriched || 0);
       toAgent  += Number(r.chunk.toAgent  || 0);
+      notFound += Number(r.chunk.notFound || 0);
+      tempFail += Number(r.chunk.tempFail || 0);
+      if(r.chunk.quotaHit) quotaHit = true;
       (r.rows||[]).forEach(x=>{ if(x.status !== 'added') failed.push(x); });
     }catch(e){
       // دفعة فشلت؟ نكمّل الباقي بدل ما نوقف كل حاجة
@@ -4892,7 +4899,7 @@ async function startImport(){
   }
 
   _impBusy = false;
-  showImportResult({ batchId, total, added, dups, bad, enriched, toAgent, failed });
+  showImportResult({ batchId, total, added, dups, bad, enriched, toAgent, notFound, tempFail, quotaHit, failed });
   if(added) boot();          // نحمّل الكروت الجديدة
 }
 
@@ -4939,13 +4946,33 @@ function showImportResult(r){
               : '')
           + '</div>'
         : '')
-    +   ((r.added - (r.enriched||0)) > 0
-        ? '<div class="ir-row wait">'
-          + '<span class="ir-i">⏳</span>'
-          + '<span class="ir-t"><b>'+(r.added-(r.enriched||0)).toLocaleString('en')+' لسه بياناتهم في الطريق</b>'
-          + '<span>هتوصل تلقائي خلال شوية — الكروت شغالة عادي لحد وقتها</span></span>'
-          + '</div>'
-        : '')
+    +   (function(){
+          // ⚠️ الرسالة دي كانت بتظهر دايمًا حتى لو الـ API شغال —
+          // وده مضلّل. دلوقتي بتظهر حسب السبب الحقيقي بس.
+          const pending = r.added - Number(r.enriched||0);
+          if(pending <= 0) return '';
+
+          if(r.quotaHit){
+            return '<div class="ir-row wait">'
+              + '<span class="ir-i">⏳</span>'
+              + '<span class="ir-t"><b>'+pending.toLocaleString('en')+' لسه بياناتهم في الطريق</b>'
+              + '<span>هتوصل تلقائي بعد شوية — الكروت شغالة عادي لحد وقتها</span></span>'
+              + '</div>';
+          }
+          if(Number(r.notFound||0) > 0){
+            return '<div class="ir-row nf">'
+              + '<span class="ir-i">🔍</span>'
+              + '<span class="ir-t"><b>'+Number(r.notFound).toLocaleString('en')+' حساب مالقيناهوش على المنصة</b>'
+              + '<span>اتأكدي من اللينك — ممكن يكون اتغيّر أو الحساب اتقفل. '
+              + 'الكارت اتضاف بالبيانات اللي في الملف</span></span>'
+              + '</div>';
+          }
+          return '<div class="ir-row wait">'
+            + '<span class="ir-i">⏳</span>'
+            + '<span class="ir-t"><b>'+pending.toLocaleString('en')+' هيتحدّثوا بعد شوية</b>'
+            + '<span>مشكلة مؤقتة في الاتصال — هنحاول تاني تلقائي</span></span>'
+            + '</div>';
+        })()
     + '</div>'
     + (r.failed.length
         ? '<div class="imp-fail"><b>تفاصيل اللي مادخلش ('+r.failed.length+'):</b><div class="imp-flist">'
