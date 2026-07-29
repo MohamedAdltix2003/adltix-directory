@@ -6220,8 +6220,14 @@ async function downloadReportPDF(){
     // نسخة معزولة بخلفية بيضا — الوضع الليلي مش هينفع في PDF
     const clone = doc.cloneNode(true);
     const wrap = document.createElement('div');
-    wrap.style.cssText = 'position:fixed;left:-99999px;top:0;width:820px;'
-                       + 'background:#fff;padding:24px;direction:rtl';
+    // ⚠️ left:-99999px كان بيخلي المتصفح يعتبر العنصر بره الشاشة
+    // تمامًا فمبيرسمهوش — والنتيجة PDF فاضي.
+    //
+    // الحل: نسيبه في مكانه الطبيعي بس مخفي بصريًا (opacity:0 وتحت
+    // كل حاجة). كده المتصفح بيرسمه فعليًا و html2canvas بتشوفه.
+    wrap.style.cssText = 'position:fixed;left:0;top:0;width:820px;'
+                       + 'background:#fff;padding:24px;direction:rtl;'
+                       + 'opacity:0;pointer-events:none;z-index:-1;overflow:visible';
     wrap.className = 'pdf-export';
     wrap.appendChild(clone);
     document.body.appendChild(wrap);
@@ -6234,6 +6240,14 @@ async function downloadReportPDF(){
     // من المتصفح (اللي بيبقى rgb عادي)، ونثبّته inline.
     flattenColors(doc, clone);
 
+    // نستنى المتصفح يرسم العنصر فعلاً قبل التصوير —
+    // من غير كده ممكن يتصوّر وهو لسه فاضي.
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+    if(!wrap.offsetHeight){
+      throw new Error('مش قادر أجهّز التقرير — جرّب تاني');
+    }
+
     await html2pdf().set({
       margin:      [8, 8, 8, 8],
       filename:    name,
@@ -6244,12 +6258,14 @@ async function downloadReportPDF(){
       pagebreak:   { mode:['css','legacy'], avoid:['.rp-score','.rp-sec','.rk','.ri','.rw','tr'] }
     }).from(wrap).save();
 
-    wrap.remove();
     toastOk('التقرير اتنزّل ✅');
 
   }catch(e){
     toastErr(e.message || 'مش قادر أنزّل الـ PDF');
   }finally{
+    // ⚠️ التنضيف في finally مش في try — لو التصوير فشل،
+    // العنصر المخفي كان هيفضل في الصفحة للأبد.
+    document.querySelectorAll('.pdf-export').forEach(el => el.remove());
     if(btn){ btn.disabled = false; btn.textContent = '⬇️ تنزيل التقرير PDF'; }
   }
 }
