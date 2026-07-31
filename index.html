@@ -3463,20 +3463,27 @@
      المهام اليومية
      ========================================================== */
   /* ==========================================================
-     زرار المهام — فوق على الشمال جنب اللوجو
+     زرار المهام — جوّه الصفحة على الشمال، بيتمرّر مع المحتوى
+     ⚠️ كان position:fixed فبيفضل ثابت وإنت بتنزل — وده مزعج.
+        دلوقتي جزء من تدفق الصفحة زي أي عنصر تاني.
      ========================================================== */
+  .tasks-row{
+    max-width:1240px; margin:0 auto 4px;
+    padding:14px 22px 0;
+    display:flex; justify-content:flex-start;
+  }
   .tasks-fab{
-    position:fixed; inset-inline-start:24px; top:88px; z-index:60;
-    display:flex; align-items:center; gap:9px;
+    position:relative;
+    display:inline-flex; align-items:center; gap:9px;
     font-family:inherit; font-size:13.5px; font-weight:800; cursor:pointer;
     padding:12px 19px; border-radius:15px; border:none;
     background:linear-gradient(135deg,#2A1310,#4A1F16);
-    color:#fff; box-shadow:0 5px 20px rgba(42,19,16,.3);
+    color:#fff; box-shadow:0 4px 16px rgba(42,19,16,.26);
     transition:transform .18s cubic-bezier(.2,.7,.2,1), box-shadow .18s;
   }
   .tasks-fab:hover{
     transform:translateY(-2px);
-    box-shadow:0 10px 28px rgba(42,19,16,.4);
+    box-shadow:0 9px 26px rgba(42,19,16,.36);
   }
   .tasks-fab:active{ transform:translateY(0) }
   .tasks-fab svg{ flex-shrink:0; color:var(--brand-2) }
@@ -3495,14 +3502,9 @@
     50%    { transform:scale(1.14) }
   }
 
-  @media (max-width:1200px){
-    .tasks-fab{ top:auto; bottom:24px }
-  }
   @media (max-width:640px){
-    .tasks-fab span{ display:none }
-    .tasks-fab{ inset-inline-start:16px; bottom:18px;
-                padding:14px; border-radius:50%; gap:0 }
-    .tasks-badge{ top:-5px; inset-inline-end:-5px }
+    .tasks-row{ padding:12px 14px 0 }
+    .tasks-fab{ padding:11px 15px; font-size:12.5px }
   }
   @media (prefers-reduced-motion:reduce){
     .tasks-fab{ transition:none }
@@ -3801,6 +3803,31 @@
     .tk-alert{ transition:opacity .2s }
     .tk-alert.show{ transform:translate(-50%,0) }
   }
+
+  /* وقت التنفيذ */
+  .tk-at{
+    display:inline-flex; align-items:center; gap:5px;
+    font-size:11px; font-weight:700; color:var(--muted);
+    margin-top:7px; padding:3px 9px; border-radius:8px;
+    background:color-mix(in srgb,var(--line) 34%,transparent);
+    direction:ltr; unicode-bidi:isolate;
+  }
+  .tk-t.done .tk-at{ background:#DCFCE7; color:#15803D }
+  .tk-t.no   .tk-at{ background:#FEE2E2; color:#B91C1C }
+  body.dark .tk-t.done .tk-at{ background:#14432a; color:#86efac }
+  body.dark .tk-t.no   .tk-at{ background:#4a1414; color:#fca5a5 }
+
+  /* الوقت جنب اسم الموظفة في عرض المديرة */
+  .tk-sc i{
+    font-style:normal; font-size:10px; opacity:.75;
+    margin-inline-start:5px; padding-inline-start:5px;
+    border-inline-start:1px solid currentColor;
+    direction:ltr; unicode-bidi:isolate;
+  }
+  .tk-rsi i{
+    display:block; font-style:normal; font-size:10.5px;
+    opacity:.75; margin-top:3px; direction:ltr; unicode-bidi:isolate;
+  }
 </style>
 </head>
 <body>
@@ -3983,17 +4010,19 @@
 
 </header>
 
-<button class="tasks-fab" id="hdrTasksBtn" style="display:none" onclick="openTasks()">
-  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-       stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M9 11l3 3L22 4"/>
-    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-  </svg>
-  <span>مهام اليوم</span>
-  <b class="tasks-badge" id="tasksBadge" style="display:none">0</b>
-</button>
-
 <div class="wrap">
+
+  <div class="tasks-row" id="tasksRow" style="display:none">
+    <button class="tasks-fab" id="hdrTasksBtn" onclick="openTasks()">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 11l3 3L22 4"/>
+        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+      </svg>
+      <span>مهام اليوم</span>
+      <b class="tasks-badge" id="tasksBadge" style="display:none">0</b>
+    </button>
+  </div>
   <div class="hero">
     <div>
       <span class="tag">الخليج العربي · مؤثرون موثّقون</span>
@@ -8939,7 +8968,7 @@ function dbCustomRange(){
 // ==========================================================
 // المهام اليومية
 // ==========================================================
-// المديرة بتلصق رسالة الواتساب زي ما هي، والمحلّل بيقسّمها.
+// المديرة بتلصق نص المهام، والمحلّل بيقسّمه لأقسام ومهام.
 // الموظفة بتشوف المهام **بنصها الأصلي** — عربي أو إنجليزي أو مختلط —
 // وجنب كل مهمة ✅ و ❌، ولو ❌ لازم تكتب السبب.
 let _tasks = { date:'', data:null, isAdmin:false, me:'', parsed:null, loading:false };
@@ -8968,19 +8997,24 @@ async function checkPendingTasks(){
 // ===== إشعار المهام الجديدة =====
 // بطاقة بتنزل من فوق وتختفي لوحدها — أوضح من toast عادي
 // لأن دي أول حاجة الموظفة لازم تشوفها لما تدخل.
-function showTasksAlert(count, title){
+function showTasksAlert(count, title, isNew){
   // لو فيه واحدة مفتوحة نشيلها
   const old = document.getElementById('tkAlert');
   if(old) old.remove();
 
+  const word = count === 1 ? 'مهمة' : 'مهام';
   const el = document.createElement('div');
   el.className = 'tk-alert';
   el.id = 'tkAlert';
   el.innerHTML =
-      '<div class="tka-i">📋</div>'
+      '<div class="tka-i">' + (isNew ? '🆕' : '📋') + '</div>'
     + '<div class="tka-t">'
-    +   '<b>عندك ' + count + ' ' + (count === 1 ? 'مهمة' : 'مهام') + ' النهاردة</b>'
-    +   '<span>' + esc(title || 'المديرة ضافت مهام جديدة') + '</span>'
+    +   '<b>' + (isNew
+        ? 'تمت إضافة مهام اليوم'
+        : 'عندك ' + count + ' ' + word + ' محتاجة رد') + '</b>'
+    +   '<span>' + (isNew
+        ? count + ' ' + word + (title ? ' · ' + esc(title) : '')
+        : esc(title || 'من مهام النهاردة')) + '</span>'
     + '</div>'
     + '<button class="tka-b" onclick="tkAlertOpen()">شوفها</button>'
     + '<button class="tka-x" onclick="tkAlertClose()" aria-label="إغلاق">✕</button>';
@@ -9165,6 +9199,9 @@ function tkTaskStaff(t, res){
     +   '<span class="tk-tt">'+esc(t.title)+'</span>'
     +   (t.detail ? '<span class="tk-td">'+esc(t.detail)+'</span>' : '')
     +   (no && res.reason ? '<span class="tk-rs">❌ '+esc(res.reason)+'</span>' : '')
+    // ⏰ وقت التنفيذ — المديرة عايزة تعرف خلصت امتى
+    +   ((done || no) && res.at
+        ? '<span class="tk-at">🕐 '+esc(tkTimeOf(res.at))+'</span>' : '')
     + '</div>'
     + '<div class="tk-ta">'
     +   '<button class="tk-y'+(done?' on':'')+'" onclick="tkAnswer('+t.id+',true)" title="اتعملت">✓</button>'
@@ -9182,8 +9219,10 @@ function tkTaskAdmin(t, byStaff, staffList){
               : r.done ? 'ok' : 'no';
     const ic  = cls === 'ok' ? '✅' : cls === 'no' ? '❌' : '⏳';
     const tip = cls === 'no' && r.reason ? esc(r.reason) : '';
+    const at  = r && r.at ? tkTimeOf(r.at) : '';
     chips += '<span class="tk-sc '+cls+'"'+(tip?' title="'+tip+'"':'')+'>'
-           + ic+' '+esc(s.name)+'</span>';
+           + ic+' '+esc(s.name)
+           + (at ? '<i>'+esc(at)+'</i>' : '')+'</span>';
   }
 
   // الأسباب المكتوبة
@@ -9199,7 +9238,8 @@ function tkTaskAdmin(t, byStaff, staffList){
     +   '<div class="tk-scs">'+chips+'</div>'
     +   (reasons.length
         ? '<div class="tk-rsl">' + reasons.map(r =>
-            '<div class="tk-rsi"><b>'+esc(r.staff)+':</b> '+esc(r.reason)+'</div>').join('')
+            '<div class="tk-rsi"><b>'+esc(r.staff)+':</b> '+esc(r.reason)
+      + (r.at ? '<i>🕐 '+esc(tkTimeOf(r.at))+'</i>' : '')+'</div>').join('')
           + '</div>'
         : '')
     + '</div></div>';
@@ -9276,6 +9316,21 @@ function tkFindTask(id){
   return null;
 }
 
+// وقت التنفيذ بصيغة واضحة — 3:45 م
+function tkTimeOf(v){
+  if(!v) return '';
+  const d = new Date(v);
+  if(isNaN(d)) return '';
+  try{
+    const p = new Intl.DateTimeFormat('en-GB', {
+      timeZone:'Africa/Cairo', hour:'numeric', minute:'2-digit', hour12:true
+    }).formatToParts(d);
+    const g = t => (p.find(x=>x.type===t)||{}).value || '';
+    const ap = g('dayPeriod').toLowerCase().includes('p') ? 'م' : 'ص';
+    return g('hour')+':'+g('minute')+' '+ap;
+  }catch(e){ return ''; }
+}
+
 function tkDateLabel(v){
   const M = ['يناير','فبراير','مارس','إبريل','مايو','يونيو',
              'يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
@@ -9289,17 +9344,17 @@ function tkDateLabel(v){
 // ==========================================================
 // شاشة إدخال المهام — للمديرة
 // ==========================================================
-// تلصق رسالة الواتساب زي ما هي، والمحلّل يقسّمها لتصنيفات ومهام.
+// تلصق نص المهام، والمحلّل يقسّمه لأقسام ومهام.
 // المعاينة قبل النشر عشان تتأكد إن التقسيم صح.
 function tkComposer(){
   const p = _tasks.parsed;
 
   let out = '<div class="tk-comp">'
     + '<div class="tk-ci"><span>✍️</span>'
-    +   '<div><b>ضيفي مهام '+esc(tkDateLabel(_tasks.date))+'</b>'
-    +     '<i>الصقي رسالة الواتساب زي ما هي والنظام هيقسّمها لوحده</i></div></div>'
+    +   '<div><b>مهام '+esc(tkDateLabel(_tasks.date))+'</b>'
+    +     '<i>اكتبي أو الصقي المهام، والنظام هيرتّبها في أقسام تلقائيًا</i></div></div>'
     + '<textarea id="tkRaw" class="tk-raw" rows="9" '
-    +   'placeholder="الصقي المهام هنا…\n\nمثال:\n📌 Tasks 19 July 2026\n🔸 Operation\n1 - Metrobrazil Creative\n2 - Noon Gcc Creative\n🔸 Following-up\n🔹 فولو اب على العملاء">'
+    +   'placeholder="مثال:\n\nTasks 1 August 2026\n🔸 Operation\n1 - Metrobrazil Creative\n2 - Noon Gcc Creative\n🔸 Acquisition\n🔹 اكوزيشن بلومينغديلز السعودية\n🔹 ممزورلد">'
     +   esc(p ? p.raw || '' : '') + '</textarea>'
     + '<div class="tk-cact">'
     +   '<button class="tk-cb main" onclick="tkParse()">🔍 حلّل المهام</button>'
@@ -10162,8 +10217,8 @@ function updateUIForRole() {
   const hdrDash = document.getElementById('hdrDashBtn');
   if (hdrDash) hdrDash.style.display = (logged && isAdminSession()) ? '' : 'none';
   // 📋 المهام اليومية — للكل
-  const hdrTasks = document.getElementById('hdrTasksBtn');
-  if (hdrTasks) hdrTasks.style.display = logged ? '' : 'none';
+  const tasksRow = document.getElementById('tasksRow');
+  if (tasksRow) tasksRow.style.display = logged ? '' : 'none';
   if (logged) checkPendingTasks();
 
   // صفوف الفلاتر دي للأدمن بس — بنخفيها عن الموظفة
