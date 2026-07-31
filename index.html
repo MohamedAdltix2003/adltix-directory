@@ -212,10 +212,16 @@
   .cf-btns button{flex:1;padding:11px;border-radius:12px;border:none;font-family:inherit;font-weight:800;font-size:13.5px;cursor:pointer;transition:filter .15s,transform .15s}
   .cf-btns button:active{transform:scale(.96)}
   .cf-cancel{background:var(--brand-soft);color:var(--brand)}
-  .cf-yes{color:#fff}
-  .cf-yes.danger{background:#dc2626}
-  .cf-yes.move{background:#D9492F}
-  .cf-yes.ok{background:#16a34a}
+  /* ⚠️ cf-yes كانت من غير خلفية، فبتطلع باهتة لو مفيش
+     صنف إضافي. اللون الافتراضي بقى البراند. */
+  /* ⚠️ الألوان الفاتحة تباينها مع الأبيض تحت الحد المقبول (4.5):
+     البراند 3.70 · الأخضر 3.30 — يعني النص صعب القراءة.
+     غمّقناها شوية والفرق البصري بالكاد يبان. */
+  .cf-yes{ color:#fff; background:#C6432D; font-weight:800 }
+  .cf-yes.danger{ background:#C1121F }
+  .cf-yes.move{ background:#B8391F }
+  .cf-yes.ok{ background:#15803D }
+  .cf-yes:hover{ filter:brightness(1.1) }
 
   .scrape-banner{background:linear-gradient(135deg,var(--brand-soft),rgba(201,162,75,.12));border:1px solid var(--brand-soft);border-radius:16px;padding:14px 18px;margin-bottom:16px;animation:slideDown .35s cubic-bezier(.2,.7,.2,1)}
   @keyframes slideDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
@@ -3829,6 +3835,13 @@
   .tk-rsi i{
     display:block; font-style:normal; font-size:10.5px;
     opacity:.75; margin-top:3px; direction:ltr; unicode-bidi:isolate;
+  }
+
+  /* شارة المديرة — بتقول كام حد ردّ، مش عدد مهام */
+  .tasks-badge.replies{
+    background:#16A34A;
+    box-shadow:0 3px 10px rgba(22,163,74,.45);
+    animation:none;
   }
 </style>
 </head>
@@ -8980,15 +8993,29 @@ async function checkPendingTasks(){
   try{
     const r = await callApi('dailyTasks', { token: SESSION.token, action:'pending' }) || {};
     const badge = document.getElementById('tasksBadge');
+
+    // 👔 المديرة: الشارة بتقول كام موظفة ردّت — مش عدد مهامها هي
+    if(r.isAdmin){
+      const ans = Number(r.answered) || 0;
+      if(badge){
+        badge.textContent = ans;
+        badge.className = 'tasks-badge replies';
+        badge.title = ans
+          ? ans + ' من الفريق ردّوا على مهام النهاردة'
+          : 'محدش ردّ لسه';
+        badge.style.display = ans ? '' : 'none';
+      }
+      return;   // المديرة مش بيجيلها إشعار
+    }
+
+    // 👩 الموظفة: عدد المهام اللي لسه محتاجة رد
     const n = Number(r.pending) > 0 ? Number(r.pending) : 0;
     if(badge){
       badge.textContent = n;
+      badge.className = 'tasks-badge';
+      badge.title = n ? n + ' مهمة محتاجة رد' : '';
       badge.style.display = n ? '' : 'none';
     }
-    // 🔔 الإشعار للموظفات بس — المديرة اللي بتضيف المهام
-    //    مش محتاجة تتنبّه لنفسها.
-    if(isAdminSession()) return;
-
     const total = Number(r.total) || 0;
     // لسه مردّتش على ولا واحدة = مهام جديدة
     const isNew = n === total && total > 0;
@@ -9305,7 +9332,7 @@ function tkAskReason(taskId){
     + '<div class="lg-err" id="tkRsE"></div>'
     + '<div class="cf-btns">'
     +   '<button class="cf-cancel" data-x="1">إلغاء</button>'
-    +   '<button class="cf-yes" id="tkRsOk">تأكيد</button>'
+    +   '<button class="cf-yes danger" id="tkRsOk">✕ تأكيد إنها متعملتش</button>'
     + '</div></div>';
   document.body.appendChild(ov);
   requestAnimationFrame(()=>ov.classList.add('show'));
