@@ -3462,23 +3462,52 @@
   /* ==========================================================
      المهام اليومية
      ========================================================== */
-  .hdr-tasks{
-    display:flex; align-items:center; gap:8px; flex-shrink:0; position:relative;
-    font-family:inherit; font-size:13px; font-weight:800; cursor:pointer;
-    padding:11px 16px; border-radius:14px;
-    border:1px solid var(--line); background:var(--surface); color:var(--ink);
-    transition:border-color .15s, background .15s, transform .14s;
+  /* ==========================================================
+     زرار المهام — عايم لوحده على الشمال
+     ========================================================== */
+  .tasks-fab{
+    position:fixed; inset-inline-start:22px; bottom:24px; z-index:60;
+    display:flex; align-items:center; gap:9px;
+    font-family:inherit; font-size:13.5px; font-weight:800; cursor:pointer;
+    padding:13px 20px; border-radius:16px; border:none;
+    background:linear-gradient(135deg,#2A1310,#4A1F16);
+    color:#fff; box-shadow:0 6px 24px rgba(42,19,16,.32);
+    transition:transform .18s cubic-bezier(.2,.7,.2,1), box-shadow .18s;
   }
-  .hdr-tasks:hover{ border-color:var(--brand); background:var(--brand-soft);
-                    color:var(--brand); transform:translateY(-1px) }
-  .hdr-badge{
-    position:absolute; top:-6px; inset-inline-end:-6px;
-    min-width:20px; height:20px; padding:0 5px; border-radius:999px;
-    display:grid; place-items:center; font-size:11px; font-weight:800;
-    background:#DC2626; color:#fff; box-shadow:0 2px 8px rgba(220,38,38,.4);
-    animation:tkPulse 2s ease-in-out infinite;
+  .tasks-fab:hover{
+    transform:translateY(-3px);
+    box-shadow:0 12px 32px rgba(42,19,16,.42);
   }
-  @keyframes tkPulse{ 0%,100%{transform:scale(1)} 50%{transform:scale(1.12)} }
+  .tasks-fab:active{ transform:translateY(-1px) }
+  .tasks-fab svg{ flex-shrink:0; color:var(--brand-2) }
+
+  .tasks-badge{
+    position:absolute; top:-7px; inset-inline-end:-7px;
+    min-width:22px; height:22px; padding:0 6px; border-radius:999px;
+    display:grid; place-items:center; font-size:11.5px; font-weight:800;
+    background:#DC2626; color:#fff;
+    box-shadow:0 3px 10px rgba(220,38,38,.5);
+    border:2px solid var(--bg);
+    animation:tkPulse 2.2s ease-in-out infinite;
+  }
+  @keyframes tkPulse{
+    0%,100%{ transform:scale(1) }
+    50%    { transform:scale(1.14) }
+  }
+
+  @media (max-width:900px){
+    .tasks-fab{ inset-inline-start:16px; bottom:18px; padding:12px 16px; font-size:13px }
+  }
+  @media (max-width:640px){
+    .tasks-fab span{ display:none }
+    .tasks-fab{ padding:14px; border-radius:50%; gap:0 }
+    .tasks-badge{ top:-5px; inset-inline-end:-5px }
+  }
+  @media (prefers-reduced-motion:reduce){
+    .tasks-fab{ transition:none }
+    .tasks-fab:hover{ transform:none }
+    .tasks-badge{ animation:none }
+  }
 
   .tk-ov{ align-items:stretch !important; padding:0 !important }
   .tk-shell{
@@ -3710,8 +3739,6 @@
   .tk-qb:hover{ background:var(--brand-soft); border-color:var(--brand); color:var(--brand) }
 
   @media (max-width:640px){
-    .hdr-tasks span{ display:none }
-    .hdr-tasks{ padding:10px; border-radius:12px }
     .tk-top{ padding:11px 13px; gap:10px }
     .tk-body{ padding:14px 13px }
     .tk-t{ padding:12px 13px; gap:9px }
@@ -3719,7 +3746,6 @@
     .tk-tt{ font-size:13px }
   }
   @media (prefers-reduced-motion:reduce){
-    .hdr-badge{ animation:none }
     .tk-t:hover{ transform:none }
   }
 </style>
@@ -3868,13 +3894,6 @@
       <div class="logo">A</div>
       <div><h1>Adltix</h1><div class="sub">منصة اكتشاف المؤثرين</div></div>
     </div>
-    <button class="hdr-tasks" id="hdrTasksBtn" style="display:none" onclick="openTasks()">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-      </svg>
-      <span>مهام اليوم</span>
-      <b class="hdr-badge" id="tasksBadge" style="display:none">0</b>
-    </button>
     <button class="hdr-dash" id="hdrDashBtn" style="display:none" onclick="openDashboard()">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/>
@@ -3910,6 +3929,16 @@
   </div>
 
 </header>
+
+<button class="tasks-fab" id="hdrTasksBtn" style="display:none" onclick="openTasks()">
+  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+       stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M9 11l3 3L22 4"/>
+    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+  </svg>
+  <span>مهام اليوم</span>
+  <b class="tasks-badge" id="tasksBadge" style="display:none">0</b>
+</button>
 
 <div class="wrap">
   <div class="hero">
@@ -8865,9 +8894,9 @@ let _tasks = { date:'', data:null, isAdmin:false, me:'', parsed:null, loading:fa
 // إشعار: في مهام محتاجة رد؟
 async function checkPendingTasks(){
   try{
-    const r = await callApi('dailyTasks', { token: SESSION.token, action:'pending' });
+    const r = await callApi('dailyTasks', { token: SESSION.token, action:'pending' }) || {};
     const badge = document.getElementById('tasksBadge');
-    const n = r && Number(r.pending) > 0 ? Number(r.pending) : 0;
+    const n = Number(r.pending) > 0 ? Number(r.pending) : 0;
     if(badge){
       badge.textContent = n;
       badge.style.display = n ? '' : 'none';
@@ -8913,8 +8942,8 @@ async function loadTasks(){
   try{
     const r = await callApi('dailyTasks', {
       token: SESSION.token, action:'get', date:_tasks.date
-    });
-    _tasks.data    = r.result;
+    }) || {};
+    _tasks.data    = r.day || null;
     _tasks.isAdmin = !!r.isAdmin;
     _tasks.me      = r.me || '';
     renderTasks();
@@ -9216,7 +9245,7 @@ async function tkParse(){
   try{
     const r = await callApi('dailyTasks', {
       token: SESSION.token, action:'parse', raw
-    });
+    }) || {};
     _tasks.parsed = { ...r, raw };
     renderTasks();
   }catch(e){ toastErr(e.message || 'مش قادر أحلّل'); }
@@ -9234,8 +9263,8 @@ async function tkPublish(){
     const r = await callApi('dailyTasks', {
       token: SESSION.token, action:'publish',
       date: _tasks.date, title: p.title, raw: p.raw, tasks: p.tasks
-    });
-    toastOk('اتنشرت ✅ — '+r.count+' مهمة للفريق');
+    }) || {};
+    toastOk('اتنشرت ✅ — '+(r.count||p.tasks.length)+' مهمة للفريق');
     _tasks.parsed = null;
     loadTasks();
   }catch(e){ toastErr(e.message || 'مش قادر أنشر'); }
