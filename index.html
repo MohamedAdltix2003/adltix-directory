@@ -3986,6 +3986,75 @@
     .db-tksti{ padding:11px 13px; gap:9px }
     .db-tkdh span{ max-width:100% }
   }
+
+  /* ===== التوقيت في تاب المهام ===== */
+  .db-tktm{ display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px }
+  .db-tktmi{
+    padding:14px 12px; border-radius:14px; text-align:center;
+    background:color-mix(in srgb,var(--line) 22%,transparent);
+    border:1px solid var(--line);
+  }
+  .db-tktmi span{ font-size:19px; display:block; margin-bottom:5px }
+  .db-tktmi b{
+    display:block; font-size:20px; font-weight:800; color:var(--ink);
+    font-family:'Space Grotesk','Tajawal',sans-serif; line-height:1.15;
+    direction:ltr; unicode-bidi:isolate;
+  }
+  .db-tktmi i{ display:block; font-style:normal; font-size:11px;
+               color:var(--muted); margin-top:4px }
+  .db-tktmi.good{ background:#DCFCE7; border-color:#86EFAC }
+  .db-tktmi.good b{ color:#15803D }
+  .db-tktmi.bad{ background:#FEE2E2; border-color:#FCA5A5 }
+  .db-tktmi.bad b{ color:#B91C1C }
+  body.dark .db-tktmi.good{ background:#14432a } body.dark .db-tktmi.good b{ color:#86efac }
+  body.dark .db-tktmi.bad{ background:#4a1414 }  body.dark .db-tktmi.bad b{ color:#fca5a5 }
+
+  /* وقت آخر رد في صف الموظفة */
+  .db-tksw{
+    display:flex; flex-wrap:wrap; gap:9px; margin-top:9px;
+    padding-top:9px; border-top:1px solid var(--line);
+  }
+  .db-tksw span{
+    display:inline-flex; align-items:center; gap:5px;
+    font-size:11px; font-weight:600; color:var(--muted);
+    padding:3px 10px; border-radius:8px;
+    background:color-mix(in srgb,var(--line) 28%,transparent);
+  }
+  .db-tksw b{ color:var(--ink); font-weight:800;
+              direction:ltr; unicode-bidi:isolate }
+  .db-tksw i{ font-style:normal; opacity:.7; margin-inline-start:4px;
+              padding-inline-start:5px; border-inline-start:1px solid var(--line) }
+
+  /* توقيت اليوم */
+  .db-tkdt{
+    display:flex; flex-wrap:wrap; gap:7px; margin-top:9px;
+    padding-top:9px; border-top:1px dashed var(--line);
+  }
+  .db-tkdt span{
+    display:inline-flex; align-items:center; gap:5px;
+    font-size:10.5px; font-weight:600; color:var(--muted);
+    padding:3px 9px; border-radius:8px;
+    background:color-mix(in srgb,var(--brand) 7%,transparent);
+  }
+  .db-tkdt b{ color:var(--brand); font-weight:800;
+              direction:ltr; unicode-bidi:isolate }
+
+  /* وقت الرد جنب اسم الموظفة في البحث */
+  .db-tksc span i{
+    font-style:normal; font-size:9.5px; opacity:.8;
+    margin-inline-start:5px; padding-inline-start:5px;
+    border-inline-start:1px solid currentColor;
+    direction:ltr; unicode-bidi:isolate;
+  }
+  .db-tksr2 i{
+    display:block; font-style:normal; font-size:10.5px;
+    opacity:.75; margin-top:3px; direction:ltr; unicode-bidi:isolate;
+  }
+
+  @media (max-width:640px){
+    .db-tktmi b{ font-size:17px }
+    .db-tksw, .db-tkdt{ gap:5px }
+  }
 </style>
 </head>
 <body>
@@ -9646,6 +9715,46 @@ async function tkDeleteDay(){
 let _dbTk = { data:null, loading:false, from:'', to:'', preset:'14',
               q:'', results:null, searching:false, staff:'' };
 
+// ===== أدوات الوقت للداشبورد =====
+// كل الأوقات بتوقيت القاهرة — الفريق كله هناك.
+function dbTime(v){
+  if(!v) return '';
+  const d = new Date(v);
+  if(isNaN(d)) return '';
+  try{
+    const p = new Intl.DateTimeFormat('en-GB', {
+      timeZone:'Africa/Cairo', hour:'numeric', minute:'2-digit', hour12:true
+    }).formatToParts(d);
+    const g = t => (p.find(x=>x.type===t)||{}).value || '';
+    return g('hour')+':'+g('minute')+' '+
+      (g('dayPeriod').toLowerCase().includes('p') ? 'م' : 'ص');
+  }catch(e){ return ''; }
+}
+
+// تاريخ + وقت مع بعض
+function dbWhenFull(v){
+  if(!v) return '—';
+  const t = dbTime(v);
+  const d = dbDate(String(v).slice(0,10));
+  return d + (t ? ' · ' + t : '');
+}
+
+// "من ساعتين" — أوضح من التاريخ لوحده
+function dbAgoOf(v){
+  if(!v) return '';
+  const ms = Date.now() - new Date(v).getTime();
+  if(!Number.isFinite(ms) || ms < 0) return '';
+  const mins = Math.floor(ms/60000);
+  if(mins < 1)  return 'دلوقتي';
+  if(mins < 60) return 'من '+mins+' دقيقة';
+  const hrs = Math.floor(mins/60);
+  if(hrs < 24)  return 'من '+hrs+' ساعة';
+  const days = Math.floor(hrs/24);
+  if(days === 1) return 'امبارح';
+  if(days < 30)  return 'من '+days+' يوم';
+  return dbDate(String(v).slice(0,10));
+}
+
 function dbTasks(r){
   // أول فتحة — نحمّل
   if(!_dbTk.data && !_dbTk.loading){ dbTkLoad(); }
@@ -9698,6 +9807,30 @@ function dbTasks(r){
              doneRate>=80?'good':doneRate<50?'bad':'warn')
     + '</div>';
 
+  // ── ملخّص التوقيت ──
+  const TM = d.timing || {};
+  if(TM.first_reply || TM.last_reply){
+    const same = dbN(TM.same_day), late = dbN(TM.late);
+    const tot = same + late;
+    out += dbSection('⏱️ التوقيت',
+      '<div class="db-tktm">'
+      + '<div class="db-tktmi"><span>🕐</span>'
+      +   '<b>'+esc(dbN(TM.avg_hours))+' ساعة</b>'
+      +   '<i>متوسط الرد بعد النشر</i></div>'
+      + '<div class="db-tktmi'+(tot && same/tot>=.8?' good':'')+'"><span>📅</span>'
+      +   '<b>'+(tot?Math.round(same/tot*100):0)+'%</b>'
+      +   '<i>ردّوا في نفس اليوم</i></div>'
+      + (late ? '<div class="db-tktmi bad"><span>⏰</span>'
+      +   '<b>'+dbF(late)+'</b><i>رد متأخر عن يومه</i></div>' : '')
+      + '<div class="db-tktmi"><span>🌅</span>'
+      +   '<b>'+esc(dbTime(TM.first_reply)||'—')+'</b>'
+      +   '<i>أول رد في الفترة</i></div>'
+      + '<div class="db-tktmi"><span>🌙</span>'
+      +   '<b>'+esc(dbTime(TM.last_reply)||'—')+'</b>'
+      +   '<i>آخر رد في الفترة</i></div>'
+      + '</div>');
+  }
+
   // ── الفريق ──
   out += dbSection('👥 أداء الفريق', dbTkStaff(staff, T));
 
@@ -9729,7 +9862,8 @@ function dbTasks(r){
         + '<div class="db-tkph">'
         +   (x.priority==='high'?'<i>عاجل</i>':'')
         +   '<b>'+esc(x.task)+'</b>'
-        +   '<span>'+dbDate(x.date)+(x.category?' · '+esc(x.category):'')+'</span>'
+        +   '<span>'+dbDate(x.date)+(x.category?' · '+esc(x.category):'')
+        +     (x.first_reply ? ' · أول رد '+esc(dbTime(x.first_reply)) : '')+'</span>'
         + '</div>'
         + '<div class="db-tkpn">'
         +   '<span class="no">❌ '+dbN(x.not_done)+'</span>'
@@ -9898,12 +10032,15 @@ function dbTkSearchResults(){
         + '</div>'
         + (x.detail ? '<div class="db-tksd">'+esc(x.detail)+'</div>' : '')
         + '<div class="db-tksc">'
-        +   done.map(r=>'<span class="ok">✅ '+esc(r.staff)+'</span>').join('')
-        +   no.map(r=>'<span class="no" title="'+esc(r.reason||'')+'">❌ '+esc(r.staff)+'</span>').join('')
+        +   done.map(r=>'<span class="ok">✅ '+esc(r.staff)
+            + (r.at?'<i>'+esc(dbTime(r.at))+'</i>':'')+'</span>').join('')
+        +   no.map(r=>'<span class="no" title="'+esc(r.reason||'')+'">❌ '+esc(r.staff)
+            + (r.at?'<i>'+esc(dbTime(r.at))+'</i>':'')+'</span>').join('')
         + '</div>'
         + (no.filter(r=>r.reason).length
             ? '<div class="db-tksr2">'+no.filter(r=>r.reason).map(r =>
-                '<div><b>'+esc(r.staff)+':</b> '+esc(r.reason)+'</div>').join('')+'</div>'
+                '<div><b>'+esc(r.staff)+':</b> '+esc(r.reason)
+                + (r.at?'<i>🕐 '+esc(dbWhenFull(r.at))+'</i>':'')+'</div>').join('')+'</div>'
             : '')
         + '</div>';
     }).join('') + '</div>',
@@ -9944,6 +10081,14 @@ function dbTkStaff(staff, T){
           ? '<span>⏱️ <b>'+dbN(s.avg_hours)+'</b> ساعة</span>' : '')
       +     (dbN(s.days_active) ? '<span>📅 <b>'+dbN(s.days_active)+'</b> يوم</span>' : '')
       +   '</div>'
+      +   (s.last_answer
+          ? '<div class="db-tksw">'
+            + '<span>🕐 آخر رد <b>'+esc(dbWhenFull(s.last_answer))+'</b>'
+            +   '<i>'+esc(dbAgoOf(s.last_answer))+'</i></span>'
+            + (s.first_answer && s.first_answer !== s.last_answer
+              ? '<span>🌅 أول رد <b>'+esc(dbWhenFull(s.first_answer))+'</b></span>' : '')
+            + '</div>'
+          : '')
       + '</div>'
       + '<div class="db-ss"><b>'+s.doneRate+'</b><span>%</span></div>'
       + '</div>';
@@ -9972,6 +10117,13 @@ function dbTkDaily(daily){
       +   '<span class="no">❌ <b>'+nd+'</b></span>'
       +   '<span>👥 <b>'+ansS+'/'+allS+'</b> ردّوا</span>'
       +   '<span class="rate">'+rate+'%</span>'
+      + '</div>'
+      // ⏱️ توقيت اليوم: امتى اتنشرت وامتى أول وآخر رد
+      + '<div class="db-tkdt">'
+      +   (d.created_at ? '<span>📤 نُشرت <b>'+esc(dbTime(d.created_at))+'</b></span>' : '')
+      +   (d.first_reply ? '<span>🌅 أول رد <b>'+esc(dbTime(d.first_reply))+'</b></span>' : '')
+      +   (d.last_reply  ? '<span>🌙 آخر رد <b>'+esc(dbTime(d.last_reply))+'</b></span>' : '')
+      +   (dbN(d.avg_hours) ? '<span>⏱️ متوسط <b>'+dbN(d.avg_hours)+'</b> ساعة</span>' : '')
       + '</div></div>';
   }).join('') + '</div>';
 }
