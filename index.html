@@ -3467,10 +3467,12 @@
      ⚠️ كان position:fixed فبيفضل ثابت وإنت بتنزل — وده مزعج.
         دلوقتي جزء من تدفق الصفحة زي أي عنصر تاني.
      ========================================================== */
+  /* ⚠️ الصفحة RTL، فـ flex-start = الشمال.
+     الزرار المفروض على اليمين تحت "تحديث مباشر" → flex-end */
   .tasks-row{
     max-width:1240px; margin:0 auto 4px;
     padding:14px 22px 0;
-    display:flex; justify-content:flex-start;
+    display:flex; justify-content:flex-end;
   }
   .tasks-fab{
     position:relative;
@@ -8983,13 +8985,30 @@ async function checkPendingTasks(){
       badge.textContent = n;
       badge.style.display = n ? '' : 'none';
     }
-    // 🔔 إشعار احترافي — بيظهر مرة واحدة لكل يوم مهام جديد.
-    // بنستخدم تاريخ اليوم كمفتاح، فلو المديرة ضافت مهام النهاردة
-    // الإشعار يظهر تاني حتى لو الموظفة فاتحة الموقع من الصبح.
-    const key = 'tasksSeen:' + (r.day_id || todayISO());
-    if(n && !localStorage.getItem(key)){
-      localStorage.setItem(key, '1');
-      setTimeout(()=> showTasksAlert(n, r.title), 1200);
+    // 🔔 الإشعار للموظفات بس — المديرة اللي بتضيف المهام
+    //    مش محتاجة تتنبّه لنفسها.
+    if(isAdminSession()) return;
+
+    const total = Number(r.total) || 0;
+    // لسه مردّتش على ولا واحدة = مهام جديدة
+    const isNew = n === total && total > 0;
+
+    // مفتاحين مختلفين:
+    //   • مهام جديدة → مرة واحدة لكل يوم (localStorage)
+    //   • مهام ناقصة → مرة كل جلسة، فلو خرجت ورجعت تظهر تاني
+    const dayKey = 'tasksNew:'  + (r.day_id || todayISO());
+    const sesKey = 'tasksLeft:' + (r.day_id || todayISO());
+
+    if(isNew){
+      if(!localStorage.getItem(dayKey)){
+        localStorage.setItem(dayKey, '1');
+        setTimeout(()=> showTasksAlert(n, r.title, true), 1200);
+      }
+    } else if(n > 0){
+      if(!sessionStorage.getItem(sesKey)){
+        sessionStorage.setItem(sesKey, '1');
+        setTimeout(()=> showTasksAlert(n, r.title, false), 1200);
+      }
     }
   }catch(e){ /* مايوقفش الموقع */ }
 }
@@ -9007,14 +9026,14 @@ function showTasksAlert(count, title, isNew){
   el.className = 'tk-alert';
   el.id = 'tkAlert';
   el.innerHTML =
-      '<div class="tka-i">' + (isNew ? '🆕' : '📋') + '</div>'
+      '<div class="tka-i">' + (isNew ? '🆕' : '⏳') + '</div>'
     + '<div class="tka-t">'
     +   '<b>' + (isNew
         ? 'تمت إضافة مهام اليوم'
-        : 'عندك ' + count + ' ' + word + ' محتاجة رد') + '</b>'
+        : 'ناقصك ' + count + ' ' + word) + '</b>'
     +   '<span>' + (isNew
-        ? count + ' ' + word + (title ? ' · ' + esc(title) : '')
-        : esc(title || 'من مهام النهاردة')) + '</span>'
+        ? count + ' ' + word + ' في انتظارك'
+        : 'لسه محتاجة رد من مهام النهاردة') + '</span>'
     + '</div>'
     + '<button class="tka-b" onclick="tkAlertOpen()">شوفها</button>'
     + '<button class="tka-x" onclick="tkAlertClose()" aria-label="إغلاق">✕</button>';
