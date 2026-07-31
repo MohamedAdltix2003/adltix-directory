@@ -3843,6 +3843,149 @@
     box-shadow:0 3px 10px rgba(22,163,74,.45);
     animation:none;
   }
+
+  /* ==========================================================
+     تاب مراقبة المهام
+     ========================================================== */
+  .db-tkf{
+    display:flex; flex-direction:column; gap:12px; margin-bottom:18px;
+    padding:15px 17px; border-radius:16px;
+    background:var(--surface); border:1px solid var(--line);
+    box-shadow:0 2px 10px rgba(0,0,0,.04);
+  }
+  .db-tkfr{ display:flex; align-items:center; gap:11px; flex-wrap:wrap }
+  .db-tkfl{ font-size:12px; font-weight:800; color:var(--muted);
+            min-width:44px; flex-shrink:0 }
+  .db-tksb{ display:flex; gap:6px; flex:1; min-width:220px }
+  .db-tksb input{
+    flex:1; font-family:inherit; font-size:12.5px;
+    padding:8px 13px; border-radius:11px;
+    border:1px solid var(--line); background:var(--bg); color:var(--ink);
+  }
+  .db-tksb input:focus{ outline:none; border-color:var(--brand) }
+  .db-tkfd{ font-size:11.5px; font-weight:700; color:var(--brand);
+            direction:ltr; unicode-bidi:isolate }
+
+  /* الفريق */
+  .db-tkst{ display:flex; flex-direction:column; gap:9px }
+  .db-tksti{
+    display:flex; align-items:center; gap:12px;
+    padding:13px 15px; border-radius:15px; position:relative; overflow:hidden;
+    background:var(--surface); border:1.5px solid var(--line);
+    box-shadow:0 2px 8px rgba(0,0,0,.04);
+  }
+  .db-tksti::before{
+    content:''; position:absolute; inset-inline-start:0; top:0; bottom:0; width:4px;
+    background:var(--line);
+  }
+  .db-tksti.top::before   { background:linear-gradient(180deg,#16A34A,#4ADE80) }
+  .db-tksti.low::before   { background:linear-gradient(180deg,#DC2626,#F87171) }
+  .db-tksti.silent::before{ background:linear-gradient(180deg,#71717A,#A1A1AA) }
+  .db-tksti.silent{ opacity:.72 }
+  .db-sg.silent{ background:#FEE2E2 !important; color:#B91C1C !important }
+  body.dark .db-sg.silent{ background:#4a1414 !important; color:#fca5a5 !important }
+
+  /* يوم بيوم */
+  .db-tkd{ display:flex; flex-direction:column; gap:8px }
+  .db-tkdi{
+    padding:13px 15px; border-radius:14px; cursor:pointer;
+    background:color-mix(in srgb,var(--line) 20%,transparent);
+    border:1px solid var(--line);
+    transition:transform .15s, border-color .15s, box-shadow .15s;
+  }
+  .db-tkdi:hover{ transform:translateX(-2px); border-color:var(--brand);
+                  box-shadow:0 5px 16px rgba(0,0,0,.07) }
+  .db-tkdh{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:9px }
+  .db-tkdh b{ font-size:13.5px; font-weight:800; color:var(--ink) }
+  .db-tkdh span{ font-size:11.5px; color:var(--muted);
+                 overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:60% }
+  .db-tkdb{ margin-bottom:0 }
+  .db-tkdbar{ height:7px; border-radius:99px; overflow:hidden; margin-bottom:9px;
+              background:#FCA5A5 }
+  .db-tkdbar span.ok{ display:block; height:100%; background:#16A34A; border-radius:99px }
+  body.dark .db-tkdbar{ background:#7f1d1d }
+  .db-tkdn{ display:flex; gap:9px; flex-wrap:wrap; align-items:center;
+            font-size:11.5px; font-weight:600; color:var(--muted) }
+  .db-tkdn > span{ display:inline-flex; align-items:center; gap:4px;
+                   padding:3px 9px; border-radius:8px;
+                   background:color-mix(in srgb,var(--line) 32%,transparent) }
+  .db-tkdn b{ color:var(--ink); font-weight:800;
+              font-family:'Space Grotesk','Tajawal',sans-serif }
+  .db-tkdn .ok{ background:#DCFCE7; color:#15803D } .db-tkdn .ok b{ color:#15803D }
+  .db-tkdn .no{ background:#FEE2E2; color:#B91C1C } .db-tkdn .no b{ color:#B91C1C }
+  .db-tkdn .rate{ margin-inline-start:auto; background:var(--brand-soft);
+                  color:var(--brand); font-weight:800 }
+  body.dark .db-tkdn .ok{ background:#14432a; color:#86efac }
+  body.dark .db-tkdn .no{ background:#4a1414; color:#fca5a5 }
+
+  /* أسباب التعطيل */
+  .db-tkr{ display:flex; flex-direction:column; gap:12px }
+  .db-tkri{ }
+  .db-tkrt{ display:flex; align-items:baseline; justify-content:space-between;
+            gap:11px; flex-wrap:wrap; margin-bottom:5px }
+  .db-tkrt b{ font-size:13px; font-weight:700; color:var(--ink) }
+  .db-tkrt span{ font-size:11px; color:var(--muted) }
+  .db-tkrb{ height:8px; border-radius:99px; overflow:hidden;
+            background:color-mix(in srgb,var(--line) 45%,transparent) }
+  .db-tkrb span{ display:block; height:100%; border-radius:99px;
+                 background:linear-gradient(90deg,#C6432D,#E4553F) }
+  .db-tkrn{ font-size:11px; color:var(--muted); margin-top:4px }
+  .db-tkrn b{ color:var(--ink); font-weight:800 }
+
+  /* مهام متعثّرة */
+  .db-tkp{ display:flex; flex-direction:column; gap:9px }
+  .db-tkpi{ padding:13px 15px; border-radius:14px;
+            background:color-mix(in srgb,var(--line) 20%,transparent);
+            border:1px solid var(--line) }
+  .db-tkpi.pri{ border-inline-start:4px solid #DC2626 }
+  .db-tkph{ margin-bottom:9px }
+  .db-tkph i{ font-style:normal; font-size:10px; font-weight:800;
+              padding:2px 8px; border-radius:999px; margin-inline-end:7px;
+              background:#FEE2E2; color:#B91C1C }
+  .db-tkph b{ font-size:13px; font-weight:700; color:var(--ink) }
+  .db-tkph span{ display:block; font-size:11px; color:var(--muted); margin-top:3px }
+  .db-tkpn{ display:flex; gap:7px; flex-wrap:wrap }
+  .db-tkpn span{ font-size:11.5px; font-weight:800; padding:3px 10px; border-radius:8px }
+  .db-tkpn .no{ background:#FEE2E2; color:#B91C1C }
+  .db-tkpn .ok{ background:#DCFCE7; color:#15803D }
+  body.dark .db-tkpn .no{ background:#4a1414; color:#fca5a5 }
+  body.dark .db-tkpn .ok{ background:#14432a; color:#86efac }
+  .db-tkpr{ display:flex; flex-wrap:wrap; gap:5px; margin-top:9px }
+  .db-tkpr span{ font-size:10.5px; padding:3px 9px; border-radius:8px;
+                 background:#FEF2F2; color:#991B1B }
+  body.dark .db-tkpr span{ background:#2e1010; color:#fca5a5 }
+
+  /* نتايج البحث */
+  .db-tksr{ display:flex; flex-direction:column; gap:9px }
+  .db-tksi{ padding:14px 16px; border-radius:14px;
+            background:var(--surface); border:1px solid var(--line);
+            box-shadow:0 2px 8px rgba(0,0,0,.04) }
+  .db-tksi.pri{ border-inline-start:4px solid #DC2626 }
+  .db-tksh i{ font-style:normal; font-size:10px; font-weight:800;
+              padding:2px 8px; border-radius:999px; margin-inline-end:7px;
+              background:#FEE2E2; color:#B91C1C }
+  .db-tksh b{ font-size:13.5px; font-weight:700; color:var(--ink) }
+  .db-tksh span{ display:block; font-size:11px; color:var(--muted); margin-top:3px }
+  .db-tksd{ font-size:12px; color:var(--muted); margin-top:7px;
+            padding-inline-start:10px; border-inline-start:2px solid var(--line) }
+  .db-tksc{ display:flex; flex-wrap:wrap; gap:5px; margin-top:10px }
+  .db-tksc span{ font-size:11px; font-weight:700; padding:3px 10px; border-radius:8px }
+  .db-tksc .ok{ background:#DCFCE7; color:#15803D }
+  .db-tksc .no{ background:#FEE2E2; color:#B91C1C; cursor:help }
+  body.dark .db-tksc .ok{ background:#14432a; color:#86efac }
+  body.dark .db-tksc .no{ background:#4a1414; color:#fca5a5 }
+  .db-tksr2{ margin-top:9px; display:flex; flex-direction:column; gap:4px }
+  .db-tksr2 div{ font-size:11.5px; line-height:1.6; padding:6px 11px;
+                 border-radius:8px; background:#FEF2F2; color:#991B1B }
+  .db-tksr2 b{ font-weight:800 }
+  body.dark .db-tksr2 div{ background:#2e1010; color:#fca5a5 }
+
+  @media (max-width:640px){
+    .db-tkfl{ min-width:100%; margin-bottom:-4px }
+    .db-tksb{ min-width:100% }
+    .db-tksti{ padding:11px 13px; gap:9px }
+    .db-tkdh span{ max-width:100% }
+  }
 </style>
 </head>
 <body>
@@ -7824,6 +7967,7 @@ function renderDashboard(){
     ['team',     '👥', 'الفريق'],
     ['reports',  '📄', 'التقارير'],
     ['dates',    '📆', 'التواريخ'],
+    ['tasks',    '📋', 'المهام'],
     ['deals',    '🎯', 'الصفقات'],
     ['leads',    '📇', 'المؤثرين'],
     ['activity', '⚡', 'النشاط'],
@@ -7866,6 +8010,7 @@ function dbTabContent(r){
     case 'team':     return dbTeam(r);
     case 'reports':  return dbReports(r);
     case 'dates':    return dbDates(r);
+    case 'tasks':    return dbTasks(r);
     case 'deals':    return dbDeals(r);
     case 'leads':    return dbLeads(r);
     case 'activity': return dbActivity(r);
@@ -9492,6 +9637,348 @@ async function tkDeleteDay(){
     _tasks.parsed = null;
     loadTasks();
   }catch(e){ toastErr(e.message); }
+}
+
+
+// ==========================================================
+// تاب الداشبورد: مراقبة المهام
+// ==========================================================
+let _dbTk = { data:null, loading:false, from:'', to:'', preset:'14',
+              q:'', results:null, searching:false, staff:'' };
+
+function dbTasks(r){
+  // أول فتحة — نحمّل
+  if(!_dbTk.data && !_dbTk.loading){ dbTkLoad(); }
+
+  let out = dbTkFilters();
+
+  if(_dbTk.loading){
+    return out + '<div class="db-load"><span class="lm-spin"></span> بنحمّل…</div>';
+  }
+
+  // نتايج البحث
+  if(_dbTk.results){
+    return out + dbTkSearchResults();
+  }
+
+  const d = _dbTk.data;
+  if(!d) return out + '<div class="db-empty">مفيش بيانات</div>';
+
+  const T = d.totals||{}, P = d.previous||{};
+  const staff = d.staff||[], daily = d.daily||[];
+  const expected = dbN(T.expected), answered = dbN(T.answered);
+  const respRate = expected ? Math.round(answered/expected*100) : 0;
+  const doneRate = answered ? Math.round(dbN(T.done)/answered*100) : 0;
+
+  // ── الملاحظات ──
+  const ins = d.insights||[];
+  if(ins.length){
+    const M = { good:'good', warn:'warn', bad:'bad', info:'info' };
+    out += '<div class="db-ins">'
+      + ins.map(i =>
+        '<div class="db-i '+(M[i.level]||'info')+'">'
+        + '<span class="db-ii">'+i.icon+'</span>'
+        + '<div class="db-it"><b>'+esc(i.title)+'</b>'
+        + (i.detail ? '<span>'+esc(i.detail)+'</span>' : '')
+        + (i.action ? '<i>→ '+esc(i.action)+'</i>' : '')
+        + '</div></div>').join('')
+      + '</div>';
+  }
+
+  // ── المؤشرات ──
+  out += '<div class="db-kpis">'
+    + dbCard('📅','أيام فيها مهام', T.task_days, '')
+    + dbCard('📋','إجمالي المهام', T.tasks, '')
+    + dbCard('💬','معدل الرد', respRate, '<span class="db-kp">%</span>',
+             respRate>=85?'good':respRate<60?'bad':'warn')
+    + dbCard('✅','اتنفّذت', T.done, dbDelta(dbN(P.done)
+        ? Math.round((dbN(T.done)-dbN(P.done))/dbN(P.done)*100) : 0), 'good')
+    + dbCard('❌','متنفّذتش', T.not_done, '', 'bad')
+    + dbCard('🎯','معدل التنفيذ', doneRate, '<span class="db-kp">%</span>',
+             doneRate>=80?'good':doneRate<50?'bad':'warn')
+    + '</div>';
+
+  // ── الفريق ──
+  out += dbSection('👥 أداء الفريق', dbTkStaff(staff, T));
+
+  // ── يوم بيوم ──
+  out += dbSection('📆 يوم بيوم', dbTkDaily(daily), dbF(daily.length)+' يوم');
+
+  // ── أسباب التعطيل ──
+  const reasons = d.reasons||[];
+  if(reasons.length){
+    const tot = reasons.reduce((a,x)=>a+dbN(x.count),0);
+    out += dbSection('💬 أسباب عدم التنفيذ',
+      '<div class="db-tkr">' + reasons.map(x => {
+        const p = tot ? Math.round(dbN(x.count)/tot*100) : 0;
+        return '<div class="db-tkri">'
+          + '<div class="db-tkrt"><b>'+esc(x.reason)+'</b>'
+          +   '<span>'+(x.staff||[]).map(s=>esc(s)).join(' · ')+'</span></div>'
+          + '<div class="db-tkrb"><span style="width:'+p+'%"></span></div>'
+          + '<div class="db-tkrn"><b>'+dbF(x.count)+'</b> مرة · '+p+'%</div>'
+          + '</div>';
+      }).join('') + '</div>', dbF(tot)+' حالة');
+  }
+
+  // ── المهام المتعثّرة ──
+  const probs = d.problem_tasks||[];
+  if(probs.length){
+    out += dbSection('🧩 مهام أغلب الفريق مانفّذهاش',
+      '<div class="db-tkp">' + probs.map(x =>
+        '<div class="db-tkpi'+(x.priority==='high'?' pri':'')+'">'
+        + '<div class="db-tkph">'
+        +   (x.priority==='high'?'<i>عاجل</i>':'')
+        +   '<b>'+esc(x.task)+'</b>'
+        +   '<span>'+dbDate(x.date)+(x.category?' · '+esc(x.category):'')+'</span>'
+        + '</div>'
+        + '<div class="db-tkpn">'
+        +   '<span class="no">❌ '+dbN(x.not_done)+'</span>'
+        +   (dbN(x.done)?'<span class="ok">✅ '+dbN(x.done)+'</span>':'')
+        + '</div>'
+        + ((x.reasons||[]).length
+            ? '<div class="db-tkpr">'+x.reasons.filter(Boolean)
+                .map(rr=>'<span>'+esc(rr)+'</span>').join('')+'</div>'
+            : '')
+        + '</div>').join('') + '</div>');
+  }
+
+  // ── التصنيفات ──
+  const cats = d.categories||[];
+  if(cats.length){
+    const mx = Math.max(1, ...cats.map(x=>dbN(x.tasks)));
+    out += dbSection('🏷️ الأقسام',
+      '<div class="db-list">' + cats.map(x => {
+        const rate = dbN(x.done)+dbN(x.not_done) > 0
+          ? Math.round(dbN(x.done)/(dbN(x.done)+dbN(x.not_done))*100) : 0;
+        return dbBar(esc(x.name), x.tasks, mx, '',
+          '✅ '+dbN(x.done)+' · ❌ '+dbN(x.not_done)+' · تنفيذ '+rate+'%');
+      }).join('') + '</div>');
+  }
+
+  // ── ساعات الرد ──
+  const byHour = d.by_hour||[];
+  if(byHour.length){
+    const mx = Math.max(1, ...byHour.map(x=>dbN(x.count)));
+    const hL = h => h===0?'12ص':h<12?h+'ص':h===12?'12م':(h-12)+'م';
+    let peak=0, pv=0;
+    byHour.forEach(x=>{ if(dbN(x.count)>pv){pv=dbN(x.count);peak=dbN(x.h);} });
+    out += dbSection('🕐 ساعات الرد',
+      '<div class="db-hours">' + Array.from({length:24},(_,h)=>{
+        const it = byHour.find(x=>dbN(x.h)===h);
+        const c = it?dbN(it.count):0;
+        const p = Math.round(c/mx*100);
+        return '<div class="db-hr'+(h===peak&&c?' peak':'')+'" title="'+hL(h)+' · '+c+' رد">'
+          + '<span class="db-hb" style="height:'+Math.max(3,p)+'%"></span>'
+          + '<span class="db-hl">'+(h%3===0?hL(h):'')+'</span></div>';
+      }).join('') + '</div>',
+      pv ? 'الذروة الساعة '+hL(peak) : '');
+  }
+
+  return out;
+}
+
+// ===== الفلاتر والبحث =====
+function dbTkFilters(){
+  return '<div class="db-tkf">'
+    + '<div class="db-tkfr">'
+    +   '<span class="db-tkfl">الفترة</span>'
+    +   '<div class="db-rfp">'
+    +     ['7','14','30','90'].map(x =>
+        '<button class="db-rp'+(_dbTk.preset===x?' on':'')+'" '
+        + 'onclick="dbTkPreset(\''+x+'\')">'+x+' يوم</button>').join('')
+    +     '<button class="db-rp'+(_dbTk.preset==='custom'?' on':'')+'" '
+    +       'onclick="dbTkCustom()">📅 فترة</button>'
+    +   '</div>'
+    + '</div>'
+    + '<div class="db-tkfr">'
+    +   '<span class="db-tkfl">بحث</span>'
+    +   '<div class="db-tksb">'
+    +     '<input id="dbTkQ" type="search" placeholder="ابحثي في المهام أو الأسباب…" '
+    +       'value="'+esc(_dbTk.q)+'" onkeydown="if(event.key===\'Enter\')dbTkSearch()">'
+    +     '<button class="db-rp on" onclick="dbTkSearch()">🔍</button>'
+    +     (_dbTk.results ? '<button class="db-rp" onclick="dbTkClearSearch()">✕ مسح</button>' : '')
+    +   '</div>'
+    + '</div>'
+    + (_dbTk.from && _dbTk.to
+        ? '<div class="db-tkfd">📅 '+esc(_dbTk.from)+' ← '+esc(_dbTk.to)+'</div>'
+        : '')
+    + '</div>';
+}
+
+async function dbTkLoad(){
+  _dbTk.loading = true;
+  _dbTk.results = null;
+  renderDashboard();
+  try{
+    const body = { token: SESSION.token, action:'monitor' };
+    if(_dbTk.from && _dbTk.to){ body.from=_dbTk.from; body.to=_dbTk.to; }
+    _dbTk.data = await callApi('dailyTasks', body) || {};
+  }catch(e){
+    _dbTk.data = { _error: e.message };
+  }
+  _dbTk.loading = false;
+  renderDashboard();
+}
+
+function dbTkPreset(days){
+  _dbTk.preset = String(days);
+  const to = new Date();
+  const from = new Date(); from.setDate(to.getDate() - (Number(days)-1));
+  _dbTk.from = from.toISOString().slice(0,10);
+  _dbTk.to   = to.toISOString().slice(0,10);
+  dbTkLoad();
+}
+
+function dbTkCustom(){
+  const ov = document.createElement('div');
+  ov.className = 'cf-overlay'; ov.style.zIndex='9999';
+  ov.innerHTML = '<div class="cf-box" style="max-width:400px;text-align:right">'
+    + '<div class="cf-title">📅 فترة مخصّصة</div>'
+    + '<div class="lg-field"><label>من</label>'
+    +   '<input id="tkcF" type="date" value="'+esc(_dbTk.from)+'"></div>'
+    + '<div class="lg-field"><label>إلى</label>'
+    +   '<input id="tkcT" type="date" value="'+esc(_dbTk.to)+'"></div>'
+    + '<div class="lg-err" id="tkcE"></div>'
+    + '<div class="cf-btns"><button class="cf-cancel">إلغاء</button>'
+    +   '<button class="cf-yes" id="tkcOk">تطبيق</button></div></div>';
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>ov.classList.add('show'));
+  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
+  ov.querySelector('.cf-cancel').onclick = close;
+  ov.addEventListener('click', e=>{ if(e.target===ov) close(); });
+  ov.querySelector('#tkcOk').onclick = ()=>{
+    const f=ov.querySelector('#tkcF').value, t=ov.querySelector('#tkcT').value;
+    if(!f||!t){ ov.querySelector('#tkcE').textContent='حددي التاريخين'; return; }
+    if(f>t){ ov.querySelector('#tkcE').textContent='البداية بعد النهاية'; return; }
+    _dbTk.from=f; _dbTk.to=t; _dbTk.preset='custom';
+    close(); dbTkLoad();
+  };
+}
+
+async function dbTkSearch(){
+  const q = (document.getElementById('dbTkQ')||{}).value || '';
+  if(!q.trim()){ dbTkClearSearch(); return; }
+  _dbTk.q = q;
+  _dbTk.loading = true;
+  renderDashboard();
+  try{
+    const body = { token: SESSION.token, action:'search', query:q };
+    if(_dbTk.from && _dbTk.to){ body.from=_dbTk.from; body.to=_dbTk.to; }
+    const r = await callApi('dailyTasks', body) || {};
+    _dbTk.results = r.items || [];
+  }catch(e){
+    _dbTk.results = [];
+    toastErr(e.message);
+  }
+  _dbTk.loading = false;
+  renderDashboard();
+}
+
+function dbTkClearSearch(){
+  _dbTk.q = '';
+  _dbTk.results = null;
+  renderDashboard();
+}
+
+function dbTkSearchResults(){
+  const items = _dbTk.results || [];
+  if(!items.length){
+    return '<div class="db-empty">مفيش نتايج لـ "'+esc(_dbTk.q)+'"</div>';
+  }
+  return dbSection('🔍 نتايج البحث',
+    '<div class="db-tksr">' + items.map(x => {
+      const rs = x.results || [];
+      const done = rs.filter(r=>r.done===true);
+      const no   = rs.filter(r=>r.done===false);
+      return '<div class="db-tksi'+(x.priority==='high'?' pri':'')+'">'
+        + '<div class="db-tksh">'
+        +   (x.priority==='high'?'<i>عاجل</i>':'')
+        +   '<b>'+esc(x.title)+'</b>'
+        +   '<span>'+dbDate(x.date)+(x.category?' · '+esc(x.category):'')+'</span>'
+        + '</div>'
+        + (x.detail ? '<div class="db-tksd">'+esc(x.detail)+'</div>' : '')
+        + '<div class="db-tksc">'
+        +   done.map(r=>'<span class="ok">✅ '+esc(r.staff)+'</span>').join('')
+        +   no.map(r=>'<span class="no" title="'+esc(r.reason||'')+'">❌ '+esc(r.staff)+'</span>').join('')
+        + '</div>'
+        + (no.filter(r=>r.reason).length
+            ? '<div class="db-tksr2">'+no.filter(r=>r.reason).map(r =>
+                '<div><b>'+esc(r.staff)+':</b> '+esc(r.reason)+'</div>').join('')+'</div>'
+            : '')
+        + '</div>';
+    }).join('') + '</div>',
+    dbF(items.length)+' نتيجة');
+}
+
+// ===== جدول الفريق =====
+function dbTkStaff(staff, T){
+  if(!staff.length) return '<div class="db-empty">مفيش موظفات</div>';
+  const assigned = dbN(T.tasks);
+
+  const scored = staff.map(s => {
+    const ans = dbN(s.answered), dn = dbN(s.done), nd = dbN(s.not_done);
+    return {
+      ...s, ans, dn, nd,
+      respRate: assigned ? Math.round(ans/assigned*100) : 0,
+      doneRate: ans ? Math.round(dn/ans*100) : 0,
+    };
+  }).sort((a,b)=> b.doneRate - a.doneRate || b.dn - a.dn);
+
+  const mx = Math.max(1, ...scored.map(x=>x.ans));
+
+  return '<div class="db-tkst">' + scored.map((s,i) => {
+    const cls = s.ans===0 ? 'silent' : s.doneRate>=80 ? 'top'
+              : s.doneRate<50 ? 'low' : '';
+    return '<div class="db-tksti '+cls+'">'
+      + '<div class="db-sr">'+(i+1)+'</div>'
+      + '<div class="db-sm">'
+      +   '<div class="db-sn">'+esc(s.emoji||'👤')+' <b>'+esc(s.name)+'</b>'
+      +     (s.ans===0 ? '<span class="db-sg silent">مردّتش</span>'
+                       : '<span class="db-sg">تنفيذ '+s.doneRate+'%</span>')+'</div>'
+      +   '<div class="db-sb"><span style="width:'+Math.round(s.ans/mx*100)+'%"></span></div>'
+      +   '<div class="db-sx">'
+      +     '<span>✅ <b>'+dbF(s.dn)+'</b></span>'
+      +     '<span>❌ <b>'+dbF(s.nd)+'</b></span>'
+      +     '<span>💬 <b>'+s.respRate+'%</b> رد</span>'
+      +     (s.avg_hours!==null && s.avg_hours!==undefined
+          ? '<span>⏱️ <b>'+dbN(s.avg_hours)+'</b> ساعة</span>' : '')
+      +     (dbN(s.days_active) ? '<span>📅 <b>'+dbN(s.days_active)+'</b> يوم</span>' : '')
+      +   '</div>'
+      + '</div>'
+      + '<div class="db-ss"><b>'+s.doneRate+'</b><span>%</span></div>'
+      + '</div>';
+  }).join('') + '</div>';
+}
+
+// ===== يوم بيوم =====
+function dbTkDaily(daily){
+  if(!daily.length) return '<div class="db-empty">مفيش أيام فيها مهام في الفترة دي</div>';
+  return '<div class="db-tkd">' + daily.map(d => {
+    const tk = dbN(d.tasks), dn = dbN(d.done), nd = dbN(d.not_done);
+    const ansS = dbN(d.answered_staff), allS = dbN(d.staff_count);
+    const rate = (dn+nd) ? Math.round(dn/(dn+nd)*100) : 0;
+    const cover = allS ? Math.round(ansS/allS*100) : 0;
+    return '<div class="db-tkdi" onclick="dbTkOpenDay(\''+esc(d.date)+'\')">'
+      + '<div class="db-tkdh">'
+      +   '<b>'+dbDate(d.date)+'</b>'
+      +   '<span>'+esc(d.title || '')+'</span>'
+      + '</div>'
+      + '<div class="db-tkdb">'
+      +   '<div class="db-tkdbar"><span class="ok" style="width:'+(tk?dn/(dn+nd||1)*100:0)+'%"></span></div>'
+      + '</div>'
+      + '<div class="db-tkdn">'
+      +   '<span>📋 <b>'+tk+'</b></span>'
+      +   '<span class="ok">✅ <b>'+dn+'</b></span>'
+      +   '<span class="no">❌ <b>'+nd+'</b></span>'
+      +   '<span>👥 <b>'+ansS+'/'+allS+'</b> ردّوا</span>'
+      +   '<span class="rate">'+rate+'%</span>'
+      + '</div></div>';
+  }).join('') + '</div>';
+}
+
+function dbTkOpenDay(date){
+  closeDashboard();
+  setTimeout(()=> openTasks(date), 260);
 }
 
 // ===== تصدير النتائج المفلترة إلى CSV =====
