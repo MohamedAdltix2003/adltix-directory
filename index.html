@@ -3458,6 +3458,270 @@
     .db-rt{ font-size:11px }
     .db-rt th, .db-rt td{ padding:7px 5px }
   }
+
+  /* ==========================================================
+     المهام اليومية
+     ========================================================== */
+  .hdr-tasks{
+    display:flex; align-items:center; gap:8px; flex-shrink:0; position:relative;
+    font-family:inherit; font-size:13px; font-weight:800; cursor:pointer;
+    padding:11px 16px; border-radius:14px;
+    border:1px solid var(--line); background:var(--surface); color:var(--ink);
+    transition:border-color .15s, background .15s, transform .14s;
+  }
+  .hdr-tasks:hover{ border-color:var(--brand); background:var(--brand-soft);
+                    color:var(--brand); transform:translateY(-1px) }
+  .hdr-badge{
+    position:absolute; top:-6px; inset-inline-end:-6px;
+    min-width:20px; height:20px; padding:0 5px; border-radius:999px;
+    display:grid; place-items:center; font-size:11px; font-weight:800;
+    background:#DC2626; color:#fff; box-shadow:0 2px 8px rgba(220,38,38,.4);
+    animation:tkPulse 2s ease-in-out infinite;
+  }
+  @keyframes tkPulse{ 0%,100%{transform:scale(1)} 50%{transform:scale(1.12)} }
+
+  .tk-ov{ align-items:stretch !important; padding:0 !important }
+  .tk-shell{
+    width:100%; height:100vh; overflow-y:auto; position:relative; z-index:2;
+    background:
+      radial-gradient(900px 420px at 85% -6%, rgba(228,85,63,.11), transparent 60%),
+      var(--bg);
+  }
+
+  .tk-top{
+    position:sticky; top:0; z-index:5;
+    display:flex; align-items:center; gap:13px; flex-wrap:wrap;
+    padding:14px 20px;
+    background:linear-gradient(135deg,#2A1310,#4A1F16);
+    box-shadow:0 5px 20px rgba(42,19,16,.2);
+  }
+  .tk-brand{ display:flex; align-items:center; gap:11px; flex:1; min-width:180px }
+  .tk-i{ font-size:24px }
+  .tk-brand b{ display:block; font-size:16px; font-weight:900; color:#fff }
+  .tk-brand span{ display:block; font-size:11.5px; color:rgba(255,255,255,.65) }
+  .tk-nav{ display:flex; align-items:center; gap:6px }
+  .tk-nb{
+    width:32px; height:32px; border-radius:9px; cursor:pointer;
+    border:1px solid rgba(255,255,255,.2); background:rgba(255,255,255,.08);
+    color:#fff; font-size:12px; transition:background .15s;
+  }
+  .tk-nb:hover:not(:disabled){ background:rgba(255,255,255,.2) }
+  .tk-nb:disabled{ opacity:.35; cursor:not-allowed }
+  .tk-dt{
+    font-family:inherit; font-size:12.5px; font-weight:700; direction:ltr;
+    padding:7px 11px; border-radius:10px; cursor:pointer;
+    border:1px solid rgba(255,255,255,.2); background:rgba(255,255,255,.1); color:#fff;
+  }
+  .tk-dt::-webkit-calendar-picker-indicator{ filter:invert(1); opacity:.7; cursor:pointer }
+
+  .tk-body{ padding:20px; max-width:900px; margin:auto }
+
+  .tk-empty{
+    display:flex; flex-direction:column; align-items:center; gap:9px;
+    padding:60px 20px; text-align:center;
+  }
+  .tk-empty span{ font-size:46px }
+  .tk-empty b{ font-size:16px; font-weight:800; color:var(--ink) }
+  .tk-empty i{ font-style:normal; font-size:13px; color:var(--muted) }
+
+  /* ترويسة اليوم */
+  .tk-head{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    flex-wrap:wrap; padding:15px 17px; border-radius:16px; margin-bottom:14px;
+    background:var(--surface); border:1px solid var(--line);
+    box-shadow:0 2px 10px rgba(0,0,0,.04);
+  }
+  .tk-ht b{ display:block; font-size:15.5px; font-weight:800; color:var(--ink) }
+  .tk-ht span{ display:block; font-size:12px; color:var(--muted); margin-top:2px }
+  .tk-hact{ display:flex; gap:7px }
+  .tk-ab{
+    font-family:inherit; font-size:12px; font-weight:800; cursor:pointer;
+    padding:8px 13px; border-radius:10px;
+    border:1px solid var(--line); background:transparent; color:var(--ink);
+    transition:background .15s, border-color .15s, color .15s;
+  }
+  .tk-ab:hover{ background:var(--brand-soft); border-color:var(--brand); color:var(--brand) }
+  .tk-ab.danger:hover{ background:#FEE2E2; border-color:#DC2626; color:#DC2626 }
+
+  /* شريط تقدّم الموظفة */
+  .tk-prog{
+    padding:14px 17px; border-radius:15px; margin-bottom:16px;
+    background:var(--surface); border:1px solid var(--line);
+  }
+  .tk-pb{ height:9px; border-radius:99px; overflow:hidden; margin-bottom:10px;
+          background:color-mix(in srgb,var(--line) 50%,transparent) }
+  .tk-pb span{ display:block; height:100%; border-radius:99px;
+               background:linear-gradient(90deg,#16A34A,#4ADE80); transition:width .4s ease }
+  .tk-pn{ display:flex; gap:9px; flex-wrap:wrap; font-size:12px; font-weight:800 }
+  .tk-pn span{ padding:4px 11px; border-radius:9px }
+  .tk-pn .ok{ background:#DCFCE7; color:#15803D }
+  .tk-pn .no{ background:#FEE2E2; color:#B91C1C }
+  .tk-pn .pd{ background:#FEF3C7; color:#92400E }
+  .tk-pn .dn{ background:var(--brand-soft); color:var(--brand) }
+  body.dark .tk-pn .ok{ background:#14432a; color:#86efac }
+  body.dark .tk-pn .no{ background:#4a1414; color:#fca5a5 }
+  body.dark .tk-pn .pd{ background:#4a3510; color:#fcd34d }
+
+  /* التصنيفات */
+  .tk-cat{ margin-bottom:18px }
+  .tk-ch{
+    display:flex; align-items:center; gap:9px; margin-bottom:10px;
+    font-size:14.5px; color:var(--ink);
+  }
+  .tk-ch b{ font-weight:800 }
+  .tk-ch span{
+    font-size:11px; font-weight:800; padding:2px 9px; border-radius:999px;
+    background:var(--brand-soft); color:var(--brand);
+  }
+
+  /* المهمة */
+  .tk-t{
+    display:flex; align-items:flex-start; gap:12px;
+    padding:14px 16px; border-radius:14px; margin-bottom:8px;
+    background:var(--surface); border:1.5px solid var(--line);
+    transition:border-color .16s, background .16s, transform .14s;
+  }
+  .tk-t:hover{ transform:translateX(-2px) }
+  .tk-t.done{ background:#F0FDF4; border-color:#86EFAC }
+  .tk-t.no  { background:#FEF2F2; border-color:#FCA5A5 }
+  .tk-t.pri { border-inline-start-width:4px; border-inline-start-color:#DC2626 }
+  body.dark .tk-t.done{ background:#0f2e1c } body.dark .tk-t.no{ background:#2e1010 }
+
+  .tk-tm{ flex:1; min-width:0 }
+  .tk-pri{
+    display:inline-block; font-size:10px; font-weight:800;
+    padding:2px 8px; border-radius:999px; margin-bottom:5px;
+    background:#FEE2E2; color:#B91C1C;
+  }
+  body.dark .tk-pri{ background:#4a1414; color:#fca5a5 }
+  /* ⚠️ النص بيتعرض زي ما هو — عربي أو إنجليزي أو مختلط */
+  .tk-tt{
+    display:block; font-size:14px; font-weight:700; color:var(--ink);
+    line-height:1.65; word-break:break-word;
+  }
+  .tk-td{
+    display:block; font-size:12px; color:var(--muted); margin-top:4px;
+    padding-inline-start:10px; border-inline-start:2px solid var(--line);
+  }
+  .tk-rs{
+    display:block; font-size:12px; font-weight:700; color:#B91C1C;
+    margin-top:8px; padding:7px 11px; border-radius:9px; background:#FEE2E2;
+  }
+  body.dark .tk-rs{ background:#4a1414; color:#fca5a5 }
+
+  .tk-ta{ display:flex; gap:6px; flex-shrink:0 }
+  .tk-y, .tk-n{
+    width:40px; height:40px; border-radius:12px; cursor:pointer;
+    font-size:17px; font-weight:800; line-height:1;
+    border:1.5px solid var(--line); background:transparent; color:var(--muted);
+    transition:all .16s;
+  }
+  .tk-y:hover{ border-color:#16A34A; background:#DCFCE7; color:#15803D }
+  .tk-n:hover{ border-color:#DC2626; background:#FEE2E2; color:#B91C1C }
+  .tk-y.on{ background:#16A34A; border-color:#16A34A; color:#fff;
+            box-shadow:0 3px 10px rgba(22,163,74,.32) }
+  .tk-n.on{ background:#DC2626; border-color:#DC2626; color:#fff;
+            box-shadow:0 3px 10px rgba(220,38,38,.32) }
+
+  /* عرض المديرة */
+  .tk-t.admin{ cursor:default }
+  .tk-t.admin:hover{ transform:none }
+  .tk-scs{ display:flex; flex-wrap:wrap; gap:6px; margin-top:10px }
+  .tk-sc{
+    font-size:11px; font-weight:700; padding:4px 10px; border-radius:9px;
+    background:color-mix(in srgb,var(--line) 40%,transparent); color:var(--muted);
+  }
+  .tk-sc.ok  { background:#DCFCE7; color:#15803D }
+  .tk-sc.no  { background:#FEE2E2; color:#B91C1C; cursor:help }
+  .tk-sc.wait{ background:#FEF3C7; color:#92400E }
+  body.dark .tk-sc.ok{ background:#14432a; color:#86efac }
+  body.dark .tk-sc.no{ background:#4a1414; color:#fca5a5 }
+  body.dark .tk-sc.wait{ background:#4a3510; color:#fcd34d }
+  .tk-rsl{ margin-top:10px; display:flex; flex-direction:column; gap:5px }
+  .tk-rsi{
+    font-size:12px; line-height:1.6; padding:7px 11px; border-radius:9px;
+    background:#FEF2F2; color:#991B1B;
+  }
+  .tk-rsi b{ font-weight:800 }
+  body.dark .tk-rsi{ background:#2e1010; color:#fca5a5 }
+
+  /* شاشة الإدخال */
+  .tk-comp{ }
+  .tk-ci{ display:flex; gap:12px; align-items:flex-start; margin-bottom:14px }
+  .tk-ci span{ font-size:26px }
+  .tk-ci b{ display:block; font-size:16px; font-weight:800; color:var(--ink) }
+  .tk-ci i{ display:block; font-style:normal; font-size:12.5px;
+            color:var(--muted); margin-top:3px }
+  .tk-raw{
+    width:100%; font-family:inherit; font-size:13.5px; line-height:1.85;
+    padding:15px; border-radius:15px; resize:vertical;
+    border:1.5px solid var(--line); background:var(--surface); color:var(--ink);
+    transition:border-color .15s;
+  }
+  .tk-raw:focus{ outline:none; border-color:var(--brand);
+                 box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 14%,transparent) }
+  .tk-cact{ display:flex; gap:8px; margin-top:11px }
+  .tk-cb{
+    font-family:inherit; font-size:13px; font-weight:800; cursor:pointer;
+    padding:11px 20px; border-radius:12px; border:1px solid var(--line);
+    background:transparent; color:var(--ink);
+    transition:filter .15s, transform .14s, background .15s;
+  }
+  .tk-cb.main{ background:linear-gradient(135deg,#C6432D,#E4553F); color:#fff;
+               border-color:transparent; box-shadow:0 3px 12px rgba(198,67,45,.3) }
+  .tk-cb.main:hover{ filter:brightness(1.07); transform:translateY(-1px) }
+  .tk-cb.ghost:hover{ background:var(--brand-soft); border-color:var(--brand) }
+  .tk-cb.wide{ width:100%; margin-top:14px; padding:13px }
+
+  .tk-prev{
+    margin-top:18px; padding:16px; border-radius:16px;
+    background:var(--surface); border:1.5px solid var(--brand);
+  }
+  .tk-ph{ font-size:14px; font-weight:700; color:var(--ink); margin-bottom:13px }
+  .tk-ph b{ color:var(--brand); font-weight:900 }
+  .tk-ph span{ color:var(--muted); font-size:12.5px }
+  .tk-pc{ margin-bottom:13px }
+  .tk-pc > b{ display:block; font-size:12.5px; font-weight:800;
+              color:var(--brand); margin-bottom:6px }
+  .tk-pt{
+    font-size:13px; line-height:1.6; padding:8px 12px; border-radius:10px;
+    margin-bottom:4px; color:var(--ink);
+    background:color-mix(in srgb,var(--line) 24%,transparent);
+  }
+  .tk-pt.pri{ border-inline-start:3px solid #DC2626 }
+  .tk-pt i{ font-style:normal; font-size:10px; font-weight:800;
+            padding:1px 7px; border-radius:999px; margin-inline-end:7px;
+            background:#FEE2E2; color:#B91C1C }
+  .tk-pt span{ display:block; font-size:11.5px; color:var(--muted); margin-top:3px }
+  .tk-warn{
+    margin-top:14px; padding:13px 15px; border-radius:12px;
+    background:#FEF3C7; color:#92400E; font-size:13px; font-weight:700;
+  }
+  body.dark .tk-warn{ background:#4a3510; color:#fcd34d }
+
+  /* أسباب سريعة */
+  .tk-quick{ display:flex; flex-wrap:wrap; gap:6px; margin:10px 0 14px }
+  .tk-qb{
+    font-family:inherit; font-size:11.5px; font-weight:700; cursor:pointer;
+    padding:6px 12px; border-radius:9px;
+    border:1px solid var(--line); background:transparent; color:var(--muted);
+    transition:background .15s, border-color .15s, color .15s;
+  }
+  .tk-qb:hover{ background:var(--brand-soft); border-color:var(--brand); color:var(--brand) }
+
+  @media (max-width:640px){
+    .hdr-tasks span{ display:none }
+    .hdr-tasks{ padding:10px; border-radius:12px }
+    .tk-top{ padding:11px 13px; gap:10px }
+    .tk-body{ padding:14px 13px }
+    .tk-t{ padding:12px 13px; gap:9px }
+    .tk-y, .tk-n{ width:36px; height:36px; font-size:15px }
+    .tk-tt{ font-size:13px }
+  }
+  @media (prefers-reduced-motion:reduce){
+    .hdr-badge{ animation:none }
+    .tk-t:hover{ transform:none }
+  }
 </style>
 </head>
 <body>
@@ -3604,6 +3868,13 @@
       <div class="logo">A</div>
       <div><h1>Adltix</h1><div class="sub">منصة اكتشاف المؤثرين</div></div>
     </div>
+    <button class="hdr-tasks" id="hdrTasksBtn" style="display:none" onclick="openTasks()">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+      </svg>
+      <span>مهام اليوم</span>
+      <b class="hdr-badge" id="tasksBadge" style="display:none">0</b>
+    </button>
     <button class="hdr-dash" id="hdrDashBtn" style="display:none" onclick="openDashboard()">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/>
@@ -3854,6 +4125,7 @@ const FN_MAP = {
   checkQuota:     "check-quota",
   staffReport:    "staff-report",
   dashboard:      "dashboard",
+  dailyTasks:     "daily-tasks",
   sendReport:     "send-report",
   reportSettings: "report-settings",
   getProofs:      "get-proofs",
@@ -8581,6 +8853,420 @@ function dbCustomRange(){
   };
 }
 
+
+// ==========================================================
+// المهام اليومية
+// ==========================================================
+// المديرة بتلصق رسالة الواتساب زي ما هي، والمحلّل بيقسّمها.
+// الموظفة بتشوف المهام **بنصها الأصلي** — عربي أو إنجليزي أو مختلط —
+// وجنب كل مهمة ✅ و ❌، ولو ❌ لازم تكتب السبب.
+let _tasks = { date:'', data:null, isAdmin:false, me:'', parsed:null, loading:false };
+
+// إشعار: في مهام محتاجة رد؟
+async function checkPendingTasks(){
+  try{
+    const r = await callApi('dailyTasks', { token: SESSION.token, action:'pending' });
+    const badge = document.getElementById('tasksBadge');
+    const n = r && Number(r.pending) > 0 ? Number(r.pending) : 0;
+    if(badge){
+      badge.textContent = n;
+      badge.style.display = n ? '' : 'none';
+    }
+    // أول مرة بس في الجلسة
+    if(n && !sessionStorage.getItem('tasksNotified')){
+      sessionStorage.setItem('tasksNotified','1');
+      setTimeout(()=> toast('📋 عندك '+n+' مهمة النهاردة محتاجة رد','info',7000), 1400);
+    }
+  }catch(e){ /* مايوقفش الموقع */ }
+}
+
+function todayISO(){
+  return new Date(new Date().toLocaleString('en-US',{timeZone:'Africa/Cairo'}))
+    .toISOString().slice(0,10);
+}
+
+async function openTasks(date){
+  _tasks.date = date || todayISO();
+  const ov = document.createElement('div');
+  ov.className = 'cf-overlay tk-ov'; ov.id = 'tkOv';
+  ov.innerHTML = '<div class="tk-shell"><div class="db-load">'
+    + '<span class="lm-spin"></span> بنحمّل المهام…</div></div>';
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>ov.classList.add('show'));
+  document.body.classList.add('db-open');
+  loadTasks();
+}
+
+function closeTasks(){
+  const ov = document.getElementById('tkOv');
+  if(!ov) return;
+  ov.classList.remove('show');
+  document.body.classList.remove('db-open');
+  setTimeout(()=>ov.remove(), 240);
+  checkPendingTasks();
+}
+
+async function loadTasks(){
+  const shell = document.querySelector('#tkOv .tk-shell');
+  if(!shell) return;
+  shell.innerHTML = '<div class="db-load"><span class="lm-spin"></span> بنحمّل…</div>';
+  try{
+    const r = await callApi('dailyTasks', {
+      token: SESSION.token, action:'get', date:_tasks.date
+    });
+    _tasks.data    = r.result;
+    _tasks.isAdmin = !!r.isAdmin;
+    _tasks.me      = r.me || '';
+    renderTasks();
+  }catch(e){
+    shell.innerHTML = '<div class="db-err">'+esc(e.message||'مش قادر أحمّل المهام')+'</div>'
+      + '<div style="text-align:center;padding:14px">'
+      + '<button class="rp-btn" onclick="closeTasks()">إغلاق</button></div>';
+  }
+}
+
+function tkShiftDate(d){
+  const cur = new Date(_tasks.date + 'T00:00:00Z');
+  cur.setUTCDate(cur.getUTCDate() + d);
+  _tasks.date = cur.toISOString().slice(0,10);
+  _tasks.parsed = null;
+  loadTasks();
+}
+
+function tkPickDate(v){
+  if(!v) return;
+  _tasks.date = v;
+  _tasks.parsed = null;
+  loadTasks();
+}
+
+// ===== الرسم =====
+function renderTasks(){
+  const shell = document.querySelector('#tkOv .tk-shell');
+  if(!shell) return;
+  const d = _tasks.data;
+  const isToday = _tasks.date === todayISO();
+
+  let out =
+      '<div class="tk-top">'
+    +   '<div class="tk-brand">'
+    +     '<span class="tk-i">📋</span>'
+    +     '<div><b>المهام اليومية</b>'
+    +       '<span>'+esc(tkDateLabel(_tasks.date))+(isToday?' · النهاردة':'')+'</span></div>'
+    +   '</div>'
+    +   '<div class="tk-nav">'
+    +     '<button class="tk-nb" onclick="tkShiftDate(-1)" title="اليوم اللي فات">◀</button>'
+    +     '<input type="date" class="tk-dt" value="'+esc(_tasks.date)+'" '
+    +       'onchange="tkPickDate(this.value)">'
+    +     '<button class="tk-nb"'+(isToday?' disabled':'')+' onclick="tkShiftDate(1)" title="اليوم اللي بعده">▶</button>'
+    +   '</div>'
+    +   '<button class="db-x" onclick="closeTasks()">✕</button>'
+    + '</div>'
+    + '<div class="tk-body">';
+
+  // مفيش مهام لليوم ده
+  if(!d || !d.day_id){
+    out += _tasks.isAdmin
+      ? tkComposer()
+      : '<div class="tk-empty"><span>🌿</span>'
+        + '<b>مفيش مهام لليوم ده</b>'
+        + '<i>لما المديرة تبعت المهام هتظهر هنا</i></div>';
+    shell.innerHTML = out + '</div>';
+    return;
+  }
+
+  // ترويسة اليوم
+  out += '<div class="tk-head">'
+    + '<div class="tk-ht"><b>'+esc(d.title || 'مهام اليوم')+'</b>'
+    +   '<span>'+dbF(d.total_tasks)+' مهمة'
+    +   (d.created_by ? ' · من '+esc(d.created_by) : '')+'</span></div>';
+
+  if(_tasks.isAdmin){
+    out += '<div class="tk-hact">'
+      +  '<button class="tk-ab" onclick="tkEditDay()">✏️ تعديل</button>'
+      +  '<button class="tk-ab danger" onclick="tkDeleteDay()">🗑️ حذف</button>'
+      + '</div>';
+  }
+  out += '</div>';
+
+  // شريط تقدّم الموظفة
+  if(!_tasks.isAdmin){
+    const mine = (d.staff||[])[0] || {};
+    const total = dbN(mine.total), done = dbN(mine.done);
+    const nd = dbN(mine.not_done), pend = dbN(mine.pending);
+    const pct = total ? Math.round((done+nd)/total*100) : 0;
+    out += '<div class="tk-prog">'
+      + '<div class="tk-pb"><span style="width:'+pct+'%"></span></div>'
+      + '<div class="tk-pn">'
+      +   '<span class="ok">✅ '+done+'</span>'
+      +   '<span class="no">❌ '+nd+'</span>'
+      +   (pend ? '<span class="pd">⏳ '+pend+' لسه</span>' : '<span class="dn">تمام خلصتي 🎉</span>')
+      + '</div></div>';
+  }
+
+  // المهام
+  const results = {};
+  for(const r of (d.results||[])){
+    (results[r.task_id] = results[r.task_id] || {})[r.staff] = r;
+  }
+
+  for(const cat of (d.categories||[])){
+    out += '<div class="tk-cat">'
+      + '<div class="tk-ch">'+cat.icon+' <b>'+esc(cat.label)+'</b>'
+      +   '<span>'+cat.tasks.length+'</span></div>';
+
+    for(const t of cat.tasks){
+      out += _tasks.isAdmin
+        ? tkTaskAdmin(t, results[t.id]||{}, d.staff||[])
+        : tkTaskStaff(t, (results[t.id]||{})[_tasks.me]);
+    }
+    out += '</div>';
+  }
+
+  shell.innerHTML = out + '</div>';
+}
+
+// ===== مهمة — عرض الموظفة =====
+function tkTaskStaff(t, res){
+  const done = res && res.done === true;
+  const no   = res && res.done === false;
+  const pri  = t.priority === 'high';
+
+  return '<div class="tk-t'+(done?' done':no?' no':'')+(pri?' pri':'')+'" id="tkT'+t.id+'">'
+    + '<div class="tk-tm">'
+    +   (pri ? '<span class="tk-pri">عاجل</span>' : '')
+    // ⚠️ النص بيتعرض زي ما هو بالظبط — مفيش ترجمة ولا تغيير
+    +   '<span class="tk-tt">'+esc(t.title)+'</span>'
+    +   (t.detail ? '<span class="tk-td">'+esc(t.detail)+'</span>' : '')
+    +   (no && res.reason ? '<span class="tk-rs">❌ '+esc(res.reason)+'</span>' : '')
+    + '</div>'
+    + '<div class="tk-ta">'
+    +   '<button class="tk-y'+(done?' on':'')+'" onclick="tkAnswer('+t.id+',true)" title="اتعملت">✓</button>'
+    +   '<button class="tk-n'+(no?' on':'')+'" onclick="tkAskReason('+t.id+')" title="متعملتش">✕</button>'
+    + '</div></div>';
+}
+
+// ===== مهمة — عرض المديرة =====
+function tkTaskAdmin(t, byStaff, staffList){
+  const pri = t.priority === 'high';
+  let chips = '';
+  for(const s of staffList){
+    const r = byStaff[s.name];
+    const cls = !r || r.done === null || r.done === undefined ? 'wait'
+              : r.done ? 'ok' : 'no';
+    const ic  = cls === 'ok' ? '✅' : cls === 'no' ? '❌' : '⏳';
+    const tip = cls === 'no' && r.reason ? esc(r.reason) : '';
+    chips += '<span class="tk-sc '+cls+'"'+(tip?' title="'+tip+'"':'')+'>'
+           + ic+' '+esc(s.name)+'</span>';
+  }
+
+  // الأسباب المكتوبة
+  const reasons = staffList
+    .map(s => byStaff[s.name])
+    .filter(r => r && r.done === false && r.reason);
+
+  return '<div class="tk-t admin'+(pri?' pri':'')+'">'
+    + '<div class="tk-tm">'
+    +   (pri ? '<span class="tk-pri">عاجل</span>' : '')
+    +   '<span class="tk-tt">'+esc(t.title)+'</span>'
+    +   (t.detail ? '<span class="tk-td">'+esc(t.detail)+'</span>' : '')
+    +   '<div class="tk-scs">'+chips+'</div>'
+    +   (reasons.length
+        ? '<div class="tk-rsl">' + reasons.map(r =>
+            '<div class="tk-rsi"><b>'+esc(r.staff)+':</b> '+esc(r.reason)+'</div>').join('')
+          + '</div>'
+        : '')
+    + '</div></div>';
+}
+
+// ===== الرد =====
+async function tkAnswer(taskId, done, reason){
+  try{
+    await callApi('dailyTasks', {
+      token: SESSION.token, action:'answer',
+      task_id: taskId, done, reason: reason || ''
+    });
+    // تحديث محلي سريع
+    const d = _tasks.data;
+    d.results = (d.results||[]).filter(r => !(r.task_id===taskId && r.staff===_tasks.me));
+    d.results.push({ task_id:taskId, staff:_tasks.me, done, reason:reason||null,
+                     at:new Date().toISOString() });
+    const mine = (d.staff||[])[0];
+    if(mine){
+      const rs = d.results.filter(r=>r.staff===_tasks.me);
+      mine.done     = rs.filter(r=>r.done===true).length;
+      mine.not_done = rs.filter(r=>r.done===false).length;
+      mine.pending  = dbN(mine.total) - rs.filter(r=>r.done!==null&&r.done!==undefined).length;
+    }
+    renderTasks();
+    checkPendingTasks();
+  }catch(e){ toastErr(e.message || 'مش قادر أسجّل'); }
+}
+
+// نافذة السبب — إجبارية
+function tkAskReason(taskId){
+  const t = tkFindTask(taskId);
+  const ov = document.createElement('div');
+  ov.className = 'cf-overlay'; ov.style.zIndex = '10000';
+  ov.innerHTML = '<div class="cf-box" style="max-width:440px;text-align:right">'
+    + '<div class="cf-title">❌ المهمة دي متعملتش</div>'
+    + '<div class="cf-msg">'+esc(t ? t.title : '')+'</div>'
+    + '<div class="lg-field"><label>ليه متعملتش؟</label>'
+    +   '<textarea id="tkRs" rows="3" placeholder="اكتبي السبب بالتفصيل…"></textarea></div>'
+    + '<div class="tk-quick">'
+    +   ['مفيش وقت','في انتظار رد العميل','محتاجة معلومات','مشكلة تقنية','اتأجلت لبكرة']
+        .map(x => '<button class="tk-qb" onclick="tkQuick(this,\''+x+'\')">'+x+'</button>').join('')
+    + '</div>'
+    + '<div class="lg-err" id="tkRsE"></div>'
+    + '<div class="cf-btns">'
+    +   '<button class="cf-cancel" data-x="1">إلغاء</button>'
+    +   '<button class="cf-yes" id="tkRsOk">تأكيد</button>'
+    + '</div></div>';
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>ov.classList.add('show'));
+  setTimeout(()=>{ const i=ov.querySelector('#tkRs'); if(i) i.focus(); }, 90);
+
+  const close = ()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
+  ov.querySelector('.cf-cancel').onclick = close;
+  ov.addEventListener('click', e=>{ if(e.target===ov) close(); });
+
+  ov.querySelector('#tkRsOk').onclick = async ()=>{
+    const v = (ov.querySelector('#tkRs').value || '').trim();
+    if(!v){ ov.querySelector('#tkRsE').textContent = 'لازم تكتبي السبب'; return; }
+    close();
+    await tkAnswer(taskId, false, v);
+  };
+}
+
+function tkQuick(btn, text){
+  const box = btn.closest('.cf-box').querySelector('#tkRs');
+  box.value = box.value ? box.value + ' · ' + text : text;
+  box.focus();
+}
+
+function tkFindTask(id){
+  for(const c of (_tasks.data?.categories||[]))
+    for(const t of c.tasks) if(t.id === id) return t;
+  return null;
+}
+
+function tkDateLabel(v){
+  const M = ['يناير','فبراير','مارس','إبريل','مايو','يونيو',
+             'يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  const D = ['الأحد','الاتنين','التلات','الأربع','الخميس','الجمعة','السبت'];
+  const d = new Date(v+'T00:00:00Z');
+  if(isNaN(d)) return v;
+  return D[d.getUTCDay()] + ' ' + d.getUTCDate() + ' ' + M[d.getUTCMonth()];
+}
+
+
+// ==========================================================
+// شاشة إدخال المهام — للمديرة
+// ==========================================================
+// تلصق رسالة الواتساب زي ما هي، والمحلّل يقسّمها لتصنيفات ومهام.
+// المعاينة قبل النشر عشان تتأكد إن التقسيم صح.
+function tkComposer(){
+  const p = _tasks.parsed;
+
+  let out = '<div class="tk-comp">'
+    + '<div class="tk-ci"><span>✍️</span>'
+    +   '<div><b>ضيفي مهام '+esc(tkDateLabel(_tasks.date))+'</b>'
+    +     '<i>الصقي رسالة الواتساب زي ما هي والنظام هيقسّمها لوحده</i></div></div>'
+    + '<textarea id="tkRaw" class="tk-raw" rows="9" '
+    +   'placeholder="الصقي المهام هنا…\n\nمثال:\n📌 Tasks 19 July 2026\n🔸 Operation\n1 - Metrobrazil Creative\n2 - Noon Gcc Creative\n🔸 Following-up\n🔹 فولو اب على العملاء">'
+    +   esc(p ? p.raw || '' : '') + '</textarea>'
+    + '<div class="tk-cact">'
+    +   '<button class="tk-cb main" onclick="tkParse()">🔍 حلّل المهام</button>'
+    +   (p ? '<button class="tk-cb ghost" onclick="tkClearParse()">مسح</button>' : '')
+    + '</div>';
+
+  // المعاينة
+  if(p && p.tasks && p.tasks.length){
+    const byCat = {};
+    for(const t of p.tasks) (byCat[t.category_ar] = byCat[t.category_ar] || []).push(t);
+
+    out += '<div class="tk-prev">'
+      + '<div class="tk-ph">✅ اتقسّمت لـ <b>'+p.tasks.length+'</b> مهمة'
+      +   (p.title ? ' · <span>'+esc(p.title)+'</span>' : '')+'</div>';
+
+    for(const cat in byCat){
+      out += '<div class="tk-pc"><b>'+esc(cat)+'</b>';
+      for(const t of byCat[cat]){
+        out += '<div class="tk-pt'+(t.priority==='high'?' pri':'')+'">'
+          + (t.priority==='high' ? '<i>عاجل</i>' : '')
+          + esc(t.title)
+          + (t.detail ? '<span>'+esc(t.detail)+'</span>' : '')
+          + '</div>';
+      }
+      out += '</div>';
+    }
+
+    out += '<button class="tk-cb main wide" onclick="tkPublish()">📤 انشري المهام للفريق</button>'
+      + '</div>';
+  } else if(p && p.tasks && !p.tasks.length){
+    out += '<div class="tk-warn">مالقيتش أي مهام في النص — اتأكدي إن كل مهمة في سطر لوحدها</div>';
+  }
+
+  return out + '</div>';
+}
+
+async function tkParse(){
+  const raw = (document.getElementById('tkRaw')||{}).value || '';
+  if(!raw.trim()){ toastErr('الصقي المهام الأول'); return; }
+  try{
+    const r = await callApi('dailyTasks', {
+      token: SESSION.token, action:'parse', raw
+    });
+    _tasks.parsed = { ...r, raw };
+    renderTasks();
+  }catch(e){ toastErr(e.message || 'مش قادر أحلّل'); }
+}
+
+function tkClearParse(){
+  _tasks.parsed = null;
+  renderTasks();
+}
+
+async function tkPublish(){
+  const p = _tasks.parsed;
+  if(!p || !p.tasks || !p.tasks.length) return;
+  try{
+    const r = await callApi('dailyTasks', {
+      token: SESSION.token, action:'publish',
+      date: _tasks.date, title: p.title, raw: p.raw, tasks: p.tasks
+    });
+    toastOk('اتنشرت ✅ — '+r.count+' مهمة للفريق');
+    _tasks.parsed = null;
+    loadTasks();
+  }catch(e){ toastErr(e.message || 'مش قادر أنشر'); }
+}
+
+function tkEditDay(){
+  const d = _tasks.data;
+  _tasks.parsed = null;
+  _tasks.data = null;
+  renderTasks();
+  // نحط النص الأصلي لو موجود
+  setTimeout(()=>{
+    const box = document.getElementById('tkRaw');
+    if(box && d && d.raw_text) box.value = d.raw_text;
+  }, 60);
+}
+
+async function tkDeleteDay(){
+  const ok = await showConfirm('حذف مهام اليوم؟',
+    'هيتشال اليوم كله بكل الردود عليه. مش هينفع ترجّعه.', 'حذف', 'danger');
+  if(!ok) return;
+  try{
+    await callApi('dailyTasks', {
+      token: SESSION.token, action:'deleteDay', date:_tasks.date
+    });
+    toastOk('اتشال');
+    _tasks.parsed = null;
+    loadTasks();
+  }catch(e){ toastErr(e.message); }
+}
+
 // ===== تصدير النتائج المفلترة إلى CSV =====
 // بيصدّر اللي ظاهر قدامك بالظبط بعد الفلترة — مش القاعدة كلها.
 // كله بيحصل في المتصفح: صفر طلبات للسيرفر، وشغّال حتى على 14 ألف صف.
@@ -9349,6 +10035,10 @@ function updateUIForRole() {
   // 📊 الداشبورد للأدمن والمديرين بس
   const hdrDash = document.getElementById('hdrDashBtn');
   if (hdrDash) hdrDash.style.display = (logged && isAdminSession()) ? '' : 'none';
+  // 📋 المهام اليومية — للكل
+  const hdrTasks = document.getElementById('hdrTasksBtn');
+  if (hdrTasks) hdrTasks.style.display = logged ? '' : 'none';
+  if (logged) checkPendingTasks();
 
   // صفوف الفلاتر دي للأدمن بس — بنخفيها عن الموظفة
   // عشان ماتاخدش مساحة فاضية وتزوّد التمرير من غير فايدة
