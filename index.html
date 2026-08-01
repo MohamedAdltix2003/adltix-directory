@@ -4131,6 +4131,48 @@
     .tg-card{ padding:12px 13px }
     .tg-h b{ font-size:20px }
   }
+
+  /* شارة المصدر */
+  .tg-tag{
+    position:absolute; top:0; inset-inline-end:0;
+    font-size:9.5px; font-weight:800; padding:4px 11px;
+    border-end-start-radius:11px;
+  }
+  .tg-tag.own { background:var(--brand); color:#fff }
+  .tg-tag.site{ background:#2563EB; color:#fff }
+  .tg-card{ padding-top:20px }
+
+  /* بطاقة الموقع — عدّاد مفتوح */
+  .tg-card.site::before{ background:linear-gradient(90deg,#1D4ED8,#60A5FA) }
+  .tg-open{ display:flex; gap:9px; flex-wrap:wrap; margin:4px 0 9px }
+  .tg-oi{
+    flex:1; min-width:66px; text-align:center;
+    padding:8px 6px; border-radius:11px;
+    background:color-mix(in srgb,#2563EB 9%,transparent);
+  }
+  .tg-oi b{
+    display:block; font-size:17px; font-weight:800; color:#1D4ED8;
+    font-family:'Space Grotesk','Tajawal',sans-serif; line-height:1.1;
+  }
+  .tg-oi span{ display:block; font-size:10px; font-weight:700;
+               color:var(--muted); margin-top:2px }
+  body.dark .tg-oi b{ color:#93c5fd }
+  .tg-note{ font-size:10.5px; color:var(--muted); font-weight:600 }
+
+  /* الملخّص */
+  .tg-sum{
+    display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;
+    padding:10px 14px; border-radius:12px;
+    background:color-mix(in srgb,var(--line) 24%,transparent);
+  }
+  .tg-sum span{ font-size:11.5px; font-weight:600; color:var(--muted) }
+  .tg-sum b{ color:var(--ink); font-weight:800;
+             font-family:'Space Grotesk','Tajawal',sans-serif }
+
+  @media (max-width:640px){
+    .tg-oi b{ font-size:15px }
+    .tg-sum{ gap:6px; padding:9px 11px }
+  }
 </style>
 </head>
 <body>
@@ -10329,9 +10371,11 @@ function renderTargetBar(){
 
   const T = d.targets||{}, today = d.today||{}, month = d.month||{}, C = d.calc||{};
   const rej = d.rejections||{};
+  const tOwn = today.own||{}, tSite = today.site||{};
+  const mOwn = month.own||{}, mSite = month.site||{};
 
-  const dDone = dbN(today.sent), dTarget = dbN(T.daily);
-  const mDone = dbN(month.sent), mTarget = dbN(T.monthly);
+  const dDone = dbN(tOwn.sent), dTarget = dbN(T.daily);
+  const mDone = dbN(mOwn.sent), mTarget = dbN(T.monthly);
   const dPct = dbN(C.dailyPct), mPct = dbN(C.monthlyPct);
 
   const dCls = dPct>=100 ? 'done' : dPct>=60 ? 'ok' : dPct>=30 ? 'mid' : 'low';
@@ -10340,8 +10384,10 @@ function renderTargetBar(){
   box.style.display = '';
   box.innerHTML =
       '<div class="tg-row">'
-    // ── اليوم ──
+
+    // ═══ 📤 اللي رفعتهم — النهاردة ═══
     +   '<div class="tg-card '+dCls+'">'
+    +     '<div class="tg-tag own">📤 اللي رفعتيهم</div>'
     +     '<div class="tg-h"><span>📅 النهاردة</span>'
     +       '<b>'+dbF(dDone)+'<i>/'+dbF(dTarget)+'</i></b></div>'
     +     '<div class="tg-b"><span style="width:'+Math.min(100,dPct)+'%"></span></div>'
@@ -10349,12 +10395,14 @@ function renderTargetBar(){
     +       (dPct>=100
           ? '<b class="win">🎉 خلّصتي تارجت النهاردة</b>'
           : 'باقي <b>'+dbF(dbN(C.dailyLeft))+'</b> رسالة')
-    +       (dbN(today.followups) ? '<span>🔄 '+dbF(today.followups)+' متابعة</span>' : '')
-    +       (dbN(today.proofs) ? '<span>📸 '+dbF(today.proofs)+' إثبات</span>' : '')
+    +       (dbN(tOwn.followups) ? '<span>🔄 '+dbF(tOwn.followups)+'</span>' : '')
+    +       (dbN(tOwn.proofs) ? '<span>📸 '+dbF(tOwn.proofs)+'</span>' : '')
     +     '</div>'
     +   '</div>'
-    // ── الشهر ──
+
+    // ═══ 📤 اللي رفعتهم — الشهر ═══
     +   '<div class="tg-card '+mCls+'">'
+    +     '<div class="tg-tag own">📤 اللي رفعتيهم</div>'
     +     '<div class="tg-h"><span>🗓️ الشهر</span>'
     +       '<b>'+dbF(mDone)+'<i>/'+dbF(mTarget)+'</i></b></div>'
     +     '<div class="tg-b"><span style="width:'+Math.min(100,mPct)+'%"></span></div>'
@@ -10366,8 +10414,31 @@ function renderTargetBar(){
           : '')
     +     '</div>'
     +   '</div>'
+
+    // ═══ 🌐 من الموقع — عدّاد مفتوح ═══
+    +   '<div class="tg-card site">'
+    +     '<div class="tg-tag site">🌐 من الموقع</div>'
+    +     '<div class="tg-h"><span>مؤثرين النظام</span>'
+    +       '<b>'+dbF(dbN(tSite.sent))+'<i> النهاردة</i></b></div>'
+    +     '<div class="tg-open">'
+    +       '<div class="tg-oi"><b>'+dbF(dbN(mSite.sent))+'</b><span>الشهر</span></div>'
+    +       (dbN(mSite.followups) ? '<div class="tg-oi"><b>'+dbF(mSite.followups)+'</b><span>🔄 متابعات</span></div>' : '')
+    +       (dbN(mSite.subscribed) ? '<div class="tg-oi"><b>'+dbF(mSite.subscribed)+'</b><span>🎉 اشتراكات</span></div>' : '')
+    +     '</div>'
+    +     '<div class="tg-note">مفيش تارجت — كل رسالة محسوبة ليكي</div>'
+    +   '</div>'
+
     + '</div>'
-    // ── تحذير المحاولات المرفوضة ──
+
+    // ═══ ملخّص سريع ═══
+    + '<div class="tg-sum">'
+    +   '<span>📊 إجمالي النهاردة <b>'+dbF(dbN(today.total_sent))+'</b></span>'
+    +   '<span>📸 إثباتات <b>'+dbF(dbN(today.total_proofs))+'</b></span>'
+    +   (dbN(today.uploaded) ? '<span>⬆️ رفعتي <b>'+dbF(today.uploaded)+'</b> مؤثر</span>' : '')
+    +   (dbN(month.active_days) ? '<span>📅 <b>'+dbN(month.active_days)+'</b> يوم شغل الشهر ده</span>' : '')
+    + '</div>'
+
+    // ═══ تحذير المحاولات المرفوضة ═══
     + (dbN(rej.month)
         ? '<div class="tg-warn">🚫 <b>'+dbN(rej.month)+'</b> محاولة رفع إثبات متكرر الشهر ده — '
           + 'الإدارة شايفة التفاصيل</div>'
