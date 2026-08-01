@@ -4173,6 +4173,184 @@
     .tg-oi b{ font-size:15px }
     .tg-sum{ gap:6px; padding:9px 11px }
   }
+
+  /* ==========================================================
+     تاب التارجت
+     ========================================================== */
+  .db-tgs{ display:flex; flex-direction:column; gap:11px }
+  .db-tgsi{
+    display:flex; align-items:flex-start; gap:12px;
+    padding:14px 16px; border-radius:16px; position:relative; overflow:hidden;
+    background:var(--surface); border:1.5px solid var(--line);
+    box-shadow:0 2px 10px rgba(0,0,0,.05);
+  }
+  .db-tgsi::before{
+    content:''; position:absolute; inset-inline-start:0; top:0; bottom:0; width:4px;
+    background:var(--line);
+  }
+  .db-tgsi.top::before { background:linear-gradient(180deg,#16A34A,#4ADE80) }
+  .db-tgsi.low::before { background:linear-gradient(180deg,#D97706,#FBBF24) }
+  .db-tgsi.flag::before{ background:linear-gradient(180deg,#DC2626,#F87171) }
+  .db-tgsi.flag{ background:#FFFBFB }
+  body.dark .db-tgsi.flag{ background:#241010 }
+  .db-sg.flag{ background:#FEE2E2 !important; color:#B91C1C !important }
+  body.dark .db-sg.flag{ background:#4a1414 !important; color:#fca5a5 !important }
+
+  /* صفوف المصدر */
+  .db-tgsr{
+    display:flex; flex-wrap:wrap; align-items:center; gap:7px;
+    padding:7px 11px; border-radius:11px; margin-top:8px;
+    font-size:11.5px; font-weight:600; color:var(--muted);
+  }
+  .db-tgsr.own { background:color-mix(in srgb,var(--brand) 9%,transparent) }
+  .db-tgsr.site{ background:color-mix(in srgb,#2563EB 8%,transparent) }
+  .db-tgsr .lbl{ font-weight:800; color:var(--ink); min-width:64px }
+  .db-tgsr.own .lbl { color:var(--brand) }
+  .db-tgsr.site .lbl{ color:#1D4ED8 }
+  body.dark .db-tgsr.site .lbl{ color:#93c5fd }
+  .db-tgsr b{ color:var(--ink); font-weight:800;
+              font-family:'Space Grotesk','Tajawal',sans-serif }
+  .db-tgsr .tgt{ margin-inline-start:auto; font-weight:800; color:var(--brand) }
+  .db-tgsr .open{ margin-inline-start:auto; font-size:10px; font-weight:800;
+                  padding:2px 9px; border-radius:999px;
+                  background:#DBEAFE; color:#1D4ED8 }
+  body.dark .db-tgsr .open{ background:#1e3a5f; color:#93c5fd }
+
+  .db-tgsx{ display:flex; flex-wrap:wrap; gap:7px; margin-top:9px;
+            font-size:11px; font-weight:600; color:var(--muted) }
+  .db-tgsx span{ padding:3px 9px; border-radius:8px;
+                 background:color-mix(in srgb,var(--line) 30%,transparent) }
+  .db-tgsx b{ color:var(--ink); font-weight:800;
+              font-family:'Space Grotesk','Tajawal',sans-serif }
+  .db-tgsx .gap{ background:#FEF3C7; color:#92400E }
+  .db-tgsx .gap b{ color:#92400E }
+  .db-tgsx .warn{ background:#FEE2E2; color:#B91C1C }
+  .db-tgsx .warn b{ color:#B91C1C }
+  body.dark .db-tgsx .gap{ background:#4a3510; color:#fcd34d }
+  body.dark .db-tgsx .gap b{ color:#fcd34d }
+  body.dark .db-tgsx .warn{ background:#4a1414; color:#fca5a5 }
+  body.dark .db-tgsx .warn b{ color:#fca5a5 }
+
+  /* آخر المحاولات المرفوضة في صف الموظفة */
+  .db-tgsl{ margin-top:9px; display:flex; flex-direction:column; gap:4px }
+  .db-tgsl div{
+    font-size:11px; line-height:1.6; padding:6px 11px; border-radius:9px;
+    background:#FEF2F2; color:#991B1B;
+  }
+  .db-tgsl b{ font-weight:800; direction:ltr; unicode-bidi:isolate }
+  .db-tgsl .more{ background:transparent; color:var(--muted); font-weight:700 }
+  body.dark .db-tgsl div{ background:#2e1010; color:#fca5a5 }
+
+  /* سجل المحاولات المرفوضة */
+  .db-tgr{ display:flex; flex-direction:column; gap:9px }
+  .db-tgri{
+    padding:13px 15px; border-radius:14px;
+    background:#FEF2F2; border:1.5px solid #FCA5A5;
+  }
+  body.dark .db-tgri{ background:#2e1010; border-color:#B91C1C }
+  .db-tgrh{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:7px }
+  .db-tgrh b{ font-size:13.5px; font-weight:800; color:#B91C1C }
+  .db-tgrt{ font-size:11.5px; font-weight:700; color:#991B1B;
+            direction:ltr; unicode-bidi:isolate }
+  .db-tgrh i{ font-style:normal; font-size:10.5px; color:var(--muted);
+              margin-inline-start:auto }
+  body.dark .db-tgrh b{ color:#fca5a5 } body.dark .db-tgrt{ color:#fca5a5 }
+  .db-tgrb{ display:flex; flex-wrap:wrap; gap:6px }
+  .db-tgrb span{ font-size:11px; font-weight:700; padding:3px 10px; border-radius:8px }
+  .db-tgrb .rs{ background:#DC2626; color:#fff }
+  .db-tgrb .dt{ background:rgba(0,0,0,.06); color:#991B1B }
+  body.dark .db-tgrb .dt{ background:rgba(255,255,255,.08); color:#fca5a5 }
+  .db-tgro{ font-size:11px; color:#991B1B; margin-top:8px;
+            padding-top:8px; border-top:1px dashed #FCA5A5 }
+  .db-tgro b{ font-weight:800; direction:ltr; unicode-bidi:isolate }
+  body.dark .db-tgro{ color:#fca5a5; border-color:#B91C1C }
+
+  .db-tgok{
+    padding:22px; border-radius:14px; text-align:center;
+    background:#DCFCE7; color:#15803D; font-size:13.5px; font-weight:700;
+  }
+  body.dark .db-tgok{ background:#14432a; color:#86efac }
+
+  /* يوم بيوم */
+  .db-tgd{ display:flex; flex-direction:column; gap:6px }
+  .db-tgdi{ display:flex; align-items:center; gap:11px;
+            padding:9px 13px; border-radius:11px;
+            background:color-mix(in srgb,var(--line) 18%,transparent) }
+  .db-tgdi.empty{ opacity:.45 }
+  .db-tgdd{ font-size:11.5px; font-weight:800; color:var(--ink);
+            min-width:64px; flex-shrink:0 }
+  .db-tgdb{ flex:1; height:9px; border-radius:99px; overflow:hidden;
+            display:flex; background:color-mix(in srgb,var(--line) 45%,transparent) }
+  .db-tgdb span{ display:block; height:100% }
+  .db-tgdb .own { background:linear-gradient(90deg,#C6432D,#E4553F) }
+  .db-tgdb .site{ background:linear-gradient(90deg,#1D4ED8,#60A5FA) }
+  .db-tgdn{ display:flex; gap:6px; flex-shrink:0; font-size:10.5px; font-weight:700 }
+  .db-tgdn span{ padding:2px 8px; border-radius:7px;
+                 background:color-mix(in srgb,var(--line) 32%,transparent);
+                 color:var(--muted) }
+  .db-tgdn .o{ background:color-mix(in srgb,var(--brand) 14%,transparent); color:var(--brand) }
+  .db-tgdn .s{ background:#DBEAFE; color:#1D4ED8 }
+  .db-tgdn .r{ background:#FEE2E2; color:#B91C1C }
+  body.dark .db-tgdn .s{ background:#1e3a5f; color:#93c5fd }
+  body.dark .db-tgdn .r{ background:#4a1414; color:#fca5a5 }
+
+  @media (max-width:640px){
+    .db-tgsi{ padding:12px 13px; gap:9px }
+    .db-tgsr{ font-size:10.5px; gap:5px; padding:6px 9px }
+    .db-tgsr .lbl{ min-width:100%; margin-bottom:-3px }
+    .db-tgdi{ flex-wrap:wrap }
+    .db-tgdb{ order:3; flex-basis:100%; margin-top:5px }
+  }
+
+  /* ===== التارجت في التقرير ===== */
+  .rt-tg{ padding:14px 16px; border-radius:14px; margin-bottom:12px; border:2px solid }
+  .rt-tg.a{ background:#DCFCE7; border-color:#16A34A; color:#15803D }
+  .rt-tg.b{ background:#DBEAFE; border-color:#2563EB; color:#1D4ED8 }
+  .rt-tg.c{ background:#FEF3C7; border-color:#D97706; color:#92400E }
+  .rt-tg.e{ background:#FEE2E2; border-color:#DC2626; color:#B91C1C }
+  body.dark .rt-tg.a{ background:#14432a } body.dark .rt-tg.b{ background:#1e3a5f }
+  body.dark .rt-tg.c{ background:#4a3510 } body.dark .rt-tg.e{ background:#4a1414 }
+  .rt-tgh{ display:flex; align-items:baseline; justify-content:space-between; gap:11px }
+  .rt-tgh span{ font-size:12.5px; font-weight:800 }
+  .rt-tgh b{ font-size:26px; font-weight:800;
+             font-family:'Space Grotesk','Tajawal',sans-serif;
+             direction:ltr; unicode-bidi:isolate }
+  .rt-tgh i{ font-style:normal; font-size:15px; opacity:.65 }
+  .rt-tgb{ height:9px; border-radius:99px; margin:10px 0 8px; overflow:hidden;
+           background:rgba(0,0,0,.13) }
+  .rt-tgb span{ display:block; height:100%; border-radius:99px;
+                background:currentColor; opacity:.8 }
+  .rt-tgn{ font-size:11.5px; font-weight:700; opacity:.85 }
+
+  .rt-tgg{ display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+           gap:10px; margin-bottom:11px }
+  .rt-tgi{ padding:11px 13px; border-radius:12px }
+  .rt-tgi.own { background:color-mix(in srgb,var(--brand) 10%,transparent) }
+  .rt-tgi.site{ background:color-mix(in srgb,#2563EB 9%,transparent) }
+  .rt-tgi b{ display:block; font-size:12px; font-weight:800; margin-bottom:7px }
+  .rt-tgi.own b { color:var(--brand) }
+  .rt-tgi.site b{ color:#1D4ED8 }
+  body.dark .rt-tgi.site b{ color:#93c5fd }
+  .rt-tgi span{ display:inline-block; font-size:11.5px; font-weight:700;
+                color:var(--ink); margin-inline-end:11px }
+
+  .rt-tgu{ font-size:12px; font-weight:700; color:var(--muted);
+           padding:9px 13px; border-radius:11px; margin-bottom:10px;
+           background:color-mix(in srgb,var(--line) 26%,transparent) }
+  .rt-tgu b{ color:var(--ink); font-weight:800 }
+
+  .rt-tgr{ padding:12px 14px; border-radius:12px;
+           background:#FEE2E2; border:1px solid #FCA5A5 }
+  .rt-tgr > b{ display:block; font-size:13px; font-weight:900;
+               color:#B91C1C; margin-bottom:8px }
+  .rt-tgr div{ font-size:11.5px; line-height:1.7; color:#991B1B;
+               padding:4px 0; border-top:1px dashed #FCA5A5 }
+  body.dark .rt-tgr{ background:#4a1414; border-color:#B91C1C }
+  body.dark .rt-tgr > b, body.dark .rt-tgr div{ color:#fca5a5 }
+
+  @media (max-width:640px){
+    .rt-tgh b{ font-size:21px }
+  }
 </style>
 </head>
 <body>
@@ -7459,6 +7637,51 @@ const pctOf = (a, b) => { const d = num(b); return d > 0 ? Math.round((num(a)/d)
 
 function renderStaffReport(r){
   r = r || {};
+
+  // ===== قسم التارجت والإثباتات =====
+  // بيوري: اللي رفعتهم (عليهم تارجت) مقابل الموقع (مفتوح) + المحاولات المرفوضة
+  const TG = r.targets || {};
+  const tgOwn = TG.own || {}, tgSite = TG.site || {};
+  const tgTarget = num(TG.target_period);
+  const tgDone   = num(tgOwn.sent);
+  const tgPct    = tgTarget ? Math.min(100, Math.round(tgDone / tgTarget * 100)) : 0;
+  const tgCls    = tgPct >= 90 ? 'a' : tgPct >= 70 ? 'b' : tgPct >= 50 ? 'c' : 'e';
+
+  const targetsHtml = (tgTarget || tgDone || num(tgSite.sent))
+    ? '<div class="rp-sec"><h4>🎯 التارجت والإثباتات</h4>'
+      + '<div class="rt-tg ' + tgCls + '">'
+      +   '<div class="rt-tgh"><span>📤 من اللي رفعتهم</span>'
+      +     '<b>' + n(tgDone) + '<i>/' + n(tgTarget) + '</i></b></div>'
+      +   '<div class="rt-tgb"><span style="width:' + tgPct + '%"></span></div>'
+      +   '<div class="rt-tgn">' + tgPct + '% من التارجت · '
+      +     n(TG.target_daily) + ' في اليوم × ' + num(TG.days) + ' يوم</div>'
+      + '</div>'
+      + '<div class="rt-tgg">'
+      +   '<div class="rt-tgi own"><b>📤 اللي رفعتهم</b>'
+      +     '<span>📩 ' + n(tgOwn.sent) + '</span>'
+      +     '<span>🔄 ' + n(tgOwn.followups) + '</span>'
+      +     '<span>🎉 ' + n(tgOwn.subscribed) + '</span>'
+      +     '<span>📸 ' + n(tgOwn.proofs) + '</span></div>'
+      +   '<div class="rt-tgi site"><b>🌐 من الموقع</b>'
+      +     '<span>📩 ' + n(tgSite.sent) + '</span>'
+      +     '<span>🔄 ' + n(tgSite.followups) + '</span>'
+      +     '<span>🎉 ' + n(tgSite.subscribed) + '</span>'
+      +     '<span>📸 ' + n(tgSite.proofs) + '</span></div>'
+      + '</div>'
+      + (num(TG.uploaded)
+        ? '<div class="rt-tgu">⬆️ رفعت <b>' + n(TG.uploaded) + '</b> مؤثر في الفترة دي</div>'
+        : '')
+      + (num(TG.rejections)
+        ? '<div class="rt-tgr"><b>🚫 ' + n(TG.rejections) + ' محاولة رفع إثبات متكرر</b>'
+          + (TG.rejection_list || []).slice(0, 5).map(function(x){
+              return '<div>' + esc(fmtShort(x.at)) + ' — ' + esc(x.detail || '')
+                + (x.original_by ? ' (الأصلية من ' + esc(x.original_by) + ')' : '') + '</div>';
+            }).join('')
+          + '</div>'
+        : '')
+      + '</div>'
+    : '';
+
   const box = document.querySelector('#rpOverlay .rp-box');
   if(!box) return;
 
@@ -7553,6 +7776,7 @@ function renderStaffReport(r){
     +   '</div>'
 
     +   '<div class="rp-sec"><h4>📅 النشاط اليومي</h4>'+chart+fuRow+'</div>'
+    +   targetsHtml
     +   dailyTable(r.dailyDetail)
     +   weeklyTable(r.weeklyDetail)
     +   reasonRow
@@ -7600,7 +7824,8 @@ function renderStaffReport(r){
   // والمتابعات مفصّلة من ١ لـ ٥ مش رقم مجمّع.
   function dailyTable(rows){
     if(!rows || !rows.length) return '';
-    const AR_D = ['الأحد','الاتنين','التلات','الأربع','الخميس','الجمعة','السبت'];
+  
+  const AR_D = ['الأحد','الاتنين','التلات','الأربع','الخميس','الجمعة','السبت'];
     const AR_M = ['يناير','فبراير','مارس','إبريل','مايو','يونيو',
                   'يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
     const sum = k => rows.reduce((a,b)=>a+Number(b[k]||0),0);
@@ -8247,6 +8472,7 @@ function renderDashboard(){
     ['reports',  '📄', 'التقارير'],
     ['dates',    '📆', 'التواريخ'],
     ['tasks',    '📋', 'المهام'],
+    ['targets',  '🎯', 'التارجت'],
     ['deals',    '🎯', 'الصفقات'],
     ['leads',    '📇', 'المؤثرين'],
     ['activity', '⚡', 'النشاط'],
@@ -8290,6 +8516,7 @@ function dbTabContent(r){
     case 'reports':  return dbReports(r);
     case 'dates':    return dbDates(r);
     case 'tasks':    return dbTasks(r);
+    case 'targets':  return dbTargets(r);
     case 'deals':    return dbDeals(r);
     case 'leads':    return dbLeads(r);
     case 'activity': return dbActivity(r);
@@ -10443,6 +10670,298 @@ function renderTargetBar(){
         ? '<div class="tg-warn">🚫 <b>'+dbN(rej.month)+'</b> محاولة رفع إثبات متكرر الشهر ده — '
           + 'الإدارة شايفة التفاصيل</div>'
         : '');
+}
+
+
+// ==========================================================
+// تاب الداشبورد: التارجت والإثباتات
+// ==========================================================
+// بيوري لكل موظفة:
+//   📤 اللي رفعتهم — عليهم التارجت
+//   🌐 من الموقع   — عدّاد مفتوح
+//   🚫 محاولات رفع إثبات متكرر بالتاريخ والساعة
+let _dbTg = { data:null, loading:false, from:'', to:'', preset:'month' };
+
+function dbTargets(r){
+  if(!_dbTg.data && !_dbTg.loading){ dbTgLoad(); }
+
+  let out = dbTgFilters();
+  if(_dbTg.loading){
+    return out + '<div class="db-load"><span class="lm-spin"></span> بنحمّل…</div>';
+  }
+
+  const d = _dbTg.data;
+  if(!d) return out + '<div class="db-empty">مفيش بيانات</div>';
+  if(d._error) return out + '<div class="db-err">'+esc(d._error)+'</div>';
+
+  const staff = d.staff||[], T = d.targets||{};
+
+  // ── الملاحظات ──
+  const ins = d.insights||[];
+  if(ins.length){
+    const M = { good:'good', warn:'warn', bad:'bad', info:'info' };
+    out += '<div class="db-ins">'
+      + ins.map(i =>
+        '<div class="db-i '+(M[i.level]||'info')+'">'
+        + '<span class="db-ii">'+i.icon+'</span>'
+        + '<div class="db-it"><b>'+esc(i.title)+'</b>'
+        + (i.detail ? '<span>'+esc(i.detail)+'</span>' : '')
+        + (i.action ? '<i>→ '+esc(i.action)+'</i>' : '')
+        + '</div></div>').join('')
+      + '</div>';
+  }
+
+  // ── الإجمالي ──
+  const totOwn  = staff.reduce((a,s)=>a+dbN(s.own?.sent),0);
+  const totSite = staff.reduce((a,s)=>a+dbN(s.site?.sent),0);
+  const totProof= staff.reduce((a,s)=>a+dbN(s.proofs),0);
+  const totRej  = staff.reduce((a,s)=>a+dbN(s.rejections),0);
+  const totUp   = staff.reduce((a,s)=>a+dbN(s.uploaded),0);
+  const teamTarget = staff.reduce((a,s)=>a+dbN(s.target_monthly),0);
+  const teamPct = teamTarget ? Math.round(totOwn/teamTarget*100) : 0;
+
+  out += '<div class="db-kpis">'
+    + dbCard('📤','من اللي رفعوهم', totOwn, dbN(teamPct)+'% من التارجت',
+             teamPct>=80?'good':teamPct<50?'bad':'warn')
+    + dbCard('🌐','من الموقع', totSite, '')
+    + dbCard('📸','إثباتات', totProof, '')
+    + dbCard('⬆️','مؤثرين مرفوعين', totUp, '')
+    + dbCard('🎯','تارجت الفريق', teamTarget, '')
+    + dbCard('🚫','محاولات مرفوضة', totRej, '', totRej?'bad':'')
+    + '</div>';
+
+  // ── جدول الفريق ──
+  out += dbSection('👥 التارجت لكل موظفة', dbTgStaff(staff, d),
+    dbWhenFull(d.from) ? esc(dbDate(d.from))+' — '+esc(dbDate(d.to)) : '');
+
+  // ── 🚫 محاولات الرفع المرفوضة ──
+  const rejs = d.all_rejections||[];
+  if(rejs.length){
+    out += dbSection('🚫 محاولات رفع إثبات متكرر',
+      '<div class="db-tgr">' + rejs.map(x => {
+        const R = { duplicate:'صورة متكررة', not_owned:'مؤثر مش في محفظتها',
+                    already_sent:'اتبعتله قبل كده' };
+        return '<div class="db-tgri">'
+          + '<div class="db-tgrh">'
+          +   '<b>🚫 '+esc(x.staff)+'</b>'
+          +   '<span class="db-tgrt">'+esc(dbWhenFull(x.at))+'</span>'
+          +   '<i>'+esc(dbAgoOf(x.at))+'</i>'
+          + '</div>'
+          + '<div class="db-tgrb">'
+          +   '<span class="rs">'+esc(R[x.reason] || x.reason)+'</span>'
+          +   (x.detail ? '<span class="dt">'+esc(x.detail)+'</span>' : '')
+          + '</div>'
+          + (x.original_by
+              ? '<div class="db-tgro">الصورة الأصلية من <b>'+esc(x.original_by)+'</b>'
+                + (x.original_at ? ' يوم <b>'+esc(dbWhenFull(x.original_at))+'</b>' : '')+'</div>'
+              : '')
+          + '</div>';
+      }).join('') + '</div>',
+      dbF(rejs.length)+' محاولة');
+  } else {
+    out += dbSection('🚫 محاولات رفع إثبات متكرر',
+      '<div class="db-tgok">✅ مفيش أي محاولة رفع إثبات متكرر في الفترة دي</div>');
+  }
+
+  // ── يوم بيوم ──
+  const daily = d.daily||[];
+  if(daily.length){
+    const mx = Math.max(1, ...daily.map(x=>dbN(x.own)+dbN(x.site)));
+    out += dbSection('📅 يوم بيوم',
+      '<div class="db-tgd">' + daily.map(x => {
+        const own = dbN(x.own), site = dbN(x.site);
+        const tot = own+site;
+        return '<div class="db-tgdi'+(tot?'':' empty')+'">'
+          + '<div class="db-tgdd">'+dbDate(x.day)+'</div>'
+          + '<div class="db-tgdb">'
+          +   '<span class="own" style="width:'+(mx?own/mx*100:0)+'%" title="رفعوهم: '+own+'"></span>'
+          +   '<span class="site" style="width:'+(mx?site/mx*100:0)+'%" title="الموقع: '+site+'"></span>'
+          + '</div>'
+          + '<div class="db-tgdn">'
+          +   '<span class="o">📤 '+own+'</span>'
+          +   '<span class="s">🌐 '+site+'</span>'
+          +   (dbN(x.proofs)?'<span>📸 '+dbN(x.proofs)+'</span>':'')
+          +   (dbN(x.rejected)?'<span class="r">🚫 '+dbN(x.rejected)+'</span>':'')
+          + '</div></div>';
+      }).join('') + '</div>');
+  }
+
+  return out;
+}
+
+// ===== الفلاتر =====
+function dbTgFilters(){
+  const P = [['month','الشهر ده'],['7','7 يوم'],['30','30 يوم'],['90','90 يوم']];
+  return '<div class="db-tkf">'
+    + '<div class="db-tkfr">'
+    +   '<span class="db-tkfl">الفترة</span>'
+    +   '<div class="db-rfp">'
+    +     P.map(([k,l]) =>
+        '<button class="db-rp'+(_dbTg.preset===k?' on':'')+'" '
+        + 'onclick="dbTgPreset(\''+k+'\')">'+l+'</button>').join('')
+    +     '<button class="db-rp'+(_dbTg.preset==='custom'?' on':'')+'" '
+    +       'onclick="dbTgCustom()">📅 فترة</button>'
+    +     '<button class="db-rp" onclick="dbTgEditTarget()">⚙️ التارجت</button>'
+    +   '</div>'
+    + '</div>'
+    + (_dbTg.from && _dbTg.to
+        ? '<div class="db-tkfd">📅 '+esc(_dbTg.from)+' ← '+esc(_dbTg.to)+'</div>' : '')
+    + '</div>';
+}
+
+async function dbTgLoad(){
+  _dbTg.loading = true;
+  renderDashboard();
+  try{
+    const body = { token: SESSION.token, action:'overview' };
+    if(_dbTg.from && _dbTg.to){ body.from=_dbTg.from; body.to=_dbTg.to; }
+    _dbTg.data = await callApi('verifyProof', body) || {};
+  }catch(e){ _dbTg.data = { _error: e.message }; }
+  _dbTg.loading = false;
+  renderDashboard();
+}
+
+function dbTgPreset(k){
+  _dbTg.preset = k;
+  const to = new Date();
+  if(k === 'month'){
+    _dbTg.from = new Date(to.getFullYear(), to.getMonth(), 1).toISOString().slice(0,10);
+  } else {
+    const f = new Date(); f.setDate(to.getDate() - (Number(k)-1));
+    _dbTg.from = f.toISOString().slice(0,10);
+  }
+  _dbTg.to = to.toISOString().slice(0,10);
+  dbTgLoad();
+}
+
+function dbTgCustom(){
+  const ov = document.createElement('div');
+  ov.className = 'cf-overlay'; ov.style.zIndex='9999';
+  ov.innerHTML = '<div class="cf-box" style="max-width:400px;text-align:right">'
+    + '<div class="cf-title">📅 فترة مخصّصة</div>'
+    + '<div class="lg-field"><label>من</label><input id="tgcF" type="date" value="'+esc(_dbTg.from)+'"></div>'
+    + '<div class="lg-field"><label>إلى</label><input id="tgcT" type="date" value="'+esc(_dbTg.to)+'"></div>'
+    + '<div class="lg-err" id="tgcE"></div>'
+    + '<div class="cf-btns"><button class="cf-cancel">إلغاء</button>'
+    +   '<button class="cf-yes" id="tgcOk">تطبيق</button></div></div>';
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>ov.classList.add('show'));
+  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
+  ov.querySelector('.cf-cancel').onclick = close;
+  ov.addEventListener('click', e=>{ if(e.target===ov) close(); });
+  ov.querySelector('#tgcOk').onclick = ()=>{
+    const f=ov.querySelector('#tgcF').value, t=ov.querySelector('#tgcT').value;
+    if(!f||!t){ ov.querySelector('#tgcE').textContent='حددي التاريخين'; return; }
+    if(f>t){ ov.querySelector('#tgcE').textContent='البداية بعد النهاية'; return; }
+    _dbTg.from=f; _dbTg.to=t; _dbTg.preset='custom';
+    close(); dbTgLoad();
+  };
+}
+
+// تعديل التارجت
+function dbTgEditTarget(){
+  const T = (_dbTg.data||{}).targets || {};
+  const ov = document.createElement('div');
+  ov.className = 'cf-overlay'; ov.style.zIndex='9999';
+  ov.innerHTML = '<div class="cf-box" style="max-width:420px;text-align:right">'
+    + '<div class="cf-title">⚙️ تعديل التارجت</div>'
+    + '<div class="cf-msg">التارجت ده على المؤثرين اللي الموظفة بترفعهم بنفسها. '
+    +   'مؤثري الموقع عدّاد مفتوح من غير هدف.</div>'
+    + '<div class="lg-field"><label>التارجت اليومي</label>'
+    +   '<input id="tgD" type="number" min="0" value="'+dbN(T.daily)+'"></div>'
+    + '<div class="lg-field"><label>التارجت الشهري</label>'
+    +   '<input id="tgM" type="number" min="0" value="'+dbN(T.monthly)+'"></div>'
+    + '<div class="lg-err" id="tgE"></div>'
+    + '<div class="cf-btns"><button class="cf-cancel">إلغاء</button>'
+    +   '<button class="cf-yes ok" id="tgOk">حفظ</button></div></div>';
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>ov.classList.add('show'));
+  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
+  ov.querySelector('.cf-cancel').onclick = close;
+  ov.addEventListener('click', e=>{ if(e.target===ov) close(); });
+  ov.querySelector('#tgOk').onclick = async ()=>{
+    const dd = Number(ov.querySelector('#tgD').value)||0;
+    const mm = Number(ov.querySelector('#tgM').value)||0;
+    if(!dd || !mm){ ov.querySelector('#tgE').textContent='حطي الرقمين'; return; }
+    try{
+      await callApi('verifyProof', {
+        token: SESSION.token, action:'setTarget', scope:'global',
+        daily: dd, monthly: mm
+      });
+      close(); toastOk('اتحفظ ✅'); dbTgLoad();
+    }catch(e){ ov.querySelector('#tgE').textContent = e.message; }
+  };
+}
+
+// ===== جدول الفريق =====
+function dbTgStaff(staff, d){
+  if(!staff.length) return '<div class="db-empty">مفيش موظفات</div>';
+
+  const sorted = [...staff].sort((a,b)=> dbN(b.pct) - dbN(a.pct));
+  const mxOwn = Math.max(1, ...sorted.map(x=>dbN(x.own?.sent)));
+
+  return '<div class="db-tgs">' + sorted.map((s,i) => {
+    const own = s.own||{}, site = s.site||{};
+    const pct = dbN(s.pct);
+    const cls = dbN(s.rejections) ? 'flag'
+              : pct>=80 ? 'top' : pct<40 ? 'low' : '';
+    const proofGap = dbN(s.proofGap);
+
+    return '<div class="db-tgsi '+cls+'">'
+      + '<div class="db-sr">'+(i+1)+'</div>'
+      + '<div class="db-sm">'
+      +   '<div class="db-sn">'+esc(s.emoji||'👤')+' <b>'+esc(s.name)+'</b>'
+      +     '<span class="db-sg">'+pct+'% من التارجت</span>'
+      +     (dbN(s.rejections)
+          ? '<span class="db-sg flag">🚫 '+dbN(s.rejections)+' محاولة</span>' : '')
+      +   '</div>'
+
+      // شريط التارجت
+      +   '<div class="db-sb"><span style="width:'+Math.min(100,pct)+'%"></span></div>'
+
+      // 📤 اللي رفعتهم
+      +   '<div class="db-tgsr own">'
+      +     '<span class="lbl">📤 رفعتهم</span>'
+      +     '<span>📩 <b>'+dbF(own.sent)+'</b></span>'
+      +     '<span>🔄 <b>'+dbF(own.followups)+'</b></span>'
+      +     '<span>🎉 <b>'+dbF(own.subscribed)+'</b></span>'
+      +     '<span>📸 <b>'+dbF(own.proofs)+'</b></span>'
+      +     '<span class="tgt">🎯 '+dbF(s.target_monthly)+'</span>'
+      +   '</div>'
+
+      // 🌐 من الموقع
+      +   '<div class="db-tgsr site">'
+      +     '<span class="lbl">🌐 الموقع</span>'
+      +     '<span>📩 <b>'+dbF(site.sent)+'</b></span>'
+      +     '<span>🔄 <b>'+dbF(site.followups)+'</b></span>'
+      +     '<span>🎉 <b>'+dbF(site.subscribed)+'</b></span>'
+      +     '<span>📸 <b>'+dbF(site.proofs)+'</b></span>'
+      +     '<span class="open">مفتوح</span>'
+      +   '</div>'
+
+      // معلومات إضافية
+      +   '<div class="db-tgsx">'
+      +     (dbN(s.uploaded) ? '<span>⬆️ رفعت <b>'+dbF(s.uploaded)+'</b> مؤثر</span>' : '')
+      +     (dbN(s.active_days) ? '<span>📅 <b>'+dbN(s.active_days)+'</b> يوم شغل</span>' : '')
+      +     (dbN(s.perDay) ? '<span>⚡ <b>'+dbN(s.perDay)+'</b>/يوم</span>' : '')
+      +     (dbN(s.gap) ? '<span class="gap">باقي <b>'+dbF(s.gap)+'</b></span>' : '')
+      +     (proofGap>=10
+          ? '<span class="warn">⚠️ <b>'+dbF(proofGap)+'</b> من غير إثبات</span>' : '')
+      +   '</div>'
+
+      // آخر محاولة مرفوضة
+      +   ((s.rejection_list||[]).length
+          ? '<div class="db-tgsl">'
+            + s.rejection_list.slice(0,3).map(x =>
+              '<div>🚫 <b>'+esc(dbWhenFull(x.at))+'</b> — '+esc(x.detail||'')+'</div>').join('')
+            + (s.rejection_list.length>3
+              ? '<div class="more">و'+(s.rejection_list.length-3)+' محاولة تانية</div>' : '')
+            + '</div>'
+          : '')
+      + '</div>'
+      + '<div class="db-ss"><b>'+dbF(own.sent)+'</b><span>رسالة</span></div>'
+      + '</div>';
+  }).join('') + '</div>';
 }
 
 // ===== تصدير النتائج المفلترة إلى CSV =====
