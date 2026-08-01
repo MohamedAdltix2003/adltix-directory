@@ -4055,6 +4055,82 @@
     .db-tktmi b{ font-size:17px }
     .db-tksw, .db-tkdt{ gap:5px }
   }
+
+  /* ==========================================================
+     شريط التارجت
+     ========================================================== */
+  .target-bar{ max-width:1240px; margin:0 auto; padding:14px 22px 0 }
+  .tg-row{ display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:11px }
+  .tg-card{
+    padding:14px 16px; border-radius:16px; position:relative; overflow:hidden;
+    background:var(--surface); border:1.5px solid var(--line);
+    box-shadow:0 2px 10px rgba(0,0,0,.05);
+  }
+  .tg-card::before{
+    content:''; position:absolute; inset:0 0 auto 0; height:3px;
+    background:var(--line);
+  }
+  .tg-card.done::before{ background:linear-gradient(90deg,#16A34A,#4ADE80) }
+  .tg-card.ok::before  { background:linear-gradient(90deg,#16A34A,#86EFAC) }
+  .tg-card.mid::before { background:linear-gradient(90deg,#D97706,#FBBF24) }
+  .tg-card.low::before { background:linear-gradient(90deg,#DC2626,#F87171) }
+
+  .tg-h{ display:flex; align-items:baseline; justify-content:space-between;
+         gap:10px; margin-bottom:9px }
+  .tg-h span{ font-size:12.5px; font-weight:800; color:var(--muted) }
+  .tg-h b{
+    font-size:23px; font-weight:800; color:var(--ink);
+    font-family:'Space Grotesk','Tajawal',sans-serif;
+    direction:ltr; unicode-bidi:isolate;
+  }
+  .tg-h i{ font-style:normal; font-size:14px; font-weight:700;
+           color:var(--muted); opacity:.75 }
+
+  .tg-b{ height:9px; border-radius:99px; overflow:hidden; margin-bottom:9px;
+         background:color-mix(in srgb,var(--line) 50%,transparent) }
+  .tg-b span{ display:block; height:100%; border-radius:99px; transition:width .5s ease }
+  .tg-card.done .tg-b span, .tg-card.ok .tg-b span{
+    background:linear-gradient(90deg,#15803D,#4ADE80) }
+  .tg-card.mid .tg-b span{ background:linear-gradient(90deg,#B45309,#FBBF24) }
+  .tg-card.low .tg-b span{ background:linear-gradient(90deg,#B91C1C,#F87171) }
+
+  .tg-n{ display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+         font-size:11.5px; font-weight:600; color:var(--muted) }
+  .tg-n b{ color:var(--ink); font-weight:800;
+           font-family:'Space Grotesk','Tajawal',sans-serif }
+  .tg-n b.win{ color:#15803D; font-size:12.5px }
+  .tg-n span{ padding:2px 9px; border-radius:8px;
+              background:color-mix(in srgb,var(--line) 30%,transparent) }
+  .tg-n span.warn{ background:#FEF3C7; color:#92400E; font-weight:800 }
+  body.dark .tg-n b.win{ color:#86efac }
+  body.dark .tg-n span.warn{ background:#4a3510; color:#fcd34d }
+
+  .tg-warn{
+    margin-top:10px; padding:11px 14px; border-radius:12px;
+    background:#FEE2E2; color:#B91C1C; font-size:12.5px; font-weight:700;
+    border:1px solid #FCA5A5;
+  }
+  .tg-warn b{ font-weight:900 }
+  body.dark .tg-warn{ background:#4a1414; color:#fca5a5; border-color:#B91C1C }
+
+  /* نافذة رفض الإثبات */
+  .cf-box.pf-rej{ text-align:center !important }
+  .pf-ri{ font-size:46px; margin-bottom:10px }
+  .pf-rt{ font-size:17px; font-weight:900; color:#B91C1C; margin-bottom:11px }
+  .pf-rm{ font-size:13.5px; line-height:1.85; color:var(--ink); margin-bottom:13px }
+  .pf-rw{
+    font-size:12px; font-weight:700; line-height:1.7;
+    padding:11px 13px; border-radius:11px; margin-bottom:14px;
+    background:#FEF3C7; color:#92400E;
+  }
+  body.dark .pf-rt{ color:#fca5a5 }
+  body.dark .pf-rw{ background:#4a3510; color:#fcd34d }
+
+  @media (max-width:640px){
+    .target-bar{ padding:12px 14px 0 }
+    .tg-card{ padding:12px 13px }
+    .tg-h b{ font-size:20px }
+  }
 </style>
 </head>
 <body>
@@ -4238,6 +4314,8 @@
 </header>
 
 <div class="wrap">
+
+  <div class="target-bar" id="targetBar" style="display:none"></div>
 
   <div class="tasks-row" id="tasksRow" style="display:none">
     <button class="tasks-fab" id="hdrTasksBtn" onclick="openTasks()">
@@ -4464,6 +4542,7 @@ const FN_MAP = {
   staffReport:    "staff-report",
   dashboard:      "dashboard",
   dailyTasks:     "daily-tasks",
+  verifyProof:    "verify-proof",
   sendReport:     "send-report",
   reportSettings: "report-settings",
   getProofs:      "get-proofs",
@@ -5741,6 +5820,63 @@ function fileToBase64(file){
   });
 }
 
+// ===== بصمة الصورة =====
+// SHA-256 من محتوى الملف نفسه — نفس الصورة = نفس البصمة دايمًا،
+// مهما اتغيّر اسم الملف أو مكانه.
+//
+// بتتحسب هنا في المتصفح قبل الرفع، فالتكلفة صفر ومفيش أي
+// خدمة خارجية. والسيرفر بيقارنها بكل البصمات المسجّلة.
+async function fileHash(file){
+  try{
+    const buf = await file.arrayBuffer();
+    const digest = await crypto.subtle.digest('SHA-256', buf);
+    return Array.from(new Uint8Array(digest))
+      .map(b => b.toString(16).padStart(2,'0')).join('');
+  }catch(e){
+    return null;   // المتصفح مش داعم — بنكمّل من غير فحص
+  }
+}
+
+// ===== الفحص قبل الرفع =====
+// بترجّع true لو الصورة مقبولة، وfalse لو مرفوضة (مع عرض التحذير).
+async function checkProofBeforeUpload(file, uid){
+  const hash = await fileHash(file);
+  if(!hash) return { ok:true, hash:null };   // مش قادرين نفحص — بنكمّل
+
+  try{
+    const r = await callApi('verifyProof', {
+      token: SESSION.token, action:'check', hash, uid
+    }) || {};
+
+    if(r.accepted === false){
+      showProofReject(r);
+      return { ok:false, hash };
+    }
+    return { ok:true, hash };
+  }catch(e){
+    // فشل الاتصال — منوقفش الشغل
+    return { ok:true, hash };
+  }
+}
+
+// نافذة رفض الإثبات
+function showProofReject(r){
+  const ov = document.createElement('div');
+  ov.className = 'cf-overlay'; ov.style.zIndex = '10001';
+  ov.innerHTML = '<div class="cf-box pf-rej" style="max-width:460px;text-align:right">'
+    + '<div class="pf-ri">🚫</div>'
+    + '<div class="pf-rt">الصورة دي مش مقبولة</div>'
+    + '<div class="pf-rm">'+esc(r.message||'')+'</div>'
+    + (r.warning ? '<div class="pf-rw">⚠️ '+esc(r.warning)+'</div>' : '')
+    + '<div class="cf-btns"><button class="cf-yes danger" data-x="1">فهمت</button></div>'
+    + '</div>';
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>ov.classList.add('show'));
+  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
+  ov.querySelector('.cf-yes').onclick = close;
+  ov.addEventListener('click', e=>{ if(e.target===ov) close(); });
+}
+
 // ===== دالة عرض خيارين للصورة =====
 function showPhotoOptions(title, msg){
   return new Promise(resolve=>{
@@ -5821,8 +5957,24 @@ document.getElementById('crmFileInput').addEventListener('change', async (e)=>{
   if(!file || !_crmPending) return;
   const pend=_crmPending; _crmPending=null;
   try{
+    // 🔒 الفحص قبل الرفع — لو الصورة متكررة بتتوقف هنا
+    toast('بنتأكد من الصورة…','info',2500);
+    const chk = await checkProofBeforeUpload(file, pend.uid);
+    if(!chk.ok) return;
+
     const base64=await fileToBase64(file);
-    await sendCrmAction(pend.btn,pend.uid,pend.actionType,base64,pend.mode,pend);
+    const res = await sendCrmAction(pend.btn,pend.uid,pend.actionType,base64,pend.mode,pend);
+
+    // نسجّل البصمة بعد الرفع الناجح
+    if(chk.hash){
+      callApi('verifyProof', {
+        token: SESSION.token, action:'register', hash: chk.hash,
+        uid: pend.uid, action_type: pend.actionType,
+        seq: pend.seq || null, size: file.size,
+        url: (res && res.screenshotUrl) || null
+      }).catch(()=>{});
+    }
+    refreshTargetBar();
   }catch(err){ toastErr('مش قادر أقرا الصورة — جرّبي صورة تانية'); }
 });
 
@@ -5832,8 +5984,24 @@ document.getElementById('crmFileInputGallery').addEventListener('change', async 
   if(!file || !_crmPending) return;
   const pend=_crmPending; _crmPending=null;
   try{
+    // 🔒 الفحص قبل الرفع — لو الصورة متكررة بتتوقف هنا
+    toast('بنتأكد من الصورة…','info',2500);
+    const chk = await checkProofBeforeUpload(file, pend.uid);
+    if(!chk.ok) return;
+
     const base64=await fileToBase64(file);
-    await sendCrmAction(pend.btn,pend.uid,pend.actionType,base64,pend.mode,pend);
+    const res = await sendCrmAction(pend.btn,pend.uid,pend.actionType,base64,pend.mode,pend);
+
+    // نسجّل البصمة بعد الرفع الناجح
+    if(chk.hash){
+      callApi('verifyProof', {
+        token: SESSION.token, action:'register', hash: chk.hash,
+        uid: pend.uid, action_type: pend.actionType,
+        seq: pend.seq || null, size: file.size,
+        url: (res && res.screenshotUrl) || null
+      }).catch(()=>{});
+    }
+    refreshTargetBar();
   }catch(err){ toastErr('مش قادر أقرا الصورة — جرّبي صورة تانية'); }
 });
 
@@ -10133,6 +10301,79 @@ function dbTkOpenDay(date){
   setTimeout(()=> openTasks(date), 260);
 }
 
+
+// ==========================================================
+// شريط التارجت — قدام الموظفة
+// ==========================================================
+// بيوري: اليوم كام من 150 · الشهر كام من 3900 · وباقي كام.
+// بيتحدّث فورًا بعد كل إرسال من غير refresh.
+let _target = { data:null, loading:false };
+
+async function refreshTargetBar(){
+  if(_target.loading) return;
+  _target.loading = true;
+  try{
+    _target.data = await callApi('verifyProof', {
+      token: SESSION.token, action:'progress'
+    }) || null;
+    renderTargetBar();
+  }catch(e){ /* مايوقفش الموقع */ }
+  _target.loading = false;
+}
+
+function renderTargetBar(){
+  const box = document.getElementById('targetBar');
+  if(!box) return;
+  const d = _target.data;
+  if(!d){ box.style.display='none'; return; }
+
+  const T = d.targets||{}, today = d.today||{}, month = d.month||{}, C = d.calc||{};
+  const rej = d.rejections||{};
+
+  const dDone = dbN(today.sent), dTarget = dbN(T.daily);
+  const mDone = dbN(month.sent), mTarget = dbN(T.monthly);
+  const dPct = dbN(C.dailyPct), mPct = dbN(C.monthlyPct);
+
+  const dCls = dPct>=100 ? 'done' : dPct>=60 ? 'ok' : dPct>=30 ? 'mid' : 'low';
+  const mCls = C.onTrack ? 'ok' : mPct>=50 ? 'mid' : 'low';
+
+  box.style.display = '';
+  box.innerHTML =
+      '<div class="tg-row">'
+    // ── اليوم ──
+    +   '<div class="tg-card '+dCls+'">'
+    +     '<div class="tg-h"><span>📅 النهاردة</span>'
+    +       '<b>'+dbF(dDone)+'<i>/'+dbF(dTarget)+'</i></b></div>'
+    +     '<div class="tg-b"><span style="width:'+Math.min(100,dPct)+'%"></span></div>'
+    +     '<div class="tg-n">'
+    +       (dPct>=100
+          ? '<b class="win">🎉 خلّصتي تارجت النهاردة</b>'
+          : 'باقي <b>'+dbF(dbN(C.dailyLeft))+'</b> رسالة')
+    +       (dbN(today.followups) ? '<span>🔄 '+dbF(today.followups)+' متابعة</span>' : '')
+    +       (dbN(today.proofs) ? '<span>📸 '+dbF(today.proofs)+' إثبات</span>' : '')
+    +     '</div>'
+    +   '</div>'
+    // ── الشهر ──
+    +   '<div class="tg-card '+mCls+'">'
+    +     '<div class="tg-h"><span>🗓️ الشهر</span>'
+    +       '<b>'+dbF(mDone)+'<i>/'+dbF(mTarget)+'</i></b></div>'
+    +     '<div class="tg-b"><span style="width:'+Math.min(100,mPct)+'%"></span></div>'
+    +     '<div class="tg-n">'
+    +       'باقي <b>'+dbF(dbN(C.monthlyLeft))+'</b>'
+    +       '<span>⏳ '+dbN(month.days_left)+' يوم</span>'
+    +       (dbN(C.perDayNeeded)
+          ? '<span class="'+(C.onTrack?'':'warn')+'">🎯 '+dbF(dbN(C.perDayNeeded))+'/يوم</span>'
+          : '')
+    +     '</div>'
+    +   '</div>'
+    + '</div>'
+    // ── تحذير المحاولات المرفوضة ──
+    + (dbN(rej.month)
+        ? '<div class="tg-warn">🚫 <b>'+dbN(rej.month)+'</b> محاولة رفع إثبات متكرر الشهر ده — '
+          + 'الإدارة شايفة التفاصيل</div>'
+        : '');
+}
+
 // ===== تصدير النتائج المفلترة إلى CSV =====
 // بيصدّر اللي ظاهر قدامك بالظبط بعد الفلترة — مش القاعدة كلها.
 // كله بيحصل في المتصفح: صفر طلبات للسيرفر، وشغّال حتى على 14 ألف صف.
@@ -10904,7 +11145,7 @@ function updateUIForRole() {
   // 📋 المهام اليومية — للكل
   const tasksRow = document.getElementById('tasksRow');
   if (tasksRow) tasksRow.style.display = logged ? '' : 'none';
-  if (logged) checkPendingTasks();
+  if (logged) { checkPendingTasks(); if(!isAdminSession()) refreshTargetBar(); }
 
   // صفوف الفلاتر دي للأدمن بس — بنخفيها عن الموظفة
   // عشان ماتاخدش مساحة فاضية وتزوّد التمرير من غير فايدة
