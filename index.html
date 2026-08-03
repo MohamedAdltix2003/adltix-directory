@@ -4477,8 +4477,9 @@
       <div class="lg-field"><label>عدد المتابعين</label><input id="al-followers" type="text" inputmode="numeric" placeholder="مثال: 250000"></div>
       <div class="lg-field"><label>الإيميل (اختياري)</label><input id="al-email" type="text" placeholder="name@mail.com"></div>
       <div class="lg-field"><label>رقم الواتساب (اختياري)</label><input id="al-phone" type="text" inputmode="tel" placeholder="+9665xxxxxxxx"></div>
-      <div class="form-hint" style="font-size:11px;color:var(--muted)">
-        ⚠️ لو كتبتي إيميل أو رقم، المؤثر هيتحوّل تلقائي للـ AI Agent.
+      <div class="form-hint" id="al-agent-note"
+           style="font-size:11px;color:var(--muted);display:none">
+        ⚠️ لو كتبت إيميل أو رقم، المؤثر هيتحوّل تلقائي للـ AI Agent.
       </div>
     </div>
     <div class="lg-err" id="al-err"></div>
@@ -5824,6 +5825,10 @@ function openAddLeadModal(){
     const el=document.getElementById(id); if(el) el.value='';
   });
   alSyncManual();
+  // ⚠️ تنبيه الأجنت للأدمن بس — الموظفة اللي بتضيف المؤثر
+  //    بيفضل معاها مهما كان، فالرسالة كانت هتلخبطها.
+  const note = document.getElementById('al-agent-note');
+  if(note) note.style.display = isAdminSession() ? '' : 'none';
   const sel=document.getElementById('al-platform');
   if(sel && !sel._synced){ sel.addEventListener('change', alSyncManual); sel._synced=true; }
   const ov=document.getElementById('addLeadOverlay'); ov.style.display='flex'; requestAnimationFrame(()=>ov.classList.add('show'));
