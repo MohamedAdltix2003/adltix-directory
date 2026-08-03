@@ -4351,6 +4351,50 @@
   @media (max-width:640px){
     .rt-tgh b{ font-size:21px }
   }
+
+  /* ==========================================================
+     نافذة إضافة مؤثر
+     ⚠️ لما تختار سناب بتظهر خانات إضافية والنافذة كانت بتطول
+        من غير تمرير، فالزراير تحت بتختفي بره الشاشة.
+     ========================================================== */
+  .al-box{
+    position:relative;
+    max-height:88vh;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+  }
+  /* الزراير تفضل ثابتة تحت مهما طالت النافذة */
+  .al-box .cf-btns{
+    position:sticky; bottom:-1px;
+    background:var(--surface);
+    padding-top:12px; margin-top:14px;
+    border-top:1px solid var(--line);
+  }
+  .al-x{
+    position:sticky; top:0; float:inline-start;
+    width:30px; height:30px; border-radius:9px; cursor:pointer;
+    border:1px solid var(--line); background:var(--surface); color:var(--muted);
+    font-size:14px; line-height:1; z-index:2;
+    transition:background .15s, color .15s, border-color .15s;
+  }
+  .al-x:hover{ background:#FEE2E2; color:#DC2626; border-color:#DC2626 }
+
+  /* شريط تمرير أنعم */
+  .al-box::-webkit-scrollbar{ width:8px }
+  .al-box::-webkit-scrollbar-thumb{
+    background:color-mix(in srgb,var(--line) 70%,transparent);
+    border-radius:99px;
+  }
+
+  @media (max-height:700px){
+    .al-box{ max-height:92vh }
+  }
+
+  /* الخانات اليدوية أقصر شوية عشان النافذة ماتطولش */
+  #al-manual .lg-field{ margin-bottom:9px }
+  #al-manual .lg-field label{ font-size:11.5px; margin-bottom:3px }
+  #al-manual .lg-field input{ padding:9px 12px; font-size:13px }
+  #al-manual .form-hint{ line-height:1.6 }
 </style>
 </head>
 <body>
@@ -4396,7 +4440,8 @@
 <button id="addLeadFab" class="add-fab" style="display:none" onclick="openAddLeadModal()">+ Add Influencer ⭐</button>
 
 <div id="addLeadOverlay" class="cf-overlay">
-  <div class="cf-box" style="max-width:420px;text-align:right">
+  <div class="cf-box al-box" style="max-width:420px;text-align:right">
+    <button class="al-x" onclick="closeAddLeadModal()" aria-label="إغلاق">✕</button>
     <div class="cf-title">إضافة مؤثر جديد</div>
     <div class="cf-msg">الصقي لينك بروفايل إنستجرام أو تيك توك، واختاري المجال والدولة.</div>
     <div class="lg-field"><label>المنصة</label>
