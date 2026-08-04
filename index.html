@@ -6889,36 +6889,59 @@ function _createIframe(host, src){
   const poster = host.querySelector('.poster');
   if(poster && !_posterBackup.has(host)) _posterBackup.set(host, poster.outerHTML);
 
-  // ⚠️ الـ iframe بيتحط **فوق** البوستر مش بدله.
-  //    السبب: تيك توك بيرفض الطلبات الكتيرة ويعرض
-  //    "overload-protect triggered" جوه الإطار — ولو كنا مسحنا
-  //    البوستر، المستخدم بيشوف رسالة الرفض بدل الصورة.
-  //    دلوقتي البوستر فاضل تحت، والإطار بيتشال لو فشل.
-  f.style.opacity = '0';
-  f.style.transition = 'opacity .25s';
+  // ⚠️ الإطار بيتحمّل **مخفي تمامًا** جنب الصفحة.
+  //    السبب: تيك توك بيرد بصفحة فيها "overload-protect triggered"
+  //    بدل الفيديو، والرسالة دي كانت بتبان للمستخدم.
+  //    دلوقتي الإطار مستخبي لحد ما نتأكد إنه فيديو حقيقي —
+  //    ولو طلع رسالة رفض بيتشال قبل ما حد يشوفه.
+  f.style.cssText =
+    'position:absolute;left:-99999px;top:0;width:100%;height:100%;'
+    + 'opacity:0;pointer-events:none;border:0';
   host.appendChild(f);
 
   let settled = false;
-  const ok = () => {
+
+  const reveal = () => {
     if(settled) return; settled = true;
-    // الإطار اشتغل — نوريه ونخفي البوستر
-    f.style.opacity = '1';
+    // ✅ فيديو حقيقي — نرجّعه مكانه ونوريه
+    // بنرجّعه مكانه وهو لسه شفاف، وبعدين نظهّره —
+    // كده مفيش ومضة ولا احتمال تبان رسالة لجزء من الثانية.
+    f.style.cssText = 'opacity:0;transition:opacity .2s';
+    f.className = 'embedframe';
+    requestAnimationFrame(() => { f.style.opacity = '1'; });
     const pEl = host.querySelector('.poster');
     if(pEl) pEl.style.display = 'none';
     _embedDone();
   };
-  const fail = () => {
+
+  const drop = () => {
     if(settled) return; settled = true;
-    // فشل — نشيل الإطار ونسيب البوستر زي ما هو
-    f.remove();
-    host.dataset.loaded = '';        // يقدر يحاول تاني بالضغط
+    // ❌ رفض أو فشل — نشيله والصورة تفضل زي ما هي
+    try{ f.remove(); }catch(e){}
+    host.dataset.loaded = '';       // يحاول تاني بالضغط
     _embedDone();
   };
 
-  f.addEventListener('load', ok, { once:true });
-  f.addEventListener('error', fail, { once:true });
-  // تيك توك بيرد بسرعة لما يرفض — 4 ثواني كفاية
-  setTimeout(() => { if(!settled) fail(); }, 4000);
+  f.addEventListener('load', () => {
+    // الإطار حمّل — بس هو فيديو ولا رسالة رفض؟
+    // تيك توك بيرد بصفحة صغيرة جدًا لما يرفض، والفيديو بياخد وقت أطول.
+    // بنستنى نص ثانية عشان المحتوى يستقر وبعدين نقرر.
+    setTimeout(() => {
+      if(settled) return;
+      // لو الإطار لسه فاضي أو ارتفاعه صغير جدًا → رفض
+      let bad = false;
+      try{
+        const h = f.contentWindow?.document?.body?.scrollHeight;
+        if(typeof h === 'number' && h > 0 && h < 60) bad = true;
+      }catch(e){
+        // cross-origin — مش هنعرف نقرا، وده الوضع الطبيعي للفيديو الشغّال
+      }
+      bad ? drop() : reveal();
+    }, 500);
+  }, { once:true });
+
+  f.addEventListener('error', drop, { once:true });
+  setTimeout(() => { if(!settled) drop(); }, 6000);
 }
 function _embedDone(){ _embedActive = Math.max(0, _embedActive - 1); _pumpEmbedQueue(); }
 
