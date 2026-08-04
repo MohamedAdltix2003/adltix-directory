@@ -4395,6 +4395,179 @@
   #al-manual .lg-field label{ font-size:11.5px; margin-bottom:3px }
   #al-manual .lg-field input{ padding:9px 12px; font-size:13px }
   #al-manual .form-hint{ line-height:1.6 }
+
+  /* ==========================================================
+     بطاقة الشريك
+     ========================================================== */
+  .pt-box{
+    max-width:520px !important; text-align:right !important;
+    max-height:90vh; overflow-y:auto; position:relative; padding-top:18px !important;
+  }
+  .pt-x{
+    position:sticky; top:0; float:inline-start;
+    width:30px; height:30px; border-radius:9px; cursor:pointer; z-index:2;
+    border:1px solid var(--line); background:var(--surface); color:var(--muted);
+    font-size:14px; line-height:1;
+  }
+  .pt-x:hover{ background:#FEE2E2; color:#DC2626; border-color:#DC2626 }
+
+  .pt-hd{
+    display:flex; align-items:center; gap:12px; margin-bottom:15px;
+    padding:14px 16px; border-radius:15px;
+    background:linear-gradient(135deg,#2A1310,#4A1F16);
+  }
+  .pt-ic{ font-size:26px; width:46px; height:46px; border-radius:13px; flex-shrink:0;
+          display:grid; place-items:center; background:rgba(228,85,63,.22) }
+  .pt-ht{ flex:1; min-width:0 }
+  .pt-ht b{ display:block; font-size:15px; font-weight:900; color:#fff }
+  .pt-ht span{ display:block; font-size:11.5px; color:rgba(255,255,255,.65); margin-top:2px }
+  .pt-id{ font-size:12px; font-weight:800; color:var(--brand-2);
+          padding:5px 11px; border-radius:9px; background:rgba(255,255,255,.1);
+          direction:ltr; unicode-bidi:isolate; flex-shrink:0 }
+
+  .pt-nm{ margin-bottom:14px }
+  .pt-nm b{ display:block; font-size:19px; font-weight:800; color:var(--ink) }
+  .pt-nm i{ display:block; font-style:normal; font-size:12.5px;
+            color:var(--muted); margin-top:2px }
+  .pt-tags{ display:flex; flex-wrap:wrap; gap:6px; margin-top:9px }
+  .pt-tags span{ font-size:11px; font-weight:800; padding:4px 11px; border-radius:999px;
+                 background:color-mix(in srgb,var(--line) 38%,transparent);
+                 color:var(--muted) }
+  .pt-tags .ok  { background:#DCFCE7; color:#15803D }
+  .pt-tags .hot { background:#DCFCE7; color:#15803D }
+  .pt-tags .warm{ background:#FEF3C7; color:#92400E }
+  .pt-tags .cold{ background:#FEE2E2; color:#B91C1C }
+  body.dark .pt-tags .ok, body.dark .pt-tags .hot{ background:#14432a; color:#86efac }
+  body.dark .pt-tags .warm{ background:#4a3510; color:#fcd34d }
+  body.dark .pt-tags .cold{ background:#4a1414; color:#fca5a5 }
+
+  .pt-gr{ display:flex; flex-direction:column; gap:1px; margin-bottom:14px;
+          border-radius:13px; overflow:hidden; border:1px solid var(--line) }
+  .pt-r{ display:flex; align-items:center; gap:10px; padding:10px 13px;
+         background:var(--surface); font-size:12.5px }
+  .pt-r:nth-child(even){ background:color-mix(in srgb,var(--line) 16%,transparent) }
+  .pt-ri{ font-size:14px; flex-shrink:0 }
+  .pt-rl{ color:var(--muted); font-weight:700; min-width:76px; flex-shrink:0 }
+  .pt-rv{ color:var(--ink); font-weight:700; flex:1; word-break:break-word;
+          direction:ltr; unicode-bidi:plaintext; text-align:start }
+  .pt-rv i{ font-style:normal; font-size:11px; opacity:.8; margin-inline-start:6px }
+  .pt-rv i.hot { color:#15803D } .pt-rv i.warm{ color:#92400E }
+  .pt-rv i.cold{ color:#B91C1C }
+
+  /* الأداء — للأدمن بس */
+  .pt-fin{ padding:14px; border-radius:14px; margin-bottom:14px;
+           background:color-mix(in srgb,var(--brand) 7%,transparent);
+           border:1px solid color-mix(in srgb,var(--brand) 24%,transparent) }
+  .pt-fh{ font-size:12.5px; font-weight:800; color:var(--brand); margin-bottom:10px }
+  .pt-fg{ display:grid; grid-template-columns:repeat(auto-fit,minmax(88px,1fr)); gap:8px }
+  .pt-fi{ text-align:center; padding:9px 6px; border-radius:11px;
+          background:var(--surface) }
+  .pt-fi b{ display:block; font-size:15px; font-weight:800; color:var(--ink);
+            font-family:'Space Grotesk','Tajawal',sans-serif;
+            direction:ltr; unicode-bidi:isolate }
+  .pt-fi span{ display:block; font-size:10px; font-weight:700;
+               color:var(--muted); margin-top:3px }
+  .pt-tier{ margin-top:10px; font-size:12px; font-weight:800; color:var(--brand) }
+
+  .pt-soc{ display:flex; flex-wrap:wrap; gap:7px; margin-bottom:14px }
+  .pt-s{ font-size:11.5px; font-weight:700; padding:7px 13px; border-radius:10px;
+         text-decoration:none; color:var(--ink);
+         background:color-mix(in srgb,var(--line) 30%,transparent);
+         transition:background .15s, color .15s }
+  .pt-s:hover{ background:var(--brand-soft); color:var(--brand) }
+
+  .pt-note{ padding:12px 14px; border-radius:12px; margin-bottom:14px;
+            font-size:12.5px; font-weight:700; line-height:1.7;
+            background:#FEF3C7; color:#92400E }
+  body.dark .pt-note{ background:#4a3510; color:#fcd34d }
+
+  /* الشركاء في نتيجة الرفع */
+  .imp-partners{ margin:13px 0; padding:13px 15px; border-radius:13px;
+                 background:#FEF3C7; border:1px solid #FCD34D }
+  body.dark .imp-partners{ background:#4a3510; border-color:#92400E }
+  .imp-ph{ font-size:13px; font-weight:800; color:#92400E; margin-bottom:9px }
+  body.dark .imp-ph{ color:#fcd34d }
+  .imp-pl{ display:flex; flex-direction:column; gap:4px;
+           max-height:220px; overflow-y:auto }
+  .imp-pi{ display:flex; align-items:center; gap:9px; flex-wrap:wrap;
+           font-size:11.5px; padding:6px 11px; border-radius:9px;
+           background:rgba(255,255,255,.55) }
+  body.dark .imp-pi{ background:rgba(0,0,0,.22) }
+  .imp-pi b{ font-weight:800; color:#92400E; direction:ltr; unicode-bidi:isolate }
+  .imp-pi span{ color:var(--muted) }
+  .imp-pi i{ font-style:normal; font-size:10px; font-weight:800;
+             padding:2px 8px; border-radius:999px; margin-inline-start:auto;
+             background:#DCFCE7; color:#15803D }
+  body.dark .imp-pi b{ color:#fcd34d }
+  .imp-pm{ font-size:11px; color:var(--muted); margin-top:7px; font-weight:700 }
+
+  @media (max-width:640px){
+    .pt-nm b{ font-size:17px }
+    .pt-rl{ min-width:64px }
+    .pt-fi b{ font-size:13.5px }
+  }
+
+  /* المعرّفات — أول حاجة في البطاقة */
+  .pt-ids{ display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-bottom:15px }
+  .pt-idc{
+    padding:11px 13px; border-radius:13px; text-align:center;
+    background:color-mix(in srgb,var(--brand) 8%,transparent);
+    border:1px solid color-mix(in srgb,var(--brand) 22%,transparent);
+  }
+  .pt-idc span{ display:block; font-size:10.5px; font-weight:700;
+                color:var(--muted); margin-bottom:3px;
+                letter-spacing:.3px; text-transform:uppercase }
+  .pt-idc b{ display:block; font-size:19px; font-weight:800; color:var(--brand);
+             font-family:'Space Grotesk','Tajawal',sans-serif; line-height:1.1;
+             direction:ltr; unicode-bidi:isolate }
+
+  /* الرسالة */
+  .pt-note b{ display:block; font-size:13.5px; font-weight:900; margin-bottom:5px }
+  .pt-note span{ display:block; font-size:12px; font-weight:600;
+                 line-height:1.75; opacity:.92; margin-bottom:4px }
+  .pt-note span:last-child{ margin-bottom:0 }
+  .pt-note span b{ display:inline; font-size:12px; font-weight:800 }
+  .pt-note.block{ background:#FEE2E2; color:#991B1B;
+                  border:1px solid #FCA5A5 }
+  body.dark .pt-note.block{ background:#3d1414; color:#fca5a5; border-color:#B91C1C }
+
+  @media (max-width:640px){
+    .pt-idc b{ font-size:16px }
+  }
+
+  /* بانر الشريك في نتايج البحث */
+  .gl-partner{
+    display:flex; align-items:center; gap:12px;
+    padding:14px 16px; border-radius:15px; margin-bottom:12px;
+    background:linear-gradient(135deg,#2A1310,#4A1F16);
+    box-shadow:0 4px 16px rgba(42,19,16,.25);
+  }
+  .gl-pi{ font-size:24px; width:44px; height:44px; border-radius:13px; flex-shrink:0;
+          display:grid; place-items:center; background:rgba(228,85,63,.22) }
+  .gl-pt{ flex:1; min-width:0 }
+  .gl-pt b{ display:block; font-size:14px; font-weight:900; color:#fff }
+  .gl-pt > span{ display:block; font-size:11.5px; color:rgba(255,255,255,.68);
+                 margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+  .gl-pids{ display:flex; gap:7px; flex-wrap:wrap; margin-top:7px }
+  .gl-pids i{
+    font-style:normal; font-size:10px; font-weight:700;
+    color:rgba(255,255,255,.6); padding:3px 9px; border-radius:8px;
+    background:rgba(255,255,255,.1);
+  }
+  .gl-pids b{ color:var(--brand-2); font-weight:800; margin-inline-start:4px;
+              direction:ltr; unicode-bidi:isolate }
+  .gl-pb{
+    font-family:inherit; font-size:12px; font-weight:800; cursor:pointer;
+    padding:9px 16px; border-radius:11px; border:none; flex-shrink:0;
+    background:var(--brand); color:#fff;
+    transition:filter .15s, transform .14s;
+  }
+  .gl-pb:hover{ filter:brightness(1.1); transform:translateY(-1px) }
+
+  @media (max-width:640px){
+    .gl-partner{ flex-wrap:wrap; padding:12px 13px }
+    .gl-pb{ width:100%; margin-top:4px }
+  }
 </style>
 </head>
 <body>
@@ -4809,6 +4982,7 @@ const FN_MAP = {
   dashboard:      "dashboard",
   dailyTasks:     "daily-tasks",
   verifyProof:    "verify-proof",
+  partners:       "sync-partners",
   sendReport:     "send-report",
   reportSettings: "report-settings",
   getProofs:      "get-proofs",
@@ -5850,6 +6024,21 @@ async function submitAddLead(){
   if(!link){ errEl.textContent='الصقي لينك البروفايل الأول'; return; }
   const btn=document.getElementById('al-submit'); btn.disabled=true; btn.textContent='بنضيفه...';
   try{
+    // 🤝 الفحص الأول: ده شريك عندنا خلاص؟
+    btn.textContent='بنتأكد...';
+    const chk = await checkPartner({
+      handle:   link, platform,
+      email:    (document.getElementById('al-email')||{}).value || '',
+      phone:    (document.getElementById('al-phone')||{}).value || ''
+    });
+    if(chk.found){
+      btn.disabled=false; btn.textContent='إضافة';
+      closeAddLeadModal();
+      showPartnerCard(chk, { blocked:true });
+      return;
+    }
+    btn.textContent='بنضيفه...';
+
     const res=await callApi('addManualLead',{
       token:SESSION.token, link, niche, country, platform,
       manualName:      (document.getElementById('al-name')||{}).value || '',
@@ -6527,6 +6716,10 @@ async function callApi(action,payload){
   catch(e){ throw new Error('رد غير مفهوم من السيرفر ('+res.status+')'); }
 
   if(!j.ok){
+    // 🔒 423 = الحساب مقفول مؤقتًا بعد محاولات كتير
+    if(res.status===423){
+      throw new Error(j.error || 'الحساب مقفول مؤقتًا');
+    }
     if(res.status===401){
       // الجلسة انتهت أو التوكن مش صالح.
       // بدل ما كل زرار يدي خطأ غامض لوحده، بنمسكها هنا مرة واحدة
@@ -6875,29 +7068,45 @@ function maybeGlobalLookup(){
     box.style.display = '';
     box.innerHTML = '<div class="gl-load"><span class="lm-spin"></span> بندوّر في قاعدة البيانات كلها…</div>';
     try{
-      const r = await callApi('lookupLead', { token: SESSION.token, query: q });
+      // 🤝 بندوّر في المؤثرين والشركاء في نفس الوقت
+      const [r, pr] = await Promise.all([
+        callApi('lookupLead', { token: SESSION.token, query: q }),
+        checkPartner({
+          handle:   q,
+          email:    q.includes('@') ? q : null,
+          phone:    /^[\d+\s()-]{7,}$/.test(q) ? q : null
+        }).catch(()=>({ found:false }))
+      ]);
       // فحص مزدوج: البحث اتغيّر؟ ولا ظهرت نتايج محلية وإحنا مستنيين؟
       if(state.q !== q || _list.length){ clearGlobalLookup(); return; }
-      renderGlobalLookup(r, q);
+
+      // لو طلع شريك، بنوريها البانر فوق النتيجة
+      renderGlobalLookup(r, q, pr && pr.found ? pr : null);
     }catch(e){
       box.innerHTML = '<div class="gl-load">مش قادر أدوّر دلوقتي — جرّب تاني</div>';
     }
   }, 450);
 }
 
-function renderGlobalLookup(r, q){
+function renderGlobalLookup(r, q, partner){
   const box = document.getElementById('globalLookup');
   if(!box) return;
 
+  // 🤝 بانر الشريك — بيظهر فوق أي نتيجة تانية
+  const pBanner = partner ? glPartnerBanner(partner) : '';
+
   // مش موجود خالص
   if(!r || !r.found){
-    box.innerHTML =
-        '<div class="gl-none">'
-      +   '<div class="gl-ni">🔍</div>'
-      +   '<h3>المؤثر ده مش موجود عندنا</h3>'
-      +   '<p>مالقيناهوش في قاعدة البيانات. تقدر تضيفه دلوقتي من زرار '
-      +     '<b>إضافة مؤثر</b> فوق، وهيتسجّل باسمك.</p>'
-      + '</div>';
+    box.innerHTML = pBanner
+      + (partner
+        ? ''   // شريك — البانر لوحده كفاية
+        : '<div class="gl-none">'
+          +   '<div class="gl-ni">🔍</div>'
+          +   '<h3>المؤثر ده مش موجود عندنا</h3>'
+          +   '<p>مالقيناهوش في قاعدة البيانات. تقدر تضيفه دلوقتي من زرار '
+          +     '<b>إضافة مؤثر</b> فوق، وهيتسجّل باسمك.</p>'
+          + '</div>');
+    if(partner) glBindPartner(box, partner);
     return;
   }
 
@@ -6929,8 +7138,8 @@ function renderGlobalLookup(r, q){
          + '<span>لسه محدش كلّمه. لو محتاجاه، ضيفي اللينك بتاعه من زرار الإضافة واطلبي إعادة تخصيص.</span></div>';
   }
 
-  box.innerHTML =
-      '<div class="gl-head">نتيجة من قاعدة البيانات</div>'
+  box.innerHTML = pBanner
+    + '<div class="gl-head">نتيجة من قاعدة البيانات</div>'
     + '<div class="gl-card">'
     +   '<div class="gl-av">'+av+'</div>'
     +   '<div class="gl-info">'
@@ -6948,6 +7157,8 @@ function renderGlobalLookup(r, q){
     + (c.profile_url
         ? '<a class="gl-link" href="'+esc(c.profile_url)+'" target="_blank" rel="noopener">زيارة الحساب ↗</a>'
         : '');
+
+  if(partner) glBindPartner(box, partner);
 }
 
 // ⚠️ الاسم كان scrollTop وده متعارض مع خاصية موجودة أصلاً في المتصفح
@@ -7335,7 +7546,7 @@ async function startImport(){
   btns.innerHTML = '<span class="imp-busy">جاري الاستيراد… متقفلش الصفحة</span>';
 
   const total  = _impRows.length;
-  const chunks = Math.ceil(total / IMPORT_CHUNK);
+  let chunks = Math.ceil(total / IMPORT_CHUNK);
   let batchId = 0, added = 0, dups = 0, bad = 0, done = 0, enriched = 0, toAgent = 0;
   let notFound = 0, tempFail = 0, quotaHit = false, staffUpload = false;
   const failed = [];
@@ -7351,8 +7562,46 @@ async function startImport(){
   const stat = document.getElementById('impStat');
   const nums = document.getElementById('impNums');
 
+  // 🤝 نفحص الملف كله قبل الرفع — أسرع من الفحص صف بصف
+  let partnerHits = {};
+  try{
+    stat.textContent = 'بنتأكد من الشركاء…';
+    const uids = _impRows.map(r => r && r.uid).filter(Boolean);
+    if(uids.length){
+      partnerHits = await callApi('partners', {
+        token: SESSION.token, action:'checkBulk', uids
+      }) || {};
+    }
+  }catch(e){ /* الفحص فشل — بنكمّل الرفع عادي */ }
+
+  const hitCount = Object.keys(partnerHits).length;
+  if(hitCount){
+    // ⚠️ بنشيلهم من الرفع — مشتركين معانا خلاص
+    _impRows = _impRows.filter(r => !(r && partnerHits[r.uid]));
+    chunks = Math.max(1, Math.ceil(_impRows.length / IMPORT_CHUNK));
+
+    // بنوري الموظفة مين اتشال وليه
+    const list = Object.entries(partnerHits).slice(0, 60);
+    const box = document.createElement('div');
+    box.className = 'imp-partners';
+    box.innerHTML =
+        '<div class="imp-ph">🤝 <b>' + dbF(hitCount) + '</b> منهم شركاء عندنا خلاص — اتشالوا</div>'
+      + '<div class="imp-pl">'
+      +   list.map(([uid, p]) =>
+          '<div class="imp-pi">'
+          + '<b>' + esc(String(uid).split(':')[1] || uid) + '</b>'
+          + '<span>' + esc(p.full_name || '') + '</span>'
+          + (p.status ? '<i>' + esc(p.status) + '</i>' : '')
+          + '</div>').join('')
+      + '</div>'
+      + (hitCount > 60 ? '<div class="imp-pm">و' + dbF(hitCount - 60) + ' غيرهم</div>' : '');
+    const host = document.getElementById('impNums');
+    if(host && host.parentElement) host.parentElement.insertBefore(box, host);
+  }
+
   for(let i=0;i<chunks;i++){
     const slice = _impRows.slice(i*IMPORT_CHUNK, (i+1)*IMPORT_CHUNK);
+    if(!slice.length) continue;
     try{
       const r = await callApi('bulkImport', {
         token: SESSION.token, rows: slice, batchId: batchId || undefined,
@@ -11012,6 +11261,180 @@ function dbTgStaff(staff, d){
       + '<div class="db-ss"><b>'+dbF(own.sent)+'</b><span>رسالة</span></div>'
       + '</div>';
   }).join('') + '</div>';
+}
+
+
+// ==========================================================
+// الشركاء — المشتركين معانا بالفعل
+// ==========================================================
+// الهدف: نمنع الموظفة تضيّع وقتها على حد مشترك خلاص،
+// ونمنع الإحراج مع العميل.
+
+// فحص مؤثر واحد
+// بانر الشريك في نتايج البحث
+function glPartnerBanner(pr){
+  const p = pr.partner || {};
+  const M = { handle:'الحساب', email:'الإيميل', phone:'الرقم' };
+  return '<div class="gl-partner" id="glPartner">'
+    + '<div class="gl-pi">🤝</div>'
+    + '<div class="gl-pt">'
+    +   '<b>شريك مسجّل في المنصة</b>'
+    +   '<span>' + esc(p.full_name || '') + ' · اتحدّد عن طريق '
+    +     (M[pr.matched_by] || pr.matched_by || '') + '</span>'
+    +   '<div class="gl-pids">'
+    +     '<i>User ID <b>' + esc(p.user_id || '—') + '</b></i>'
+    +     '<i>Partner ID <b>' + esc(p.partner_id || '—') + '</b></i>'
+    +   '</div>'
+    + '</div>'
+    + '<button class="gl-pb">التفاصيل</button>'
+    + '</div>';
+}
+
+// ربط زرار التفاصيل بعد الرسم
+function glBindPartner(box, pr){
+  const btn = box.querySelector('.gl-pb');
+  if(btn) btn.onclick = () => showPartnerCard(pr, { blocked:false });
+}
+
+async function checkPartner(opts){
+  try{
+    return await callApi('partners', {
+      token: SESSION.token, action:'check',
+      uid: opts.uid || null, email: opts.email || null,
+      phone: opts.phone || null, handle: opts.handle || null,
+      platform: opts.platform || null
+    }) || { found:false };
+  }catch(e){ return { found:false, _error:e.message }; }
+}
+
+// نافذة "ده شريك عندنا"
+function showPartnerCard(r, opts){
+  opts = opts || {};
+  const p = r.partner || {};
+  const f = r.financials;          // للأدمن بس
+  const M = { handle:'الحساب', email:'الإيميل', phone:'الرقم' };
+
+  const dash = v => (v===null || v===undefined || v==='') ? '—' : esc(String(v));
+  const money = v => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n.toLocaleString('en-US',{maximumFractionDigits:0}) : '—';
+  };
+  const dt = v => v ? dbDate(String(v).slice(0,10)) : '—';
+
+  // حالة نشاط الشريك
+  const days = Number(p.days_since_last);
+  const act = !Number.isFinite(days) ? { c:'', t:'' }
+            : days <= 30  ? { c:'hot',  t:'نشط' }
+            : days <= 180 ? { c:'warm', t:'نشط من فترة' }
+            : { c:'cold', t:'متوقف' };
+
+  const ov = document.createElement('div');
+  ov.className = 'cf-overlay'; ov.style.zIndex = '10002';
+  ov.innerHTML =
+      '<div class="cf-box pt-box">'
+    +   '<button class="pt-x" aria-label="إغلاق">✕</button>'
+
+    // الترويسة
+    +   '<div class="pt-hd">'
+    +     '<div class="pt-ic">🤝</div>'
+    +     '<div class="pt-ht">'
+    +       '<b>شريك مسجّل في المنصة</b>'
+    +       '<span>الحساب ده متعاقد معانا · اتحدّد عن طريق '
+    +         (M[r.matched_by] || r.matched_by || '') + '</span>'
+    +     '</div>'
+    +   '</div>'
+
+    // 🆔 المعرّفات — أول حاجة تشوفها
+    +   '<div class="pt-ids">'
+    +     '<div class="pt-idc"><span>User ID</span><b>' + dash(p.user_id) + '</b></div>'
+    +     '<div class="pt-idc"><span>Partner ID</span><b>' + dash(p.partner_id) + '</b></div>'
+    +   '</div>'
+
+    // الاسم والحالة
+    +   '<div class="pt-nm">'
+    +     '<b>' + dash(p.full_name) + '</b>'
+    +     (p.company_name ? '<i>' + esc(p.company_name) + '</i>' : '')
+    +     '<div class="pt-tags">'
+    +       (p.status ? '<span class="ok">' + esc(p.status) + '</span>' : '')
+    +       (p.partner_type ? '<span>' + esc(p.partner_type) + '</span>' : '')
+    +       (p.segment ? '<span class="' + act.c + '">' + esc(p.segment) + '</span>' : '')
+    +     '</div>'
+    +   '</div>'
+
+    // التفاصيل
+    +   '<div class="pt-gr">'
+    +     ptRow('📧', 'الإيميل', dash(p.email))
+    +     ptRow('📱', 'الرقم', dash(p.phone))
+    +     (p.whatsapp && p.whatsapp !== p.phone
+        ? ptRow('💬', 'واتساب', dash(p.whatsapp)) : '')
+    +     ptRow('🌍', 'السوق', dash(p.primary_market) + (p.region ? ' · ' + esc(p.region) : ''))
+    +     ptRow('📡', 'القناة', dash(p.primary_channel))
+    +     ptRow('📅', 'اشترك', dt(p.joined_date))
+    +     ptRow('🛒', 'آخر أوردر', dt(p.last_order)
+        + (Number.isFinite(days) ? ' <i class="' + act.c + '">من ' + dbF(days) + ' يوم</i>' : ''))
+    +     (p.account_manager ? ptRow('👤', 'المسؤول', dash(p.account_manager)) : '')
+    +   '</div>'
+
+    // 🔒 الأرقام المالية — للأدمن والمديرين بس
+    +   (f
+      ? '<div class="pt-fin">'
+        + '<div class="pt-fh">📊 الأداء</div>'
+        + '<div class="pt-fg">'
+        +   ptFin('الأوردرات', money(f.total_orders))
+        +   ptFin('الصالحة', money(f.valid_orders))
+        +   ptFin('المبيعات', money(f.sale_amount))
+        +   ptFin('الصالحة', money(f.valid_sale_amount))
+        +   ptFin('متوسط الأوردر', money(f.avg_order_value))
+        +   (f.revenue_rank ? ptFin('الترتيب', '#' + dbN(f.revenue_rank)) : '')
+        + '</div>'
+        + (f.commission_tier
+          ? '<div class="pt-tier">🏅 ' + esc(f.commission_tier) + '</div>' : '')
+        + '</div>'
+      : '')
+
+    // الحسابات
+    +   (p.instagram || p.tiktok || p.snapchat
+      ? '<div class="pt-soc">'
+        + (p.instagram ? ptSoc('📷', 'إنستجرام', p.instagram) : '')
+        + (p.tiktok    ? ptSoc('🎵', 'تيك توك', p.tiktok) : '')
+        + (p.snapchat  ? ptSoc('👻', 'سناب', p.snapchat) : '')
+        + '</div>'
+      : '')
+
+    +   '<div class="pt-note' + (opts.blocked ? ' block' : '') + '">'
+    +     (opts.blocked
+        ? '<b>الإضافة اتوقفت</b>'
+          + '<span>الحساب ده متعاقد مع أدلتكس بالفعل، ومعاه مسؤول حساب. '
+          + 'التواصل معاه من جديد ممكن يسبب لبس مع العميل.</span>'
+          + (p.account_manager
+            ? '<span>لو محتاج تفاصيل أكتر، كلّم <b>' + esc(p.account_manager) + '</b>.</span>'
+            : '')
+        : '<b>الحساب ده متعاقد معانا</b>'
+          + '<span>مش محتاج تواصل جديد — البيانات فوق للاطّلاع بس.</span>')
+    +   '</div>'
+
+    +   '<div class="cf-btns"><button class="cf-yes" data-x="1">تمام، فهمت</button></div>'
+    + '</div>';
+
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>ov.classList.add('show'));
+  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
+  ov.querySelector('.pt-x').onclick = close;
+  ov.querySelector('.cf-yes').onclick = close;
+  ov.addEventListener('click', e=>{ if(e.target===ov) close(); });
+}
+
+function ptRow(icon, label, val){
+  return '<div class="pt-r"><span class="pt-ri">'+icon+'</span>'
+    + '<span class="pt-rl">'+label+'</span>'
+    + '<span class="pt-rv">'+val+'</span></div>';
+}
+function ptFin(label, val){
+  return '<div class="pt-fi"><b>'+val+'</b><span>'+label+'</span></div>';
+}
+function ptSoc(icon, label, url){
+  return '<a class="pt-s" href="'+esc(url)+'" target="_blank" rel="noopener">'
+    + icon+' '+label+'</a>';
 }
 
 // ===== تصدير النتائج المفلترة إلى CSV =====
