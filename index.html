@@ -6867,7 +6867,11 @@ async function onApprove(btn){
 //   • وبرضه تقدر تدوس على أي كارت تشغّله فورًا من غير انتظار
 // ================================================================
 
-const EMBED_MAX_CONCURRENT = 2;
+// ⚠️ إطار واحد في المرة. تيك توك بيرفض لما يجيله طلبين مع بعض
+//    ويرد بـ "overload-protect triggered".
+const EMBED_MAX_CONCURRENT = 1;
+// فاصل بين كل إطار والتاني — بيقلّل الرفض جدًا
+const EMBED_GAP_MS = 350;
 const EMBED_UNLOAD_DISTANCE = 2.5;      // مضاعفات ارتفاع الشاشة
 const _embedQueue = [];
 const _posterBackup = new WeakMap();    // نحتفظ بالبوستر عشان نرجّعه
@@ -6881,16 +6885,54 @@ function _createIframe(host, src){
   f.setAttribute('scrolling','no');
   f.setAttribute('allow','encrypted-media; clipboard-write');
   f.setAttribute('allowfullscreen','');
+
   const poster = host.querySelector('.poster');
   if(poster && !_posterBackup.has(host)) _posterBackup.set(host, poster.outerHTML);
-  host.innerHTML = '';
+
+  // ⚠️ الـ iframe بيتحط **فوق** البوستر مش بدله.
+  //    السبب: تيك توك بيرفض الطلبات الكتيرة ويعرض
+  //    "overload-protect triggered" جوه الإطار — ولو كنا مسحنا
+  //    البوستر، المستخدم بيشوف رسالة الرفض بدل الصورة.
+  //    دلوقتي البوستر فاضل تحت، والإطار بيتشال لو فشل.
+  f.style.opacity = '0';
+  f.style.transition = 'opacity .25s';
   host.appendChild(f);
-  f.addEventListener('load', _embedDone, { once:true });
-  setTimeout(_embedDone, 5000);         // شبكة الاحتياط لو الـ iframe معلّق
+
+  let settled = false;
+  const ok = () => {
+    if(settled) return; settled = true;
+    // الإطار اشتغل — نوريه ونخفي البوستر
+    f.style.opacity = '1';
+    const pEl = host.querySelector('.poster');
+    if(pEl) pEl.style.display = 'none';
+    _embedDone();
+  };
+  const fail = () => {
+    if(settled) return; settled = true;
+    // فشل — نشيل الإطار ونسيب البوستر زي ما هو
+    f.remove();
+    host.dataset.loaded = '';        // يقدر يحاول تاني بالضغط
+    _embedDone();
+  };
+
+  f.addEventListener('load', ok, { once:true });
+  f.addEventListener('error', fail, { once:true });
+  // تيك توك بيرد بسرعة لما يرفض — 4 ثواني كفاية
+  setTimeout(() => { if(!settled) fail(); }, 4000);
 }
 function _embedDone(){ _embedActive = Math.max(0, _embedActive - 1); _pumpEmbedQueue(); }
 
+let _embedPumpTimer = null;
 function _pumpEmbedQueue(){
+  // بنأخّر شوية عشان مانرشقش تيك توك بطلبات ورا بعض
+  if(_embedPumpTimer) return;
+  _embedPumpTimer = setTimeout(() => {
+    _embedPumpTimer = null;
+    _pumpNow();
+  }, EMBED_GAP_MS);
+}
+
+function _pumpNow(){
   while(_embedActive < EMBED_MAX_CONCURRENT && _embedQueue.length){
     const item = _embedQueue.shift();
     const host = item.host;
