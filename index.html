@@ -7566,10 +7566,15 @@ async function startImport(){
   let partnerHits = {};
   try{
     stat.textContent = 'بنتأكد من الشركاء…';
-    const uids = _impRows.map(r => r && r.uid).filter(Boolean);
-    if(uids.length){
+    // ⚠️ بنبعت الإيميلات والأرقام كمان — 45% من الشركاء
+    //    مالهمش حساب سوشيال، فالفحص بالـ uid وحده مش كفاية.
+    const uids   = _impRows.map(r => r && r.uid).filter(Boolean);
+    const emails = _impRows.map(r => r && (r.email || '')).filter(x => x && x.includes('@'));
+    const phones = _impRows.map(r => r && (r.whatsapp || r.phone || ''))
+                           .filter(x => x && String(x).replace(/\D/g,'').length >= 9);
+    if(uids.length || emails.length || phones.length){
       partnerHits = await callApi('partners', {
-        token: SESSION.token, action:'checkBulk', uids
+        token: SESSION.token, action:'checkBulk', uids, emails, phones
       }) || {};
     }
   }catch(e){ /* الفحص فشل — بنكمّل الرفع عادي */ }
@@ -7577,7 +7582,17 @@ async function startImport(){
   const hitCount = Object.keys(partnerHits).length;
   if(hitCount){
     // ⚠️ بنشيلهم من الرفع — مشتركين معانا خلاص
-    _impRows = _impRows.filter(r => !(r && partnerHits[r.uid]));
+    // بنفلتر بالتلاتة: الحساب أو الإيميل أو الرقم
+    const isHit = r => {
+      if(!r) return false;
+      if(r.uid && partnerHits[r.uid]) return true;
+      const em = String(r.email||'').trim().toLowerCase();
+      if(em && partnerHits[em]) return true;
+      const ph = r.whatsapp || r.phone || '';
+      if(ph && partnerHits[ph]) return true;
+      return false;
+    };
+    _impRows = _impRows.filter(r => !isHit(r));
     chunks = Math.max(1, Math.ceil(_impRows.length / IMPORT_CHUNK));
 
     // بنوري الموظفة مين اتشال وليه
