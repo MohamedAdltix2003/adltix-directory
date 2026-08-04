@@ -4569,13 +4569,6 @@
     .gl-pb{ width:100%; margin-top:4px }
   }
 
-  /* الإطار مخفي لحد ما يحمّل — البوستر بيبان تحته */
-  .media.embed{ position:relative }
-  .embedframe.embed-loading{
-    opacity:0 !important;
-    pointer-events:none;
-  }
-  .embedframe{ transition:opacity .25s ease }
 </style>
 </head>
 <body>
@@ -6889,32 +6882,12 @@ function _createIframe(host, src){
   f.setAttribute('scrolling','no');
   f.setAttribute('allow','encrypted-media; clipboard-write');
   f.setAttribute('allowfullscreen','');
-
   const poster = host.querySelector('.poster');
   if(poster && !_posterBackup.has(host)) _posterBackup.set(host, poster.outerHTML);
-
-  // ⚠️ البوستر بيفضل ظاهر تحت الإطار لحد ما الفيديو يحمّل.
-  //    قبل كده كنا بنمسحه فورًا (host.innerHTML = '')، فلو تيك توك
-  //    رد بـ "overload-protect triggered" كانت الرسالة تبان مكان الفيديو.
-  //    دلوقتي الإطار شفاف فوق البوستر، وبيظهر بس لما يشتغل فعلاً.
-  f.classList.add('embed-loading');
+  host.innerHTML = '';
   host.appendChild(f);
-
-  let settled = false;
-  const done = (show) => {
-    if(settled) return; settled = true;
-    if(show){
-      f.classList.remove('embed-loading');   // ✅ الفيديو بان
-    } else {
-      try{ f.remove(); }catch(e){}           // ❌ نشيله والبوستر يفضل
-      host.dataset.loaded = '';              // يحاول تاني بالضغط
-    }
-    _embedDone();
-  };
-
-  f.addEventListener('load', () => done(true),  { once:true });
-  f.addEventListener('error', () => done(false), { once:true });
-  setTimeout(() => done(false), 5000);        // شبكة الاحتياط لو الإطار معلّق
+  f.addEventListener('load', _embedDone, { once:true });
+  setTimeout(_embedDone, 5000);         // شبكة الاحتياط لو الـ iframe معلّق
 }
 function _embedDone(){ _embedActive = Math.max(0, _embedActive - 1); _pumpEmbedQueue(); }
 
