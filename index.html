@@ -1719,7 +1719,32 @@
   /* ==========================================================
      رفع المؤثرين بالجملة
      ========================================================== */
-  .imp-box{ max-width:560px !important; text-align:right }
+  /* ⚠️ النافذة كانت بتطول مع كتر الشركاء والزراير تختفي تحت
+     من غير طريقة للخروج. دلوقتي تمرير داخلي + زراير ثابتة. */
+  .imp-box{
+    max-width:560px !important; text-align:right;
+    max-height:88vh; overflow-y:auto; position:relative;
+    padding-top:18px !important; overscroll-behavior:contain;
+  }
+  .imp-box .cf-btns{
+    position:sticky; bottom:-1px; z-index:3;
+    background:var(--surface);
+    padding-top:12px; margin-top:14px;
+    border-top:1px solid var(--line);
+  }
+  .imp-x{
+    position:sticky; top:0; float:inline-start; z-index:4;
+    width:30px; height:30px; border-radius:9px; cursor:pointer;
+    border:1px solid var(--line); background:var(--surface); color:var(--muted);
+    font-size:14px; line-height:1;
+    transition:background .15s, color .15s, border-color .15s;
+  }
+  .imp-x:hover{ background:#FEE2E2; color:#DC2626; border-color:#DC2626 }
+  .imp-box::-webkit-scrollbar{ width:8px }
+  .imp-box::-webkit-scrollbar-thumb{
+    background:color-mix(in srgb,var(--line) 70%,transparent); border-radius:99px }
+
+  @media (max-height:700px){ .imp-box{ max-height:92vh } }
 
   .imp-drop{
     display:flex; flex-direction:column; align-items:center; gap:7px;
@@ -7536,6 +7561,7 @@ function openImportModal(){
   ov.className = 'cf-overlay'; ov.id = 'impOverlay';
   ov.innerHTML =
       '<div class="cf-box imp-box">'
+    +   '<button class="imp-x" onclick="closeImportModal()" aria-label="إغلاق">✕</button>'
     +   '<div class="cf-title">📄 رفع مؤثرين من ملف</div>'
     +   '<div class="cf-msg">ارفع ملف Excel أو CSV. الموقع هيتعرّف على الأعمدة لوحده، '
     +     'ويفحص كل حساب — الموجود هيترفض والجديد هيتضاف.</div>'
