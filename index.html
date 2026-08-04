@@ -11813,10 +11813,12 @@ function setView(v){
 function updateViewCounts(){
   const all = cleanList();
   const myName = (SESSION && (SESSION.staffName || SESSION.username)) || '';
+  // ⚠️ نفس قاعدة الفلتر: أي حاجة ضفتها — بملف أو يدوي.
+  //    كان بيطلب import_batch_id، فالإضافة اليدوية مكانتش بتتعد.
   let imp = 0;
   for(const c of all){
-    if(Number(c.import_batch_id) &&
-       String(c.imported_by||'').toLowerCase() === String(myName).toLowerCase()) imp++;
+    const by = String(c.imported_by||'').trim();
+    if(by && by.toLowerCase() === String(myName).toLowerCase()) imp++;
   }
   const set = (id, n) => { const e = document.getElementById(id); if(e) e.textContent = n.toLocaleString('en'); };
   set('vnAssigned', all.length - imp);
