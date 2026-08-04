@@ -4569,6 +4569,11 @@
     .gl-pb{ width:100%; margin-top:4px }
   }
 
+
+  /* رسالة قابلة للضغط */
+  .toast.t-click .t-msg{ cursor:pointer; text-decoration:underline;
+                         text-underline-offset:3px; text-decoration-style:dotted }
+  .toast.t-click .t-msg:hover{ opacity:.82 }
 </style>
 </head>
 <body>
@@ -5158,7 +5163,8 @@ function buildAllPills(){
     if(drow) drow.style.display = (state.view === 'imported') ? "" : "none";
     if(state.view === 'imported'){
       const myN = (SESSION && (SESSION.staffName || SESSION.username)) || '';
-      const imported = data.filter(c => Number(c.import_batch_id) &&
+      // نفس القاعدة: أي حاجة ضفتها — بملف أو يدوي
+      const imported = data.filter(c => String(c.imported_by||'').trim() &&
         String(c.imported_by||'').toLowerCase() === String(myN).toLowerCase());
       const within = (n) => imported.filter(c => c.imported_at &&
         (Date.now() - new Date(c.imported_at).getTime())/86400000 <= n).length;
@@ -5241,9 +5247,13 @@ function applyFilters(){
       // لو الأدمن رفع ملف والمؤثرين اتوزّعوا على الموظفات، الموظفة
       // بتلاقيهم في "مؤثريني" زي أي مؤثر — مش في "اللي رفعتهم"
       // لأنها مرفعتش حاجة أصلاً.
+      //
+      // ⚠️ الشرط كان بيطلب import_batch_id كمان — فالإضافة اليدوية
+      //    مكانتش بتظهر خالص. دلوقتي أي حاجة ضفتها (بملف أو يدوي)
+      //    بتظهر في صفحتك.
       const myName = (SESSION && (SESSION.staffName || SESSION.username)) || '';
-      const isImported = !!Number(c.import_batch_id) &&
-                         String(c.imported_by||'').toLowerCase() === String(myName).toLowerCase();
+      const isImported = String(c.imported_by||'').toLowerCase() ===
+                         String(myName).toLowerCase() && !!String(c.imported_by||'').trim();
       if(state.view === 'assigned' && isImported) return false;
       if(state.view === 'imported' && !isImported) return false;
 
@@ -6061,7 +6071,43 @@ async function submitAddLead(){
     // الـ backend بيرجّع رسالة مناسبة لكل حالة (اتحوّل للأجنت / الرصيد خلص /
     // المنصة مش مفعّلة / اتجاب بنجاح) — بنعرضها زي ما هي
     if(res.message) toast(res.message, res.routedToAgent ? 'warn' : 'success');
+
+    // 📍 المؤثر راح لمين؟ الأدمن لازم يعرف — قبل كده كان بيضيف
+    //    ويلاقيه اختفى لأنه اتخصص لموظفة تانية والفلتر بيخفيه.
+    const owner = card.assigned_to || res.card?.assigned_to;
+    if(isAdminSession()){
+      setTimeout(()=>{
+        toast(owner
+          ? '📍 راح لـ ' + owner + ' — دوس عشان تشوفه'
+          : '🤖 راح للأجنت — عنده وسيلة تواصل',
+          'info', 8000, owner ? ()=>{ jumpToLead(card.uid, owner); } : null);
+      }, 900);
+    }
   }catch(e){ btn.disabled=false; btn.textContent='إضافة'; errEl.textContent=e.message||'حصل خطأ'; }
+}
+
+// بيروح للمؤثر حتى لو مخصص لموظفة تانية — بيظبط الفلتر ويدوّر عليه
+function jumpToLead(uid, owner){
+  try{
+    // بنفتح الفلتر على الموظفة صاحبة المؤثر ونبحث بالاسم
+    if(owner) state.staff = owner;
+    const handle = String(uid).split(':')[1] || uid;
+    state.q = handle;
+    const box = document.getElementById('searchBox') || document.getElementById('q');
+    if(box) box.value = handle;
+    // نحدّث أزرار الفلتر لو موجودة
+    document.querySelectorAll('#f-staff .pill').forEach(b => {
+      b.classList.toggle('on', b.dataset.v === owner);
+    });
+    if(typeof render === 'function') render();
+    setTimeout(()=>{
+      const el = document.querySelector('.card[data-uid="'+uid+'"]');
+      if(el){
+        el.classList.add('new-card-flash');
+        el.scrollIntoView({behavior:'smooth', block:'center'});
+      }
+    }, 400);
+  }catch(e){ /* مايوقفش حاجة */ }
 }
 
 // ===== Employee Management =====
@@ -12249,7 +12295,8 @@ function toastHost(){
   return h;
 }
 
-function toast(msg, type = 'info', ms){
+// المعامل الرابع (اختياري): دالة بتتنفّذ لو المستخدم دوس على الرسالة
+function toast(msg, type = 'info', ms, onClick){
   const text = String(msg == null ? '' : msg).trim();
   if(!text) return;
 
@@ -12262,6 +12309,11 @@ function toast(msg, type = 'info', ms){
     + '<span class="t-msg"></span>'
     + '<button class="t-x" aria-label="إغلاق">×</button>';
   el.querySelector('.t-msg').textContent = text;   // textContent = آمن ضد أي HTML
+
+  if(typeof onClick === 'function'){
+    el.classList.add('t-click');
+    el.querySelector('.t-msg').onclick = () => { try{ onClick(); }catch(e){} };
+  }
 
   const close = () => {
     el.classList.remove('in');
