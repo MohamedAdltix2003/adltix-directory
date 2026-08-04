@@ -5921,7 +5921,8 @@ function handleSessionExpired(){
     const u = document.getElementById('lg-user');
     if(u) setTimeout(()=>u.focus(), 100);
   }
-  if(typeof toast === 'function') toast('انتهت جلستك — سجّل دخول تاني','warn', 6000);
+  // ⚠️ رسالة "انتهت جلستك" اتشالت بناءً على طلب المستخدم.
+  //    شاشة الدخول لوحدها كافية للتوضيح.
 }
 
 async function logout(){
