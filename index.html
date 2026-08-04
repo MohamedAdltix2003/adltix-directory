@@ -4578,6 +4578,50 @@
   /* أزرار سريعة لأيام المتابعة */
   .fu-quick{ display:flex; flex-wrap:wrap; gap:6px; margin:9px 0 13px }
   .fu-quick .tk-qb.on{ background:var(--brand); color:#fff; border-color:var(--brand) }
+
+  /* الشركاء في نتيجة الاستيراد */
+  .is-c.ptn b{ color:#B45309 }
+  body.dark .is-c.ptn b{ color:#fcd34d }
+
+  .imp-ptn{
+    margin-top:14px; padding:14px 16px; border-radius:14px;
+    background:#FEF3C7; border:1px solid #FCD34D;
+  }
+  body.dark .imp-ptn{ background:#3d2c0d; border-color:#92400E }
+  .imp-ptn > b{
+    display:block; font-size:13.5px; font-weight:900;
+    color:#92400E; margin-bottom:10px;
+  }
+  body.dark .imp-ptn > b{ color:#fcd34d }
+
+  .imp-plist{ display:flex; flex-direction:column; gap:5px;
+              max-height:260px; overflow-y:auto }
+  .imp-pr{
+    display:flex; align-items:center; gap:9px; flex-wrap:wrap;
+    font-size:11.5px; padding:7px 11px; border-radius:9px;
+    background:rgba(255,255,255,.6);
+  }
+  body.dark .imp-pr{ background:rgba(0,0,0,.25) }
+  .pr-h{ font-weight:800; color:#92400E; direction:ltr; unicode-bidi:isolate }
+  .pr-n{ color:var(--muted); flex:1; min-width:70px }
+  .pr-b{ font-size:10px; font-weight:700; padding:2px 8px; border-radius:7px;
+         background:rgba(0,0,0,.07); color:#92400E }
+  .pr-s{ font-size:10px; font-weight:800; padding:2px 9px; border-radius:999px;
+         background:#DCFCE7; color:#15803D }
+  body.dark .pr-h, body.dark .pr-b{ color:#fcd34d }
+  body.dark .pr-b{ background:rgba(255,255,255,.1) }
+  body.dark .pr-s{ background:#14432a; color:#86efac }
+
+  .imp-pnote{
+    font-size:11.5px; line-height:1.75; color:#92400E;
+    margin-top:10px; padding-top:10px; border-top:1px dashed #FCD34D;
+  }
+  body.dark .imp-pnote{ color:#fcd34d; border-color:#92400E }
+
+  @media (max-width:640px){
+    .imp-pr{ gap:6px; padding:6px 9px }
+    .pr-n{ min-width:100%; order:3 }
+  }
 </style>
 </head>
 <body>
@@ -7740,7 +7784,9 @@ async function startImport(){
   }
 
   _impBusy = false;
-  showImportResult({ batchId, total, added, dups, bad, enriched, toAgent, notFound, tempFail, quotaHit, staffUpload, failed });
+  showImportResult({ batchId, total, added, dups, bad, enriched, toAgent, notFound,
+                     tempFail, quotaHit, staffUpload, failed,
+                     partners: partnerHits, partnersCount: hitCount });
   if(added) boot();          // نحمّل الكروت الجديدة
   refreshQuota();            // الرصيد اتغيّر — نحدّثه
 }
@@ -7761,6 +7807,10 @@ function showImportResult(r){
     +     '<div class="is-c ok"><b>'+r.added.toLocaleString('en')+'</b><span>اتضافوا</span></div>'
     +     '<div class="is-c dup"><b>'+r.dups.toLocaleString('en')+'</b><span>موجودين قبل كده</span></div>'
     +     '<div class="is-c bad"><b>'+r.bad.toLocaleString('en')+'</b><span>صفوف غلط</span></div>'
+    +     (r.partnersCount
+        ? '<div class="is-c ptn"><b>'+Number(r.partnersCount).toLocaleString('en')+'</b>'
+          + '<span>شركاء عندنا</span></div>'
+        : '')
     +   '</div>'
     +   ((r.enriched || r.toAgent)
         ? '<div class="ir-rows">'
@@ -7826,6 +7876,34 @@ function showImportResult(r){
             + '</div>';
         })()
     + '</div>'
+    // 🤝 الشركاء اللي اتشالوا — لازم يبانوا في النتيجة النهائية
+    //    قبل كده كانوا بيظهروا وقت الرفع بس ويختفوا في الآخر.
+    + (r.partnersCount
+        ? (() => {
+            const M = { handle:'الحساب', email:'الإيميل', phone:'الرقم' };
+            const list = Object.entries(r.partners || {});
+            return '<div class="imp-ptn">'
+              + '<b>🤝 ' + r.partnersCount + ' منهم شركاء عندنا بالفعل — مادخلوش</b>'
+              + '<div class="imp-plist">'
+              + list.slice(0, 60).map(([key, p]) => {
+                  const who = String(key).includes(':')
+                    ? '@' + String(key).split(':')[1]
+                    : key;
+                  return '<div class="imp-pr">'
+                    + '<span class="pr-h">' + esc(who) + '</span>'
+                    + '<span class="pr-n">' + esc(p.full_name || '') + '</span>'
+                    + '<span class="pr-b">اتطابق بـ' + (M[p.by] || p.by || '') + '</span>'
+                    + (p.status ? '<span class="pr-s">' + esc(p.status) + '</span>' : '')
+                    + '</div>';
+                }).join('')
+              + (list.length > 60
+                  ? '<div class="imp-more">+ ' + (list.length - 60) + ' كمان</div>' : '')
+              + '</div>'
+              + '<div class="imp-pnote">الحسابات دي متعاقدة مع أدلتكس، ومعاها مسؤولين حسابات. '
+              + 'التواصل معاها من جديد ممكن يسبب لبس مع العميل.</div>'
+              + '</div>';
+          })()
+        : '')
     + (r.failed.length
         ? '<div class="imp-fail"><b>تفاصيل اللي مادخلش ('+r.failed.length+'):</b><div class="imp-flist">'
           + r.failed.slice(0,60).map(x =>
