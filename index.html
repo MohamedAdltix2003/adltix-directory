@@ -7582,6 +7582,41 @@ async function handleImportFile(file){
   }
 }
 
+// استخراج uid من صف الملف — نفس منطق السيرفر بالظبط
+// (instagram:username). محتاجينه عشان نفحص الشركاء قبل الرفع.
+const IMP_PAT = {
+  instagram: /instagram\.com\/@?([A-Za-z0-9._]+)/i,
+  tiktok:    /tiktok\.com\/@?([A-Za-z0-9._]+)/i,
+  snapchat:  /snapchat\.com\/(?:add\/|u\/|t\/|@)?([A-Za-z0-9._-]+)/i,
+  youtube:   /youtube\.com\/@?([A-Za-z0-9._-]+)/i,
+};
+const IMP_STOP = ['p','reel','reels','explore','stories','profilecard','add','tv','share','t','u','c','channel'];
+
+function impUidOf(r){
+  if(!r) return null;
+  const raw = String(r.link || r.username || '').trim();
+  if(!raw) return null;
+
+  // منصة مذكورة صراحةً؟
+  let plat = String(r.platform || '').trim().toLowerCase();
+  if(plat === 'x' || plat === 'twitter') plat = 'twitter';
+
+  // رابط؟
+  for(const p in IMP_PAT){
+    const m = IMP_PAT[p].exec(raw);
+    if(m){
+      const h = m[1].toLowerCase().replace(/[./]+$/,'');
+      if(h && !IMP_STOP.includes(h)) return p + ':' + h;
+      return null;
+    }
+  }
+
+  // مش رابط — اسم حساب لوحده، محتاج منصة
+  const h = raw.replace(/^@/,'').trim().toLowerCase();
+  if(!/^[a-z0-9._-]{2,}$/.test(h) || IMP_STOP.includes(h)) return null;
+  return plat ? plat + ':' + h : 'instagram:' + h;
+}
+
 // ===== الاستيراد على دفعات =====
 async function startImport(){
   if(_impBusy || !_impRows.length) return;
@@ -7614,7 +7649,9 @@ async function startImport(){
     stat.textContent = 'بنتأكد من الشركاء…';
     // ⚠️ بنبعت الإيميلات والأرقام كمان — 45% من الشركاء
     //    مالهمش حساب سوشيال، فالفحص بالـ uid وحده مش كفاية.
-    const uids   = _impRows.map(r => r && r.uid).filter(Boolean);
+    // ⚠️ الصفوف مفيهاش uid — بيتعمل في السيرفر وقت الرفع.
+    //    فبنطلّعه هنا من اللينك بنفس طريقة السيرفر.
+    const uids   = _impRows.map(r => r && impUidOf(r)).filter(Boolean);
     const emails = _impRows.map(r => r && (r.email || '')).filter(x => x && x.includes('@'));
     const phones = _impRows.map(r => r && (r.whatsapp || r.phone || ''))
                            .filter(x => x && String(x).replace(/\D/g,'').length >= 9);
@@ -7627,11 +7664,13 @@ async function startImport(){
 
   const hitCount = Object.keys(partnerHits).length;
   if(hitCount){
+    // نربط كل صف بالـ uid بتاعه عشان الفلترة
     // ⚠️ بنشيلهم من الرفع — مشتركين معانا خلاص
     // بنفلتر بالتلاتة: الحساب أو الإيميل أو الرقم
     const isHit = r => {
       if(!r) return false;
-      if(r.uid && partnerHits[r.uid]) return true;
+      const uid = impUidOf(r);
+      if(uid && partnerHits[uid]) return true;
       const em = String(r.email||'').trim().toLowerCase();
       if(em && partnerHits[em]) return true;
       const ph = r.whatsapp || r.phone || '';
