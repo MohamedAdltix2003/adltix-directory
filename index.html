@@ -5915,7 +5915,7 @@ function handleSessionExpired(){
 
   const gate = document.getElementById('loginGate');
   const err  = document.getElementById('lg-err');
-  if(err) err.textContent = 'انتهت الجلسة — سجّل دخول تاني';
+  if(err) err.textContent = 'سجّل دخول عشان تكمّل';
   if(gate){
     gate.style.display = 'flex';
     const u = document.getElementById('lg-user');
@@ -6722,11 +6722,10 @@ async function callApi(action,payload){
       throw new Error(j.error || 'الحساب مقفول مؤقتًا');
     }
     if(res.status===401){
-      // الجلسة انتهت أو التوكن مش صالح.
-      // بدل ما كل زرار يدي خطأ غامض لوحده، بنمسكها هنا مرة واحدة
-      // ونرجّع المستخدم لشاشة الدخول برسالة واضحة.
+      // ⚠️ الجلسة مبقتش بتنتهي بالوقت — فالـ 401 دلوقتي معناها
+      //    إن التوكن نفسه مش صالح (مثلاً بعد تغيير الباسورد).
       handleSessionExpired();
-      throw new Error('انتهت الجلسة');
+      throw new Error('محتاج تسجّل دخول');
     }
     // بنلزّق اسم الـ function في الرسالة عشان لو حصل خطأ نعرف مصدره
     // فورًا بدل ما ندوّر في 12 function
