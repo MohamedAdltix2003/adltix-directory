@@ -4574,6 +4574,10 @@
   .toast.t-click .t-msg{ cursor:pointer; text-decoration:underline;
                          text-underline-offset:3px; text-decoration-style:dotted }
   .toast.t-click .t-msg:hover{ opacity:.82 }
+
+  /* أزرار سريعة لأيام المتابعة */
+  .fu-quick{ display:flex; flex-wrap:wrap; gap:6px; margin:9px 0 13px }
+  .fu-quick .tk-qb.on{ background:var(--brand); color:#fff; border-color:var(--brand) }
 </style>
 </head>
 <body>
@@ -4989,6 +4993,7 @@ const FN_MAP = {
   dailyTasks:     "daily-tasks",
   verifyProof:    "verify-proof",
   partners:       "sync-partners",
+  adminAction:    "admin-action",
   sendReport:     "send-report",
   reportSettings: "report-settings",
   getProofs:      "get-proofs",
@@ -8983,13 +8988,40 @@ function dbWhen(label, v, icon){
 const dbN = v => { const x = Number(v); return Number.isFinite(x) ? x : 0; };
 const dbF = v => dbN(v).toLocaleString('en');
 
+// ⚠️ كانت بتستخدم getUTCDate — بترجّع اليوم بتوقيت جرينتش.
+//    أي وقت بعد 10 مساءً بالقاهرة كان بيظهر باليوم اللي فات.
 function dbDate(v){
   if(!v) return '';
   const M = ['يناير','فبراير','مارس','إبريل','مايو','يونيو',
              'يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-  const d = new Date(v + (String(v).length===10 ? 'T00:00:00Z' : ''));
+  // تاريخ بس (2026-08-04) → مفيش وقت، نقراه زي ما هو
+  if(/^\d{4}-\d{2}-\d{2}$/.test(String(v))){
+    const [y,m,dd] = String(v).split('-').map(Number);
+    return dd + ' ' + M[m-1];
+  }
+  const d = new Date(v);
   if(isNaN(d)) return String(v);
-  return d.getUTCDate() + ' ' + M[d.getUTCMonth()];
+  try{
+    const p = new Intl.DateTimeFormat('en-GB',{ timeZone:'Africa/Cairo',
+      day:'numeric', month:'numeric' }).formatToParts(d);
+    const g = t => (p.find(x=>x.type===t)||{}).value || '';
+    return Number(g('day')) + ' ' + M[Number(g('month'))-1];
+  }catch(e){ return d.getUTCDate() + ' ' + M[d.getUTCMonth()]; }
+}
+
+// فرق الأيام بالتقويم المصري — مش بالساعات
+// (25 ساعة مش بالضرورة "يوم" لو عدّينا منتصف الليل مرة واحدة)
+function dbDaysAgo(v){
+  if(!v) return 0;
+  const fmt = d => new Intl.DateTimeFormat('en-CA',{ timeZone:'Africa/Cairo',
+    year:'numeric', month:'2-digit', day:'2-digit' }).format(d);
+  try{
+    const a = new Date(fmt(new Date(v)) + 'T00:00:00Z').getTime();
+    const b = new Date(fmt(new Date())  + 'T00:00:00Z').getTime();
+    return Math.round((b - a) / 86400000);
+  }catch(e){
+    return Math.floor((Date.now() - new Date(v).getTime()) / 86400000);
+  }
 }
 
 function dbDelta(v){
@@ -9986,7 +10018,7 @@ function dbDates(r){
 // خلية تاريخ في الجدول
 function dbDCell(v, extra){
   if(!v) return '<td class="z">—</td>';
-  const days = Math.floor((Date.now() - new Date(v).getTime()) / 86400000);
+  const days = dbDaysAgo(v);
   const ago = days === 0 ? 'النهاردة' : days === 1 ? 'امبارح' : days + ' يوم';
   return '<td class="dt"><b>'+esc(fmtShort(v))+'</b>'
     + '<span>'+ago+(extra?' · '+extra:'')+'</span></td>';
@@ -11201,6 +11233,7 @@ function dbTgFilters(){
     +     '<button class="db-rp'+(_dbTg.preset==='custom'?' on':'')+'" '
     +       'onclick="dbTgCustom()">📅 فترة</button>'
     +     '<button class="db-rp" onclick="dbTgEditTarget()">⚙️ التارجت</button>'
+    +     '<button class="db-rp" onclick="dbEditFollowup()">🔄 أيام المتابعة</button>'
     +   '</div>'
     + '</div>'
     + (_dbTg.from && _dbTg.to
@@ -11258,6 +11291,54 @@ function dbTgCustom(){
 }
 
 // تعديل التارجت
+// ⚙️ بعد كام يوم من الإرسال يبقى المؤثر محتاج متابعة
+async function dbEditFollowup(){
+  let cur = 2;
+  try{
+    const r = await callApi('adminAction', {
+      token: SESSION.token, action: 'getConfig', key: 'followup_after_days'
+    });
+    cur = Number(r && r.value) || 2;
+  }catch(e){}
+
+  const ov = document.createElement('div');
+  ov.className = 'cf-overlay'; ov.style.zIndex = '9999';
+  ov.innerHTML = '<div class="cf-box" style="max-width:420px;text-align:right">'
+    + '<div class="cf-title">🔄 أيام المتابعة</div>'
+    + '<div class="cf-msg">بعد كام يوم من إرسال الرسالة يبقى المؤثر محتاج متابعة؟ '
+    +   'الموظفة هتشوف تنبيه، والمؤثر هيظهر في قايمة "محتاجين متابعة".</div>'
+    + '<div class="lg-field"><label>عدد الأيام</label>'
+    +   '<input id="fuDays" type="number" min="1" max="30" value="'+cur+'"></div>'
+    + '<div class="fu-quick">'
+    +   [1,2,3,5,7].map(d =>
+        '<button class="tk-qb'+(d===cur?' on':'')+'" onclick="document.getElementById(\'fuDays\').value='+d+'">'
+        + d + ' يوم</button>').join('')
+    + '</div>'
+    + '<div class="lg-err" id="fuErr"></div>'
+    + '<div class="cf-btns"><button class="cf-cancel">إلغاء</button>'
+    +   '<button class="cf-yes ok" id="fuOk">حفظ</button></div></div>';
+
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>ov.classList.add('show'));
+  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
+  ov.querySelector('.cf-cancel').onclick = close;
+  ov.addEventListener('click', e=>{ if(e.target===ov) close(); });
+
+  ov.querySelector('#fuOk').onclick = async ()=>{
+    const v = Number(ov.querySelector('#fuDays').value) || 0;
+    if(v < 1 || v > 30){ ov.querySelector('#fuErr').textContent = 'من 1 لـ 30 يوم'; return; }
+    try{
+      await callApi('adminAction', {
+        token: SESSION.token, action: 'setConfig',
+        key: 'followup_after_days', value: String(v)
+      });
+      close();
+      toastOk('اتحفظ ✅ — المتابعة بعد ' + v + ' يوم');
+      if(typeof dbTgLoad === 'function') dbTgLoad();
+    }catch(e){ ov.querySelector('#fuErr').textContent = e.message; }
+  };
+}
+
 function dbTgEditTarget(){
   const T = (_dbTg.data||{}).targets || {};
   const ov = document.createElement('div');
