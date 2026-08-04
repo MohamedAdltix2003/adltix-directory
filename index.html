@@ -4568,6 +4568,14 @@
     .gl-partner{ flex-wrap:wrap; padding:12px 13px }
     .gl-pb{ width:100%; margin-top:4px }
   }
+
+  /* الإطار مخفي لحد ما يحمّل — البوستر بيبان تحته */
+  .media.embed{ position:relative }
+  .embedframe.embed-loading{
+    opacity:0 !important;
+    pointer-events:none;
+  }
+  .embedframe{ transition:opacity .25s ease }
 </style>
 </head>
 <body>
@@ -6867,11 +6875,7 @@ async function onApprove(btn){
 //   • وبرضه تقدر تدوس على أي كارت تشغّله فورًا من غير انتظار
 // ================================================================
 
-// ⚠️ إطار واحد في المرة. تيك توك بيرفض لما يجيله طلبين مع بعض
-//    ويرد بـ "overload-protect triggered".
-const EMBED_MAX_CONCURRENT = 1;
-// فاصل بين كل إطار والتاني — بيقلّل الرفض جدًا
-const EMBED_GAP_MS = 350;
+const EMBED_MAX_CONCURRENT = 2;
 const EMBED_UNLOAD_DISTANCE = 2.5;      // مضاعفات ارتفاع الشاشة
 const _embedQueue = [];
 const _posterBackup = new WeakMap();    // نحتفظ بالبوستر عشان نرجّعه
@@ -6889,73 +6893,32 @@ function _createIframe(host, src){
   const poster = host.querySelector('.poster');
   if(poster && !_posterBackup.has(host)) _posterBackup.set(host, poster.outerHTML);
 
-  // ⚠️ الإطار بيتحمّل **مخفي تمامًا** جنب الصفحة.
-  //    السبب: تيك توك بيرد بصفحة فيها "overload-protect triggered"
-  //    بدل الفيديو، والرسالة دي كانت بتبان للمستخدم.
-  //    دلوقتي الإطار مستخبي لحد ما نتأكد إنه فيديو حقيقي —
-  //    ولو طلع رسالة رفض بيتشال قبل ما حد يشوفه.
-  f.style.cssText =
-    'position:absolute;left:-99999px;top:0;width:100%;height:100%;'
-    + 'opacity:0;pointer-events:none;border:0';
+  // ⚠️ البوستر بيفضل ظاهر تحت الإطار لحد ما الفيديو يحمّل.
+  //    قبل كده كنا بنمسحه فورًا (host.innerHTML = '')، فلو تيك توك
+  //    رد بـ "overload-protect triggered" كانت الرسالة تبان مكان الفيديو.
+  //    دلوقتي الإطار شفاف فوق البوستر، وبيظهر بس لما يشتغل فعلاً.
+  f.classList.add('embed-loading');
   host.appendChild(f);
 
   let settled = false;
-
-  const reveal = () => {
+  const done = (show) => {
     if(settled) return; settled = true;
-    // ✅ فيديو حقيقي — نرجّعه مكانه ونوريه
-    // بنرجّعه مكانه وهو لسه شفاف، وبعدين نظهّره —
-    // كده مفيش ومضة ولا احتمال تبان رسالة لجزء من الثانية.
-    f.style.cssText = 'opacity:0;transition:opacity .2s';
-    f.className = 'embedframe';
-    requestAnimationFrame(() => { f.style.opacity = '1'; });
-    const pEl = host.querySelector('.poster');
-    if(pEl) pEl.style.display = 'none';
+    if(show){
+      f.classList.remove('embed-loading');   // ✅ الفيديو بان
+    } else {
+      try{ f.remove(); }catch(e){}           // ❌ نشيله والبوستر يفضل
+      host.dataset.loaded = '';              // يحاول تاني بالضغط
+    }
     _embedDone();
   };
 
-  const drop = () => {
-    if(settled) return; settled = true;
-    // ❌ رفض أو فشل — نشيله والصورة تفضل زي ما هي
-    try{ f.remove(); }catch(e){}
-    host.dataset.loaded = '';       // يحاول تاني بالضغط
-    _embedDone();
-  };
-
-  f.addEventListener('load', () => {
-    // الإطار حمّل — بس هو فيديو ولا رسالة رفض؟
-    // تيك توك بيرد بصفحة صغيرة جدًا لما يرفض، والفيديو بياخد وقت أطول.
-    // بنستنى نص ثانية عشان المحتوى يستقر وبعدين نقرر.
-    setTimeout(() => {
-      if(settled) return;
-      // لو الإطار لسه فاضي أو ارتفاعه صغير جدًا → رفض
-      let bad = false;
-      try{
-        const h = f.contentWindow?.document?.body?.scrollHeight;
-        if(typeof h === 'number' && h > 0 && h < 60) bad = true;
-      }catch(e){
-        // cross-origin — مش هنعرف نقرا، وده الوضع الطبيعي للفيديو الشغّال
-      }
-      bad ? drop() : reveal();
-    }, 500);
-  }, { once:true });
-
-  f.addEventListener('error', drop, { once:true });
-  setTimeout(() => { if(!settled) drop(); }, 6000);
+  f.addEventListener('load', () => done(true),  { once:true });
+  f.addEventListener('error', () => done(false), { once:true });
+  setTimeout(() => done(false), 5000);        // شبكة الاحتياط لو الإطار معلّق
 }
 function _embedDone(){ _embedActive = Math.max(0, _embedActive - 1); _pumpEmbedQueue(); }
 
-let _embedPumpTimer = null;
 function _pumpEmbedQueue(){
-  // بنأخّر شوية عشان مانرشقش تيك توك بطلبات ورا بعض
-  if(_embedPumpTimer) return;
-  _embedPumpTimer = setTimeout(() => {
-    _embedPumpTimer = null;
-    _pumpNow();
-  }, EMBED_GAP_MS);
-}
-
-function _pumpNow(){
   while(_embedActive < EMBED_MAX_CONCURRENT && _embedQueue.length){
     const item = _embedQueue.shift();
     const host = item.host;
