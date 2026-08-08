@@ -4684,6 +4684,77 @@
     .tg-al b{ font-size:22px }
     .tg-an .m{ margin-inline-start:0 }
   }
+
+  /* ═══ تاب الشيتات ═══ */
+  .sh-split{
+    display:flex; align-items:stretch; gap:12px; margin-bottom:14px;
+    padding:14px 16px; border-radius:16px;
+    background:linear-gradient(135deg,#2A1310,#4A1F16);
+  }
+  .sh-sh, .sh-si{ text-align:center; flex-shrink:0; min-width:96px }
+  .sh-sh b, .sh-si b{
+    display:block; font-size:11.5px; font-weight:800;
+    color:rgba(255,255,255,.7); margin-bottom:4px;
+  }
+  .sh-sh i, .sh-si i{
+    display:block; font-style:normal; font-size:22px; font-weight:900;
+    line-height:1; font-family:'Space Grotesk','Tajawal',sans-serif;
+    direction:ltr; unicode-bidi:isolate;
+  }
+  .sh-sh i{ color:#4ADE80 }
+  .sh-si i{ color:#60A5FA }
+  .sh-sh span, .sh-si span{
+    display:block; font-size:10px; color:rgba(255,255,255,.45); margin-top:3px;
+  }
+  .sh-bar{
+    flex:1; display:flex; flex-direction:column; justify-content:center;
+    min-width:0; position:relative;
+  }
+  .sh-bar > span{ display:block; height:100% }
+  .sh-bar{ padding:0 4px }
+  .sh-bar .sheet, .sh-bar .site{
+    position:absolute; top:50%; transform:translateY(-50%); height:9px;
+  }
+  .sh-bar .sheet{ inset-inline-start:4px; background:linear-gradient(90deg,#16A34A,#4ADE80);
+                  border-start-start-radius:99px; border-end-start-radius:99px }
+  .sh-bar .site { inset-inline-end:4px;  background:linear-gradient(90deg,#60A5FA,#1D4ED8);
+                  border-start-end-radius:99px; border-end-end-radius:99px }
+  .sh-pct{
+    position:relative; z-index:2; text-align:center; font-size:10.5px;
+    font-weight:800; color:#fff; margin-top:22px;
+  }
+
+  .sh-lnk{
+    font-size:11px; font-weight:800; text-decoration:none;
+    color:var(--brand); padding:3px 9px; border-radius:7px;
+    background:var(--brand-soft); white-space:nowrap;
+  }
+  .sh-lnk:hover{ filter:brightness(.94) }
+  .sh-ok{ color:#15803D; font-weight:800 }
+  .sh-no{ color:var(--muted); font-size:11px }
+
+  /* سجل العمليات */
+  .sh-log{ display:flex; flex-direction:column; gap:4px }
+  .sh-li{
+    display:flex; align-items:center; gap:9px; flex-wrap:wrap;
+    font-size:11.5px; padding:7px 11px; border-radius:9px;
+    background:color-mix(in srgb,var(--line) 18%,transparent);
+  }
+  .sh-li.bad{ background:#FEE2E2 }
+  body.dark .sh-li.bad{ background:#3d1414 }
+  .sh-li .k{ font-weight:800; color:var(--brand); min-width:74px }
+  .sh-li .s{ font-weight:700; color:var(--ink); min-width:64px }
+  .sh-li .d{ flex:1; color:var(--muted); min-width:100px }
+  .sh-li .t{ font-size:10.5px; color:var(--muted); direction:ltr; unicode-bidi:isolate }
+  .sh-li.bad .k, .sh-li.bad .s{ color:#B91C1C }
+  body.dark .sh-li.bad .k, body.dark .sh-li.bad .s{ color:#fca5a5 }
+
+  @media (max-width:640px){
+    .sh-split{ flex-wrap:wrap }
+    .sh-bar{ order:3; width:100%; min-height:44px }
+    .sh-sh, .sh-si{ flex:1 }
+    .sh-li .d{ min-width:100% }
+  }
 </style>
 </head>
 <body>
@@ -9018,6 +9089,7 @@ function renderDashboard(){
     ['dates',    '📆', 'التواريخ'],
     ['tasks',    '📋', 'المهام'],
     ['targets',  '🎯', 'التارجت'],
+    ['sheets',   '📗', 'الشيتات'],
     ['deals',    '🎯', 'الصفقات'],
     ['leads',    '📇', 'المؤثرين'],
     ['activity', '⚡', 'النشاط'],
@@ -9062,6 +9134,7 @@ function dbTabContent(r){
     case 'dates':    return dbDates(r);
     case 'tasks':    return dbTasks(r);
     case 'targets':  return dbTargets(r);
+    case 'sheets':   return dbSheets(r);
     case 'deals':    return dbDeals(r);
     case 'leads':    return dbLeads(r);
     case 'activity': return dbActivity(r);
@@ -11279,6 +11352,137 @@ function renderTargetBar(){
 //   🌐 من الموقع   — عدّاد مفتوح
 //   🚫 محاولات رفع إثبات متكرر بالتاريخ والساعة
 let _dbTg = { data:null, loading:false, from:'', to:'', preset:'month' };
+
+// ═══════════════════════════════════════════════════════════
+// 📗 تاب الشيتات — كل حاجة بتحصل في شيتات الفريق
+// ═══════════════════════════════════════════════════════════
+function dbSheets(r){
+  // 📗 البيانات جاية مع الداشبورد — مفيش نداء زيادة
+  const d = r.sheets || {};
+  const staff = d.staff || [];
+  const n = v => Number(v||0);
+  const f = v => n(v).toLocaleString('en');
+
+  // إجماليات
+  let tShSent=0, tSiSent=0, tShProof=0, tSiProof=0, tRej=0, tAdd=0, withSheet=0;
+  staff.forEach(s=>{
+    tShSent+=n(s.sheet_sent); tSiSent+=n(s.site_sent);
+    tShProof+=n(s.sheet_proofs); tSiProof+=n(s.site_proofs);
+    tRej+=n(s.sheet_rejected); tAdd+=n(s.sheet_added);
+    if(s.has_sheet) withSheet++;
+  });
+  const allSent = tShSent + tSiSent;
+  const shPct = allSent ? Math.round(tShSent/allSent*100) : 0;
+
+  let h = '';
+
+  // ═══ الشيت vs الموقع ═══
+  h += '<div class="sh-split">'
+    +   '<div class="sh-sh"><b>📗 من الشيت</b><i>'+f(tShSent)+'</i><span>رسالة</span></div>'
+    +   '<div class="sh-bar">'
+    +     (allSent
+        ? '<span class="sheet" style="width:'+shPct+'%"></span>'
+          + '<span class="site" style="width:'+(100-shPct)+'%"></span>'
+        : '')
+    +     '<div class="sh-pct">'+shPct+'% من الشغل من الشيت</div>'
+    +   '</div>'
+    +   '<div class="sh-si"><b>🖥️ من الموقع</b><i>'+f(tSiSent)+'</i><span>رسالة</span></div>'
+    + '</div>';
+
+  // ═══ الأرقام ═══
+  h += '<div class="db-kpis">'
+    +   dbCard('📗', 'شيتات مربوطة', withSheet, 'من ' + staff.length)
+    +   dbCard('📤', 'إرسال من الشيت', tShSent)
+    +   dbCard('📸', 'إثباتات', tShProof)
+    +   dbCard('➕', 'مؤثرين اتضافوا', tAdd)
+    +   dbCard('🚫', 'محاولات مرفوضة', tRej, '', tRej ? 'bad' : '')
+    + '</div>';
+
+  // ═══ جدول الفريق ═══
+  h += '<div class="db-sec"><div class="db-sh"><h3>👥 الفريق</h3></div>';
+  if(!staff.length){
+    h += '<div class="db-empty">مفيش موظفات</div>';
+  } else {
+    h += '<div class="db-tw"><table class="db-t"><thead><tr>'
+      +  '<th>الموظفة</th><th>الشيت</th><th>📗 إرسال</th><th>🖥️ إرسال</th>'
+      +  '<th>📸 إثبات</th><th>➕ اتضافوا</th><th>🚫 مرفوض</th>'
+      +  '<th>آخر مزامنة</th><th>أيام مؤرشفة</th></tr></thead><tbody>';
+
+    staff.forEach(s=>{
+      const bad = n(s.sheet_rejected) > 0;
+      h += '<tr'+(bad?' class="row-bad"':'')+'>'
+        + '<td><b>'+(s.emoji||'👤')+' '+esc(s.name)+'</b></td>'
+        + '<td>'+(s.has_sheet
+            ? (s.sheet_url
+               ? '<a class="sh-lnk" href="'+esc(s.sheet_url)+'" target="_blank" rel="noopener">افتح ↗</a>'
+               : '<span class="sh-ok">✅</span>')
+            : '<span class="sh-no">— مفيش</span>')+'</td>'
+        + '<td><b>'+f(s.sheet_sent)+'</b></td>'
+        + '<td>'+f(s.site_sent)+'</td>'
+        + '<td>'+f(s.sheet_proofs)+'</td>'
+        + '<td>'+f(s.sheet_added)+'</td>'
+        + '<td'+(bad?' class="z-bad"':'')+'>'+(bad?'🚫 '+f(s.sheet_rejected):'—')+'</td>'
+        + '<td class="z">'+(s.last_push ? fmtShort(s.last_push) : '—')+'</td>'
+        + '<td>'+f(s.archived_days)+'</td>'
+        + '</tr>';
+    });
+    h += '</tbody></table></div>';
+  }
+  h += '</div>';
+
+  // ═══ الأرشيف اليومي ═══
+  const arch = d.archive || [];
+  h += '<div class="db-sec"><div class="db-sh"><h3>🗄️ الأرشيف اليومي</h3></div>';
+  if(!arch.length){
+    h += '<div class="db-empty">مفيش أيام مؤرشفة في الفترة دي</div>';
+  } else {
+    h += '<div class="db-tw"><table class="db-t"><thead><tr>'
+      +  '<th>اليوم</th><th>الموظفة</th><th>اتضافوا</th><th>أكشنات</th>'
+      +  '<th>إثباتات</th><th>مرفوض</th><th>الملفات</th></tr></thead><tbody>';
+    arch.slice(0,60).forEach(a=>{
+      h += '<tr>'
+        + '<td><b>'+dbDate(a.day)+'</b></td>'
+        + '<td>'+esc(a.staff)+'</td>'
+        + '<td>'+f(a.added)+'</td>'
+        + '<td>'+f(a.actions)+'</td>'
+        + '<td>'+f(a.proofs)+'</td>'
+        + '<td'+(n(a.rejected)?' class="z-bad"':'')+'>'+(n(a.rejected)?f(a.rejected):'—')+'</td>'
+        + '<td>'
+        +   (a.folder ? '<a class="sh-lnk" href="'+esc(a.folder)+'" target="_blank" rel="noopener">📁 الصور</a> ' : '')
+        +   (a.sheet  ? '<a class="sh-lnk" href="'+esc(a.sheet)+'" target="_blank" rel="noopener">📗 الشيت</a>' : '')
+        +   (!a.folder && !a.sheet ? '<span class="z">—</span>' : '')
+        + '</td></tr>';
+    });
+    h += '</tbody></table></div>';
+  }
+  h += '</div>';
+
+  // ═══ سجل المزامنة ═══
+  const sync = d.recent_sync || [];
+  h += '<div class="db-sec"><div class="db-sh"><h3>⚡ آخر العمليات</h3></div>';
+  if(!sync.length){
+    h += '<div class="db-empty">مفيش عمليات</div>';
+  } else {
+    const KIND = {
+      pull:'📥 سحب', add:'➕ إضافة', action:'📝 أكشن',
+      proof:'📸 إثبات', delete:'🗑️ مسح', archive:'🗄️ أرشفة',
+      register:'🔗 ربط',
+    };
+    h += '<div class="sh-log">';
+    sync.slice(0,25).forEach(l=>{
+      h += '<div class="sh-li'+(l.ok?'':' bad')+'">'
+        + '<span class="k">'+(KIND[l.kind]||l.kind)+'</span>'
+        + '<span class="s">'+esc(l.staff||'')+'</span>'
+        + '<span class="d">'+esc(l.detail||l.error||'')+'</span>'
+        + '<span class="t">'+(l.at?fmtShort(l.at):'')+'</span>'
+        + '</div>';
+    });
+    h += '</div>';
+  }
+  h += '</div>';
+
+  return h;
+}
 
 function dbTargets(r){
   if(!_dbTg.data && !_dbTg.loading){ dbTgLoad(); }
