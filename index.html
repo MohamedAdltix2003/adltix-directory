@@ -11426,17 +11426,20 @@ let _dbTg = { data:null, loading:false, from:'', to:'', preset:'month' };
 // 📗 تاب الشيتات — كل حاجة بتحصل في شيتات الفريق
 // ═══════════════════════════════════════════════════════════
 // 📋 نسخ إعدادات الشيت للموظفة الجديدة
-function dbShCopy(json){
-  let d; try{ d = JSON.parse(json); }catch(e){ return; }
-  if(!d.e){ toastErr('لازم تحط إيميل جوجل الأول'); return; }
+function dbShCopy(btn){
+  const tok = btn.dataset.tok || '';
+  const st  = btn.dataset.st  || '';
+  const gm  = btn.dataset.gm  || '';
+  const mg  = btn.dataset.mg  || '';
 
-  const mgrs = String(d.m || '').split(',')
-    .map(x => x.trim()).filter(Boolean);
+  if(!gm){ toastErr('لازم تحط إيميل جوجل الأول'); return; }
+
+  const mgrs = mg.split(',').map(x => x.trim()).filter(Boolean);
 
   const txt =
-      "  TOKEN: '" + d.t + "',\n"
-    + "  STAFF: '" + d.s + "',\n"
-    + "  EMAIL: '" + d.e + "',\n"
+      "  TOKEN: '" + tok + "',\n"
+    + "  STAFF: '" + st + "',\n"
+    + "  EMAIL: '" + gm + "',\n"
     + "};\n\n"
     + "const MANAGERS = [\n"
     + mgrs.map(m => "  '" + m + "',").join('\n')
@@ -11446,12 +11449,14 @@ function dbShCopy(json){
     navigator.clipboard.writeText(txt);
     toastOk('📋 اتنسخ — الصقه في Apps Script');
   }catch(e){
-    showConfirm('إعدادات ' + d.s, txt, 'تمام', 'ok');
+    showConfirm('إعدادات ' + st, txt, 'تمام', 'ok');
   }
 }
 
 // ✏️ تعديل إيميل جوجل للموظفة
-async function dbShMail(staff, cur){
+async function dbShMail(btn){
+  const staff = btn.dataset.st || '';
+  const cur   = btn.dataset.gm || '';
   const ov = document.createElement('div');
   ov.className = 'cf-overlay'; ov.style.zIndex = '10001';
   ov.innerHTML = '<div class="cf-box" style="max-width:420px;text-align:right">'
@@ -11524,12 +11529,12 @@ function dbSheets(r){
           +   '<span>' + dbF(p.leads) + ' مؤثر · '
           +     (g ? '📧 ' + esc(g)
                    : '<i class="sp-w">⚠️ محتاج إيميل جوجل</i>') + '</span></div>'
-          + '<button class="sp-g" onclick="dbShMail('
-          +   esc(JSON.stringify(p.staff)) + ',' + esc(JSON.stringify(g)) + ')">✏️</button>'
+          + '<button class="sp-g" data-st="' + esc(p.staff) + '" '
+          +   'data-gm="' + esc(g) + '" onclick="dbShMail(this)">✏️</button>'
           + '<button class="sp-b"' + (g ? '' : ' disabled')
-          +   ' onclick="dbShCopy(' + esc(JSON.stringify(JSON.stringify({
-              t: p.token, s: p.staff, e: g, m: p.managers || '',
-            }))) + ')">📋 نسخ الإعدادات</button>'
+          +   ' data-tok="' + esc(p.token) + '" data-st="' + esc(p.staff) + '" '
+          +   'data-gm="' + esc(g) + '" data-mg="' + esc(p.managers || '') + '" '
+          +   'onclick="dbShCopy(this)">📋 نسخ الإعدادات</button>'
           + '</div>';
         }).join('')
       +   '</div>'
