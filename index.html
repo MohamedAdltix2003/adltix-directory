@@ -12499,8 +12499,23 @@ function mpPickCand(idx){
           it.uid = c.uid; it.handle = c.handle;
           it.action = c.action; it.seq = c.seq;
           it.label = c.action === 'followup' ? ('متابعة ' + c.seq) : 'إرسال';
-          it.conf = 'high';   // اختارتها بنفسها
-          it.msg = '';
+          // 🔒 تغيير المؤثر مايغيّرش نتيجة فحص الصورة.
+          //    قبل كده كانت 'high' — يعني أي صورة تعدّي بمجرد
+          //    ما تغيّر المؤثر. ده كان باب مفتوح.
+          const sigN = Object.values(it.signals || {})
+            .reduce((a, b) => a + Number(b || 0), 0);
+          const target = String(c.handle || '').toLowerCase();
+          const txt    = String(it.ocr || '').toLowerCase();
+          const matched = target.length >= 3 && txt.includes(target);
+
+          it.score  = matched ? 100 : 0;
+          it.manual = true;      // اختارته بإيدها — بيتسجّل للإدارة
+
+          if(matched && sigN >= 2)      it.conf = 'high';
+          else if(matched || sigN >= 2) it.conf = 'medium';
+          else                          it.conf = 'low';
+
+          it.msg = it.conf === 'low' ? 'مش واضح إنها محادثة' : '';
         }
         close();
         renderMobileProofs();
@@ -12566,7 +12581,8 @@ async function mpUpload(){
           token: SESSION.token, action: 'setVerify',
           hash, confidence: it.conf || 'none',
           ocrHandle: it.ocr || '', matched: !!it.score,
-          signals: it.signals || {},
+          signals: Object.assign({}, it.signals || {},
+                   it.manual ? { manual_pick: 1 } : {}),
           confirmed: it.conf === 'high',
         }).catch(()=>{});
       }
