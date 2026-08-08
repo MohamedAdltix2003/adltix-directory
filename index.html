@@ -12152,13 +12152,10 @@ async function mpAddLinks(){
 
   MP.addBusy = false;
 
-  // نحدّث قايمة المرشّحين — الجداد دخلوا
-  try{
-    const r = await callApi('verifyProof', {
-      token: SESSION.token, action: 'candidates',
-    });
-    MP.cands = (r.items || []).filter(x => x.action !== 'done');
-  }catch(e){}
+  // ⚠️ نعيد تحميل القوايم كلها — الجداد لازم يظهروا فورًا
+  //    قبل كده كنا بنحدّث cands بس، فتابة مؤثريني تفضل قديمة.
+  MP.loaded = false;
+  await mpLoadLists();
 
   renderMobileProofs();
   if(MP.addRes.added.length){
