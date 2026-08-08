@@ -4755,6 +4755,47 @@
     .sh-sh, .sh-si{ flex:1 }
     .sh-li .d{ min-width:100% }
   }
+
+  /* 🔔 موظفات محتاجين شيتات */
+  .sh-pend{
+    padding:14px 16px; border-radius:15px; margin-bottom:13px;
+    background:#FEF3C7; border:1px solid #FCD34D;
+  }
+  body.dark .sh-pend{ background:#3d2c0d; border-color:#92400E }
+  .sp-h{ font-size:13.5px; font-weight:800; color:#92400E; margin-bottom:10px }
+  .sp-h b{ font-size:16px }
+  body.dark .sp-h{ color:#fcd34d }
+
+  .sp-l{ display:flex; flex-direction:column; gap:6px }
+  .sp-i{
+    display:flex; align-items:center; gap:10px;
+    padding:9px 12px; border-radius:11px;
+    background:rgba(255,255,255,.62);
+  }
+  body.dark .sp-i{ background:rgba(0,0,0,.25) }
+  .sp-i .e{ font-size:17px; flex-shrink:0 }
+  .sp-i .n{ flex:1; min-width:0 }
+  .sp-i .n b{ display:block; font-size:12.5px; color:var(--ink) }
+  .sp-i .n span{ display:block; font-size:10.5px; color:var(--muted); margin-top:1px }
+  .sp-b{
+    font-family:inherit; font-size:11.5px; font-weight:800; cursor:pointer;
+    padding:7px 13px; border-radius:9px; border:none; flex-shrink:0;
+    background:#92400E; color:#fff;
+    transition:filter .15s, transform .14s;
+  }
+  .sp-b:hover{ filter:brightness(1.14); transform:translateY(-1px) }
+
+  .sp-n{
+    font-size:11.5px; line-height:1.75; color:#92400E;
+    margin-top:10px; padding-top:9px; border-top:1px dashed #FCD34D;
+  }
+  .sp-n b{ font-weight:800 }
+  body.dark .sp-n{ color:#fcd34d; border-color:#92400E }
+
+  @media (max-width:640px){
+    .sp-i{ flex-wrap:wrap }
+    .sp-b{ width:100%; margin-top:5px }
+  }
 </style>
 </head>
 <body>
@@ -11356,9 +11397,25 @@ let _dbTg = { data:null, loading:false, from:'', to:'', preset:'month' };
 // ═══════════════════════════════════════════════════════════
 // 📗 تاب الشيتات — كل حاجة بتحصل في شيتات الفريق
 // ═══════════════════════════════════════════════════════════
+// 📋 نسخ إعدادات الشيت للموظفة الجديدة
+function dbShCopy(json){
+  let d; try{ d = JSON.parse(json); }catch(e){ return; }
+  const txt =
+      "  TOKEN: '" + d.t + "',\n"
+    + "  STAFF: '" + d.s + "',\n"
+    + "  EMAIL: '" + (d.e || '') + "',";
+  try{
+    navigator.clipboard.writeText(txt);
+    toastOk('📋 اتنسخ — الصقه في CONFIG جوه Apps Script');
+  }catch(e){
+    showConfirm('إعدادات ' + d.s, txt, 'تمام', 'ok');
+  }
+}
+
 function dbSheets(r){
   // 📗 البيانات جاية مع الداشبورد — مفيش نداء زيادة
   const d = r.sheets || {};
+  const pend = r.sheetsPending || [];
   const staff = d.staff || [];
   const n = v => Number(v||0);
   const f = v => n(v).toLocaleString('en');
@@ -11375,6 +11432,27 @@ function dbSheets(r){
   const shPct = allSent ? Math.round(tShSent/allSent*100) : 0;
 
   let h = '';
+
+  // ═══ 🔔 موظفات محتاجين شيت ═══
+  if(pend.length){
+    h += '<div class="sh-pend">'
+      +   '<div class="sp-h">🔔 <b>' + pend.length + '</b> '
+      +     (pend.length === 1 ? 'موظفة محتاجة شيت' : 'موظفات محتاجين شيتات') + '</div>'
+      +   '<div class="sp-l">'
+      +   pend.map(p =>
+          '<div class="sp-i">'
+          + '<span class="e">' + (p.emoji || '👤') + '</span>'
+          + '<div class="n"><b>' + esc(p.staff) + '</b>'
+          +   '<span>' + esc(p.email || '') + ' · ' + dbF(p.leads) + ' مؤثر</span></div>'
+          + '<button class="sp-b" onclick="dbShCopy(' + esc(JSON.stringify(JSON.stringify({
+              t: p.token, s: p.staff, e: p.email,
+            }))) + ')">📋 نسخ الإعدادات</button>'
+          + '</div>').join('')
+      +   '</div>'
+      +   '<div class="sp-n">انسخ أي شيت موجود، الصق الإعدادات في Apps Script، '
+      +     'وشغّل <b>setup</b>. التنبيه هيختفي لوحده.</div>'
+      + '</div>';
+  }
 
   // ═══ الشيت vs الموقع ═══
   h += '<div class="sh-split">'
