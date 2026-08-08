@@ -5133,6 +5133,61 @@
   .mp-li{ font-size:11.5px; color:var(--muted); padding:3px 0; line-height:1.7;
           direction:ltr; unicode-bidi:plaintext; text-align:start }
   .mp-li.m{ font-weight:700; opacity:.8 }
+
+  /* كروت المؤثرين في الموبايل */
+  .mp-search{ margin-bottom:8px }
+  .mp-cnt{ font-size:11.5px; color:var(--muted); font-weight:700;
+           margin-bottom:9px; text-align:center }
+  .mc-list{ display:flex; flex-direction:column; gap:8px }
+
+  .mc{
+    padding:11px 13px; border-radius:14px;
+    border:1px solid var(--line);
+    background:color-mix(in srgb,var(--line) 12%,transparent);
+  }
+  .mc.late{ background:#FEE2E2; border-color:#FCA5A5 }
+  body.dark .mc.late{ background:#3d1414; border-color:#B91C1C }
+
+  .mc-t{ display:flex; align-items:center; gap:10px; margin-bottom:10px }
+  .mc-av{ width:40px; height:40px; border-radius:50%; object-fit:cover;
+          flex-shrink:0; background:var(--line) }
+  .mc-av.i{ display:grid; place-items:center; font-size:16px; font-weight:900;
+            color:#fff; background:linear-gradient(135deg,#C6432D,#E4553F) }
+  .mc-i{ flex:1; min-width:0 }
+  .mc-i b{ display:block; font-size:13.5px; font-weight:800; color:var(--ink);
+           direction:ltr; unicode-bidi:isolate; text-align:start;
+           overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+  .mc-i span{ display:block; font-size:11.5px; color:var(--muted); margin-top:2px }
+  .mc-b{ font-size:10.5px; font-weight:800; padding:3px 10px; border-radius:999px;
+         flex-shrink:0; background:color-mix(in srgb,var(--line) 40%,transparent);
+         color:var(--muted) }
+  .mc-b.bad { background:#FEE2E2; color:#B91C1C }
+  .mc-b.warn{ background:#FEF3C7; color:#92400E }
+
+  .mc-a{ display:flex; gap:7px }
+  .mc-p{
+    flex:1; font-family:inherit; font-size:12.5px; font-weight:800; cursor:pointer;
+    padding:11px; border-radius:11px; border:none;
+    background:var(--brand); color:#fff;
+  }
+  .mc-p:active{ transform:scale(.97) }
+  .mc-l{
+    display:grid; place-items:center; width:44px; flex-shrink:0;
+    border-radius:11px; text-decoration:none; font-size:15px;
+    border:1px solid var(--line); background:var(--surface); color:var(--muted);
+  }
+
+  .mp-w2{ text-align:center; padding:34px 12px; color:var(--muted);
+          font-size:12.5px; display:flex; align-items:center;
+          justify-content:center; gap:8px }
+  .mp-empty2{ text-align:center; padding:38px 16px; color:var(--muted);
+              font-size:13px; line-height:1.8 }
+  .mp-more2{ text-align:center; font-size:11px; color:var(--muted);
+             margin-top:10px; font-weight:700 }
+
+  @media (max-width:400px){
+    .mp-tb{ font-size:11px; padding:9px 4px }
+  }
 </style>
 </head>
 <body>
@@ -11644,32 +11699,25 @@ async function refreshTargetBar(){
 //   بـ OCR وتربطه بالمؤثر تلقائي.
 // ═══════════════════════════════════════════════════════════
 const MP = {
-  open: false, tab: 'add',        // add / proofs
+  open: false,
+  tab: 'leads',                   // leads / follow / add / proofs
   items: [], cands: [], loading: false,
   ocrReady: false, worker: null, done: 0,
-  // ➕ تابة الإضافة
   addBusy: false, addRes: null,
+  leads: [], follows: [], listBusy: false,
+  q: '',                          // البحث
 };
 
 // ===== فتح الصفحة =====
 async function openMobileProofs(){
   MP.open = true;
-  MP.tab = 'add';
+  MP.tab = 'leads';
   MP.items = [];
   MP.done = 0;
   MP.addRes = null;
   renderMobileProofs();
 
-  // نجيب مؤثريها عشان نطابق عليهم
-  if(!MP.cands.length){
-    try{
-      const r = await callApi('verifyProof', {
-        token: SESSION.token, action: 'candidates',
-      });
-      MP.cands = (r.items || []).filter(x => x.action !== 'done');
-    }catch(e){ MP.cands = []; }
-    renderMobileProofs();
-  }
+  mpLoadLists();
 }
 
 function closeMobileProofs(){
@@ -11869,6 +11917,120 @@ async function runOCR_(){
 }
 
 // ═══════════════════════════════════════════
+// 📋 تابة مؤثريني · 🔄 تابة المتابعات
+// ═══════════════════════════════════════════
+async function mpLoadLists(){
+  if(MP.listBusy) return;
+  MP.listBusy = true;
+  renderMobileProofs();
+
+  try{
+    const [c, f] = await Promise.all([
+      callApi('verifyProof', { token: SESSION.token, action: 'candidates' }),
+      callApi('verifyProof', { token: SESSION.token, action: 'followups' })
+        .catch(() => ({ items: [] })),
+    ]);
+    const all = (c.items || []);
+    MP.cands   = all.filter(x => x.action !== 'done');
+    MP.leads   = all.filter(x => x.action === 'sent');
+    MP.follows = (f.items || []).length ? f.items
+               : all.filter(x => x.action === 'followup' && x.due);
+  }catch(e){ /* تجاهل */ }
+
+  MP.listBusy = false;
+  renderMobileProofs();
+}
+
+// كارت المؤثر
+function mpCard_(c, mode){
+  const h  = String(c.handle || '').replace('@','');
+  const uid = c.uid;
+  const P = { instagram:'📷', tiktok:'🎵', snapchat:'👻', youtube:'▶️' };
+  const late = Number(c.late_days || 0);
+
+  let badge = '';
+  if(mode === 'follow'){
+    const st = c.state || (late > 0 ? 'late' : 'due');
+    const M = { late:['bad','🔴 متأخر '+late+' يوم'],
+                due:['warn','🟡 النهاردة'], waiting:['','⏳ لسه'] };
+    const [cls, txt] = M[st] || M.due;
+    badge = '<span class="mc-b ' + cls + '">' + txt + '</span>';
+  }
+
+  const label = c.action === 'followup'
+    ? 'متابعة ' + (c.seq || 1) : 'إرسال';
+
+  return '<div class="mc' + (mode==='follow' && late>0 ? ' late' : '') + '">'
+    + '<div class="mc-t">'
+    +   (c.avatar
+        ? '<img class="mc-av" src="' + esc(c.avatar) + '" referrerpolicy="no-referrer" '
+          + 'onerror="this.remove()">'
+        : '<span class="mc-av i">' + (h[0]||'?').toUpperCase() + '</span>')
+    +   '<div class="mc-i">'
+    +     '<b>@' + esc(h) + '</b>'
+    +     '<span>' + (P[c.platform]||'') + ' ' + dbF(c.followers) + '</span>'
+    +   '</div>'
+    +   badge
+    + '</div>'
+    + '<div class="mc-a">'
+    +   '<button class="mc-p" onclick="mpQuickProof(' + esc(JSON.stringify(uid)).replace(/"/g,'&quot;') + ')">'
+    +     '📷 ' + label + '</button>'
+    +   (c.link || c.profile_url
+        ? '<a class="mc-l" href="' + esc(c.link || c.profile_url) + '" target="_blank" '
+          + 'rel="noopener">🔗</a>' : '')
+    + '</div>'
+    + '</div>';
+}
+
+// رفع إثبات لمؤثر واحد
+function mpQuickProof(uid){
+  const c = MP.cands.find(x => x.uid === uid);
+  if(!c){ toastErr('المؤثر مش موجود'); return; }
+
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'image/*';
+  inp.onchange = async e => {
+    const f = e.target.files[0];
+    if(!f) return;
+    MP.tab = 'proofs';
+    MP.items = [{
+      id: 'q' + Date.now(), file: f, preview: URL.createObjectURL(f),
+      state: 'ready', uid: c.uid, handle: c.handle,
+      action: c.action, seq: c.seq,
+      label: c.action === 'followup' ? ('متابعة ' + c.seq) : 'إرسال',
+      conf: 'high', ocr: '', signals: {}, score: 100, msg: '',
+    }];
+    MP.done = 1;
+    renderMobileProofs();
+  };
+  inp.click();
+}
+
+// قايمة مع بحث
+function mpList_(items, mode, empty){
+  if(MP.listBusy){
+    return '<div class="mp-w2"><span class="lm-spin"></span> بنحمّل…</div>';
+  }
+  if(!items.length){
+    return '<div class="mp-empty2">' + empty + '</div>';
+  }
+
+  const q = String(MP.q || '').trim().toLowerCase().replace('@','');
+  const list = q
+    ? items.filter(c => String(c.handle||'').toLowerCase().includes(q))
+    : items;
+
+  return '<input class="mp-search" id="mpQ2" placeholder="🔍 ابحثي…" '
+    +    'value="' + esc(MP.q||'') + '" autocomplete="off">'
+    + '<div class="mp-cnt">' + dbF(list.length) + ' مؤثر</div>'
+    + '<div class="mc-list">'
+    +   list.slice(0, 120).map(c => mpCard_(c, mode)).join('')
+    + '</div>'
+    + (list.length > 120
+      ? '<div class="mp-more2">بيظهر أول 120 — استخدمي البحث</div>' : '');
+}
+
+// ═══════════════════════════════════════════
 // ➕ إضافة مؤثرين باللينكات — زي تابة New Leads
 // ═══════════════════════════════════════════
 async function mpAddLinks(){
@@ -11964,6 +12126,24 @@ function renderMobileProofs(){
   const okN   = MP.items.filter(x => x.state === 'ok').length;
 
   let body = '';
+
+  // ═══════════ 📋 مؤثريني ═══════════
+  if(MP.tab === 'leads'){
+    if(!MP.leads.length && !MP.listBusy) mpLoadLists();
+    ov.innerHTML = mpShell_(
+      mpList_(MP.leads, 'leads', 'مفيش مؤثرين مستنيين — كله اتبعتله ✅'));
+    mpBind_();
+    return;
+  }
+
+  // ═══════════ 🔄 المتابعات ═══════════
+  if(MP.tab === 'follow'){
+    if(!MP.follows.length && !MP.listBusy) mpLoadLists();
+    ov.innerHTML = mpShell_(
+      mpList_(MP.follows, 'follow', 'مفيش متابعات مستحقة النهاردة ✅'));
+    mpBind_();
+    return;
+  }
 
   // ═══════════ ➕ تابة الإضافة ═══════════
   if(MP.tab === 'add'){
@@ -12130,7 +12310,12 @@ function renderMobileProofs(){
 
 // قوقعة النافذة — التابات والهيدر
 function mpShell_(body){
-  const T = [['add','➕','إضافة مؤثرين'], ['proofs','📷','رفع الإثباتات']];
+  const T = [
+    ['leads',  '📋', 'مؤثريني'],
+    ['follow', '🔄', 'متابعات'],
+    ['add',    '➕', 'إضافة'],
+    ['proofs', '📷', 'إثباتات'],
+  ];
   return '<div class="mp-box">'
     +   '<div class="mp-hd">'
     +     '<b>⚡ أدلتكس</b>'
@@ -12149,6 +12334,18 @@ function mpShell_(body){
 function mpBind_(){
   const inp = document.getElementById('mpFile');
   if(inp) inp.onchange = e => mpFiles(e.target.files);
+
+  // البحث في القوايم
+  const q = document.getElementById('mpQ2');
+  if(q){
+    q.oninput = () => {
+      MP.q = q.value;
+      const pos = q.selectionStart;
+      renderMobileProofs();
+      const q2 = document.getElementById('mpQ2');
+      if(q2){ q2.focus(); q2.setSelectionRange(pos, pos); }
+    };
+  }
 }
 
 function mpTab(t){ MP.tab = t; renderMobileProofs(); }
