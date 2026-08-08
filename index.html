@@ -11779,7 +11779,7 @@ const MP = {
   items: [], cands: [], loading: false,
   ocrReady: false, worker: null, done: 0,
   addBusy: false, addRes: null,
-  leads: [], follows: [], listBusy: false,
+  leads: [], follows: [], listBusy: false, loaded: false,
   q: '',                          // البحث
 };
 
@@ -11787,6 +11787,7 @@ const MP = {
 async function openMobileProofs(){
   MP.open = true;
   MP.tab = 'leads';
+  MP.loaded = false;
   MP.items = [];
   MP.done = 0;
   MP.addRes = null;
@@ -12013,6 +12014,7 @@ async function mpLoadLists(){
   }catch(e){ /* تجاهل */ }
 
   MP.listBusy = false;
+  MP.loaded = true;      // ✅ حمّلنا — حتى لو القايمة فاضية
   renderMobileProofs();
 }
 
@@ -12037,10 +12039,7 @@ function mpCard_(c, mode){
 
   return '<div class="mc' + (mode==='follow' && late>0 ? ' late' : '') + '">'
     + '<div class="mc-t">'
-    +   (c.avatar
-        ? '<img class="mc-av" src="' + esc(c.avatar) + '" referrerpolicy="no-referrer" '
-          + 'onerror="this.remove()">'
-        : '<span class="mc-av i">' + (h[0]||'?').toUpperCase() + '</span>')
+    +   '<span class="mc-av i">' + (h[0]||'?').toUpperCase() + '</span>'
     +   '<div class="mc-i">'
     +     '<b>@' + esc(h) + '</b>'
     +     '<span>' + (P[c.platform]||'') + ' ' + dbF(c.followers) + '</span>'
@@ -12204,7 +12203,8 @@ function renderMobileProofs(){
 
   // ═══════════ 📋 مؤثريني ═══════════
   if(MP.tab === 'leads'){
-    if(!MP.leads.length && !MP.listBusy) mpLoadLists();
+    // ⚠️ loaded بدل length — القايمة الفاضية نتيجة صحيحة
+    if(!MP.loaded && !MP.listBusy) mpLoadLists();
     ov.innerHTML = mpShell_(
       mpList_(MP.leads, 'leads', 'مفيش مؤثرين مستنيين — كله اتبعتله ✅'));
     mpBind_();
@@ -12213,7 +12213,7 @@ function renderMobileProofs(){
 
   // ═══════════ 🔄 المتابعات ═══════════
   if(MP.tab === 'follow'){
-    if(!MP.follows.length && !MP.listBusy) mpLoadLists();
+    if(!MP.loaded && !MP.listBusy) mpLoadLists();
     ov.innerHTML = mpShell_(
       mpList_(MP.follows, 'follow', 'مفيش متابعات مستحقة النهاردة ✅'));
     mpBind_();
