@@ -6978,6 +6978,53 @@ async function fileHash(file){
   }
 }
 
+// 🔍 فحص الصورة — هل هي محادثة حقيقية؟
+//
+// بيشتغل من الكارت العادي ومن صفحة الموبايل بنفس المنطق.
+// لو الـ OCR مش متاح بيرجّع null ومايوقفش الرفع.
+async function verifyShot(file, uid){
+  try{
+    if(!MP.ocrReady){
+      await loadScript_('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js');
+      MP.worker = await Tesseract.createWorker('eng');
+      MP.ocrReady = true;
+    }
+
+    const crop = await cropTop_(file, 0.16);
+    const res  = await MP.worker.recognize(crop);
+    const text = res && res.data ? (res.data.text || '') : '';
+
+    const sig = scanSignals_(text);
+    const handles = extractHandles_(text);
+
+    // اسم المؤثر ظهر في الصورة؟
+    const target = String(uid || '').split(':')[1] || '';
+    let matched = false, score = 0;
+    if(target){
+      for(const h of handles){
+        if(h === target){ matched = true; score = 100; break; }
+        if(h.includes(target) || target.includes(h)){
+          const r = Math.min(h.length, target.length) / Math.max(h.length, target.length);
+          const sc = Math.round(r * 82);
+          if(sc > score){ score = sc; matched = sc >= 70; }
+        }
+      }
+    }
+
+    let conf = 'low';
+    if(matched && sig.n >= 2)      conf = 'high';
+    else if(matched || sig.n >= 2) conf = 'medium';
+
+    return {
+      conf: conf, matched: matched, score: score,
+      ocr: text.replace(/\s+/g, ' ').trim().slice(0, 90),
+      signals: sig.hit,
+    };
+  }catch(e){
+    return null;   // الفحص فشل — مايوقفش الرفع
+  }
+}
+
 // ===== الفحص قبل الرفع =====
 // بترجّع true لو الصورة مقبولة، وfalse لو مرفوضة (مع عرض التحذير).
 async function checkProofBeforeUpload(file, uid){
@@ -7114,6 +7161,20 @@ document.getElementById('crmFileInput').addEventListener('change', async (e)=>{
         seq: pend.seq || null, size: file.size,
         url: (res && res.screenshotUrl) || null
       }).catch(()=>{});
+
+      // 🔍 فحص الصورة في الخلفية — مايعطّلش الموظفة
+      verifyShot(file, pend.uid).then(v => {
+        if(!v) return;
+        callApi('verifyProof', {
+          token: SESSION.token, action:'setVerify', hash: chk.hash,
+          confidence: v.conf, ocrHandle: v.ocr,
+          matched: v.matched, signals: v.signals,
+          confirmed: v.conf === 'high',
+        }).catch(()=>{});
+        if(v.conf === 'low'){
+          toast('⚠️ الصورة مش واضح إنها محادثة — الإدارة هتراجعها','warn',6000);
+        }
+      });
     }
     refreshTargetBar();
   }catch(err){ toastErr('مش قادر أقرا الصورة — جرّبي صورة تانية'); }
@@ -7141,6 +7202,20 @@ document.getElementById('crmFileInputGallery').addEventListener('change', async 
         seq: pend.seq || null, size: file.size,
         url: (res && res.screenshotUrl) || null
       }).catch(()=>{});
+
+      // 🔍 فحص الصورة في الخلفية — مايعطّلش الموظفة
+      verifyShot(file, pend.uid).then(v => {
+        if(!v) return;
+        callApi('verifyProof', {
+          token: SESSION.token, action:'setVerify', hash: chk.hash,
+          confidence: v.conf, ocrHandle: v.ocr,
+          matched: v.matched, signals: v.signals,
+          confirmed: v.conf === 'high',
+        }).catch(()=>{});
+        if(v.conf === 'low'){
+          toast('⚠️ الصورة مش واضح إنها محادثة — الإدارة هتراجعها','warn',6000);
+        }
+      });
     }
     refreshTargetBar();
   }catch(err){ toastErr('مش قادر أقرا الصورة — جرّبي صورة تانية'); }
