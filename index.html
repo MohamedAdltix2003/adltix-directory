@@ -11958,6 +11958,28 @@ async function runOCR_(){
       it.signals = sig.hit;
 
       const handles = extractHandles_(text);
+
+      // 🔒 المؤثر مختار بنفسها — نفحص الصورة بس
+      if(it.locked){
+        const target = String(it.uid).split(':')[1] || '';
+        let matched = false;
+        for(const h of handles){
+          if(h === target || h.includes(target) || target.includes(h)){
+            matched = true; break;
+          }
+        }
+        if(matched && sig.n >= 2)      it.conf = 'high';
+        else if(matched || sig.n >= 2) it.conf = 'medium';
+        else                           it.conf = 'low';
+
+        it.score = matched ? 100 : 0;
+        it.msg = it.conf === 'low' ? 'مش واضح إنها محادثة' : '';
+        it.state = 'ready';
+        MP.done++;
+        renderMobileProofs();
+        continue;
+      }
+
       const m = matchCandidate_(handles);
 
       if(m){
@@ -12067,15 +12089,19 @@ function mpQuickProof(uid){
     const f = e.target.files[0];
     if(!f) return;
     MP.tab = 'proofs';
+    // ⚠️ المؤثر متأكد منه (اختارته بنفسها)، بس الصورة لازم تتفحص:
+    //    الفحص مش عن الربط بس — ده عن إن الصورة محادثة أصلاً.
     MP.items = [{
       id: 'q' + Date.now(), file: f, preview: URL.createObjectURL(f),
-      state: 'ready', uid: c.uid, handle: c.handle,
+      state: 'scan', uid: c.uid, handle: c.handle,
       action: c.action, seq: c.seq,
       label: c.action === 'followup' ? ('متابعة ' + c.seq) : 'إرسال',
-      conf: 'high', ocr: '', signals: {}, score: 100, msg: '',
+      conf: '', ocr: '', signals: {}, score: 0, msg: '',
+      locked: true,          // المؤثر متأكد منه — الفحص للصورة بس
     }];
-    MP.done = 1;
+    MP.done = 0;
     renderMobileProofs();
+    runOCR_();
   };
   inp.click();
 }
