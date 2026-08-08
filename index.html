@@ -4796,6 +4796,18 @@
     .sp-i{ flex-wrap:wrap }
     .sp-b{ width:100%; margin-top:5px }
   }
+
+  /* زرار تعديل إيميل جوجل */
+  .sp-g{
+    font-family:inherit; font-size:13px; cursor:pointer; flex-shrink:0;
+    width:30px; height:30px; border-radius:8px; border:1px solid #FCD34D;
+    background:rgba(255,255,255,.7); color:#92400E;
+  }
+  .sp-g:hover{ background:#fff }
+  body.dark .sp-g{ background:rgba(0,0,0,.3); border-color:#92400E; color:#fcd34d }
+  .sp-b:disabled{ background:#D6D3D1; cursor:default; opacity:.6 }
+  .sp-w{ font-style:normal; color:#B91C1C; font-weight:700 }
+  body.dark .sp-w{ color:#fca5a5 }
 </style>
 </head>
 <body>
@@ -11400,16 +11412,65 @@ let _dbTg = { data:null, loading:false, from:'', to:'', preset:'month' };
 // 📋 نسخ إعدادات الشيت للموظفة الجديدة
 function dbShCopy(json){
   let d; try{ d = JSON.parse(json); }catch(e){ return; }
+  if(!d.e){ toastErr('لازم تحط إيميل جوجل الأول'); return; }
+
+  const mgrs = String(d.m || '').split(',')
+    .map(x => x.trim()).filter(Boolean);
+
   const txt =
       "  TOKEN: '" + d.t + "',\n"
     + "  STAFF: '" + d.s + "',\n"
-    + "  EMAIL: '" + (d.e || '') + "',";
+    + "  EMAIL: '" + d.e + "',\n"
+    + "};\n\n"
+    + "const MANAGERS = [\n"
+    + mgrs.map(m => "  '" + m + "',").join('\n')
+    + "\n];";
+
   try{
     navigator.clipboard.writeText(txt);
-    toastOk('📋 اتنسخ — الصقه في CONFIG جوه Apps Script');
+    toastOk('📋 اتنسخ — الصقه في Apps Script');
   }catch(e){
     showConfirm('إعدادات ' + d.s, txt, 'تمام', 'ok');
   }
+}
+
+// ✏️ تعديل إيميل جوجل للموظفة
+async function dbShMail(staff, cur){
+  const ov = document.createElement('div');
+  ov.className = 'cf-overlay'; ov.style.zIndex = '10001';
+  ov.innerHTML = '<div class="cf-box" style="max-width:420px;text-align:right">'
+    + '<div class="cf-title">📧 إيميل جوجل — ' + esc(staff) + '</div>'
+    + '<div class="cf-msg">ده الإيميل اللي الشيت هيتشارك بيه. '
+    +   'ممكن يكون مختلف عن إيميل الدخول للموقع.</div>'
+    + '<div class="lg-field"><label>إيميل جوجل</label>'
+    +   '<input id="gmEmail" type="email" dir="ltr" value="' + esc(cur || '') + '" '
+    +   'placeholder="name@adltix.com"></div>'
+    + '<div class="lg-err" id="gmErr"></div>'
+    + '<div class="cf-btns"><button class="cf-cancel">إلغاء</button>'
+    +   '<button class="cf-yes ok" id="gmOk">حفظ</button></div></div>';
+
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>ov.classList.add('show'));
+  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
+  ov.querySelector('.cf-cancel').onclick = close;
+  ov.addEventListener('click', e=>{ if(e.target===ov) close(); });
+  setTimeout(()=>{ const i=ov.querySelector('#gmEmail'); if(i) i.focus(); }, 120);
+
+  ov.querySelector('#gmOk').onclick = async ()=>{
+    const v = String(ov.querySelector('#gmEmail').value || '').trim();
+    if(!v || !v.includes('@')){
+      ov.querySelector('#gmErr').textContent = 'إيميل مش صحيح'; return;
+    }
+    try{
+      await callApi('adminAction', {
+        token: SESSION.token, action: 'setGoogleEmail',
+        staff: staff, email: v,
+      });
+      close();
+      toastOk('✅ اتحفظ');
+      loadDashboard();
+    }catch(e){ ov.querySelector('#gmErr').textContent = e.message; }
+  };
 }
 
 function dbSheets(r){
@@ -11439,15 +11500,22 @@ function dbSheets(r){
       +   '<div class="sp-h">🔔 <b>' + pend.length + '</b> '
       +     (pend.length === 1 ? 'موظفة محتاجة شيت' : 'موظفات محتاجين شيتات') + '</div>'
       +   '<div class="sp-l">'
-      +   pend.map(p =>
-          '<div class="sp-i">'
+      +   pend.map(p => {
+          const g = p.google_email || '';
+          return '<div class="sp-i">'
           + '<span class="e">' + (p.emoji || '👤') + '</span>'
           + '<div class="n"><b>' + esc(p.staff) + '</b>'
-          +   '<span>' + esc(p.email || '') + ' · ' + dbF(p.leads) + ' مؤثر</span></div>'
-          + '<button class="sp-b" onclick="dbShCopy(' + esc(JSON.stringify(JSON.stringify({
-              t: p.token, s: p.staff, e: p.email,
+          +   '<span>' + dbF(p.leads) + ' مؤثر · '
+          +     (g ? '📧 ' + esc(g)
+                   : '<i class="sp-w">⚠️ محتاج إيميل جوجل</i>') + '</span></div>'
+          + '<button class="sp-g" onclick="dbShMail('
+          +   esc(JSON.stringify(p.staff)) + ',' + esc(JSON.stringify(g)) + ')">✏️</button>'
+          + '<button class="sp-b"' + (g ? '' : ' disabled')
+          +   ' onclick="dbShCopy(' + esc(JSON.stringify(JSON.stringify({
+              t: p.token, s: p.staff, e: g, m: p.managers || '',
             }))) + ')">📋 نسخ الإعدادات</button>'
-          + '</div>').join('')
+          + '</div>';
+        }).join('')
       +   '</div>'
       +   '<div class="sp-n">انسخ أي شيت موجود، الصق الإعدادات في Apps Script، '
       +     'وشغّل <b>setup</b>. التنبيه هيختفي لوحده.</div>'
