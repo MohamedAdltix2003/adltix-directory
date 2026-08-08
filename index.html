@@ -4808,6 +4808,75 @@
   .sp-b:disabled{ background:#D6D3D1; cursor:default; opacity:.6 }
   .sp-w{ font-style:normal; color:#B91C1C; font-weight:700 }
   body.dark .sp-w{ color:#fca5a5 }
+
+  /* 📗 نافذة إعداد الشيت */
+  .sc-box{
+    max-width:560px !important; text-align:right !important;
+    max-height:90vh; overflow-y:auto; position:relative;
+    padding-top:18px !important; overscroll-behavior:contain;
+  }
+  .sc-x{
+    position:sticky; top:0; float:inline-start; z-index:3;
+    width:30px; height:30px; border-radius:9px; cursor:pointer;
+    border:1px solid var(--line); background:var(--surface); color:var(--muted);
+    font-size:14px; line-height:1;
+  }
+  .sc-x:hover{ background:#FEE2E2; color:#DC2626; border-color:#DC2626 }
+
+  .sc-hd{
+    display:flex; align-items:center; gap:12px; margin-bottom:16px;
+    padding:13px 15px; border-radius:14px;
+    background:linear-gradient(135deg,#2A1310,#4A1F16);
+  }
+  .sc-ic{ font-size:24px; width:44px; height:44px; border-radius:12px; flex-shrink:0;
+          display:grid; place-items:center; background:rgba(228,85,63,.22) }
+  .sc-hd b{ display:block; font-size:14.5px; font-weight:900; color:#fff }
+  .sc-hd span{ display:block; font-size:11.5px; color:rgba(255,255,255,.6);
+               margin-top:2px; direction:ltr; unicode-bidi:isolate; text-align:start }
+
+  .sc-steps{ display:flex; flex-direction:column; gap:13px }
+  .sc-s{ display:flex; gap:11px }
+  .sc-s > i{
+    flex-shrink:0; width:24px; height:24px; border-radius:50%;
+    background:var(--brand); color:#fff; font-style:normal;
+    font-size:11.5px; font-weight:900; text-align:center; line-height:24px;
+  }
+  .sc-s > div{ flex:1; min-width:0 }
+  .sc-s b{ display:block; font-size:13px; font-weight:800; color:var(--ink);
+           margin-bottom:3px }
+  .sc-s span{ display:block; font-size:11.5px; color:var(--muted);
+              line-height:1.8; margin-bottom:2px }
+  .sc-s code{
+    font-family:'Space Grotesk',monospace; font-size:11px;
+    padding:1px 6px; border-radius:5px; direction:ltr; unicode-bidi:isolate;
+    background:color-mix(in srgb,var(--line) 45%,transparent); color:var(--brand);
+  }
+
+  .sc-code{
+    margin:8px 0 0; padding:12px 13px; border-radius:10px;
+    background:#1C1917; color:#E7E5E4;
+    font-family:'Space Grotesk',Consolas,monospace; font-size:11.5px;
+    line-height:1.75; direction:ltr; text-align:left;
+    white-space:pre; overflow-x:auto; unicode-bidi:isolate;
+  }
+  .sc-cp{
+    margin-top:7px; font-family:inherit; font-size:11.5px; font-weight:800;
+    cursor:pointer; padding:7px 15px; border-radius:9px; border:none;
+    background:var(--brand); color:#fff; transition:filter .15s;
+  }
+  .sc-cp:hover{ filter:brightness(1.1) }
+  .sc-cp.done{ background:#16A34A }
+
+  .sc-note{
+    margin-top:16px; padding:11px 13px; border-radius:11px;
+    font-size:11.5px; line-height:1.8;
+    background:#DCFCE7; color:#14532D;
+  }
+  body.dark .sc-note{ background:#14432a; color:#86efac }
+
+  @media (max-width:640px){
+    .sc-code{ font-size:10.5px }
+  }
 </style>
 </head>
 <body>
@@ -11426,6 +11495,7 @@ let _dbTg = { data:null, loading:false, from:'', to:'', preset:'month' };
 // 📗 تاب الشيتات — كل حاجة بتحصل في شيتات الفريق
 // ═══════════════════════════════════════════════════════════
 // 📋 نسخ إعدادات الشيت للموظفة الجديدة
+// 📗 نافذة إعداد الشيت — الخطوات + الكود جاهز للنسخ
 function dbShCopy(btn){
   const tok = btn.dataset.tok || '';
   const st  = btn.dataset.st  || '';
@@ -11436,7 +11506,7 @@ function dbShCopy(btn){
 
   const mgrs = mg.split(',').map(x => x.trim()).filter(Boolean);
 
-  const txt =
+  const code =
       "  TOKEN: '" + tok + "',\n"
     + "  STAFF: '" + st + "',\n"
     + "  EMAIL: '" + gm + "',\n"
@@ -11445,12 +11515,71 @@ function dbShCopy(btn){
     + mgrs.map(m => "  '" + m + "',").join('\n')
     + "\n];";
 
-  try{
-    navigator.clipboard.writeText(txt);
-    toastOk('📋 اتنسخ — الصقه في Apps Script');
-  }catch(e){
-    showConfirm('إعدادات ' + st, txt, 'تمام', 'ok');
-  }
+  const ov = document.createElement('div');
+  ov.className = 'cf-overlay'; ov.style.zIndex = '10002';
+  ov.innerHTML = '<div class="cf-box sc-box">'
+    + '<button class="sc-x" aria-label="إغلاق">✕</button>'
+    + '<div class="sc-hd">'
+    +   '<div class="sc-ic">📗</div>'
+    +   '<div><b>إعداد شيت ' + esc(st) + '</b>'
+    +     '<span>' + esc(gm) + '</span></div>'
+    + '</div>'
+
+    + '<div class="sc-steps">'
+    +   '<div class="sc-s"><i>1</i><div>'
+    +     '<b>انسخ أي شيت موجود</b>'
+    +     '<span>افتح شيت أي موظفة → File → Make a copy</span>'
+    +     '<span>سمّيه: <code>Adltix — ' + esc(st) + '</code></span>'
+    +   '</div></div>'
+
+    +   '<div class="sc-s"><i>2</i><div>'
+    +     '<b>افتح المحرر</b>'
+    +     '<span>Extensions → Apps Script</span>'
+    +   '</div></div>'
+
+    +   '<div class="sc-s"><i>3</i><div>'
+    +     '<b>استبدل الإعدادات</b>'
+    +     '<span>دوّر على <code>TOKEN</code> فوق، واستبدل من عنده '
+    +       'لحد نهاية <code>MANAGERS</code> بالكود ده:</span>'
+    +     '<pre class="sc-code" id="scCode">' + esc(code) + '</pre>'
+    +     '<button class="sc-cp" id="scCp">📋 نسخ الكود</button>'
+    +   '</div></div>'
+
+    +   '<div class="sc-s"><i>4</i><div>'
+    +     '<b>احفظ وشغّل</b>'
+    +     '<span>Ctrl+S → اختار <code>setup</code> → ▶ Run</span>'
+    +     '<span>أول مرة هيطلب إذن — Advanced → Go to → Allow</span>'
+    +   '</div></div>'
+    + '</div>'
+
+    + '<div class="sc-note">✅ أول ما <b>setup</b> تخلص، الشيت هيسجّل نفسه '
+    +   'ويتشارك مع ' + esc(st) + ' والإدارة، والتنبيه ده هيختفي لوحده.</div>'
+
+    + '<div class="cf-btns"><button class="cf-yes ok" data-x="1">تمام</button></div>'
+    + '</div>';
+
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>ov.classList.add('show'));
+  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
+  ov.querySelector('.sc-x').onclick = close;
+  ov.querySelector('.cf-yes').onclick = close;
+  ov.addEventListener('click', e=>{ if(e.target===ov) close(); });
+
+  const cp = ov.querySelector('#scCp');
+  cp.onclick = () => {
+    try{
+      navigator.clipboard.writeText(code);
+      cp.textContent = '✅ اتنسخ';
+      cp.classList.add('done');
+      setTimeout(()=>{ cp.textContent = '📋 نسخ الكود'; cp.classList.remove('done'); }, 2000);
+    }catch(e){
+      // لو المتصفح رفض — نحدد النص عشان ينسخه بإيده
+      const r = document.createRange();
+      r.selectNodeContents(ov.querySelector('#scCode'));
+      const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+      cp.textContent = 'حدّد وانسخ Ctrl+C';
+    }
+  };
 }
 
 // ✏️ تعديل إيميل جوجل للموظفة
