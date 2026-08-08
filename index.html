@@ -5076,6 +5076,63 @@
     .mp-ov{ align-items:center }
     .mp-box{ border-radius:20px; max-height:86vh }
   }
+
+  /* تابات نافذة الموبايل */
+  .mp-tabs{ display:flex; gap:5px; padding:10px 16px 0; flex-shrink:0 }
+  .mp-tb{
+    flex:1; font-family:inherit; font-size:12.5px; font-weight:800; cursor:pointer;
+    padding:10px 8px; border-radius:11px 11px 0 0; border:none;
+    background:color-mix(in srgb,var(--line) 22%,transparent); color:var(--muted);
+    transition:background .16s, color .16s;
+  }
+  .mp-tb.on{ background:var(--brand); color:#fff }
+
+  /* فورم الإضافة */
+  .mp-add{ padding:4px 0 }
+  .mp-lbl{ font-size:12.5px; font-weight:800; color:var(--ink); margin-bottom:8px }
+  .mp-ta{
+    width:100%; box-sizing:border-box; padding:13px 14px;
+    border:1px solid var(--line); border-radius:12px;
+    background:var(--bg); color:var(--ink);
+    font-family:'Space Grotesk',monospace; font-size:12px; line-height:1.85;
+    resize:vertical; direction:ltr;
+  }
+  .mp-ta:focus{ outline:none; border-color:var(--brand) }
+  .mp-hint{ font-size:11.5px; color:var(--muted); line-height:1.75; margin:9px 0 14px }
+
+  .mp-live{ display:flex; gap:7px; justify-content:center; margin-top:12px }
+  .mp-live span{ font-size:12px; font-weight:800; padding:5px 13px; border-radius:999px }
+  .mp-live .ok  { background:#DCFCE7; color:#15803D }
+  .mp-live .bad { background:#FEE2E2; color:#B91C1C }
+  .mp-live .warn{ background:#FEF3C7; color:#92400E }
+
+  /* نتيجة الإضافة */
+  .mp-done{ padding:2px 0 }
+  .mp-dn{ display:grid; grid-template-columns:repeat(auto-fit,minmax(78px,1fr));
+          gap:7px; margin-bottom:14px }
+  .mp-dn .d{ text-align:center; padding:12px 6px; border-radius:12px;
+             background:color-mix(in srgb,var(--line) 20%,transparent) }
+  .mp-dn .d b{ display:block; font-size:21px; font-weight:900; color:var(--ink);
+               font-family:'Space Grotesk','Tajawal',sans-serif; line-height:1 }
+  .mp-dn .d span{ display:block; font-size:10.5px; color:var(--muted); margin-top:4px }
+  .mp-dn .d.ok  { background:#DCFCE7 } .mp-dn .d.ok b  { color:#15803D }
+  .mp-dn .d.bad { background:#FEE2E2 } .mp-dn .d.bad b { color:#B91C1C }
+  .mp-dn .d.warn{ background:#FEF3C7 } .mp-dn .d.warn b{ color:#92400E }
+  body.dark .mp-dn .d.ok{ background:#14432a } body.dark .mp-dn .d.ok b{ color:#86efac }
+  body.dark .mp-dn .d.bad{ background:#3d1414 } body.dark .mp-dn .d.bad b{ color:#fca5a5 }
+  body.dark .mp-dn .d.warn{ background:#3d2c0d } body.dark .mp-dn .d.warn b{ color:#fcd34d }
+
+  .mp-sec{ padding:11px 13px; border-radius:12px; margin-bottom:9px;
+           background:color-mix(in srgb,var(--line) 18%,transparent) }
+  .mp-sec.bad { background:#FEE2E2 } .mp-sec.warn{ background:#FEF3C7 }
+  body.dark .mp-sec.bad{ background:#3d1414 } body.dark .mp-sec.warn{ background:#3d2c0d }
+  .mp-sec > b{ display:block; font-size:12.5px; font-weight:800; margin-bottom:7px;
+               color:var(--ink) }
+  .mp-sec.bad > b{ color:#B91C1C } .mp-sec.warn > b{ color:#92400E }
+  body.dark .mp-sec.bad > b{ color:#fca5a5 } body.dark .mp-sec.warn > b{ color:#fcd34d }
+  .mp-li{ font-size:11.5px; color:var(--muted); padding:3px 0; line-height:1.7;
+          direction:ltr; unicode-bidi:plaintext; text-align:start }
+  .mp-li.m{ font-weight:700; opacity:.8 }
 </style>
 </head>
 <body>
@@ -11587,15 +11644,20 @@ async function refreshTargetBar(){
 //   بـ OCR وتربطه بالمؤثر تلقائي.
 // ═══════════════════════════════════════════════════════════
 const MP = {
-  open: false, items: [], cands: [], loading: false,
+  open: false, tab: 'add',        // add / proofs
+  items: [], cands: [], loading: false,
   ocrReady: false, worker: null, done: 0,
+  // ➕ تابة الإضافة
+  addBusy: false, addRes: null,
 };
 
 // ===== فتح الصفحة =====
 async function openMobileProofs(){
   MP.open = true;
+  MP.tab = 'add';
   MP.items = [];
   MP.done = 0;
+  MP.addRes = null;
   renderMobileProofs();
 
   // نجيب مؤثريها عشان نطابق عليهم
@@ -11807,6 +11869,82 @@ async function runOCR_(){
 }
 
 // ═══════════════════════════════════════════
+// ➕ إضافة مؤثرين باللينكات — زي تابة New Leads
+// ═══════════════════════════════════════════
+async function mpAddLinks(){
+  const ta = document.getElementById('mpLinks');
+  if(!ta) return;
+
+  const raw = String(ta.value || '').trim();
+  if(!raw){ toastErr('الصقي اللينكات الأول'); return; }
+
+  const links = raw.split(/[\n,;]+/).map(x => x.trim()).filter(Boolean);
+  if(!links.length){ toastErr('مفيش لينكات'); return; }
+  if(links.length > 100){ toastErr('أقصى 100 لينك في المرة'); return; }
+
+  MP.addBusy = true;
+  MP.addRes = { total: links.length, done: 0,
+                added: [], partners: [], taken: [], bad: [] };
+  renderMobileProofs();
+
+  for(const link of links){
+    try{
+      const r = await callApi('addManualLead', {
+        token: SESSION.token, link,
+        niche: '', country: '', platform: '',
+      });
+
+      if(r && r.card){
+        MP.addRes.added.push({ handle: r.card.handle || link, uid: r.card.uid });
+      } else {
+        MP.addRes.bad.push({ link, msg: 'مش مفهوم' });
+      }
+    }catch(e){
+      const m = String(e.message || '');
+      // 🚫 شريك؟
+      if(m.includes('شريك') || m.includes('متعاقد')){
+        MP.addRes.partners.push({ link, msg: m });
+      } else if(m.includes('موجود')){
+        MP.addRes.taken.push({ link, msg: m });
+      } else {
+        MP.addRes.bad.push({ link, msg: m });
+      }
+    }
+    MP.addRes.done++;
+    renderMobileProofs();
+  }
+
+  MP.addBusy = false;
+
+  // نحدّث قايمة المرشّحين — الجداد دخلوا
+  try{
+    const r = await callApi('verifyProof', {
+      token: SESSION.token, action: 'candidates',
+    });
+    MP.cands = (r.items || []).filter(x => x.action !== 'done');
+  }catch(e){}
+
+  renderMobileProofs();
+  if(MP.addRes.added.length){
+    toastOk('✅ اتضاف ' + MP.addRes.added.length + ' مؤثر');
+    boot();
+  }
+}
+
+function mpClearAdd(){
+  MP.addRes = null;
+  const ta = document.getElementById('mpLinks');
+  if(ta) ta.value = '';
+  renderMobileProofs();
+}
+
+// نروح لتابة الإثباتات بعد الإضافة
+function mpGoProofs(){
+  MP.tab = 'proofs';
+  renderMobileProofs();
+}
+
+// ═══════════════════════════════════════════
 // الواجهة
 // ═══════════════════════════════════════════
 function renderMobileProofs(){
@@ -11826,6 +11964,78 @@ function renderMobileProofs(){
   const okN   = MP.items.filter(x => x.state === 'ok').length;
 
   let body = '';
+
+  // ═══════════ ➕ تابة الإضافة ═══════════
+  if(MP.tab === 'add'){
+    const R = MP.addRes;
+
+    if(MP.addBusy && R){
+      const pct = R.total ? Math.round(R.done / R.total * 100) : 0;
+      body = '<div class="mp-scan">'
+        + '<div class="mp-sb"><span style="width:' + pct + '%"></span></div>'
+        + '<div class="mp-st">🔍 بنفحص… ' + R.done + '/' + R.total + '</div>'
+        + '</div>'
+        + '<div class="mp-live">'
+        +   '<span class="ok">✅ ' + R.added.length + '</span>'
+        +   '<span class="bad">🚫 ' + R.partners.length + '</span>'
+        +   '<span class="warn">🔁 ' + R.taken.length + '</span>'
+        + '</div>';
+
+    } else if(R){
+      // ═══ النتيجة ═══
+      body = '<div class="mp-done">'
+        + '<div class="mp-dn">'
+        +   '<div class="d ok"><b>' + R.added.length + '</b><span>اتضافوا</span></div>'
+        +   '<div class="d bad"><b>' + R.partners.length + '</b><span>شركاء</span></div>'
+        +   '<div class="d warn"><b>' + R.taken.length + '</b><span>موجودين</span></div>'
+        +   (R.bad.length ? '<div class="d"><b>' + R.bad.length + '</b><span>مش مفهوم</span></div>' : '')
+        + '</div>';
+
+      if(R.partners.length){
+        body += '<div class="mp-sec bad"><b>🚫 شركاء عندنا — مااتضافوش</b>'
+          + R.partners.slice(0,20).map(x =>
+            '<div class="mp-li">' + esc(shortLink_(x.link)) + '</div>').join('')
+          + (R.partners.length > 20 ? '<div class="mp-li m">+ ' + (R.partners.length-20) + '</div>' : '')
+          + '</div>';
+      }
+      if(R.taken.length){
+        body += '<div class="mp-sec warn"><b>🔁 موجودين قبل كده</b>'
+          + R.taken.slice(0,15).map(x =>
+            '<div class="mp-li">' + esc(shortLink_(x.link)) + ' — ' + esc(x.msg) + '</div>').join('')
+          + '</div>';
+      }
+      if(R.bad.length){
+        body += '<div class="mp-sec"><b>⚠️ مش مفهوم</b>'
+          + R.bad.slice(0,10).map(x =>
+            '<div class="mp-li">' + esc(shortLink_(x.link)) + '</div>').join('')
+          + '</div>';
+      }
+
+      body += '<div class="mp-foot">'
+        + '<button class="mp-more" onclick="mpClearAdd()">➕ زودي تاني</button>'
+        + (R.added.length
+          ? '<button class="mp-go" onclick="mpGoProofs()">📷 ارفعي الإثباتات</button>'
+          : '')
+        + '</div>';
+
+    } else {
+      // ═══ الفورم ═══
+      body = '<div class="mp-add">'
+        + '<div class="mp-lbl">الصقي اللينكات — واحد في كل سطر</div>'
+        + '<textarea id="mpLinks" class="mp-ta" rows="8" dir="ltr" '
+        +   'placeholder="https://instagram.com/username&#10;'
+        +   'https://tiktok.com/@username&#10;https://snapchat.com/add/username"></textarea>'
+        + '<div class="mp-hint">النظام بيفحص كل لينك: لو شريك عندنا أو موجود '
+        +   'مع موظفة تانية مش هيتضاف.</div>'
+        + '<button class="mp-pick" onclick="mpAddLinks()">🔍 افحصي وأضيفي</button>'
+        + '</div>';
+    }
+
+    // نرسم ونخرج
+    ov.innerHTML = mpShell_(body);
+    mpBind_();
+    return;
+  }
 
   // ═══ مفيش صور لسه ═══
   if(!n){
@@ -11914,18 +12124,40 @@ function renderMobileProofs(){
     }
   }
 
-  ov.innerHTML =
-      '<div class="mp-box">'
+  ov.innerHTML = mpShell_(body);
+  mpBind_();
+}
+
+// قوقعة النافذة — التابات والهيدر
+function mpShell_(body){
+  const T = [['add','➕','إضافة مؤثرين'], ['proofs','📷','رفع الإثباتات']];
+  return '<div class="mp-box">'
     +   '<div class="mp-hd">'
-    +     '<b>📷 رفع الإثباتات</b>'
+    +     '<b>⚡ أدلتكس</b>'
     +     '<button class="mp-x" onclick="closeMobileProofs()">✕</button>'
+    +   '</div>'
+    +   '<div class="mp-tabs">'
+    +     T.map(([k,i,l]) =>
+          '<button class="mp-tb' + (MP.tab===k ? ' on' : '') + '" '
+          + 'onclick="mpTab(\'' + k + '\')">' + i + ' ' + l + '</button>').join('')
     +   '</div>'
     +   '<div class="mp-body">' + body + '</div>'
     + '</div>'
     + '<input type="file" id="mpFile" accept="image/*" multiple hidden>';
+}
 
+function mpBind_(){
   const inp = document.getElementById('mpFile');
   if(inp) inp.onchange = e => mpFiles(e.target.files);
+}
+
+function mpTab(t){ MP.tab = t; renderMobileProofs(); }
+
+// اختصار اللينك للعرض
+function shortLink_(u){
+  const s = String(u || '');
+  const m = s.match(/(?:instagram|tiktok|snapchat|youtube)\.com\/(?:add\/|@)?([\w.-]+)/i);
+  return m ? '@' + m[1] : (s.length > 40 ? s.slice(0, 40) + '…' : s);
 }
 
 // ═══ اختيار المؤثر يدويًا ═══
