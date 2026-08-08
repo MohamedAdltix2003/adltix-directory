@@ -4927,6 +4927,12 @@
       </div>
       <div class="form-row flex-2"><label>كلمة المرور</label><input id="emp-password" type="text" placeholder="كلمة مرور قوية"></div>
       <div class="form-row flex-2"><label>الاسم الكامل</label><input id="emp-name" type="text" placeholder="مثال: Sara Ahmed"></div>
+      <div class="form-row flex-2"><label>📧 إيميل جوجل</label>
+        <input id="emp-gmail" type="email" dir="ltr" placeholder="sara@adltix.com">
+        <div class="form-hint" style="margin-top:5px">
+          ده اللي الشيت هيتشارك بيه — ممكن يكون مختلف عن إيميل الدخول.
+        </div>
+      </div>
       <div class="form-row flex-2"><label>الإيموجي</label>
         <select id="emp-emoji" style="width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid var(--line);font-family:inherit;font-size:14px;background:var(--bg);color:var(--ink)">
           <option value="🌸">🌸</option><option value="🌺">🌺</option><option value="🌷">🌷</option>
@@ -4934,7 +4940,7 @@
           <option value="💐">💐</option><option value="🌿">🌿</option><option value="🦋">🦋</option>
         </select>
       </div>
-      <div class="form-row flex-1"><div class="form-hint">⚠️ بعد الإضافة، سيتم توزيع المؤثرين غير المعينين على جميع الموظفات بشكل متساوٍ.</div></div>
+      <div class="form-row flex-1"><div class="form-hint">⚠️ بعد الإضافة، المؤثرين هيتوزّعوا على كل الموظفات بالتساوي، وهيتجهّز شيت خاص بيها.</div></div>
     </div>
     <div class="lg-err" id="emp-err"></div>
     <div class="cf-btns">
@@ -6370,6 +6376,7 @@ function openEmployeeModal(){
   document.getElementById('emp-username').value='';
   document.getElementById('emp-password').value='';
   document.getElementById('emp-name').value='';
+  const gm=document.getElementById('emp-gmail'); if(gm) gm.value='';
   updateUsernameHint();
   const ov=document.getElementById('employeeOverlay'); ov.style.display='flex'; requestAnimationFrame(()=>ov.classList.add('show'));
 }
@@ -6380,6 +6387,7 @@ async function submitEmployee(){
   const password=document.getElementById('emp-password').value.trim();
   const name=document.getElementById('emp-name').value.trim();
   const emoji=document.getElementById('emp-emoji').value;
+  const gmail=(document.getElementById('emp-gmail')||{}).value?.trim()||'';
   const errEl=document.getElementById('emp-err');
   errEl.textContent='';
   
@@ -6387,6 +6395,11 @@ async function submitEmployee(){
   if(username.length<3){ errEl.textContent='اسم المستخدم أقل شيء 3 حروف'; return; }
   if(!password || password.length<4){ errEl.textContent='كلمة المرور (أقل شيء 4 حروف)'; return; }
   if(!name){ errEl.textContent='الاسم الكامل مطلوب'; return; }
+  // 📧 إيميل جوجل إجباري — من غيره مش هنقدر نشارك الشيت
+  if(!gmail || !gmail.includes('@')){
+    errEl.textContent='📧 إيميل جوجل مطلوب — عشان نقدر نعملها الشيت ونشاركه معاها';
+    return;
+  }
   
   // Check if username exists
   const exists = await checkUsernameExists(username);
@@ -6400,7 +6413,10 @@ async function submitEmployee(){
   
   const btn=document.getElementById('emp-submit'); btn.disabled=true; btn.textContent='⏳ جاري الإضافة...';
   try{
-    const res=await callApi('addEmployee',{token:SESSION.token,username:fullEmail,password,staffName:name,emoji});
+    const res=await callApi('addEmployee',{
+      token:SESSION.token, username:fullEmail, password,
+      staffName:name, emoji, googleEmail:gmail,
+    });
     btn.disabled=false; btn.textContent='✅ تمت الإضافة!';
     setTimeout(()=>{ btn.textContent='➕ إضافة الموظفة'; },2000);
     closeEmployeeModal();
