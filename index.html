@@ -4877,6 +4877,46 @@
   @media (max-width:640px){
     .sc-code{ font-size:10.5px }
   }
+
+  /* 📗 بطاقة الشيت للموظفة */
+  .my-sheet{ margin-bottom:11px }
+  .ms-card, .ms-wait{
+    display:flex; align-items:center; gap:12px;
+    padding:13px 16px; border-radius:15px;
+  }
+  .ms-card{
+    background:linear-gradient(135deg,#14532D,#166534);
+    box-shadow:0 4px 14px rgba(20,83,45,.22);
+  }
+  .ms-wait{ background:#FEF3C7; border:1px solid #FCD34D }
+  body.dark .ms-wait{ background:#3d2c0d; border-color:#92400E }
+
+  .ms-i{ font-size:22px; width:42px; height:42px; border-radius:12px;
+         display:grid; place-items:center; flex-shrink:0 }
+  .ms-card .ms-i{ background:rgba(255,255,255,.14) }
+  .ms-wait .ms-i{ background:rgba(146,64,14,.14) }
+
+  .ms-t{ flex:1; min-width:0 }
+  .ms-t b{ display:block; font-size:13.5px; font-weight:900 }
+  .ms-t span{ display:block; font-size:11.5px; margin-top:2px; line-height:1.6 }
+  .ms-card .ms-t b{ color:#fff }
+  .ms-card .ms-t span{ color:rgba(255,255,255,.72) }
+  .ms-wait .ms-t b{ color:#92400E }
+  .ms-wait .ms-t span{ color:#92400E; opacity:.82 }
+  body.dark .ms-wait .ms-t b, body.dark .ms-wait .ms-t span{ color:#fcd34d }
+
+  .ms-b{
+    font-size:12px; font-weight:800; text-decoration:none; flex-shrink:0;
+    padding:9px 17px; border-radius:11px;
+    background:#fff; color:#14532D;
+    transition:transform .14s, filter .15s;
+  }
+  .ms-b:hover{ transform:translateY(-1px); filter:brightness(.96) }
+
+  @media (max-width:640px){
+    .ms-card, .ms-wait{ flex-wrap:wrap }
+    .ms-b{ width:100%; text-align:center; margin-top:4px }
+  }
 </style>
 </head>
 <body>
@@ -5069,6 +5109,7 @@
 
 <div class="wrap">
 
+  <div class="my-sheet" id="mySheet" style="display:none"></div>
   <div class="target-bar" id="targetBar" style="display:none"></div>
 
   <div class="tasks-row" id="tasksRow" style="display:none">
@@ -11362,6 +11403,7 @@ function dbTkOpenDay(date){
 let _target = { data:null, loading:false };
 
 async function refreshTargetBar(){
+  loadMySheet();   // 📗 بطاقة الشيت بتتحدّث معاه
   if(_target.loading) return;
   _target.loading = true;
   try{
@@ -11371,6 +11413,66 @@ async function refreshTargetBar(){
     renderTargetBar();
   }catch(e){ /* مايوقفش الموقع */ }
   _target.loading = false;
+}
+
+// ═══════════════════════════════════════════════════════════
+// 📗 بطاقة الشيت — بتظهر للموظفة فوق الكروت
+// ═══════════════════════════════════════════════════════════
+let _mySheet = null;
+
+async function loadMySheet(){
+  const box = document.getElementById('mySheet');
+  if(!box) return;
+
+  // للموظفات بس
+  if(isAdminSession()){ box.style.display = 'none'; return; }
+
+  try{
+    _mySheet = await callApi('verifyProof', {
+      token: SESSION.token, action: 'mySheet',
+    });
+  }catch(e){ _mySheet = null; }
+
+  renderMySheet();
+}
+
+function renderMySheet(){
+  const box = document.getElementById('mySheet');
+  if(!box) return;
+
+  const d = _mySheet;
+  if(!d){ box.style.display = 'none'; return; }
+
+  box.style.display = '';
+
+  // ⏳ لسه مااتعملش
+  if(!d.has || !d.url){
+    box.innerHTML =
+        '<div class="ms-wait">'
+      +   '<span class="ms-i">📗</span>'
+      +   '<div class="ms-t">'
+      +     '<b>الشيت بتاعك بيتجهّز</b>'
+      +     '<span>هيوصلك لينكه قريب — وهيظهر هنا تلقائي</span>'
+      +   '</div>'
+      + '</div>';
+    return;
+  }
+
+  // ✅ جاهز
+  const n = Number(d.today || 0);
+  box.innerHTML =
+      '<div class="ms-card">'
+    +   '<span class="ms-i">📗</span>'
+    +   '<div class="ms-t">'
+    +     '<b>الشيت بتاعك</b>'
+    +     '<span>'
+    +       (n ? '✅ ' + dbF(n) + ' حركة النهاردة من الشيت'
+             : 'اشتغلي منه أو من الموقع — الاتنين بيوصلوا لنفس المكان')
+    +     '</span>'
+    +   '</div>'
+    +   '<a class="ms-b" href="' + esc(d.url) + '" target="_blank" rel="noopener">'
+    +     'افتحي الشيت ↗</a>'
+    + '</div>';
 }
 
 function renderTargetBar(){
