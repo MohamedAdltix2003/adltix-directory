@@ -12137,10 +12137,10 @@ async function mpAddLinks(){
       }
     }catch(e){
       const m = String(e.message || '');
-      // 🚫 شريك؟
-      if(m.includes('شريك') || m.includes('متعاقد')){
+      // 🚫 شريك — الرسالة جاية من الـ function نفسها
+      if(m.includes('شريك') || m.includes('متعاقد') || m.includes('اتحدّد بـ')){
         MP.addRes.partners.push({ link, msg: m });
-      } else if(m.includes('موجود')){
+      } else if(m.includes('موجود') || m.includes('مسجّل قبل')){
         MP.addRes.taken.push({ link, msg: m });
       } else {
         MP.addRes.bad.push({ link, msg: m });
