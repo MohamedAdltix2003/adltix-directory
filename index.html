@@ -5188,6 +5188,21 @@
   @media (max-width:400px){
     .mp-tb{ font-size:11px; padding:9px 4px }
   }
+
+  /* تحذير الإثبات المشكوك فيه */
+  .mp-warn{
+    display:block; font-size:10.5px; font-weight:700; line-height:1.65;
+    color:#B91C1C; margin-top:3px;
+  }
+  body.dark .mp-warn{ color:#fca5a5 }
+  .mp-btns{ display:flex; gap:6px; margin-top:5px }
+  .mp-del{
+    font-family:inherit; font-size:11px; font-weight:800; cursor:pointer;
+    padding:5px 12px; border-radius:8px;
+    border:1px solid #FCA5A5; background:#FEE2E2; color:#B91C1C;
+  }
+  .mp-del:hover{ background:#FCA5A5; color:#7F1D1D }
+  body.dark .mp-del{ background:#3d1414; border-color:#B91C1C; color:#fca5a5 }
 </style>
 </head>
 <body>
@@ -12376,16 +12391,27 @@ function renderMobileProofs(){
         body += '<b class="mp-h">@' + esc(it.handle) + '</b>'
              +  '<span class="mp-a"><span class="lm-spin"></span> بنرفع…</span>';
       } else if(it.uid){
+        const risky = (it.conf === 'low' || it.conf === 'none');
         body += '<b class="mp-h">@' + esc(it.handle) + '</b>'
           + '<div class="mp-r">'
           +   '<span class="mp-tag">' + esc(it.label) + '</span>'
           +   '<span class="mp-cf ' + cf.c + '">' + cf.t + '</span>'
           + '</div>'
-          + '<button class="mp-ch" onclick="mpPickCand(' + i + ')">🔍 غيّري</button>';
+          + (risky
+            ? '<span class="mp-warn">⚠️ الصورة دي هتظهر للإدارة كإثبات مشكوك فيه</span>'
+            : '')
+          + '<div class="mp-btns">'
+          +   '<button class="mp-ch" onclick="mpPickCand(' + i + ')">🔍 غيّري</button>'
+          +   '<button class="mp-del" onclick="mpRemove(' + i + ')">🗑️ احذفي</button>'
+          + '</div>';
       } else {
         body += '<div class="mp-r"><span class="mp-cf ' + cf.c + '">' + cf.t + '</span></div>'
           + (it.msg ? '<span class="mp-msg">' + esc(it.msg) + '</span>' : '')
-          + '<button class="mp-ch pick" onclick="mpPickCand(' + i + ')">🔍 اختاري المؤثر</button>';
+          + '<span class="mp-warn">⚠️ لو رفعتيها هتظهر للإدارة كإثبات مشكوك فيه</span>'
+          + '<div class="mp-btns">'
+          +   '<button class="mp-ch pick" onclick="mpPickCand(' + i + ')">🔍 اختاري المؤثر</button>'
+          +   '<button class="mp-del" onclick="mpRemove(' + i + ')">🗑️ احذفي</button>'
+          + '</div>';
       }
 
       body += '</div></div>';
@@ -12453,6 +12479,16 @@ function shortLink_(u){
   const s = String(u || '');
   const m = s.match(/(?:instagram|tiktok|snapchat|youtube)\.com\/(?:add\/|@)?([\w.-]+)/i);
   return m ? '@' + m[1] : (s.length > 40 ? s.slice(0, 40) + '…' : s);
+}
+
+// 🗑️ حذف صورة من القايمة قبل الرفع
+function mpRemove(idx){
+  const it = MP.items[idx];
+  if(!it) return;
+  try{ URL.revokeObjectURL(it.preview); }catch(e){}
+  MP.items.splice(idx, 1);
+  renderMobileProofs();
+  toastOk('🗑️ اتشالت');
 }
 
 // ═══ اختيار المؤثر يدويًا ═══
