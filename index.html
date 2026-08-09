@@ -5203,6 +5203,61 @@
   }
   .mp-del:hover{ background:#FCA5A5; color:#7F1D1D }
   body.dark .mp-del{ background:#3d1414; border-color:#B91C1C; color:#fca5a5 }
+
+  /* 🚩 إثباتات مشكوك فيها في الداشبورد */
+  .sp-grid{
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+    gap:9px; margin-top:11px;
+  }
+  .sp-c{
+    display:flex; gap:10px; padding:9px; border-radius:13px;
+    border:1px solid var(--line);
+    background:color-mix(in srgb,var(--line) 12%,transparent);
+  }
+  .sp-c.bad { background:#FEE2E2; border-color:#FCA5A5 }
+  .sp-c.warn{ background:#FEF3C7; border-color:#FCD34D }
+  body.dark .sp-c.bad{ background:#3d1414; border-color:#B91C1C }
+  body.dark .sp-c.warn{ background:#3d2c0d; border-color:#92400E }
+
+  .sp-im{
+    width:62px; height:82px; border-radius:9px; overflow:hidden;
+    flex-shrink:0; background:var(--line); display:block;
+  }
+  .sp-im img{ width:100%; height:100%; object-fit:cover; display:block }
+  .sp-im.no{ display:grid; place-items:center; font-size:22px; opacity:.4 }
+
+  .sp-d{ flex:1; min-width:0; display:flex; flex-direction:column; gap:3px }
+  .sp-d > b{
+    font-size:12.5px; font-weight:800; color:var(--ink);
+    direction:ltr; unicode-bidi:isolate; text-align:start;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .sp-s{ font-size:11px; color:var(--muted); font-weight:700 }
+  .sp-tags{ display:flex; flex-wrap:wrap; gap:4px; margin-top:1px }
+  .sp-tags span{ font-size:9.5px; font-weight:800; padding:2px 7px; border-radius:6px }
+  .sp-tags .ok  { background:#DCFCE7; color:#15803D }
+  .sp-tags .warn{ background:rgba(146,64,14,.15); color:#92400E }
+  .sp-tags .bad { background:rgba(185,28,28,.15); color:#B91C1C }
+  body.dark .sp-tags .ok{ background:#14432a; color:#86efac }
+  body.dark .sp-tags .warn{ background:rgba(252,211,77,.15); color:#fcd34d }
+  body.dark .sp-tags .bad{ background:rgba(252,165,165,.15); color:#fca5a5 }
+
+  .sp-ocr{
+    font-size:10px; color:var(--muted); line-height:1.55;
+    direction:ltr; unicode-bidi:plaintext; text-align:start;
+    background:rgba(0,0,0,.05); padding:3px 7px; border-radius:6px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  body.dark .sp-ocr{ background:rgba(255,255,255,.06) }
+  .sp-t{ font-size:10px; color:var(--muted); margin-top:auto;
+         direction:ltr; unicode-bidi:isolate; text-align:start }
+
+  .db-more{ text-align:center; font-size:11.5px; color:var(--muted);
+            font-weight:700; margin-top:9px }
+
+  @media (max-width:520px){
+    .sp-grid{ grid-template-columns:1fr }
+  }
 </style>
 </head>
 <body>
@@ -12975,6 +13030,7 @@ function dbSheets(r){
   // 📗 البيانات جاية مع الداشبورد — مفيش نداء زيادة
   const d = r.sheets || {};
   const pend = r.sheetsPending || [];
+  const sus  = r.suspicious || {};
   const staff = d.staff || [];
   const n = v => Number(v||0);
   const f = v => n(v).toLocaleString('en');
@@ -13100,6 +13156,74 @@ function dbSheets(r){
     h += '</tbody></table></div>';
   }
   h += '</div>';
+
+  // ═══ 🚩 إثباتات مشكوك فيها ═══
+  const ss = sus.summary || {};
+  const sItems = sus.items || [];
+  if(n(ss.total)){
+    h += '<div class="db-sec"><div class="db-sh"><h3>🚩 إثباتات مشكوك فيها</h3></div>';
+
+    h += '<div class="db-kpis">'
+      +   dbCard('🚩', 'مشكوك فيها', ss.low, '', n(ss.low) ? 'bad' : '')
+      +   dbCard('⚠️', 'محتاجة مراجعة', ss.medium)
+      +   dbCard('✅', 'مؤكدة', ss.high)
+      +   dbCard('❔', 'من غير فحص', ss.no_ocr)
+      + '</div>';
+
+    // كل موظفة
+    const byS = sus.by_staff || [];
+    if(byS.length){
+      h += '<div class="db-tw"><table class="db-t"><thead><tr>'
+        +  '<th>الموظفة</th><th>إثباتات</th><th>مشكوك</th><th>النسبة</th>'
+        +  '</tr></thead><tbody>';
+      byS.forEach(x => {
+        const bad = n(x.pct) >= 30;
+        h += '<tr' + (bad ? ' class="row-bad"' : '') + '>'
+          + '<td><b>' + esc(x.staff) + '</b></td>'
+          + '<td>' + f(x.total) + '</td>'
+          + '<td' + (bad ? ' class="z-bad"' : '') + '>' + f(x.suspect) + '</td>'
+          + '<td' + (bad ? ' class="z-bad"' : '') + '>' + n(x.pct) + '%</td>'
+          + '</tr>';
+      });
+      h += '</tbody></table></div>';
+    }
+
+    // القايمة بالصور
+    h += '<div class="sp-grid">';
+    sItems.slice(0, 40).forEach(x => {
+      const C = { low:['bad','🚩 مشكوك'], medium:['warn','⚠️ راجع'],
+                  none:['bad','❔ مفيش فحص'] };
+      const [cls, txt] = C[x.conf] || C.none;
+      const manual = x.signals && x.signals.manual_pick;
+
+      h += '<div class="sp-c ' + cls + '">'
+        + (x.url
+          ? '<a href="' + esc(x.url) + '" target="_blank" rel="noopener" class="sp-im">'
+            + '<img src="' + esc(x.url) + '" loading="lazy" onerror="this.remove()">'
+            + '</a>'
+          : '<div class="sp-im no">🖼️</div>')
+        + '<div class="sp-d">'
+        +   '<b>' + esc(x.handle || x.uid) + '</b>'
+        +   '<span class="sp-s">' + esc(x.staff) + ' · '
+        +     (x.action === 'followup' ? 'متابعة ' + (x.seq||1) : 'إرسال') + '</span>'
+        +   '<div class="sp-tags">'
+        +     '<span class="' + cls + '">' + txt + '</span>'
+        +     (manual ? '<span class="warn">✋ اختيار يدوي</span>' : '')
+        +     (x.matched ? '<span class="ok">الاسم ظهر</span>'
+                        : '<span class="bad">الاسم مظهرش</span>')
+        +   '</div>'
+        +   (x.ocr ? '<div class="sp-ocr">📄 ' + esc(x.ocr) + '</div>' : '')
+        +   '<div class="sp-t">' + fmtShort(x.at) + '</div>'
+        + '</div>'
+        + '</div>';
+    });
+    h += '</div>';
+
+    if(sItems.length > 40){
+      h += '<div class="db-more">+ ' + (sItems.length - 40) + ' غيرهم</div>';
+    }
+    h += '</div>';
+  }
 
   // ═══ سجل المزامنة ═══
   const sync = d.recent_sync || [];
