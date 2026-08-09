@@ -5258,6 +5258,36 @@
   @media (max-width:520px){
     .sp-grid{ grid-template-columns:1fr }
   }
+
+  /* 🚨 تنبيه تجاوز الحد */
+  .sa-alert{
+    padding:14px 16px; border-radius:15px; margin-bottom:13px;
+    background:#FEE2E2; border:1px solid #FCA5A5;
+  }
+  body.dark .sa-alert{ background:#3d1414; border-color:#B91C1C }
+  .sa-h{ font-size:13.5px; font-weight:800; color:#B91C1C;
+         line-height:1.7; margin-bottom:10px }
+  .sa-h b{ font-size:16px }
+  body.dark .sa-h{ color:#fca5a5 }
+
+  .sa-l{ display:flex; flex-direction:column; gap:6px }
+  .sa-i{
+    display:flex; align-items:center; gap:10px;
+    padding:9px 12px; border-radius:11px;
+    background:rgba(255,255,255,.6);
+  }
+  body.dark .sa-i{ background:rgba(0,0,0,.25) }
+  .sa-i b{ flex:1; font-size:12.5px; color:var(--ink) }
+  .sa-p{ font-size:15px; font-weight:900; color:#B91C1C;
+         font-family:'Space Grotesk','Tajawal',sans-serif; direction:ltr }
+  .sa-n{ font-size:11px; color:var(--muted); min-width:64px; text-align:end }
+  body.dark .sa-p{ color:#fca5a5 }
+
+  .sa-n2{
+    font-size:11.5px; line-height:1.75; color:#B91C1C;
+    margin-top:10px; padding-top:9px; border-top:1px dashed #FCA5A5;
+  }
+  body.dark .sa-n2{ color:#fca5a5; border-color:#B91C1C }
 </style>
 </head>
 <body>
@@ -13156,6 +13186,26 @@ function dbSheets(r){
     h += '</tbody></table></div>';
   }
   h += '</div>';
+
+  // ═══ 🚨 تنبيه: موظفات تجاوزوا الحد ═══
+  const susBy = (sus.by_staff || []).filter(x => n(x.pct) >= 30 && n(x.total) >= 3);
+  if(susBy.length){
+    h += '<div class="sa-alert">'
+      + '<div class="sa-h">🚨 <b>' + susBy.length + '</b> '
+      +   (susBy.length === 1 ? 'موظفة تجاوزت الحد' : 'موظفات تجاوزوا الحد')
+      +   ' — أكتر من 30% من إثباتاتهم مشكوك فيها</div>'
+      + '<div class="sa-l">'
+      + susBy.map(x =>
+        '<div class="sa-i">'
+        + '<b>' + esc(x.staff) + '</b>'
+        + '<span class="sa-p">' + n(x.pct) + '%</span>'
+        + '<span class="sa-n">' + f(x.suspect) + ' من ' + f(x.total) + '</span>'
+        + '</div>').join('')
+      + '</div>'
+      + '<div class="sa-n2">راجع إثباتاتهم تحت — ممكن يكون سوء استخدام '
+      +   'أو إن طريقة التصوير محتاجة توضيح.</div>'
+      + '</div>';
+  }
 
   // ═══ 🚩 إثباتات مشكوك فيها ═══
   const ss = sus.summary || {};
