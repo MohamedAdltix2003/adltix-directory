@@ -7111,9 +7111,12 @@ async function verifyShot(file, uid){
       }
     }
 
+    // 🔑 الهاندل المطابق = أقوى دليل ممكن.
+    //    ظهور 'm_bassas47' بالظبط في الصورة مستحيل يحصل بالصدفة.
+    //    قبل كده كان بيدّي medium بس — وده كان بيعلّم صور سليمة.
     let conf = 'low';
-    if(matched && sig.n >= 2)      conf = 'high';
-    else if(matched || sig.n >= 2) conf = 'medium';
+    if(matched)          conf = 'high';
+    else if(sig.n >= 2)  conf = 'medium';
 
     return {
       conf: conf, matched: matched, score: score,
@@ -11936,13 +11939,28 @@ function cropTop_(file, pct){
 }
 
 // بصمات المحادثة — لو الصورة فيها منها، يبقى محادثة حقيقية
+// ⚠️ الواجهة عند الفريق بالعربي — لازم نغطي الاتنين.
+//    والـ OCR بيقرا إنجليزي، فالعربي بيطلع مشوّش —
+//    عشان كده بنعتمد على علامات النظام كمان (الوقت، البطارية).
 const CHAT_SIGNS = {
-  instagram: ['message','active','send message','instagram','following','follow'],
-  whatsapp:  ['online','type a message','last seen','whatsapp','tap here'],
-  snapchat:  ['snap','chat','streak','snapchat','tap to'],
-  tiktok:    ['tiktok','message','send'],
-  generic:   ['am','pm','ص','م','today','yesterday','النهاردة','امبارح'],
+  instagram: ['message','active','send message','instagram',
+              'following','followers','رسالة','متابع','نشط'],
+  whatsapp:  ['online','type a message','last seen','whatsapp',
+              'متصل','ظهور','اكتب'],
+  snapchat:  ['snap','streak','snapchat'],
+  tiktok:    ['tiktok','send'],
+  ui:        ['reply','replied','sent','seen','delivered','typing',
+              'chat','رد','إرسال','مشاهدة'],
 };
+
+// علامات لقطة الشاشة نفسها — بتظهر في أي موبايل مهما كانت اللغة
+function systemSigns_(t){
+  const hit = {}; let n = 0;
+  if(/\d{1,2}:\d{2}/.test(t))               { hit.time = 1; n++; }
+  if(/\d{1,3}\s*%/.test(t))                 { hit.battery = 1; n++; }
+  if(/\b(4g|5g|lte|wifi|wi-fi)\b/i.test(t)) { hit.network = 1; n++; }
+  return { hit: hit, n: n };
+}
 
 function scanSignals_(text){
   const t = String(text || '').toLowerCase();
@@ -11952,9 +11970,10 @@ function scanSignals_(text){
     const found = CHAT_SIGNS[k].filter(w => t.includes(w));
     if(found.length){ hit[k] = found.length; n += found.length; }
   }
-  // وقت زي 3:45
-  if(/\d{1,2}:\d{2}/.test(t)){ hit.time = 1; n++; }
-  return { hit, n };
+  const sys = systemSigns_(t);
+  Object.assign(hit, sys.hit);
+  n += sys.n;
+  return { hit: hit, n: n };
 }
 
 // نطلّع أي كلمة شكلها اسم حساب
@@ -12068,9 +12087,9 @@ async function runOCR_(){
             matched = true; break;
           }
         }
-        if(matched && sig.n >= 2)      it.conf = 'high';
-        else if(matched || sig.n >= 2) it.conf = 'medium';
-        else                           it.conf = 'low';
+        if(matched)          it.conf = 'high';
+        else if(sig.n >= 2)  it.conf = 'medium';
+        else                 it.conf = 'low';
 
         it.score = matched ? 100 : 0;
         it.msg = it.conf === 'low' ? 'مش واضح إنها محادثة' : '';
@@ -12091,7 +12110,7 @@ async function runOCR_(){
         it.score  = m.score;
 
         // 🎯 درجة الثقة
-        if(m.score >= 90 && sig.n >= 2)      it.conf = 'high';
+        if(m.score >= 90)                    it.conf = 'high';
         else if(m.score >= 70 || sig.n >= 2) it.conf = 'medium';
         else                                 it.conf = 'low';
 
@@ -12471,7 +12490,8 @@ function renderMobileProofs(){
              +  '<span class="mp-a bad">🚫 ' + esc(it.msg) + '</span>';
       } else if(it.state === 'fail'){
         body += '<b class="mp-h">@' + esc(it.handle || '—') + '</b>'
-             +  '<span class="mp-a bad">❌ ' + esc(it.msg) + '</span>';
+             +  '<span class="mp-a bad">❌ ' + esc(it.msg) + '</span>'
+             +  '<button class="mp-ch" onclick="mpRetry(' + i + ')">🔄 جرّبي تاني</button>';
       } else if(it.state === 'uploading'){
         body += '<b class="mp-h">@' + esc(it.handle) + '</b>'
              +  '<span class="mp-a"><span class="lm-spin"></span> بنرفع…</span>';
@@ -12566,6 +12586,16 @@ function shortLink_(u){
   return m ? '@' + m[1] : (s.length > 40 ? s.slice(0, 40) + '…' : s);
 }
 
+// 🔄 إعادة محاولة الرفع
+function mpRetry(idx){
+  const it = MP.items[idx];
+  if(!it) return;
+  it.state = 'ready';
+  it.msg = '';
+  renderMobileProofs();
+  mpUpload();
+}
+
 // 🗑️ حذف صورة من القايمة قبل الرفع
 function mpRemove(idx){
   const it = MP.items[idx];
@@ -12632,9 +12662,9 @@ function mpPickCand(idx){
           it.score  = matched ? 100 : 0;
           it.manual = true;      // اختارته بإيدها — بيتسجّل للإدارة
 
-          if(matched && sigN >= 2)      it.conf = 'high';
-          else if(matched || sigN >= 2) it.conf = 'medium';
-          else                          it.conf = 'low';
+          if(matched)          it.conf = 'high';
+          else if(sigN >= 2)   it.conf = 'medium';
+          else                 it.conf = 'low';
 
           it.msg = it.conf === 'low' ? 'مش واضح إنها محادثة' : '';
         }
@@ -12718,7 +12748,14 @@ async function mpUpload(){
       it.state = 'ok';
     }catch(e){
       it.state = 'fail';
-      it.msg = e.message || 'فشل الرفع';
+      // ⚠️ رسالة مفهومة بدل الخطأ التقني
+      const m = String(e.message || '');
+      it.msg = m.includes('Failed to fetch') || m.includes('NetworkError')
+        ? 'النت فصل — جرّبي تاني'
+        : (m.includes('413') || m.includes('too large')
+          ? 'الصورة كبيرة أوي'
+          : (m || 'فشل الرفع'));
+      it.canRetry = true;
     }
     renderMobileProofs();
   }
