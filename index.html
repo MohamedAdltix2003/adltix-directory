@@ -12167,9 +12167,14 @@ async function runOCR_(){
         const r0 = scoreShot_(text, '');
         it.conf    = r0.conf;
         it.signals = r0.signals;
+        // ⚠️ الاسم اتقرا بس مش في قايمتها — ده مختلف تمامًا
+        //    عن إن الصورة مش محادثة.
+        const found = handles.filter(h => h.length >= 4);
         it.msg = r0.conf === 'low'
           ? 'مش واضح إنها محادثة'
-          : 'مالقيتش الاسم — اختاريه';
+          : (found.length
+            ? '@' + found[0] + ' مش في قايمتك — ضيفيه من تابة ➕ إضافة'
+            : 'مالقيتش الاسم — اختاريه');
       }
 
       it.state = 'ready';
@@ -12562,9 +12567,13 @@ function renderMobileProofs(){
           +   '<button class="mp-del" onclick="mpRemove(' + i + ')">🗑️ احذفي</button>'
           + '</div>';
       } else {
+        // ⚠️ التحذير للصور المشكوك فيها بس — مش لكل صورة مالهاش مؤثر
+        const risky2 = (it.conf === 'low' || it.conf === 'none');
         body += '<div class="mp-r"><span class="mp-cf ' + cf.c + '">' + cf.t + '</span></div>'
           + (it.msg ? '<span class="mp-msg">' + esc(it.msg) + '</span>' : '')
-          + '<span class="mp-warn">⚠️ لو رفعتيها هتظهر للإدارة كإثبات مشكوك فيه</span>'
+          + (risky2
+            ? '<span class="mp-warn">⚠️ لو رفعتيها هتظهر للإدارة كإثبات مشكوك فيه</span>'
+            : '<span class="mp-msg">الصورة سليمة — اختاري المؤثر بس</span>')
           + '<div class="mp-btns">'
           +   '<button class="mp-ch pick" onclick="mpPickCand(' + i + ')">🔍 اختاري المؤثر</button>'
           +   '<button class="mp-del" onclick="mpRemove(' + i + ')">🗑️ احذفي</button>'
