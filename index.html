@@ -12009,8 +12009,17 @@ function scoreShot_(text, uid){
   // 5️⃣ عربي = واجهة عربي
   if(/[\u0600-\u06FF]{3,}/.test(t)){ sc += 2; sig.arabic = 1; }
 
+  // 🔑 البوابة: لازم دليل محادثة حقيقي.
+  //
+  // ⚠️ الساعة والبطارية والعربي موجودين في أي لقطة شاشة —
+  //    لو اعتمدنا عليهم لوحدهم، صورة الإعدادات هتعدّي.
+  //    فالنقاط دي بتقوّي دليل موجود، مش بتصنع واحد.
+  const hasChat = matched || (sig.ui && sig.ui >= 2) || !!sig.phone;
+
+  if(!hasChat) return { conf: 'low', score: sc, matched: matched, signals: sig };
+
   return {
-    conf: sc >= 5 ? 'high' : (sc >= 3 ? 'medium' : 'low'),
+    conf: sc >= 7 ? 'high' : (sc >= 5 ? 'medium' : 'low'),
     score: sc, matched: matched, signals: sig,
   };
 }
