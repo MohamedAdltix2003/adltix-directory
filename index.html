@@ -7086,11 +7086,11 @@ async function verifyShot(file, uid){
   try{
     if(!MP.ocrReady){
       await loadScript_('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js');
-      MP.worker = await Tesseract.createWorker('eng');
+      MP.worker = await Tesseract.createWorker(['ara','eng']);
       MP.ocrReady = true;
     }
 
-    const crop = await cropTop_(file, 0.16);
+    const crop = await cropTop_(file, 0.35);
     const res  = await MP.worker.recognize(crop);
     const text = res && res.data ? (res.data.text || '') : '';
 
@@ -11888,23 +11888,25 @@ function closeMobileProofs(){
 
 // بنقص الشريط العلوي بس — ده اللي فيه اسم الحساب في أي محادثة.
 // صورة صغيرة = قراءة أسرع ودقة أعلى.
+// ⚠️ 16% كانت بتاخد شريط الحالة بس (الساعة والبطارية).
+//    اسم الحساب تحته في هيدر المحادثة — محتاجين 35%.
 function cropTop_(file, pct){
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
     img.onload = () => {
-      const h = Math.max(60, Math.round(img.height * (pct || 0.16)));
+      const h = Math.max(120, Math.round(img.height * (pct || 0.35)));
       const c = document.createElement('canvas');
       c.width = img.width; c.height = h;
       const ctx = c.getContext('2d');
       ctx.drawImage(img, 0, 0, img.width, h, 0, 0, img.width, h);
-      // تباين أعلى = قراءة أدق
+      // ⚠️ التباين العالي كان بيمسح النص الرمادي (اسم الحساب
+      //    في إنستجرام رمادي فاتح). دلوقتي رمادي بسيط بس.
       const d = ctx.getImageData(0, 0, c.width, c.height);
       const px = d.data;
       for(let i = 0; i < px.length; i += 4){
         const g = px[i]*0.299 + px[i+1]*0.587 + px[i+2]*0.114;
-        const v = g > 140 ? 255 : (g < 90 ? 0 : g);
-        px[i] = px[i+1] = px[i+2] = v;
+        px[i] = px[i+1] = px[i+2] = g;
       }
       ctx.putImageData(d, 0, 0);
       URL.revokeObjectURL(url);
@@ -12086,7 +12088,8 @@ async function runOCR_(){
   if(!MP.ocrReady){
     try{
       await loadScript_('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js');
-      MP.worker = await Tesseract.createWorker('eng');
+      // ⚠️ الواجهة عربي — لازم اللغتين
+      MP.worker = await Tesseract.createWorker(['ara','eng']);
       MP.ocrReady = true;
     }catch(e){
       // ⚠️ فشل التحميل — نكمّل بالاختيار اليدوي
@@ -12102,7 +12105,7 @@ async function runOCR_(){
 
   for(const it of MP.items){
     try{
-      const crop = await cropTop_(it.file, 0.16);
+      const crop = await cropTop_(it.file, 0.35);
       const res  = await MP.worker.recognize(crop);
       const text = res?.data?.text || '';
 
