@@ -7090,7 +7090,7 @@ async function verifyShot(file, uid){
       MP.ocrReady = true;
     }
 
-    const crop = await cropTop_(file, 0.35);
+    const crop = await cropTop_(file, 0.5);
     const res  = await MP.worker.recognize(crop);
     const text = res && res.data ? (res.data.text || '') : '';
 
@@ -11895,7 +11895,7 @@ function cropTop_(file, pct){
     const img = new Image();
     const url = URL.createObjectURL(file);
     img.onload = () => {
-      const h = Math.max(120, Math.round(img.height * (pct || 0.35)));
+      const h = Math.max(120, Math.round(img.height * (pct || 0.5)));
       const c = document.createElement('canvas');
       c.width = img.width; c.height = h;
       const ctx = c.getContext('2d');
@@ -11941,6 +11941,20 @@ function systemSigns_(t){
   return { hit: hit, n: n };
 }
 
+// 🔤 الـ OCR بيخلط بين حروف شكلها واحد.
+//    'tolyi07' اتقرت 'tolyio7' — الصفر بقى o.
+//    بنوحّدهم قبل المقارنة.
+function normHandle_(h){
+  return String(h || '').toLowerCase()
+    .replace(/[0oO]/g, '0')
+    .replace(/[1lIi|]/g, '1')
+    .replace(/[5sS]/g, '5')
+    .replace(/[2zZ]/g, '2')
+    .replace(/[8bB]/g, '8')
+    .replace(/[9gq]/g, '9')
+    .replace(/[^a-z0-9._]/g, '');
+}
+
 // 💬 كلمات واجهة المحادثة — عربي وإنجليزي
 const CHAT_WORDS = [
   'message','رسالة','active','نشط','online','متصل','send','إرسال',
@@ -11969,8 +11983,10 @@ function scoreShot_(text, uid){
   const target = String(uid || '').split(':')[1] || '';
   let matched = false;
   if(target.length >= 3){
+    const nt = normHandle_(target);
     for(const h of extractHandles_(t)){
-      if(h === target || h.includes(target) || target.includes(h)){ matched = true; break; }
+      const nh = normHandle_(h);
+      if(nh === nt || nh.includes(nt) || nt.includes(nh)){ matched = true; break; }
     }
   }
   if(matched){ sc += 5; sig.handle = 1; }
@@ -12032,9 +12048,10 @@ function matchCandidate_(handles){
   let best = null, bestScore = 0;
 
   for(const c of MP.cands){
-    const h = String(c.handle || '').toLowerCase();
+    const h = normHandle_(c.handle);
     if(h.length < 3) continue;
-    for(const x of handles){
+    for(const x0 of handles){
+      const x = normHandle_(x0);
       let sc = 0;
       if(x === h) sc = 100;
       else if(x.includes(h) || h.includes(x)){
@@ -12105,7 +12122,7 @@ async function runOCR_(){
 
   for(const it of MP.items){
     try{
-      const crop = await cropTop_(it.file, 0.35);
+      const crop = await cropTop_(it.file, 0.5);
       const res  = await MP.worker.recognize(crop);
       const text = res?.data?.text || '';
 
