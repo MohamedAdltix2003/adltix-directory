@@ -5288,6 +5288,13 @@
     margin-top:10px; padding-top:9px; border-top:1px dashed #FCA5A5;
   }
   body.dark .sa-n2{ color:#fca5a5; border-color:#B91C1C }
+
+  /* ملاحظة سناب — معلومة مش تحذير */
+  .qb-note{
+    font-size:11px; line-height:1.7; padding:6px 11px; margin-top:6px;
+    border-radius:8px; background:color-mix(in srgb,var(--line) 30%,transparent);
+    color:var(--muted);
+  }
 </style>
 </head>
 <body>
@@ -14193,7 +14200,8 @@ function renderQuotaBar(){
     +     '<b>'+lv[2]+' — فاضل '+Number(q.left).toLocaleString('en')+' طلب من '
     +       Number(q.limit).toLocaleString('en')+'</b>'
     +     '<span>باقة '+esc(q.pack||'')+' · تنتهي بعد '+q.validity+' يوم'
-    +       (q.pendingLeads ? ' · '+Number(q.pendingLeads).toLocaleString('en')+' مؤثر مستني بيانات' : '')
+    +       (q.pendingLeads ? ' · '+Number(q.pendingLeads).toLocaleString('en')+' مستني بيانات' : '')
+    +       (q.manualSnap ? ' · 👻 '+Number(q.manualSnap).toLocaleString('en')+' سناب (يدوي)' : '')
     +     '</span>'
     +   '</div>'
     +   '<button class="qb-k" onclick="openKeyBox()" title="تغيير مفتاح الـ API">🔑</button>'
@@ -14203,6 +14211,11 @@ function renderQuotaBar(){
     + (!q.enough && q.pendingLeads
         ? '<div class="qb-warn">⚠️ الرصيد مش كفاية للـ '+Number(q.pendingLeads).toLocaleString('en')
           + ' مؤثر المستنيين — محتاج '+Number(q.pendingLeads - q.left).toLocaleString('en')+' طلب زيادة</div>'
+        : '')
+    // 👻 سناب مالوش API — بياناته بتتكتب يدويًا، مش عطل
+    + (q.manualSnap
+        ? '<div class="qb-note">👻 '+Number(q.manualSnap).toLocaleString('en')
+          + ' حساب سناب — مفيش API ليهم، بياناتهم بتتكتب وقت الإضافة</div>'
         : '');
 }
 
