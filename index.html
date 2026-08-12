@@ -5505,6 +5505,10 @@
     .cg-hero{ flex-wrap:wrap }
     .cg-n b{ font-size:24px }
   }
+
+  /* الرسالة لما تبقى فاضية */
+  .rj-n.empty{ color:var(--muted); font-style:italic; opacity:.7;
+               background:transparent; padding:2px 0 }
 </style>
 </head>
 <body>
@@ -10292,7 +10296,6 @@ function renderDashboard(){
     ['targets',  '🎯', 'التارجت'],
     ['sheets',   '📗', 'الشيتات'],
     ['rejects',  '❌', 'أسباب الرفض'],
-    ['coach',    '💡', 'أسلوب الرسايل'],
     ['deals',    '🎯', 'الصفقات'],
     ['leads',    '📇', 'المؤثرين'],
     ['activity', '⚡', 'النشاط'],
@@ -10339,7 +10342,6 @@ function dbTabContent(r){
     case 'targets':  return dbTargets(r);
     case 'sheets':   return dbSheets(r);
     case 'rejects':  return dbRejects(r);
-    case 'coach':    return dbCoach(r);
     case 'deals':    return dbDeals(r);
     case 'leads':    return dbLeads(r);
     case 'activity': return dbActivity(r);
@@ -13901,107 +13903,6 @@ async function dbShMail(btn){
 }
 
 // ═══════════════════════════════════════════════════════════
-// 💡 تاب أسلوب الرسايل
-//
-// بيوري إيه اللي بيتكرر في رسايل الفريق، ومين بيتحسّن.
-// ═══════════════════════════════════════════════════════════
-function dbCoach(r){
-  const d = r.coach || {};
-  const S = d.summary || {};
-  const n = v => Number(v || 0);
-  const f = v => n(v).toLocaleString('en');
-
-  if(!n(S.total)){
-    return '<div class="db-empty">لسه مفيش رسايل اتحلّلت — '
-         + 'التحليل بيشتغل مع كل إثبات إرسال</div>';
-  }
-
-  const avg = n(S.avg_score);
-  const lvl = avg >= 70 ? 'ok' : (avg >= 50 ? 'mid' : 'low');
-
-  let h = '';
-
-  // ═══ المتوسط العام ═══
-  h += '<div class="cg-hero ' + lvl + '">'
-    + '<div class="cg-n"><b>' + avg + '</b><span>/100</span></div>'
-    + '<div class="cg-t">'
-    +   '<b>متوسط جودة الرسايل</b>'
-    +   '<span>' + f(S.total) + ' رسالة اتحلّلت · '
-    +     f(S.applied) + ' مرة استخدموا الاقتراح</span>'
-    + '</div>'
-    + '</div>';
-
-  h += '<div class="db-kpis">'
-    +   dbCard('✅', 'رسايل قوية', S.good, '70+ نقطة')
-    +   dbCard('⚠️', 'محتاجة تحسين', S.weak, 'أقل من 50', n(S.weak) ? 'bad' : '')
-    +   dbCard('📋', 'استخدموا الاقتراح', S.applied)
-    + '</div>';
-
-  // ═══ أكتر المشاكل ═══
-  const iss = d.top_issues || [];
-  if(iss.length){
-    h += '<div class="db-sec"><div class="db-sh"><h3>🔍 أكتر الملاحظات تكرارًا</h3></div>';
-    h += '<div class="cg-iss">';
-    iss.forEach(x => {
-      const pct = n(x.pct);
-      h += '<div class="cg-i">'
-        + '<div class="cg-il"><b>' + esc(x.issue) + '</b>'
-        +   '<span>' + f(x.count) + ' · ' + pct + '%</span></div>'
-        + '<div class="cg-ib"><span style="width:' + Math.min(100, pct) + '%"></span></div>'
-        + '</div>';
-    });
-    h += '</div></div>';
-  }
-
-  // ═══ كل موظفة ═══
-  const st = d.by_staff || [];
-  if(st.length){
-    h += '<div class="db-sec"><div class="db-sh"><h3>👥 حسب الموظفة</h3></div>'
-      +  '<div class="db-tw"><table class="db-t"><thead><tr>'
-      +  '<th>الموظفة</th><th>رسايل</th><th>المتوسط</th>'
-      +  '<th>محتاجة تحسين</th><th>استخدمت الاقتراح</th></tr></thead><tbody>';
-    st.forEach(x => {
-      const a = n(x.avg_score);
-      const cls = a >= 70 ? 'z-ok' : (a < 50 ? 'z-bad' : '');
-      h += '<tr' + (a < 50 ? ' class="row-bad"' : '') + '>'
-        + '<td><b>' + esc(x.staff) + '</b></td>'
-        + '<td>' + f(x.count) + '</td>'
-        + '<td class="' + cls + '"><b>' + a + '</b></td>'
-        + '<td' + (n(x.weak) ? ' class="z-bad"' : '') + '>' + f(x.weak) + '</td>'
-        + '<td>' + f(x.applied) + '</td></tr>';
-    });
-    h += '</tbody></table></div></div>';
-  }
-
-  // ═══ أمثلة ═══
-  const items = (d.items || []).filter(x => x.message);
-  if(items.length){
-    h += '<div class="db-sec"><div class="db-sh"><h3>📝 آخر الرسايل</h3></div>';
-    h += '<div class="cg-list">';
-    items.slice(0, 30).forEach(x => {
-      const sc = n(x.score);
-      const c2 = sc >= 70 ? 'ok' : (sc >= 50 ? 'mid' : 'low');
-      h += '<div class="cg-c ' + c2 + '">'
-        + '<div class="cg-ch">'
-        +   '<span class="cg-s ' + c2 + '">' + sc + '</span>'
-        +   '<b>' + esc(x.staff) + '</b>'
-        +   (x.applied ? '<span class="cg-ap">✅ استخدمت الاقتراح</span>' : '')
-        +   '<span class="cg-at">' + fmtShort(x.at) + '</span>'
-        + '</div>'
-        + '<div class="cg-m">' + esc(x.message) + '</div>'
-        + ((x.issues && x.issues.length)
-          ? '<div class="cg-tags">'
-            + x.issues.map(i => '<span>' + esc(i) + '</span>').join('')
-            + '</div>' : '')
-        + '</div>';
-    });
-    h += '</div></div>';
-  }
-
-  return h;
-}
-
-// ═══════════════════════════════════════════════════════════
 // ❌ تاب أسباب عدم الاشتراك
 //
 // البيانات من deal_outcomes — كل رفض معاه سببه وصورته.
@@ -14095,7 +13996,9 @@ function dbRejects(r){
         +   '<b>' + esc(x.handle) + '</b>'
         +   '<span class="rj-s">' + esc(x.staff) + ' · ' + f(x.followers) + '</span>'
         +   '<span class="rj-t ' + cls + '">' + esc(x.label) + '</span>'
-        +   (x.note ? '<div class="rj-n">' + esc(x.note) + '</div>' : '')
+        +   (x.note
+              ? '<div class="rj-n">💬 ' + esc(x.note) + '</div>'
+              : '<div class="rj-n empty">مفيش تفاصيل مكتوبة</div>')
         +   '<div class="rj-at">' + fmtShort(x.at) + '</div>'
         + '</div></div>';
     });
