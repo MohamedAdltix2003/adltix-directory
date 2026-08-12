@@ -6035,6 +6035,28 @@ function cleanList(){
   return _cleanCache;
 }
 
+// ═══════════════════════════════════════════════════════════
+// 🕐 كل التواريخ في الموقع بتوقيت القاهرة
+//
+// ⚠️ toISOString() بترجّع UTC. مصر UTC+3، فأي حاجة قبل
+//    الساعة 3 الصبح كانت بتتحسب اليوم اللي فات.
+// ═══════════════════════════════════════════════════════════
+function cairoDate(d){
+  try{
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Africa/Cairo',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+    }).format(d || new Date());
+  }catch(e){ return (d || new Date()).toISOString().slice(0,10); }
+}
+
+// كائن Date بس مضبوط على توقيت القاهرة — للحسابات
+function cairoNow(){
+  try{
+    return new Date(new Date().toLocaleString('en-US', { timeZone:'Africa/Cairo' }));
+  }catch(e){ return new Date(); }
+}
+
 function fmt(n){ if(n==null) return "—"; n=Number(n); if(!n) return "—"; if(n>=1e6) return (n/1e6).toFixed(1).replace(/\.0$/,"")+"M"; if(n>=1e3) return (n/1e3).toFixed(1).replace(/\.0$/,"")+"K"; return ""+n; }
 function esc(s){ return String(s||"").replace(/'/g,"\\'").replace(/"/g,"&quot;"); }
 // بقت بتستخدم الكاش بدل ما تفلتر 14 ألف صف في كل نداء
@@ -6954,7 +6976,7 @@ function card(c){
 let scrapingMode=false;
 function cairoTodayStr(){
   try{ return new Intl.DateTimeFormat('en-CA',{timeZone:'Africa/Cairo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()); }
-  catch(e){ return new Date().toISOString().slice(0,10); }
+  catch(e){ return cairoDate(); }
 }
 function cairoNowLabel(){
   try{ return new Intl.DateTimeFormat('en-GB',{timeZone:'Africa/Cairo',weekday:'long',year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date()); }
@@ -10155,8 +10177,8 @@ function msSetToday(){
 function msSetWeek(){
   const to = new Date(), from = new Date(Date.now() - 6*86400000);
   const a = document.getElementById('msFrom2'), b = document.getElementById('msTo2');
-  if(a) a.value = from.toISOString().slice(0,10);
-  if(b) b.value = to.toISOString().slice(0,10);
+  if(a) a.value = cairoDate(from);
+  if(b) b.value = cairoDate(to);
 }
 
 // إرسال التقارير المتأخرة يدويًا
@@ -10244,8 +10266,8 @@ function dbPreset(days){
   else{
     const to = new Date();
     const from = new Date(); from.setDate(to.getDate() - (Number(days)-1));
-    _dash.from = from.toISOString().slice(0,10);
-    _dash.to   = to.toISOString().slice(0,10);
+    _dash.from = cairoDate(from);
+    _dash.to   = cairoDate(to);
   }
   loadDashboard();
 }
@@ -10369,6 +10391,18 @@ function dbFull(v){
   const M = ['يناير','فبراير','مارس','إبريل','مايو','يونيو',
              'يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
   const p = n => String(n).padStart(2,'0');
+
+  // ⚠️ العرض لازم يبقى بتوقيت القاهرة — مش توقيت جهاز المستخدم
+  try{
+    const P = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Africa/Cairo', year:'numeric', month:'numeric',
+      day:'numeric', hour:'2-digit', minute:'2-digit', hour12:false,
+    }).formatToParts(d);
+    const g = k => P.find(x => x.type === k)?.value || '';
+    return Number(g('day'))+' '+M[Number(g('month'))-1]+' '+g('year')
+      + ' · ' + g('hour')+':'+g('minute');
+  }catch(e){ /* نكمّل بالطريقة القديمة */ }
+
   return d.getDate()+' '+M[d.getMonth()]+' '+d.getFullYear()
        + ' · ' + p(d.getHours())+':'+p(d.getMinutes());
 }
@@ -11565,9 +11599,10 @@ function tkAlertOpen(){
   openTasks();
 }
 
+// ⚠️ الطريقة القديمة كانت بتحوّل للقاهرة وبعدين ترجّع لـ UTC —
+//    فالـ 3 ساعات بتتشال تاني. cairoDate بتعملها في خطوة واحدة.
 function todayISO(){
-  return new Date(new Date().toLocaleString('en-US',{timeZone:'Africa/Cairo'}))
-    .toISOString().slice(0,10);
+  return cairoDate();
 }
 
 async function openTasks(date){
@@ -11613,7 +11648,7 @@ async function loadTasks(){
 function tkShiftDate(d){
   const cur = new Date(_tasks.date + 'T00:00:00Z');
   cur.setUTCDate(cur.getUTCDate() + d);
-  _tasks.date = cur.toISOString().slice(0,10);
+  _tasks.date = cairoDate(cur);
   _tasks.parsed = null;
   loadTasks();
 }
@@ -12223,8 +12258,8 @@ function dbTkPreset(days){
   _dbTk.preset = String(days);
   const to = new Date();
   const from = new Date(); from.setDate(to.getDate() - (Number(days)-1));
-  _dbTk.from = from.toISOString().slice(0,10);
-  _dbTk.to   = to.toISOString().slice(0,10);
+  _dbTk.from = cairoDate(from);
+  _dbTk.to   = cairoDate(to);
   dbTkLoad();
 }
 
@@ -14466,12 +14501,12 @@ function dbTgPreset(k){
   _dbTg.preset = k;
   const to = new Date();
   if(k === 'month'){
-    _dbTg.from = new Date(to.getFullYear(), to.getMonth(), 1).toISOString().slice(0,10);
+    _dbTg.from = cairoDate(new Date(to.getFullYear(), to.getMonth(), 1));
   } else {
     const f = new Date(); f.setDate(to.getDate() - (Number(k)-1));
-    _dbTg.from = f.toISOString().slice(0,10);
+    _dbTg.from = cairoDate(f);
   }
-  _dbTg.to = to.toISOString().slice(0,10);
+  _dbTg.to = cairoDate(to);
   dbTgLoad();
 }
 
@@ -14880,7 +14915,7 @@ function exportCSV(){
   const blob = new Blob(["\uFEFF" + lines.join("\r\n")], { type:"text/csv;charset=utf-8;" });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement("a");
-  const d    = new Date().toISOString().slice(0,10);
+  const d    = cairoDate();
   a.href = url;
   a.download = "adltix_" + d + "_" + rows.length + ".csv";
   document.body.appendChild(a); a.click(); a.remove();
