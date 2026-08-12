@@ -12803,7 +12803,7 @@ function renderMobileProofs(){
       } else if(it.state === 'fail'){
         body += '<b class="mp-h">@' + esc(it.handle || '—') + '</b>'
              +  '<span class="mp-a bad">❌ ' + esc(it.msg) + '</span>'
-             +  '<button class="mp-ch" onclick="mpRetry(' + i + ')">🔄 جرّبي تاني</button>';
+             +  '<button class="mp-ch" onclick="mpRetry(\'' + it.id + '\')">🔄 جرّبي تاني</button>';
       } else if(it.state === 'uploading'){
         body += '<b class="mp-h">@' + esc(it.handle) + '</b>'
              +  '<span class="mp-a"><span class="lm-spin"></span> بنرفع…</span>';
@@ -12818,8 +12818,8 @@ function renderMobileProofs(){
             ? '<span class="mp-warn">⚠️ الصورة دي هتظهر للإدارة كإثبات مشكوك فيه</span>'
             : '')
           + '<div class="mp-btns">'
-          +   '<button class="mp-ch" onclick="mpPickCand(' + i + ')">🔍 غيّري</button>'
-          +   '<button class="mp-del" onclick="mpRemove(' + i + ')">🗑️ احذفي</button>'
+          +   '<button class="mp-ch" onclick="mpPickCand(\'' + it.id + '\')">🔍 غيّري</button>'
+          +   '<button class="mp-del" onclick="mpRemove(\'' + it.id + '\')">🗑️ احذفي</button>'
           + '</div>';
       } else {
         // ⚠️ التحذير للصور المشكوك فيها بس — مش لكل صورة مالهاش مؤثر
@@ -12830,8 +12830,8 @@ function renderMobileProofs(){
             ? '<span class="mp-warn">⚠️ لو رفعتيها هتظهر للإدارة كإثبات مشكوك فيه</span>'
             : '<span class="mp-msg">الصورة سليمة — اختاري المؤثر بس</span>')
           + '<div class="mp-btns">'
-          +   '<button class="mp-ch pick" onclick="mpPickCand(' + i + ')">🔍 اختاري المؤثر</button>'
-          +   '<button class="mp-del" onclick="mpRemove(' + i + ')">🗑️ احذفي</button>'
+          +   '<button class="mp-ch pick" onclick="mpPickCand(\'' + it.id + '\')">🔍 اختاري المؤثر</button>'
+          +   '<button class="mp-del" onclick="mpRemove(\'' + it.id + '\')">🗑️ احذفي</button>'
           + '</div>';
       }
 
@@ -12903,8 +12903,8 @@ function shortLink_(u){
 }
 
 // 🔄 إعادة محاولة الرفع
-function mpRetry(idx){
-  const it = MP.items[idx];
+function mpRetry(id){
+  const it = MP.items.find(x => x.id === id);
   if(!it) return;
   it.state = 'ready';
   it.msg = '';
@@ -12913,18 +12913,21 @@ function mpRetry(idx){
 }
 
 // 🗑️ حذف صورة من القايمة قبل الرفع
-function mpRemove(idx){
-  const it = MP.items[idx];
-  if(!it) return;
+function mpRemove(id){
+  const i = MP.items.findIndex(x => x.id === id);
+  if(i < 0) return;
+  const it = MP.items[i];
   try{ URL.revokeObjectURL(it.preview); }catch(e){}
-  MP.items.splice(idx, 1);
+  MP.items.splice(i, 1);
   renderMobileProofs();
   toastOk('🗑️ اتشالت');
 }
 
 // ═══ اختيار المؤثر يدويًا ═══
-function mpPickCand(idx){
-  const it = MP.items[idx];
+// ⚠️ كانت بتاخد الفهرس — والفهرس بيتغيّر لما تمسحي صف،
+//    فالضغط على صف كان بيعدّل صف تاني. دلوقتي بالمعرّف الثابت.
+function mpPickCand(id){
+  const it = MP.items.find(x => x.id === id);
   if(!it) return;
 
   const ov = document.createElement('div');
@@ -12966,15 +12969,30 @@ function mpPickCand(idx){
           it.uid = c.uid; it.handle = c.handle;
           it.action = c.action; it.seq = c.seq;
           it.label = c.action === 'followup' ? ('متابعة ' + c.seq) : 'إرسال';
-          // 🔒 تغيير المؤثر مايغيّرش نتيجة فحص الصورة.
-          //    قبل كده كانت 'high' — يعني أي صورة تعدّي بمجرد
-          //    ما تغيّر المؤثر. ده كان باب مفتوح.
-          const r0 = scoreShot_(it.ocr || '', c.uid);
-          it.conf    = r0.conf;
-          it.score   = r0.score;
-          it.signals = r0.signals;
-          it.manual  = true;     // اختارته بإيدها — بيتسجّل للإدارة
-          it.msg = it.conf === 'low' ? 'مش واضح إنها محادثة' : '';
+          it.manual = true;      // اختارته بإيدها — بيتسجّل للإدارة
+
+          // 🔄 نعيد الفحص بالموديل مع المؤثر الجديد.
+          //    الحساب المحلي مكانش بيعرف يطابق صح، فكان بيدي نتيجة غلط.
+          it.conf = '';
+          it.msg  = '⏳ بنتأكد…';
+          close();
+          renderMobileProofs();
+
+          verifyShot(it.file, c.uid).then(r => {
+            if(r){
+              it.conf    = r.conf;
+              it.score   = r.score;
+              it.matched = r.matched;
+              it.signals = Object.assign({}, r.signals || {}, { manual_pick: 1 });
+              it.ocr     = r.ocr || it.ocr;
+              it.msg = it.conf === 'low'
+                ? ((r.reasons || [])[0] || 'مش واضح إنها محادثة') : '';
+            } else {
+              it.conf = 'review'; it.msg = 'محتاجة مراجعة';
+            }
+            renderMobileProofs();
+          });
+          return;
         }
         close();
         renderMobileProofs();
