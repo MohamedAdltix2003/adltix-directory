@@ -10148,7 +10148,7 @@ async function toggleRecipient(id, field, val){
 }
 
 function msSetToday(){
-  const t = new Date().toISOString().slice(0,10);
+  const t = cairoISO();      // ⚠️ كان UTC — بيدي يوم غلط قبل 3 ص
   const a = document.getElementById('msFrom2'), b = document.getElementById('msTo2');
   if(a) a.value = t; if(b) b.value = t;
 }
@@ -15002,12 +15002,33 @@ function clearDateRange(){
   buildAllPills(); render();
 }
 
+// ⚠️ toISOString() بترجّع التاريخ بتوقيت UTC.
+//    مصر UTC+3 — فاللي اتضاف يوم 11 قبل الساعة 3 ص كان
+//    بيتحسب يوم 10 والفلتر مش بيلاقيه.
+// 📅 تاريخ النهاردة بتوقيت القاهرة — مش UTC
+function cairoISO(d){
+  try{
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Africa/Cairo',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+    }).format(d || new Date());
+  }catch(e){ return (d || new Date()).toISOString().slice(0,10); }
+}
+
 function inDateRange(v){
   if(!state.from && !state.to) return true;
   if(!v) return false;
   const d = new Date(v);
   if(isNaN(d)) return false;
-  const day = d.toISOString().slice(0,10);
+
+  let day;
+  try{
+    day = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Africa/Cairo',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+    }).format(d);
+  }catch(e){ day = d.toISOString().slice(0,10); }
+
   if(state.from && day < state.from) return false;
   if(state.to   && day > state.to)   return false;
   return true;
