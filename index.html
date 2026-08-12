@@ -5518,6 +5518,34 @@
   }
   .mp-rt:hover{ filter:brightness(1.12) }
   .mp-rt:active{ transform:scale(.96) }
+
+  /* 🔎 تكبير الصورة */
+  .mp-th{ cursor:zoom-in }
+  .mz-ov{
+    position:fixed; inset:0; z-index:10020;
+    background:rgba(12,10,9,.92);
+    display:flex; align-items:center; justify-content:center;
+    padding:16px; opacity:0; transition:opacity .18s;
+  }
+  .mz-ov.show{ opacity:1 }
+  .mz-ov img{
+    max-width:100%; max-height:92vh; border-radius:12px;
+    box-shadow:0 12px 40px rgba(0,0,0,.5);
+  }
+  .mz-x{
+    position:absolute; top:14px; inset-inline-end:14px;
+    width:40px; height:40px; border-radius:50%; cursor:pointer;
+    border:none; background:rgba(255,255,255,.16); color:#fff;
+    font-size:18px; backdrop-filter:blur(6px);
+  }
+  .mz-x:hover{ background:rgba(255,255,255,.28) }
+
+  /* الصورة جنب البحث */
+  .mp-pv{
+    display:block; width:100%; max-height:180px; object-fit:contain;
+    border-radius:12px; margin-bottom:11px; cursor:zoom-in;
+    background:color-mix(in srgb,var(--line) 25%,transparent);
+  }
 </style>
 </head>
 <body>
@@ -13255,7 +13283,8 @@ function renderMobileProofs(){
       if(it.state === 'uploading') cls += ' busy';
 
       body += '<div class="' + cls + '" id="mp_' + it.id + '">'
-        + '<img class="mp-th" src="' + it.preview + '" alt="">'
+        + '<img class="mp-th" src="' + it.preview + '" alt="" '
+        +   'onclick="mpZoom(\'' + it.id + '\')" title="اضغطي للتكبير">'
         + '<div class="mp-b">';
 
       if(it.state === 'scan'){
@@ -13378,6 +13407,24 @@ function mpRetry(id){
   mpUpload();
 }
 
+// 🔎 تكبير الصورة — عشان تشوفي اسم المؤثر فيها
+function mpZoom(id){
+  const it = MP.items.find(x => x.id === id);
+  if(!it) return;
+
+  const ov = document.createElement('div');
+  ov.className = 'mz-ov';
+  ov.innerHTML = '<button class="mz-x">✕</button>'
+    + '<img src="' + it.preview + '" alt="">';
+
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>ov.classList.add('show'));
+
+  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),180); };
+  ov.querySelector('.mz-x').onclick = close;
+  ov.onclick = e => { if(e.target === ov) close(); };
+}
+
 // 🗑️ حذف صورة من القايمة قبل الرفع
 function mpRemove(id){
   const i = MP.items.findIndex(x => x.id === id);
@@ -13403,7 +13450,12 @@ function mpPickCand(id){
     +   '<div class="mp-hd"><b>🔍 اختاري المؤثر</b>'
     +     '<button class="mp-x">✕</button></div>'
     +   '<div class="mp-body">'
-    +     '<input class="mp-search" id="mpQ" placeholder="اكتبي اسم الحساب…" autocomplete="off">'
+    +     (it.preview
+        ? '<img class="mp-pv" src="' + it.preview + '" '
+          + 'onclick="mpZoom(\'' + it.id + '\')" title="اضغطي للتكبير">'
+        : '')
+    +     '<input class="mp-search" id="mpQ" '
+    +       'placeholder="اسم الحساب أو اللينك…" autocomplete="off">'
     +     '<div class="mp-res" id="mpRes"></div>'
     +   '</div>'
     + '</div>';
@@ -13467,9 +13519,26 @@ function mpPickCand(id){
   };
 
   draw(MP.cands.slice(0, 40));
+  // 🔍 البحث بأي حاجة — لينك كامل، اسم حساب، أو جزء منه
   q.oninput = () => {
-    const t = q.value.trim().toLowerCase().replace('@','');
-    draw(t ? MP.cands.filter(c => String(c.handle).toLowerCase().includes(t)) : MP.cands);
+    let t = q.value.trim().toLowerCase();
+    if(!t){ draw(MP.cands); return; }
+
+    // لو لزقت لينك، نطلّع اسم الحساب منه
+    const m = t.match(
+      /(?:instagram|tiktok|snapchat|youtube)\.com\/(?:add\/|@)?([\w.\-]+)/i);
+    if(m) t = m[1];
+    t = t.replace(/^@/, '').replace(/\/+$/, '');
+
+    // نشيل بقايا اللينك لو الموظفة لزقت جزء منه
+    t = t.replace(/^https?:\/\//, '').replace(/^www\./, '')
+         .replace(/\?.*$/, '');
+
+    draw(MP.cands.filter(c => {
+      const h = String(c.handle || '').toLowerCase();
+      const u = String(c.uid || '').toLowerCase();
+      return h.includes(t) || u.includes(t) || t.includes(h);
+    }));
   };
   setTimeout(()=>q.focus(), 150);
 }
