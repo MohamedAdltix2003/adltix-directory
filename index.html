@@ -15215,8 +15215,23 @@ function updateViewCounts(){
     if(by && by.toLowerCase() === String(myName).toLowerCase()) imp++;
   }
   const set = (id, n) => { const e = document.getElementById(id); if(e) e.textContent = n.toLocaleString('en'); };
+
+  // ⚠️ لو فيه فلتر تاريخ نشط، العدّاد لازم يحترمه —
+  //    وإلا الزرار يقول 37 والعرض يوري 9.
+  const dateOn = !!(state.from || state.to) || (state.days && state.days !== 'all');
+  let impShown = imp;
+  if(dateOn){
+    impShown = 0;
+    for(const c of all){
+      const by = String(c.imported_by||'').trim();
+      if(!by || by.toLowerCase() !== String(myName).toLowerCase()) continue;
+      if((state.from || state.to) && !inDateRange(c.imported_at)) continue;
+      impShown++;
+    }
+  }
+
   set('vnAssigned', all.length - imp);
-  set('vnImported', imp);
+  set('vnImported', impShown);
   set('vnAll', all.length);
 
   // 🔄 عدّاد المتابعات — والمتأخرين بيتلوّنوا
