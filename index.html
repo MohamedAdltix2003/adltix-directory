@@ -5718,6 +5718,7 @@ const FN_MAP = {
   dashboard:      "dashboard",
   dailyTasks:     "daily-tasks",
   verifyProof:    "verify-proof",
+  verifyVision:   "verify-vision",
   partners:       "sync-partners",
   adminAction:    "admin-action",
   sendReport:     "send-report",
@@ -7118,27 +7119,151 @@ async function fileHash(file){
 //
 // بيشتغل من الكارت العادي ومن صفحة الموبايل بنفس المنطق.
 // لو الـ OCR مش متاح بيرجّع null ومايوقفش الرفع.
-async function verifyShot(file, uid){
+// 🤖 فحص الصورة بموديل الرؤية على السيرفر.
+//
+// ⚠️ الـ OCR في المتصفح وصل لحده: صفحة البروفايل والمحادثة
+//    شكلهم واحد في النص. الموديل بيشوف *شكل* الصورة نفسها.
+//
+//    لو الموديل مش متاح، بنرجع للـ OCR المحلي — الشغل مايقفش.
+async function verifyShotAI(file, uid){
   try{
-    if(!MP.ocrReady){
-      await loadScript_('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js');
-      MP.worker = await Tesseract.createWorker(['ara','eng']);
-      MP.ocrReady = true;
-    }
+    const fd = new FormData();
+    fd.append('token', SESSION.token);
+    fd.append('uid', uid || '');
+    fd.append('file', file, file.name || 'proof.png');
 
-    const crop = await cropTop_(file, 0.5);
-    const res  = await MP.worker.recognize(crop);
-    const text = res && res.data ? (res.data.text || '') : '';
+    const base = (typeof SUPABASE_URL !== 'undefined' && SUPABASE_URL)
+      ? SUPABASE_URL : 'https://svjnugimaadcadawnglf.supabase.co';
 
-    const r0 = scoreShot_(text, uid);
+    const res = await fetch(base + '/functions/v1/verify-vision', {
+      method: 'POST', body: fd,
+    });
+    const d = await res.json();
+    if(!d || !d.ok) return null;
+
+    const r = d.result || {};
     return {
-      conf: r0.conf, matched: r0.matched, score: r0.score,
-      ocr: text.replace(/\s+/g, ' ').trim().slice(0, 90),
-      signals: r0.signals,
+      conf: r.confidence,
+      matched: r.matched,
+      score: r.score,
+      ocr: r.ocr || '',
+      signals: {
+        ai: 1,
+        chat_prob: r.chat_prob,
+        reasons: (r.reasons || []).slice(0, 3),
+      },
+      reasons: r.reasons || [],
+      via: 'ai',
     };
+  }catch(e){ return null; }
+}
+
+// ═══════════════════════════════════════════════════════════
+// 🧠 المستوى التالت — نفس موديل CLIP جوه المتصفح
+//
+// ⚠️ ده بيشتغل بس لو السيرفر و HuggingFace الاتنين وقعوا.
+//    أبطأ (5-10 ثواني) بس مستحيل يقع — بيشتغل عند الموظفة نفسها.
+//
+//    نفس الأوصاف ونفس المنطق — فالنتيجة متسقة مع الاتنين اللي فوق.
+// ═══════════════════════════════════════════════════════════
+const BROWSER_AI = { ready: false, pipe: null, busy: false };
+
+const CLIP_PROMPTS = [
+  "a screenshot of a direct message conversation on a phone",
+  "a mobile chat screen with message bubbles",
+  "a WhatsApp or Instagram chat conversation",
+  "a messaging app showing sent and received messages",
+  "a phone screenshot of a text conversation with someone",
+  "a chat thread with a text input box at the bottom",
+  "a social media profile page showing followers count",
+  "an Instagram profile with a grid of photos",
+  "a phone settings or preferences screen",
+  "a photo of a person, product, or landscape",
+  "a home screen or lock screen of a phone",
+  "a web page or article",
+  "a video call or online meeting screen with participants",
+  "a login or sign-in screen asking for email and password",
+];
+const CLIP_CHAT_N = 6;
+
+async function browserClipInit(){
+  if(BROWSER_AI.ready) return true;
+  if(BROWSER_AI.busy) return false;
+  BROWSER_AI.busy = true;
+  try{
+    const mod = await import(
+      'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.3.1');
+    mod.env.allowLocalModels = false;
+    BROWSER_AI.pipe = await mod.pipeline(
+      'zero-shot-image-classification',
+      'Xenova/clip-vit-base-patch32',
+      { dtype: 'q8' }
+    );
+    BROWSER_AI.ready = true;
+    return true;
   }catch(e){
-    return null;   // الفحص فشل — مايوقفش الرفع
-  }
+    return false;
+  }finally{ BROWSER_AI.busy = false; }
+}
+
+async function verifyShotBrowser(file, uid){
+  try{
+    if(!(await browserClipInit())) return null;
+
+    const url = URL.createObjectURL(file);
+    let out;
+    try{
+      out = await BROWSER_AI.pipe(url, CLIP_PROMPTS);
+    } finally { URL.revokeObjectURL(url); }
+
+    if(!Array.isArray(out) || !out.length) return null;
+
+    const chatSet = new Set(CLIP_PROMPTS.slice(0, CLIP_CHAT_N));
+    let chat = 0;
+    for(const x of out) if(chatSet.has(x.label)) chat += Number(x.score) || 0;
+
+    const bestIsChat = chatSet.has(out[0].label);
+    const reasons = [];
+    let score = 0;
+
+    if(chat >= 0.7)       { score += 5; reasons.push('الشكل محادثة بوضوح'); }
+    else if(bestIsChat)   { score += 4; reasons.push('الشكل محادثة'); }
+    else if(chat >= 0.45) { score += 2; reasons.push('الشكل قريب من المحادثة'); }
+    else                  { score -= 4; reasons.push('الشكل مش محادثة'); }
+
+    // مطابقة المؤثر من اسم الملف
+    const target = String(uid || '').split(':').pop() || '';
+    const matched = target.length >= 3 &&
+      String(file.name || '').toLowerCase().includes(target.toLowerCase());
+    if(matched){ score += 3; reasons.push('اسم المؤثر مطابق'); }
+
+    const conf = score >= 6 ? 'high' : (score >= 3 ? 'medium' : 'low');
+    return {
+      conf, matched, score, ocr: '',
+      signals: { browser: 1, chat_prob: Number(chat.toFixed(3)) },
+      reasons, via: 'browser',
+    };
+  }catch(e){ return null; }
+}
+
+// ═══ الترتيب: سيرفرنا → HuggingFace → المتصفح ═══
+//
+// ⚠️ مفيش رجوع للـ OCR لوحده — ده اللي سبب المشكلة من الأول.
+async function verifyShot(file, uid){
+  // ①② الـ Edge Function بتجرّب السيرفر وبعده HuggingFace
+  const ai = await verifyShotAI(file, uid);
+  if(ai && ai.conf !== 'review') return ai;
+
+  // ③ المتصفح — أبطأ بس مستحيل يقع
+  const local = await verifyShotBrowser(file, uid);
+  if(local) return local;
+
+  return {
+    conf: 'review', matched: false, score: 0, ocr: '',
+    signals: { offline: 1 },
+    reasons: ['الفحص مش متاح — الإدارة هتراجعها'],
+    via: 'none',
+  };
 }
 
 // ===== الفحص قبل الرفع =====
@@ -12167,6 +12292,69 @@ async function mpFiles(files){
 async function runOCR_(){
   MP.loading = true;
   renderMobileProofs();
+
+  // 🤖 نجرّب الموديل الأول — أدق بكتير من الـ OCR المحلي
+  let aiWorks = true;
+  for(const it of MP.items){
+    if(!aiWorks) break;
+    try{
+      const ai = await verifyShotAI(it.file, it.uid || '');
+      if(!ai){ aiWorks = false; break; }
+
+      it.conf    = ai.conf;
+      it.score   = ai.score;
+      it.matched = ai.matched;
+      it.signals = ai.signals;
+      it.ocr     = ai.ocr;
+
+      // مالوش مؤثر لسه — نحاول نطابق من الأسماء
+      if(!it.uid && ai.ocr){
+        const m = matchCandidate_(extractHandles_(ai.ocr));
+        if(m){
+          it.uid    = m.cand.uid;
+          it.handle = m.cand.handle;
+          it.action = m.cand.action;
+          it.seq    = m.cand.seq;
+          it.label  = m.cand.action === 'followup'
+                      ? ('متابعة ' + m.cand.seq) : 'إرسال';
+        }
+      }
+
+      it.msg = it.conf === 'low'
+        ? ((ai.reasons || [])[0] || 'مش واضح إنها محادثة')
+        : (it.uid ? '' : 'مالقيتش الاسم — اختاريه');
+      it.state = 'ready';
+      MP.done++;
+      renderMobileProofs();
+    }catch(e){ aiWorks = false; break; }
+  }
+
+  // ③ اللي مخلصش — المتصفح
+  const rest = MP.items.filter(x => x.state === 'scan');
+  if(rest.length){
+    for(const it of rest){
+      const lo = await verifyShotBrowser(it.file, it.uid || '');
+      if(lo){
+        it.conf    = lo.conf;
+        it.score   = lo.score;
+        it.matched = lo.matched;
+        it.signals = lo.signals;
+        it.msg = it.conf === 'low'
+          ? ((lo.reasons || [])[0] || 'مش واضح إنها محادثة')
+          : (it.uid ? '' : 'مالقيتش الاسم — اختاريه');
+      } else {
+        it.conf = 'review';
+        it.msg  = 'محتاجة مراجعة';
+      }
+      it.state = 'ready';
+      MP.done++;
+      renderMobileProofs();
+    }
+  }
+
+  MP.loading = false;
+  renderMobileProofs();
+  return;
 
   // نحمّل المحرك مرة واحدة
   if(!MP.ocrReady){
