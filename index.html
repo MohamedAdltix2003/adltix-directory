@@ -5509,6 +5509,15 @@
   /* الرسالة لما تبقى فاضية */
   .rj-n.empty{ color:var(--muted); font-style:italic; opacity:.7;
                background:transparent; padding:2px 0 }
+
+  /* زرار إعادة الرفع — واضح ومطمّن */
+  .mp-rt{
+    align-self:flex-start; font-family:inherit; font-size:11.5px;
+    font-weight:800; cursor:pointer; padding:6px 14px; border-radius:9px;
+    border:none; background:#1D4ED8; color:#fff; margin-top:4px;
+  }
+  .mp-rt:hover{ filter:brightness(1.12) }
+  .mp-rt:active{ transform:scale(.96) }
 </style>
 </head>
 <body>
@@ -13260,7 +13269,7 @@ function renderMobileProofs(){
       } else if(it.state === 'fail'){
         body += '<b class="mp-h">@' + esc(it.handle || '—') + '</b>'
              +  '<span class="mp-a bad">❌ ' + esc(it.msg) + '</span>'
-             +  '<button class="mp-ch" onclick="mpRetry(\'' + it.id + '\')">🔄 جرّبي تاني</button>';
+             +  '<button class="mp-rt" onclick="mpRetry(\'' + it.id + '\')">🔄 ارفعيها تاني</button>';
       } else if(it.state === 'uploading'){
         body += '<b class="mp-h">@' + esc(it.handle) + '</b>'
              +  '<span class="mp-a"><span class="lm-spin"></span> بنرفع…</span>';
@@ -13466,29 +13475,58 @@ function mpPickCand(id){
 }
 
 // ═══ الرفع ═══
-async function mpUpload(){
-  const list = MP.items.filter(x => x.state === 'ready' && x.uid);
-  if(!list.length) return;
+// 🔁 إعادة المحاولة — النت بيتقطع، والسيرفر بيتأخر أحيانًا.
+//    من غير ده، صورة واحدة تفشل وتوقف الباقي.
+// 🌐 نستنى النت يرجع بدل ما نفشل
+async function waitNet_(maxMs){
+  if(navigator.onLine !== false) return true;
+  const t0 = Date.now();
+  while(navigator.onLine === false){
+    if(Date.now() - t0 > (maxMs || 45000)) return false;
+    await new Promise(r => setTimeout(r, 1200));
+  }
+  await new Promise(r => setTimeout(r, 700));   // نديله لحظة يستقر
+  return true;
+}
 
-  for(const it of list){
-    it.state = 'uploading';
-    renderMobileProofs();
-
+// 🔁 إعادة المحاولة — بمهلة قصيرة عشان مانطوّلش على الموظفة
+async function retry_(fn, tries){
+  const N = tries || 4;
+  let last;
+  for(let i = 0; i < N; i++){
     try{
+      await waitNet_();          // النت راجع؟
+      return await fn();
+    }catch(e){
+      last = e;
+      if(i < N - 1){
+        await new Promise(r => setTimeout(r, 400 + i * 500));
+      }
+    }
+  }
+  throw last;
+}
+
+// ⚡ رفع صورة واحدة — بتتنده متوازية
+async function mpUploadOne(it){
+  it.state = 'uploading';
+  renderMobileProofs();
+
+  try{
       // 1️⃣ البصمة — نفس دالة الموقع
       const hash = await fileHash(it.file);
       it.hash = hash;      // نحتاجها للتوصية
 
       // 2️⃣ فحص التكرار
       if(hash){
-        const chk = await callApi('verifyProof', {
+        const chk = await retry_(() => callApi('verifyProof', {
           token: SESSION.token, action: 'check', hash, uid: it.uid,
-        }) || {};
+        }), 3) || {};
         if(chk.accepted === false){
           it.state = 'dup';
           it.msg = chk.message || 'الصورة دي مرفوعة قبل كده';
           renderMobileProofs();
-          continue;
+          return;      // ⚠️ دالة مش لوب — return مش continue
         }
       }
 
@@ -13497,11 +13535,13 @@ async function mpUpload(){
       // ⚠️ ده الخطوة الحاسمة. لو نجحت، الأكشن اتسجّل فعلًا —
       //    وأي فشل بعد كده مايستاهلش يقول "فشل الرفع".
       const b64 = await fileToBase64(it.file);
-      const res = await callApi('logAction', {
+
+      // 🔒 الخطوة الحاسمة — بتتحاول 4 مرات
+      const res = await retry_(() => callApi('logAction', {
         token: SESSION.token, uid: it.uid,
         actionType: it.action, imageBase64: b64,
         mode: 'new', seq: it.seq || undefined,
-      });
+      }), 4);
 
       it.logged = true;    // 🔒 من هنا الأكشن مسجّل
       const url = (res && res.screenshotUrl) || null;
@@ -13538,26 +13578,71 @@ async function mpUpload(){
       }catch(e){ /* تجاهل */ }
 
       it.state = 'ok';
-    }catch(e){
-      // ✅ الأكشن اتسجّل خلاص — الفشل في خطوة ثانوية
-      if(it.logged){
-        it.state = 'ok';
-        renderMobileProofs();
-        continue;
-      }
-      it.state = 'fail';
-      const m = String(e.message || '');
-      it.msg = m.includes('Failed to fetch') || m.includes('NetworkError')
-        ? 'النت فصل — جرّبي تاني'
-        : (m.includes('413') || m.includes('too large')
-          ? 'الصورة كبيرة أوي'
-          : (m || 'فشل الرفع'));
-      it.canRetry = true;
+  }catch(e){
+    // ✅ الأكشن اتسجّل خلاص — الفشل في خطوة ثانوية
+    if(it.logged){
+      it.state = 'ok';
+      renderMobileProofs();
+      return;
     }
+    it.state = 'fail';
+    const m = String(e.message || '');
+    it.msg = m.includes('Failed to fetch') || m.includes('NetworkError')
+      ? 'النت فصل'
+      : (m.includes('413') || m.includes('too large')
+        ? 'الصورة كبيرة أوي' : 'محتاجة إعادة');
+    it.canRetry = true;
+  }
+  renderMobileProofs();
+}
+
+// ⚡ الرفع الجماعي — 4 صور في نفس الوقت
+//
+// ⚠️ الرفع بالتسلسل كان بياخد دقيقتين لـ 40 صورة.
+//    المتوازي بيخلّصهم في نص الوقت أو أقل.
+async function mpUpload(){
+  const list = MP.items.filter(x => x.state === 'ready' && x.uid);
+  if(!list.length) return;
+
+  const LANES = 4;
+  let idx = 0;
+
+  async function lane(){
+    while(idx < list.length){
+      const it = list[idx++];
+      await mpUploadOne(it);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(LANES, list.length) }, lane));
+
+  // 🔁 اللي فشل — جولتين إعادة متوازيتين
+  //    ⚠️ الموظفة مش المفروض تشوف "فشل" وهي رفعت 40 صورة.
+  for(let round = 1; round <= 2; round++){
+    const failed = MP.items.filter(x => x.state === 'fail');
+    if(!failed.length) break;
+
+    await waitNet_(60000);       // نستنى النت لو مقطوع
+    await new Promise(r => setTimeout(r, 600 * round));
+
+    failed.forEach(x => { x.state = 'ready'; x.msg = ''; });
     renderMobileProofs();
+
+    let i2 = 0;
+    const lane2 = async () => {
+      while(i2 < failed.length) await mpUploadOne(failed[i2++]);
+    };
+    await Promise.all(Array.from(
+      { length: Math.min(3, failed.length) }, lane2));
   }
 
   const ok = MP.items.filter(x => x.state === 'ok').length;
+  const stillBad = MP.items.filter(x => x.state === 'fail').length;
+
+  if(stillBad){
+    // ⚠️ رسالة مطمّنة مش مخيفة — الشغل اللي نجح متسجّل
+    toastErr('📶 ' + stillBad + ' صورة النت قطع عليها — دوسي 🔄 جنبها');
+  }
+
   if(ok){
     toastOk('✅ اترفع ' + ok + ' إثبات');
     invalidateCache();
