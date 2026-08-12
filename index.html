@@ -5295,6 +5295,216 @@
     border-radius:8px; background:color-mix(in srgb,var(--line) 30%,transparent);
     color:var(--muted);
   }
+
+  /* 🔄 تابة المتابعات — المتأخرين */
+  .vtab.has-late .vt-n{
+    background:#DC2626 !important; color:#fff !important;
+    animation:fuPulse 2s ease-in-out infinite;
+  }
+  @keyframes fuPulse{
+    0%,100%{ transform:scale(1) }
+    50%    { transform:scale(1.12) }
+  }
+  /* شارة التأخير على الكارت */
+  .fu-badge{
+    display:inline-flex; align-items:center; gap:4px;
+    font-size:10.5px; font-weight:800; padding:2px 9px;
+    border-radius:999px; margin-inline-start:6px;
+  }
+  .fu-badge.due { background:#FEF3C7; color:#92400E }
+  .fu-badge.late{ background:#FEE2E2; color:#B91C1C }
+  .fu-badge.old { background:#DC2626; color:#fff }
+  body.dark .fu-badge.due { background:#3d2c0d; color:#fcd34d }
+  body.dark .fu-badge.late{ background:#3d1414; color:#fca5a5 }
+
+  /* ❌ تاب أسباب الرفض */
+  .rj-bars{ display:flex; flex-direction:column; gap:12px; margin-top:11px }
+  .rj-bar{ }
+  .rj-lbl{ display:flex; justify-content:space-between; align-items:baseline;
+           margin-bottom:5px }
+  .rj-lbl b{ font-size:13px; font-weight:800; color:var(--ink) }
+  .rj-lbl span{ font-size:11.5px; color:var(--muted); font-weight:700 }
+  .rj-track{ height:10px; border-radius:99px; overflow:hidden;
+             background:color-mix(in srgb,var(--line) 45%,transparent) }
+  .rj-track span{ display:block; height:100%; border-radius:99px;
+                  transition:width .5s ease }
+  .rj-track .fx{ background:linear-gradient(90deg,#B45309,#F59E0B) }
+  .rj-track .gf{ background:linear-gradient(90deg,#7C3AED,#A78BFA) }
+  .rj-track .ot{ background:linear-gradient(90deg,#57534E,#A8A29E) }
+  .rj-note{ font-size:10.5px; color:var(--muted); margin-top:3px }
+
+  .rj-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr));
+            gap:9px; margin-top:11px }
+  .rj-c{ display:flex; gap:10px; padding:9px; border-radius:13px;
+         border:1px solid var(--line);
+         background:color-mix(in srgb,var(--line) 10%,transparent) }
+  .rj-c.fx{ border-inline-start:3.5px solid #F59E0B }
+  .rj-c.gf{ border-inline-start:3.5px solid #A78BFA }
+  .rj-c.ot{ border-inline-start:3.5px solid #A8A29E }
+
+  .rj-im{ width:58px; height:78px; border-radius:9px; overflow:hidden;
+          flex-shrink:0; background:var(--line); display:block }
+  .rj-im img{ width:100%; height:100%; object-fit:cover; display:block }
+  .rj-im.no{ display:grid; place-items:center; font-size:20px; opacity:.35 }
+
+  .rj-d{ flex:1; min-width:0; display:flex; flex-direction:column; gap:3px }
+  .rj-d > b{ font-size:12.5px; font-weight:800; color:var(--ink);
+             direction:ltr; unicode-bidi:isolate; text-align:start;
+             overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+  .rj-s{ font-size:11px; color:var(--muted); font-weight:700 }
+  .rj-t{ align-self:flex-start; font-size:10px; font-weight:800;
+         padding:2px 9px; border-radius:7px }
+  .rj-t.fx{ background:#FEF3C7; color:#92400E }
+  .rj-t.gf{ background:#EDE9FE; color:#6D28D9 }
+  .rj-t.ot{ background:color-mix(in srgb,var(--line) 40%,transparent); color:var(--muted) }
+  body.dark .rj-t.fx{ background:#3d2c0d; color:#fcd34d }
+  body.dark .rj-t.gf{ background:#2e1065; color:#c4b5fd }
+
+  .rj-n{ font-size:11px; color:var(--ink); line-height:1.6;
+         background:rgba(0,0,0,.04); padding:4px 8px; border-radius:7px }
+  body.dark .rj-n{ background:rgba(255,255,255,.06) }
+  .rj-at{ font-size:10px; color:var(--muted); margin-top:auto;
+          direction:ltr; unicode-bidi:isolate; text-align:start }
+
+  @media (max-width:520px){ .rj-grid{ grid-template-columns:1fr } }
+
+  /* 💡 نافذة مدرّب الرسايل */
+  .ch-box{
+    max-width:520px !important; text-align:right !important;
+    max-height:90vh; overflow-y:auto; position:relative;
+    padding-top:18px !important;
+  }
+  .ch-x{
+    position:sticky; top:0; float:inline-start; z-index:3;
+    width:30px; height:30px; border-radius:9px; cursor:pointer;
+    border:1px solid var(--line); background:var(--surface);
+    color:var(--muted); font-size:14px;
+  }
+  .ch-x:hover{ background:#FEE2E2; color:#DC2626 }
+
+  .ch-hd{ display:flex; align-items:center; gap:13px; margin-bottom:15px }
+  .ch-sc{
+    width:62px; height:62px; border-radius:16px; flex-shrink:0;
+    display:flex; flex-direction:column; align-items:center;
+    justify-content:center; gap:0;
+  }
+  .ch-sc b{ font-size:22px; font-weight:900; line-height:1;
+            font-family:'Space Grotesk','Tajawal',sans-serif }
+  .ch-sc span{ font-size:9.5px; opacity:.7; margin-top:1px }
+  .ch-sc.ok { background:#DCFCE7; color:#15803D }
+  .ch-sc.mid{ background:#FEF3C7; color:#92400E }
+  .ch-sc.low{ background:#FEE2E2; color:#B91C1C }
+  body.dark .ch-sc.ok{ background:#14432a; color:#86efac }
+  body.dark .ch-sc.mid{ background:#3d2c0d; color:#fcd34d }
+  body.dark .ch-sc.low{ background:#3d1414; color:#fca5a5 }
+
+  .ch-hd > div:last-child b{ display:block; font-size:15px; font-weight:900;
+                             color:var(--ink) }
+  .ch-hd > div:last-child span{ display:block; font-size:11.5px;
+    color:var(--muted); margin-top:2px; direction:ltr;
+    unicode-bidi:isolate; text-align:start }
+
+  .ch-is{ padding:12px 14px; border-radius:12px; margin-bottom:12px;
+          background:#FEF3C7 }
+  body.dark .ch-is{ background:#3d2c0d }
+  .ch-is > b{ display:block; font-size:12.5px; font-weight:800;
+              color:#92400E; margin-bottom:7px }
+  body.dark .ch-is > b{ color:#fcd34d }
+  .ch-i{ font-size:12px; color:#78350F; line-height:1.85 }
+  body.dark .ch-i{ color:#fcd34d; opacity:.9 }
+
+  .ch-sg{ padding:13px 15px; border-radius:13px;
+          background:#DCFCE7; border:1px solid #86EFAC }
+  body.dark .ch-sg{ background:#14432a; border-color:#166534 }
+  .ch-sg > b{ display:block; font-size:12.5px; font-weight:800;
+              color:#15803D; margin-bottom:9px }
+  body.dark .ch-sg > b{ color:#86efac }
+  .ch-txt{
+    font-size:13px; line-height:2; color:var(--ink);
+    background:var(--surface); padding:13px 15px; border-radius:11px;
+    white-space:pre-wrap; word-break:break-word;
+  }
+  .ch-cp{
+    margin-top:9px; font-family:inherit; font-size:12px; font-weight:800;
+    cursor:pointer; padding:8px 17px; border-radius:9px; border:none;
+    background:#15803D; color:#fff; transition:filter .15s;
+  }
+  .ch-cp:hover{ filter:brightness(1.12) }
+  .ch-cp.done{ background:#16A34A }
+
+  .ch-note{ font-size:11px; color:var(--muted); line-height:1.75;
+            margin-top:12px; text-align:center }
+
+  /* 💡 تاب أسلوب الرسايل */
+  .cg-hero{
+    display:flex; align-items:center; gap:15px;
+    padding:16px 18px; border-radius:16px; margin-bottom:13px;
+  }
+  .cg-hero.ok { background:linear-gradient(135deg,#14532D,#166534) }
+  .cg-hero.mid{ background:linear-gradient(135deg,#78350F,#92400E) }
+  .cg-hero.low{ background:linear-gradient(135deg,#7F1D1D,#B91C1C) }
+  .cg-n{
+    display:flex; align-items:baseline; gap:2px; flex-shrink:0;
+    padding:11px 16px; border-radius:14px; background:rgba(255,255,255,.15);
+  }
+  .cg-n b{ font-size:30px; font-weight:900; color:#fff; line-height:1;
+           font-family:'Space Grotesk','Tajawal',sans-serif; direction:ltr }
+  .cg-n span{ font-size:12px; color:rgba(255,255,255,.6) }
+  .cg-t b{ display:block; font-size:14.5px; font-weight:900; color:#fff }
+  .cg-t span{ display:block; font-size:11.5px; color:rgba(255,255,255,.72);
+              margin-top:3px; line-height:1.7 }
+
+  .cg-iss{ display:flex; flex-direction:column; gap:11px; margin-top:11px }
+  .cg-i{ }
+  .cg-il{ display:flex; justify-content:space-between; align-items:baseline;
+          margin-bottom:5px }
+  .cg-il b{ font-size:12.5px; font-weight:800; color:var(--ink) }
+  .cg-il span{ font-size:11px; color:var(--muted); font-weight:700 }
+  .cg-ib{ height:9px; border-radius:99px; overflow:hidden;
+          background:color-mix(in srgb,var(--line) 45%,transparent) }
+  .cg-ib span{ display:block; height:100%; border-radius:99px;
+               background:linear-gradient(90deg,#C6432D,#E4553F);
+               transition:width .5s ease }
+
+  .cg-list{ display:flex; flex-direction:column; gap:9px; margin-top:11px }
+  .cg-c{ padding:11px 13px; border-radius:13px; border:1px solid var(--line);
+         background:color-mix(in srgb,var(--line) 10%,transparent) }
+  .cg-c.ok { border-inline-start:3.5px solid #16A34A }
+  .cg-c.mid{ border-inline-start:3.5px solid #F59E0B }
+  .cg-c.low{ border-inline-start:3.5px solid #DC2626 }
+
+  .cg-ch{ display:flex; align-items:center; gap:9px; flex-wrap:wrap;
+          margin-bottom:8px }
+  .cg-s{ font-size:13px; font-weight:900; padding:2px 10px; border-radius:8px;
+         font-family:'Space Grotesk','Tajawal',sans-serif; direction:ltr }
+  .cg-s.ok { background:#DCFCE7; color:#15803D }
+  .cg-s.mid{ background:#FEF3C7; color:#92400E }
+  .cg-s.low{ background:#FEE2E2; color:#B91C1C }
+  body.dark .cg-s.ok{ background:#14432a; color:#86efac }
+  body.dark .cg-s.mid{ background:#3d2c0d; color:#fcd34d }
+  body.dark .cg-s.low{ background:#3d1414; color:#fca5a5 }
+  .cg-ch > b{ font-size:12px; color:var(--ink) }
+  .cg-ap{ font-size:10px; font-weight:800; padding:2px 8px; border-radius:6px;
+          background:#DCFCE7; color:#15803D }
+  body.dark .cg-ap{ background:#14432a; color:#86efac }
+  .cg-at{ margin-inline-start:auto; font-size:10px; color:var(--muted);
+          direction:ltr; unicode-bidi:isolate }
+
+  .cg-m{ font-size:12px; line-height:1.85; color:var(--ink);
+         background:var(--surface); padding:9px 12px; border-radius:9px;
+         white-space:pre-wrap; word-break:break-word }
+  .cg-tags{ display:flex; flex-wrap:wrap; gap:5px; margin-top:7px }
+  .cg-tags span{ font-size:10px; font-weight:700; padding:2px 8px;
+                 border-radius:6px; background:#FEF3C7; color:#92400E }
+  body.dark .cg-tags span{ background:#3d2c0d; color:#fcd34d }
+
+  .z-ok{ color:#15803D; font-weight:800 }
+  body.dark .z-ok{ color:#86efac }
+
+  @media (max-width:640px){
+    .cg-hero{ flex-wrap:wrap }
+    .cg-n b{ font-size:24px }
+  }
 </style>
 </head>
 <body>
@@ -5533,6 +5743,9 @@
     <button class="vtab" data-v="imported" onclick="setView('imported')">
       <span class="vt-i">📄</span><span class="vt-t">اللي رفعتهم</span><span class="vt-n" id="vnImported">0</span>
     </button>
+    <button class="vtab" data-v="followups" onclick="setView('followups')">
+      <span class="vt-i">🔄</span><span class="vt-t">المتابعات</span><span class="vt-n" id="vnFollow">0</span>
+    </button>
     <button class="vtab" data-v="all" onclick="setView('all')">
       <span class="vt-i">🗂️</span><span class="vt-t">الكل</span><span class="vt-n" id="vnAll">0</span>
     </button>
@@ -5595,6 +5808,13 @@
       <div class="frow"><span class="flabel">المنصة</span><div id="f-platform"></div></div>
       <div class="frow"><span class="flabel">الدولة</span><div id="f-country"></div></div>
       <div class="frow" id="fuFilterRow" style="display:none"><span class="flabel">المتابعات</span><div id="f-fu"></div></div>
+      <div class="frow" id="fuViewRow" style="display:none">
+        <span class="flabel">التأخير</span>
+        <div class="dwrap">
+          <div id="f-late"></div>
+          <div id="f-round" style="margin-top:6px"></div>
+        </div>
+      </div>
       <div class="frow" id="daysFilterRow" style="display:none">
         <span class="flabel">تاريخ الرفع</span>
         <div class="dwrap">
@@ -5719,6 +5939,7 @@ const FN_MAP = {
   dailyTasks:     "daily-tasks",
   verifyProof:    "verify-proof",
   verifyVision:   "verify-vision",
+  coachMessage:   "coach-message",
   partners:       "sync-partners",
   adminAction:    "admin-action",
   sendReport:     "send-report",
@@ -5891,6 +6112,30 @@ function buildAllPills(){
       const n = followupsOf(c);
       for(let i=1;i<=5;i++) if(n >= i) fuN[i-1]++;
     }
+    // 🔄 فلاتر المتابعات
+    const furow = document.getElementById("fuViewRow");
+    if(furow){
+      furow.style.display = (state.view === 'followups') ? "" : "none";
+      if(state.view === 'followups'){
+        const due = data.filter(fuDue);
+        const byLate = (f) => due.filter(f).length;
+
+        buildPills("f-late", [
+          {v:"all",   l:"الكل ("+due.length+")"},
+          {v:"today", l:"🟡 النهاردة ("+byLate(c => fuLate(c) === 0)+")"},
+          {v:"late",  l:"🔴 متأخرين ("+byLate(c => fuLate(c) >= 1)+")"},
+          {v:"week",  l:"🚨 أكتر من أسبوع ("+byLate(c => fuLate(c) >= 7)+")"},
+        ], "late");
+
+        buildPills("f-round", [{v:"all", l:"كل المتابعات"}].concat(
+          [1,2,3,4,5].map(i => ({
+            v: String(i),
+            l: "متابعة "+i+" ("+due.filter(c => followupsOf(c)+1 === i).length+")",
+          }))
+        ), "round");
+      }
+    }
+
     const drow=document.getElementById("daysFilterRow");
     if(drow) drow.style.display = (state.view === 'imported') ? "" : "none";
     if(state.view === 'imported'){
@@ -6003,6 +6248,23 @@ function applyFilters(){
                          String(myName).toLowerCase() && !!String(c.imported_by||'').trim();
       if(state.view === 'assigned' && isImported) return false;
       if(state.view === 'imported' && !isImported) return false;
+
+      // 🔄 تابة المتابعات — المستحقين بس
+      if(state.view === 'followups'){
+        if(!fuDue(c)) return false;
+
+        // فلتر التأخير
+        if(state.late && state.late !== 'all'){
+          const L = fuLate(c);
+          if(state.late === 'today' && L !== 0) return false;
+          if(state.late === 'late'  && L < 1)   return false;
+          if(state.late === 'week'  && L < 7)   return false;
+        }
+        // فلتر رقم المتابعة الجاية
+        if(state.round && state.round !== 'all'){
+          if(String(followupsOf(c) + 1) !== String(state.round)) return false;
+        }
+      }
 
       // فلتر الفترة المحددة
       if((state.from || state.to) && isImported && !inDateRange(c.imported_at)) return false;
@@ -6523,6 +6785,54 @@ function reachedStage(c, stage){
 }
 
 // كام متابعة اتعملت للمؤثر ده فعلاً
+// ═══════════════════════════════════════════════════════════
+// 🔄 المتابعات — مين محتاج متابعة النهاردة ومين اتأخر
+//
+// القاعدة: اتبعتله، وعدّى وقت المتابعة، ولسه مردّش،
+//          ومخلّصش الخمس متابعات.
+// ═══════════════════════════════════════════════════════════
+const FU_DAYS = 2;      // بيتحدّث من الإعدادات
+const FU_MAX  = 5;
+
+function fuLastTouch(c){
+  const pr = PROOFS[c.uid] || {};
+  return pr.last_action_at || c.lastFollowupAt || c.sentAt || c.stageAt || null;
+}
+
+// كام يوم فات على آخر تواصل — بالتقويم المصري
+function fuDaysSince(c){
+  const t = fuLastTouch(c);
+  if(!t) return null;
+  const day = (v) => {
+    try{
+      return new Intl.DateTimeFormat('en-CA', { timeZone:'Africa/Cairo',
+        year:'numeric', month:'2-digit', day:'2-digit' }).format(new Date(v));
+    }catch(e){ return String(v).slice(0,10); }
+  };
+  const a = new Date(day(t) + 'T00:00:00Z').getTime();
+  const b = new Date(day(new Date()) + 'T00:00:00Z').getTime();
+  return Math.round((b - a) / 86400000);
+}
+
+// محتاج متابعة؟
+function fuDue(c){
+  if(c.archived) return false;
+  const st = String(c.messageStatus || '').toLowerCase();
+  if(!['sent','followup','contacted'].includes(st)) return false;
+  if(String(c.signupStatus || 'pending') !== 'pending') return false;
+  if(c.outcomeType) return false;
+  if(followupsOf(c) >= FU_MAX) return false;
+
+  const d = fuDaysSince(c);
+  return d !== null && d >= FU_DAYS;
+}
+
+// متأخر كام يوم عن موعده
+function fuLate(c){
+  const d = fuDaysSince(c);
+  return d === null ? 0 : Math.max(0, d - FU_DAYS);
+}
+
 function followupsOf(c){
   const pr = PROOFS[c.uid] || {};
   return Math.min(5, pr.followup_count || c.followupCount || 0);
@@ -6571,7 +6881,17 @@ function card(c){
   html += '<div class="body">';
   html += '<div class="chead">';
   html += '<div class="cmeta">';
-  html += '<div class="name">@'+esc(c.handle)+'</div>';
+  html += '<div class="name">@'+esc(c.handle);
+  // 🔄 شارة التأخير — في تابة المتابعات بس
+  if(state.view === 'followups'){
+    const L = fuLate(c);
+    const B = L >= 7 ? ['old','🚨 متأخر '+L+' يوم']
+            : (L >= 1 ? ['late','🔴 متأخر '+L+' يوم']
+                      : ['due','🟡 النهاردة']);
+    html += '<span class="fu-badge '+B[0]+'">'+B[1]+'</span>';
+    html += '<span class="fu-badge due">متابعة '+(followupsOf(c)+1)+'</span>';
+  }
+  html += '</div>';
   html += '<div class="loc">📍 '+esc(c.country||"الخليج")+(scrapingMode&&c.discoveredAt?'  ·  🕒 '+esc(c.discoveredAt):'')+'</div>';
   html += '</div>';
   html += '<span class="pchip" style="background:'+p.c+'">'+p.ar+'</span>';
@@ -7119,6 +7439,84 @@ async function fileHash(file){
 //
 // بيشتغل من الكارت العادي ومن صفحة الموبايل بنفس المنطق.
 // لو الـ OCR مش متاح بيرجّع null ومايوقفش الرفع.
+// ═══════════════════════════════════════════════════════════
+// 💡 مدرّب الرسايل — بيحلّل أسلوب الموظفة ويقترح تحسين
+//
+// ⚠️ بيشتغل بعد الرفع، ومايعطّلش حاجة.
+//    لو التحليل فشل، مفيش حاجة بتظهر — مش رسالة خطأ.
+// ═══════════════════════════════════════════════════════════
+async function coachMessage(text, uid, hash){
+  try{
+    if(!text || String(text).trim().length < 15) return null;
+    const r = await callApi('coachMessage', {
+      token: SESSION.token, text, uid: uid || '', hash: hash || '',
+    });
+    if(!r || r.skip) return null;
+    return r;
+  }catch(e){ return null; }
+}
+
+// نافذة التوصية
+function showCoach(c, handle){
+  if(!c || !c.suggestion) return;
+
+  const sc = Number(c.score) || 0;
+  const lvl = sc >= 70 ? ['ok','ممتازة'] : (sc >= 50 ? ['mid','كويسة'] : ['low','محتاجة تحسين']);
+
+  const ov = document.createElement('div');
+  ov.className = 'cf-overlay'; ov.style.zIndex = '10010';
+  ov.innerHTML = '<div class="cf-box ch-box">'
+    + '<button class="ch-x" aria-label="إغلاق">✕</button>'
+    + '<div class="ch-hd">'
+    +   '<div class="ch-sc ' + lvl[0] + '"><b>' + sc + '</b><span>/100</span></div>'
+    +   '<div><b>رسالتك ' + lvl[1] + '</b>'
+    +     (handle ? '<span>' + esc(handle) + '</span>' : '') + '</div>'
+    + '</div>'
+
+    + (c.issues && c.issues.length
+      ? '<div class="ch-is"><b>💡 ملاحظات</b>'
+        + c.issues.map(x => '<div class="ch-i">• ' + esc(x) + '</div>').join('')
+        + '</div>'
+      : '')
+
+    + '<div class="ch-sg">'
+    +   '<b>✨ جرّبي كده المرة الجاية</b>'
+    +   '<div class="ch-txt" id="chTxt">' + esc(c.suggestion) + '</div>'
+    +   '<button class="ch-cp" id="chCp">📋 نسخ</button>'
+    + '</div>'
+
+    + '<div class="ch-note">ده اقتراح مش تقييم — الهدف نرفع نسبة الرد مع الوقت.</div>'
+    + '<div class="cf-btns"><button class="cf-yes ok" data-x="1">تمام</button></div>'
+    + '</div>';
+
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>ov.classList.add('show'));
+  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
+  ov.querySelector('.ch-x').onclick = close;
+  ov.querySelector('.cf-yes').onclick = close;
+  ov.addEventListener('click', e => { if(e.target === ov) close(); });
+
+  const cp = ov.querySelector('#chCp');
+  cp.onclick = () => {
+    try{
+      navigator.clipboard.writeText(c.suggestion);
+      cp.textContent = '✅ اتنسخ'; cp.classList.add('done');
+      // نسجّل إنها استخدمته
+      if(c.hash){
+        callApi('coachMessage', {
+          token: SESSION.token, action: 'applied', hash: c.hash,
+        }).catch(()=>{});
+      }
+      setTimeout(()=>{ cp.textContent = '📋 نسخ'; cp.classList.remove('done'); }, 2000);
+    }catch(e){
+      const r = document.createRange();
+      r.selectNodeContents(ov.querySelector('#chTxt'));
+      const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+      cp.textContent = 'حدّدي وانسخي';
+    }
+  };
+}
+
 // 🤖 فحص الصورة بموديل الرؤية على السيرفر.
 //
 // ⚠️ الـ OCR في المتصفح وصل لحده: صفحة البروفايل والمحادثة
@@ -7147,6 +7545,7 @@ async function verifyShotAI(file, uid){
       matched: r.matched,
       score: r.score,
       ocr: r.ocr || '',
+      handles: r.handles || [],
       signals: {
         ai: 1,
         chat_prob: r.chat_prob,
@@ -9858,6 +10257,8 @@ function renderDashboard(){
     ['tasks',    '📋', 'المهام'],
     ['targets',  '🎯', 'التارجت'],
     ['sheets',   '📗', 'الشيتات'],
+    ['rejects',  '❌', 'أسباب الرفض'],
+    ['coach',    '💡', 'أسلوب الرسايل'],
     ['deals',    '🎯', 'الصفقات'],
     ['leads',    '📇', 'المؤثرين'],
     ['activity', '⚡', 'النشاط'],
@@ -9903,6 +10304,8 @@ function dbTabContent(r){
     case 'tasks':    return dbTasks(r);
     case 'targets':  return dbTargets(r);
     case 'sheets':   return dbSheets(r);
+    case 'rejects':  return dbRejects(r);
+    case 'coach':    return dbCoach(r);
     case 'deals':    return dbDeals(r);
     case 'leads':    return dbLeads(r);
     case 'activity': return dbActivity(r);
@@ -12307,9 +12710,13 @@ async function runOCR_(){
       it.signals = ai.signals;
       it.ocr     = ai.ocr;
 
-      // مالوش مؤثر لسه — نحاول نطابق من الأسماء
-      if(!it.uid && ai.ocr){
-        const m = matchCandidate_(extractHandles_(ai.ocr));
+      // 🔗 مالوش مؤثر لسه — نطابق من الأسماء اللي الموديل طلّعها.
+      //    الأسماء الجاهزة من السيرفر أنضف من استخراجها من النص الخام.
+      if(!it.uid){
+        const names = (ai.handles && ai.handles.length)
+          ? ai.handles
+          : extractHandles_(ai.ocr || '');
+        const m = names.length ? matchCandidate_(names) : null;
         if(m){
           it.uid    = m.cand.uid;
           it.handle = m.cand.handle;
@@ -12617,7 +13024,8 @@ async function mpAddLinks(){
   renderMobileProofs();
   if(MP.addRes.added.length){
     toastOk('✅ اتضاف ' + MP.addRes.added.length + ' مؤثر');
-    boot();
+    invalidateCache();
+    boot();          // بيعيد تحميل الكروت والعدّادات
   }
 }
 
@@ -13020,6 +13428,7 @@ async function mpUpload(){
     try{
       // 1️⃣ البصمة — نفس دالة الموقع
       const hash = await fileHash(it.file);
+      it.hash = hash;      // نحتاجها للتوصية
 
       // 2️⃣ فحص التكرار
       if(hash){
@@ -13035,6 +13444,9 @@ async function mpUpload(){
       }
 
       // 3️⃣ تسجيل الأكشن — بيرفع الصورة كمان
+      //
+      // ⚠️ ده الخطوة الحاسمة. لو نجحت، الأكشن اتسجّل فعلًا —
+      //    وأي فشل بعد كده مايستاهلش يقول "فشل الرفع".
       const b64 = await fileToBase64(it.file);
       const res = await callApi('logAction', {
         token: SESSION.token, uid: it.uid,
@@ -13042,6 +13454,7 @@ async function mpUpload(){
         mode: 'new', seq: it.seq || undefined,
       });
 
+      it.logged = true;    // 🔒 من هنا الأكشن مسجّل
       const url = (res && res.screenshotUrl) || null;
 
       // 4️⃣ تسجيل البصمة
@@ -13064,17 +13477,26 @@ async function mpUpload(){
         }).catch(()=>{});
       }
 
-      // 6️⃣ نحدّث الكارت محليًا
-      const card = CREATORS.find(x => x.uid === it.uid);
-      if(card){
-        if(it.action === 'sent')     card.messageStatus = 'sent';
-        if(it.action === 'followup') card.followupCount = (card.followupCount||0) + 1;
-      }
+      // 6️⃣ نحدّث الكارت محليًا — ثانوي، مايوقعش الرفع
+      try{
+        const card = CREATORS.find(x => x.uid === it.uid);
+        if(card){
+          if(it.action === 'sent')     card.messageStatus = 'sent';
+          if(it.action === 'followup') card.followupCount = (card.followupCount||0) + 1;
+        }
+        // ⚠️ الكاش لازم يتبطّل — وإلا العدّادات تفضل قديمة
+        invalidateCache();
+      }catch(e){ /* تجاهل */ }
 
       it.state = 'ok';
     }catch(e){
+      // ✅ الأكشن اتسجّل خلاص — الفشل في خطوة ثانوية
+      if(it.logged){
+        it.state = 'ok';
+        renderMobileProofs();
+        continue;
+      }
       it.state = 'fail';
-      // ⚠️ رسالة مفهومة بدل الخطأ التقني
       const m = String(e.message || '');
       it.msg = m.includes('Failed to fetch') || m.includes('NetworkError')
         ? 'النت فصل — جرّبي تاني'
@@ -13089,7 +13511,19 @@ async function mpUpload(){
   const ok = MP.items.filter(x => x.state === 'ok').length;
   if(ok){
     toastOk('✅ اترفع ' + ok + ' إثبات');
+    invalidateCache();
+    try{ buildAllPills(); }catch(e){}
+    try{ applyFilters(); }catch(e){}
     refreshTargetBar();
+
+    // 💡 توصية على أول رسالة إرسال — مرة واحدة مش لكل صورة
+    const first = MP.items.find(x =>
+      x.state === 'ok' && x.action === 'sent' && x.ocr);
+    if(first){
+      coachMessage(first.ocr, first.uid, first.hash).then(c => {
+        if(c) setTimeout(() => showCoach(c, '@' + (first.handle||'')), 900);
+      });
+    }
   }
 }
 
@@ -13418,6 +13852,217 @@ async function dbShMail(btn){
     }catch(e){ ov.querySelector('#gmErr').textContent = e.message; }
   };
 }
+
+// ═══════════════════════════════════════════════════════════
+// 💡 تاب أسلوب الرسايل
+//
+// بيوري إيه اللي بيتكرر في رسايل الفريق، ومين بيتحسّن.
+// ═══════════════════════════════════════════════════════════
+function dbCoach(r){
+  const d = r.coach || {};
+  const S = d.summary || {};
+  const n = v => Number(v || 0);
+  const f = v => n(v).toLocaleString('en');
+
+  if(!n(S.total)){
+    return '<div class="db-empty">لسه مفيش رسايل اتحلّلت — '
+         + 'التحليل بيشتغل مع كل إثبات إرسال</div>';
+  }
+
+  const avg = n(S.avg_score);
+  const lvl = avg >= 70 ? 'ok' : (avg >= 50 ? 'mid' : 'low');
+
+  let h = '';
+
+  // ═══ المتوسط العام ═══
+  h += '<div class="cg-hero ' + lvl + '">'
+    + '<div class="cg-n"><b>' + avg + '</b><span>/100</span></div>'
+    + '<div class="cg-t">'
+    +   '<b>متوسط جودة الرسايل</b>'
+    +   '<span>' + f(S.total) + ' رسالة اتحلّلت · '
+    +     f(S.applied) + ' مرة استخدموا الاقتراح</span>'
+    + '</div>'
+    + '</div>';
+
+  h += '<div class="db-kpis">'
+    +   dbCard('✅', 'رسايل قوية', S.good, '70+ نقطة')
+    +   dbCard('⚠️', 'محتاجة تحسين', S.weak, 'أقل من 50', n(S.weak) ? 'bad' : '')
+    +   dbCard('📋', 'استخدموا الاقتراح', S.applied)
+    + '</div>';
+
+  // ═══ أكتر المشاكل ═══
+  const iss = d.top_issues || [];
+  if(iss.length){
+    h += '<div class="db-sec"><div class="db-sh"><h3>🔍 أكتر الملاحظات تكرارًا</h3></div>';
+    h += '<div class="cg-iss">';
+    iss.forEach(x => {
+      const pct = n(x.pct);
+      h += '<div class="cg-i">'
+        + '<div class="cg-il"><b>' + esc(x.issue) + '</b>'
+        +   '<span>' + f(x.count) + ' · ' + pct + '%</span></div>'
+        + '<div class="cg-ib"><span style="width:' + Math.min(100, pct) + '%"></span></div>'
+        + '</div>';
+    });
+    h += '</div></div>';
+  }
+
+  // ═══ كل موظفة ═══
+  const st = d.by_staff || [];
+  if(st.length){
+    h += '<div class="db-sec"><div class="db-sh"><h3>👥 حسب الموظفة</h3></div>'
+      +  '<div class="db-tw"><table class="db-t"><thead><tr>'
+      +  '<th>الموظفة</th><th>رسايل</th><th>المتوسط</th>'
+      +  '<th>محتاجة تحسين</th><th>استخدمت الاقتراح</th></tr></thead><tbody>';
+    st.forEach(x => {
+      const a = n(x.avg_score);
+      const cls = a >= 70 ? 'z-ok' : (a < 50 ? 'z-bad' : '');
+      h += '<tr' + (a < 50 ? ' class="row-bad"' : '') + '>'
+        + '<td><b>' + esc(x.staff) + '</b></td>'
+        + '<td>' + f(x.count) + '</td>'
+        + '<td class="' + cls + '"><b>' + a + '</b></td>'
+        + '<td' + (n(x.weak) ? ' class="z-bad"' : '') + '>' + f(x.weak) + '</td>'
+        + '<td>' + f(x.applied) + '</td></tr>';
+    });
+    h += '</tbody></table></div></div>';
+  }
+
+  // ═══ أمثلة ═══
+  const items = (d.items || []).filter(x => x.message);
+  if(items.length){
+    h += '<div class="db-sec"><div class="db-sh"><h3>📝 آخر الرسايل</h3></div>';
+    h += '<div class="cg-list">';
+    items.slice(0, 30).forEach(x => {
+      const sc = n(x.score);
+      const c2 = sc >= 70 ? 'ok' : (sc >= 50 ? 'mid' : 'low');
+      h += '<div class="cg-c ' + c2 + '">'
+        + '<div class="cg-ch">'
+        +   '<span class="cg-s ' + c2 + '">' + sc + '</span>'
+        +   '<b>' + esc(x.staff) + '</b>'
+        +   (x.applied ? '<span class="cg-ap">✅ استخدمت الاقتراح</span>' : '')
+        +   '<span class="cg-at">' + fmtShort(x.at) + '</span>'
+        + '</div>'
+        + '<div class="cg-m">' + esc(x.message) + '</div>'
+        + ((x.issues && x.issues.length)
+          ? '<div class="cg-tags">'
+            + x.issues.map(i => '<span>' + esc(i) + '</span>').join('')
+            + '</div>' : '')
+        + '</div>';
+    });
+    h += '</div></div>';
+  }
+
+  return h;
+}
+
+// ═══════════════════════════════════════════════════════════
+// ❌ تاب أسباب عدم الاشتراك
+//
+// البيانات من deal_outcomes — كل رفض معاه سببه وصورته.
+// ═══════════════════════════════════════════════════════════
+let _rjFilter = 'all';
+
+function dbRejects(r){
+  const d = r.rejections || {};
+  const S = d.summary || {};
+  const n = v => Number(v || 0);
+  const f = v => n(v).toLocaleString('en');
+
+  if(!n(S.total)){
+    return '<div class="db-empty">مفيش حالات رفض في الفترة دي</div>';
+  }
+
+  let h = '';
+
+  // ═══ الأرقام ═══
+  h += '<div class="db-kpis">'
+    +   dbCard('❌', 'إجمالي الرفض', S.total)
+    +   dbCard('💰', 'طلب سعر ثابت', S.fixed)
+    +   dbCard('🎁', 'طلب هدايا', S.gifts)
+    +   dbCard('✍️', 'سبب تاني', S.other)
+    + '</div>';
+
+  // ═══ الأسباب بالنسب ═══
+  const by = d.by_reason || [];
+  if(by.length){
+    h += '<div class="db-sec"><div class="db-sh"><h3>📊 التوزيع</h3></div>';
+    h += '<div class="rj-bars">';
+    by.forEach(x => {
+      const pct = n(x.pct);
+      const cls = x.type === 'fixed' ? 'fx' : (x.type === 'gifts' ? 'gf' : 'ot');
+      h += '<div class="rj-bar">'
+        + '<div class="rj-lbl"><b>' + esc(x.label) + '</b>'
+        +   '<span>' + f(x.count) + ' · ' + pct + '%</span></div>'
+        + '<div class="rj-track"><span class="' + cls + '" style="width:' + pct + '%"></span></div>'
+        + (n(x.avg_followers)
+          ? '<div class="rj-note">متوسط المتابعين ' + f(x.avg_followers) + '</div>' : '')
+        + '</div>';
+    });
+    h += '</div></div>';
+  }
+
+  // ═══ كل موظفة ═══
+  const st = d.by_staff || [];
+  if(st.length){
+    h += '<div class="db-sec"><div class="db-sh"><h3>👥 حسب الموظفة</h3></div>'
+      +  '<div class="db-tw"><table class="db-t"><thead><tr>'
+      +  '<th>الموظفة</th><th>الإجمالي</th><th>💰 سعر ثابت</th>'
+      +  '<th>🎁 هدايا</th><th>✍️ سبب تاني</th></tr></thead><tbody>';
+    st.forEach(x => {
+      h += '<tr><td><b>' + esc(x.staff) + '</b></td>'
+        + '<td><b>' + f(x.total) + '</b></td>'
+        + '<td>' + f(x.fixed) + '</td>'
+        + '<td>' + f(x.gifts) + '</td>'
+        + '<td>' + f(x.other) + '</td></tr>';
+    });
+    h += '</tbody></table></div></div>';
+  }
+
+  // ═══ القايمة بالصور ═══
+  const items = (d.items || []).filter(x =>
+    _rjFilter === 'all' || x.rtype === _rjFilter);
+
+  h += '<div class="db-sec"><div class="db-sh"><h3>📋 الحالات</h3></div>';
+
+  h += '<div class="db-row">'
+    + [['all','الكل',n(S.total)],
+       ['fixed','💰 سعر ثابت',n(S.fixed)],
+       ['gifts','🎁 هدايا',n(S.gifts)],
+       ['other','✍️ سبب تاني',n(S.other)]]
+      .map(([v,l,c]) =>
+        '<button class="db-rp' + (_rjFilter===v ? ' on' : '') + '" '
+        + 'onclick="dbRjFilter(\'' + v + '\')">' + l + ' (' + f(c) + ')</button>').join('')
+    + '</div>';
+
+  if(!items.length){
+    h += '<div class="db-empty">مفيش حالات في الفلتر ده</div>';
+  } else {
+    h += '<div class="rj-grid">';
+    items.slice(0, 60).forEach(x => {
+      const cls = x.rtype === 'fixed' ? 'fx' : (x.rtype === 'gifts' ? 'gf' : 'ot');
+      h += '<div class="rj-c ' + cls + '">'
+        + (x.proof
+          ? '<a class="rj-im" href="' + esc(x.proof) + '" target="_blank" rel="noopener">'
+            + '<img src="' + esc(x.proof) + '" loading="lazy" onerror="this.remove()"></a>'
+          : '<div class="rj-im no">📷</div>')
+        + '<div class="rj-d">'
+        +   '<b>' + esc(x.handle) + '</b>'
+        +   '<span class="rj-s">' + esc(x.staff) + ' · ' + f(x.followers) + '</span>'
+        +   '<span class="rj-t ' + cls + '">' + esc(x.label) + '</span>'
+        +   (x.note ? '<div class="rj-n">' + esc(x.note) + '</div>' : '')
+        +   '<div class="rj-at">' + fmtShort(x.at) + '</div>'
+        + '</div></div>';
+    });
+    h += '</div>';
+    if(items.length > 60){
+      h += '<div class="db-more">+ ' + (items.length - 60) + ' غيرهم</div>';
+    }
+  }
+  h += '</div>';
+
+  return h;
+}
+
+function dbRjFilter(v){ _rjFilter = v; renderDashboard(); }
 
 function dbSheets(r){
   // 📗 البيانات جاية مع الداشبورد — مفيش نداء زيادة
@@ -14484,6 +15129,7 @@ function setView(v){
   if(bar) bar.style.display = (v === 'imported') ? '' : 'none';
   state.batch = 0;
   if(v !== 'imported') state.days = 'all';
+  if(v !== 'followups'){ state.late = 'all'; state.round = 'all'; }
   document.querySelectorAll('.vtab').forEach(b =>
     b.classList.toggle('on', b.getAttribute('data-v') === v));
   buildAllPills();
@@ -14504,6 +15150,16 @@ function updateViewCounts(){
   set('vnAssigned', all.length - imp);
   set('vnImported', imp);
   set('vnAll', all.length);
+
+  // 🔄 عدّاد المتابعات — والمتأخرين بيتلوّنوا
+  const due = all.filter(fuDue);
+  set('vnFollow', due.length);
+  const fb = document.querySelector('.vtab[data-v="followups"]');
+  if(fb){
+    const late = due.filter(c => fuLate(c) >= 1).length;
+    fb.classList.toggle('has-late', late > 0);
+    fb.title = late ? (late + ' متأخر') : '';
+  }
   // التبويبات بتفضل ظاهرة دايمًا — الفصل بين "مؤثريني" و"اللي رفعتهم"
   // هو الفكرة نفسها، ولو خفيناها لما العدد صفر المستخدم مش هيعرف إنها موجودة.
   const tabs = document.getElementById('viewTabs');
