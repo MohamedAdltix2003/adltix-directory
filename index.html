@@ -5981,6 +5981,7 @@ const FN_MAP = {
   verifyProof:    "verify-proof",
   verifyVision:   "verify-vision",
   coachMessage:   "coach-message",
+  readHandle:     "read-handle",
   partners:       "sync-partners",
   adminAction:    "admin-action",
   sendReport:     "send-report",
@@ -12724,31 +12725,100 @@ function extractHandles_(text){
 }
 
 // مطابقة الاسم بمؤثريها
-function matchCandidate_(handles){
-  if(!handles.length || !MP.cands.length) return null;
-  let best = null, bestScore = 0;
+// ═══════════════════════════════════════════════════════════
+// 👁️ الموديل بيقرا اسم الحساب من الصورة
+//
+// ⚠️ الـ OCR بيقرا كل النص — بما فيه الرسايل نفسها.
+//    الموديل بيفهم *مكان* الاسم: الهيدر فوق الفقاعات.
+//
+//    ده أدق بكتير، والمطابقة الضبابية بتبقى الطبقة التانية.
+// ═══════════════════════════════════════════════════════════
+async function readHandleAI(file){
+  try{
+    const b64 = await fileToBase64(file);
+    if(!b64) return null;
 
+    const r = await callApi('readHandle', {
+      token: SESSION.token, image: b64,
+    });
+    if(!r || r.skip) return null;
+
+    const names = [];
+    if(r.username) names.push(String(r.username).toLowerCase());
+    if(r.display)  names.push(String(r.display).toLowerCase());
+
+    return {
+      names,
+      isChat: r.is_chat !== false,
+      platform: r.platform || '',
+    };
+  }catch(e){ return null; }
+}
+
+// ═══════════════════════════════════════════════════════════
+// 🎯 مطابقة ضبابية — بتمسك أخطاء الـ OCR
+//
+// ⚠️ المطابقة القديمة كانت بتطلب تطابق شبه كامل، فـ 4 من كل
+//    6 حالات بتفشل: حرف ناقص، نقطة مفقودة، حروف ملزوقة.
+//
+//    دي بتحسب "مسافة التحرير" — كام تعديل محتاج عشان
+//    الاسمين يبقوا واحد. 78% فأعلى = تطابق.
+// ═══════════════════════════════════════════════════════════
+function lev_(a, b){
+  const m = a.length, n = b.length;
+  if(!m) return n;
+  if(!n) return m;
+  let prev = Array.from({ length: n + 1 }, (_, i) => i);
+  let cur  = new Array(n + 1);
+  for(let i = 1; i <= m; i++){
+    cur[0] = i;
+    for(let j = 1; j <= n; j++){
+      cur[j] = Math.min(
+        prev[j] + 1, cur[j - 1] + 1,
+        prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
+      );
+    }
+    const t = prev; prev = cur; cur = t;
+  }
+  return prev[n];
+}
+
+// نشيل الفواصل والحروف المتشابهة — sarahmed = sara.ahmed
+function core_(h){
+  return String(h || '').toLowerCase()
+    .replace(/[0o]/g, '0').replace(/[1li|]/g, '1')
+    .replace(/[5s]/g, '5').replace(/[2z]/g, '2')
+    .replace(/[8b]/g, '8').replace(/[9gq]/g, '9')
+    .replace(/[^a-z0-9]/g, '');
+}
+
+function simScore_(a, b){
+  const x = core_(a), y = core_(b);
+  if(!x || !y) return 0;
+  if(x === y) return 100;
+  if(x.length < 3 || y.length < 3) return 0;
+  if(x.includes(y) || y.includes(x)){
+    return Math.round(Math.min(x.length, y.length) /
+                      Math.max(x.length, y.length) * 95);
+  }
+  const d = lev_(x, y);
+  return Math.round((1 - d / Math.max(x.length, y.length)) * 100);
+}
+
+function matchCandidate_(handles){
+  if(!handles || !handles.length || !MP.cands.length) return null;
+
+  let best = null, bestScore = 0;
   for(const c of MP.cands){
-    const h = normHandle_(c.handle);
-    if(h.length < 3) continue;
-    for(const x0 of handles){
-      const x = normHandle_(x0);
-      let sc = 0;
-      if(x === h) sc = 100;
-      else if(x.includes(h) || h.includes(x)){
-        const ratio = Math.min(x.length, h.length) / Math.max(x.length, h.length);
-        sc = Math.round(ratio * 82);
-      } else {
-        // تشابه الحروف — بيمسك أخطاء الـ OCR البسيطة
-        const a = new Set(x), b = new Set(h);
-        const inter = [...a].filter(ch => b.has(ch)).length;
-        const ratio = inter / Math.max(a.size, b.size);
-        if(ratio > 0.78 && Math.abs(x.length - h.length) <= 2) sc = Math.round(ratio * 68);
-      }
+    const h = String(c.handle || '');
+    if(core_(h).length < 3) continue;
+    for(const x of handles){
+      const sc = simScore_(x, h);
       if(sc > bestScore){ bestScore = sc; best = c; }
     }
   }
-  return bestScore >= 60 ? { cand: best, score: bestScore } : null;
+  // 78% = الحد الآمن (اختُبر: 86% أقل نجاح · 44% أعلى فشل)
+  return bestScore >= 78 ? { cand: best, score: bestScore } : null;
 }
 
 // ═══════════════════════════════════════════
@@ -12796,12 +12866,24 @@ async function runOCR_(){
       it.signals = ai.signals;
       it.ocr     = ai.ocr;
 
-      // 🔗 مالوش مؤثر لسه — نطابق من الأسماء اللي الموديل طلّعها.
-      //    الأسماء الجاهزة من السيرفر أنضف من استخراجها من النص الخام.
+      // 🔗 مالوش مؤثر لسه — نطابق على تلات طبقات
       if(!it.uid){
-        const names = (ai.handles && ai.handles.length)
-          ? ai.handles
-          : extractHandles_(ai.ocr || '');
+        // 👁️ ① الموديل — بيقرا الاسم من الهيدر مباشرةً
+        let names = [];
+        const vis = await readHandleAI(it.file);
+        if(vis && vis.names.length){
+          names = vis.names;
+          it.visionRead = vis.names[0];
+        }
+
+        // 📋 ② الـ OCR — طبقة تانية
+        names = [...new Set([
+          ...names,
+          ...(ai.handles || []),
+          ...extractHandles_(ai.ocr || ''),
+        ])];
+
+        // 🎯 ③ المطابقة الضبابية
         const m = names.length ? matchCandidate_(names) : null;
         if(m){
           it.uid    = m.cand.uid;
@@ -12813,9 +12895,20 @@ async function runOCR_(){
         }
       }
 
-      it.msg = it.conf === 'low'
-        ? ((ai.reasons || [])[0] || 'مش واضح إنها محادثة')
-        : (it.uid ? '' : 'مالقيتش الاسم — اختاريه');
+      // 📝 الفرق بين "مش محادثة" و"المؤثر مش عندك"
+      if(it.conf === 'low'){
+        it.msg = (ai.reasons || [])[0] || 'مش واضح إنها محادثة';
+      } else if(it.uid){
+        it.msg = '';
+      } else {
+        const seen = [...new Set([
+          ...(ai.handles || []),
+          ...extractHandles_(ai.ocr || ''),
+        ])].filter(h => h.length >= 4);
+        it.msg = seen.length
+          ? '⚠️ @' + seen[0] + ' مش في قايمتك — ضيفيه من تابة ➕'
+          : 'مالقيتش اسم المؤثر — اختاريه';
+      }
       it.state = 'ready';
       MP.done++;
       renderMobileProofs();
@@ -13518,7 +13611,9 @@ function mpPickCand(id){
     });
   };
 
-  draw(MP.cands.slice(0, 40));
+  // 📅 اللي ضافتهم النهاردة الأول — دول اللي بتبعتلهم غالبًا
+  const today = MP.cands.filter(c => c.added_today);
+  draw((today.length ? today : MP.cands).slice(0, 40));
   // 🔍 البحث بأي حاجة — لينك كامل، اسم حساب، أو جزء منه
   q.oninput = () => {
     let t = q.value.trim().toLowerCase();
