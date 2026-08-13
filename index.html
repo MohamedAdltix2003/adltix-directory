@@ -5666,6 +5666,15 @@
   .pn-s:hover{ background:#DBEAFE; color:#1D4ED8; border-color:#93C5FD }
   .pn-x:hover{ background:#FEE2E2; color:#B91C1C; border-color:#FCA5A5 }
   @media (max-width:520px){ .pn-grid{ grid-template-columns:1fr } }
+
+  /* ➕ زرار إضافة مؤثر جديد */
+  .pn-a{
+    font-family:inherit; font-size:11px; font-weight:700; cursor:pointer;
+    padding:5px 11px; border-radius:8px; border:1px solid #86EFAC;
+    background:#DCFCE7; color:#15803D;
+  }
+  .pn-a:hover{ filter:brightness(.96) }
+  body.dark .pn-a{ background:#14432a; color:#86efac; border-color:#166534 }
 </style>
 </head>
 <body>
@@ -6120,7 +6129,7 @@ const FN_MAP = {
   approve:        "admin-action",
   unarchive:      "admin-action"
 };
-const ADMIN_ACTIONS = { "delete":"delete", moveToNew:"archive", changeNiche:"changeNiche", approve:"approve", unarchive:"unarchive", resolvePending:"resolvePending", dropPending:"dropPending" };
+const ADMIN_ACTIONS = { "delete":"delete", moveToNew:"archive", changeNiche:"changeNiche", approve:"approve", unarchive:"unarchive", resolvePending:"resolvePending", dropPending:"dropPending", addAndResolve:"addAndResolve" };
 
 // Supabase بيحدّ أي طلب بـ 1000 صف كحد أقصى (إعداد max-rows).
 // كنا بنطلب 2000 فكان بيرجّع 1000 ويرمي الباقي في صمت —
@@ -14880,6 +14889,9 @@ function dbPending(r){
 
       +   '<div class="pn-act">'
       +     '<button class="pn-s" onclick="dbPnSearch(' + it.id + ')">🔍 دوّر</button>'
+      +     '<button class="pn-a" onclick="dbPnAdd(' + it.id + ',\''
+      +       esc(it.staff) + '\',\'' + esc(it.ai_name || '') + '\',\''
+      +       esc(it.platform || '') + '\')">➕ ضيفه</button>'
       +     '<button class="pn-x" onclick="dbPnDrop(' + it.id + ')">🗑️</button>'
       +   '</div>'
       + '</div></div>';
@@ -14914,6 +14926,85 @@ async function dbPnLink(id, uid){
     if(card) card.style.opacity = '1';
     toastErr(e.message);
   }
+}
+
+// ➕ إضافة مؤثر جديد وربط الصورة بيه
+//
+// ⚠️ الحالة: الموظفة نسيت تضيفه قبل ما تبعت.
+function dbPnAdd(id, staff, aiName, platform){
+  // 💡 نقترح اللينك من اللي الموديل قراه
+  const guess = pnGuessLink_(aiName, platform);
+
+  const ov = document.createElement('div');
+  ov.className = 'cf-overlay';
+  ov.innerHTML = '<div class="cf-box" style="max-width:460px;text-align:right">'
+    + '<b style="display:block;margin-bottom:4px">➕ ضيف المؤثر لـ ' + esc(staff) + '</b>'
+    + (aiName
+      ? '<div style="font-size:11.5px;color:var(--muted);margin-bottom:11px">'
+        + '🤖 الموديل قرا: <b>' + esc(aiName) + '</b></div>'
+      : '')
+    + '<input class="mp-search" id="pnLink" placeholder="لينك الحساب…" '
+    +   'value="' + esc(guess) + '">'
+    + (guess
+      ? '<div style="font-size:11px;color:#15803D;margin-top:6px">'
+        + '💡 اقتراح — راجعه قبل ما تأكّد</div>'
+      : '')
+    + '<div class="cf-btns">'
+    +   '<button class="cf-no">إلغاء</button>'
+    +   '<button class="cf-yes ok" id="pnGo">✅ ضيف واربط</button>'
+    + '</div></div>';
+
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>ov.classList.add('show'));
+  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
+  ov.querySelector('.cf-no').onclick = close;
+  ov.addEventListener('click', e => { if(e.target === ov) close(); });
+
+  const inp = ov.querySelector('#pnLink');
+  const go  = ov.querySelector('#pnGo');
+
+  go.onclick = async () => {
+    const link = inp.value.trim();
+    if(link.length < 8){ toastErr('اكتب اللينك'); return; }
+    go.disabled = true; go.textContent = '⏳ بنضيف…';
+    try{
+      const r = await callApi('adminAction', {
+        token: SESSION.token, action: 'addAndResolve', id, link, staff,
+      });
+      close();
+      const card = document.getElementById('pn' + id);
+      if(card){
+        card.style.transition = 'all .3s';
+        card.style.transform = 'scale(.9)';
+        card.style.opacity = '0';
+        setTimeout(() => card.remove(), 300);
+      }
+      toastOk('✅ اتضاف واتربط بـ @' + String(r.handle || '').replace('@',''));
+    }catch(e){
+      go.disabled = false; go.textContent = '✅ ضيف واربط';
+      toastErr(e.message);
+    }
+  };
+  setTimeout(()=>inp.focus(), 150);
+}
+
+// 💡 نستنتج اللينك من الاسم اللي الموديل قراه
+function pnGuessLink_(name, platform){
+  const n = String(name || '').trim();
+  if(!n) return '';
+
+  // إنجليزي؟ نستخدمه كهاندل
+  if(!/[\u0600-\u06FF]/.test(n) && /^[\w.\-]{3,30}$/.test(n)){
+    const base = {
+      instagram: 'https://instagram.com/',
+      tiktok:    'https://tiktok.com/@',
+      snapchat:  'https://snapchat.com/add/',
+    }[String(platform || '').toLowerCase()] || 'https://instagram.com/';
+    return base + n.replace(/^@/, '');
+  }
+
+  // عربي — مفيش استنتاج مضمون
+  return '';
 }
 
 // 🗑️ رفض
