@@ -5566,6 +5566,68 @@
                  line-height:1.75 }
   .mp-need .tip{ margin-top:6px; font-size:11px; opacity:.85 }
   body.dark .mp-need b, body.dark .mp-need span{ color:#fcd34d }
+
+  /* 🔍 نافذة التشخيص */
+  .mp-dbg{
+    margin-top:9px; font-family:inherit; font-size:11.5px; font-weight:800;
+    cursor:pointer; padding:7px 14px; border-radius:9px; border:none;
+    background:#92400E; color:#fff;
+  }
+  .dg-ov{
+    position:fixed; inset:0; z-index:10030; background:rgba(28,25,23,.72);
+    display:flex; align-items:center; justify-content:center; padding:14px;
+    opacity:0; transition:opacity .18s;
+  }
+  .dg-ov.show{ opacity:1 }
+  .dg-box{
+    background:var(--surface); border-radius:16px; width:100%;
+    max-width:460px; max-height:86vh; overflow:hidden;
+    display:flex; flex-direction:column;
+  }
+  .dg-hd{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:13px 15px; border-bottom:1px solid var(--line);
+  }
+  .dg-hd b{ font-size:14px; color:var(--ink) }
+  .dg-x{
+    width:30px; height:30px; border-radius:8px; cursor:pointer;
+    border:1px solid var(--line); background:transparent; color:var(--muted);
+  }
+  .dg-body{ padding:13px 15px; overflow-y:auto }
+  .dg-row{
+    display:flex; justify-content:space-between; padding:7px 0;
+    border-bottom:1px dashed var(--line); font-size:12.5px;
+  }
+  .dg-row span{ color:var(--muted) }
+  .dg-row b{ color:var(--ink); font-weight:800 }
+  .dg-warn{
+    margin-top:11px; padding:10px 12px; border-radius:10px;
+    background:#FEE2E2; color:#B91C1C; font-size:12px; line-height:1.7;
+  }
+  .dg-list{ margin-top:12px; display:flex; flex-direction:column; gap:9px }
+  .dg-it{
+    padding:9px 11px; border-radius:10px; font-size:11.5px; line-height:1.85;
+    background:color-mix(in srgb,var(--line) 18%,transparent);
+  }
+  .dg-it b{ display:block; font-size:12px; color:var(--ink); margin-bottom:3px }
+  .dg-it div{ color:var(--muted) }
+  .dg-it code{
+    font-family:ui-monospace,monospace; font-size:11px;
+    background:var(--surface); padding:1px 6px; border-radius:5px;
+    color:var(--ink); direction:ltr; unicode-bidi:isolate;
+    display:inline-block; margin:1px;
+  }
+
+  /* ⚠️ خطأ تحميل القايمة */
+  .mp-err{
+    padding:12px 14px; border-radius:12px; margin:10px 0;
+    background:#FEE2E2; border:1px solid #FCA5A5;
+  }
+  body.dark .mp-err{ background:#3d1414; border-color:#7f1d1d }
+  .mp-err b{ display:block; font-size:13px; font-weight:800;
+             color:#B91C1C; margin-bottom:5px }
+  .mp-err span{ display:block; font-size:11.5px; color:#7f1d1d; line-height:1.75 }
+  body.dark .mp-err b, body.dark .mp-err span{ color:#fca5a5 }
 </style>
 </head>
 <body>
@@ -13150,8 +13212,10 @@ async function runOCR_(){
         let names = [];
         const vis = await readHandleAI(it.file);
         if(vis && vis.names.length){
-          names = vis.names;
-          it.visionRead = vis.names[0];
+          names = vis.names.filter(x => String(x || '').trim().length >= 2);
+          // ⚠️ names[0] هو username — وفي سناب بيبقى فاضي.
+          //    ناخد أول اسم حقيقي مش أول عنصر.
+          it.visionRead = names[0] || '';
         }
 
         // 📋 ② الـ OCR — طبقة تانية
@@ -13186,7 +13250,18 @@ async function runOCR_(){
 
         // ➕ ④ مالقاش؟ نضيفه تلقائي — مفيش صورة تفضل بغير مؤثر
         if(!m && vis && vis.isChat && vis.names.length){
-          const uname = vis.names[0];
+          // نضيف بـ username بس — الاسم المعروض مش هاندل صالح
+          const uname = String(vis.names[0] || '').trim();
+          if(/[\u0600-\u06FF\s]/.test(uname) || uname.length < 3){
+            // اسم عربي أو قصير — مش هاندل، منضيفش
+            it.msg = uname
+              ? '⚠️ "' + uname + '" مش في قايمتك — اختاريه'
+              : 'مالقيتش اسم المؤثر — اختاريه';
+            it.state = 'ready';
+            MP.done++;
+            renderMobileProofs();
+            continue;
+          }
           it.msg = '⏳ بنضيف @' + uname + '…';
           renderMobileProofs();
 
@@ -13387,10 +13462,31 @@ async function mpLoadLists(){
     MP.leads   = all.filter(x => x.action === 'sent');
     MP.follows = (f.items || []).length ? f.items
                : all.filter(x => x.action === 'followup' && x.due);
-  }catch(e){ /* تجاهل */ }
+    MP.loadErr = '';
+  }catch(e){
+    // ⚠️ الفشل هنا كان بيتبلع — فالصور بتتفحص ومفيش
+    //    مؤثرين للمطابقة، والنتيجة "مش في قايمتك" للكل.
+    MP.loadErr = String(e.message || 'مالقدرناش نحمّل قايمة المؤثرين');
+  }
 
   MP.listBusy = false;
-  MP.loaded = true;      // ✅ حمّلنا — حتى لو القايمة فاضية
+  MP.loaded = true;
+
+  // 🔁 القايمة فاضية والتحميل فشل — نجرّب تاني
+  if(!MP.cands.length && MP.loadErr){
+    try{
+      await new Promise(r => setTimeout(r, 1200));
+      const c2 = await callApi('verifyProof', {
+        token: SESSION.token, action: 'candidates',
+      });
+      const all2 = (c2.items || []);
+      if(all2.length){
+        MP.cands = all2.filter(x => x.action !== 'done');
+        MP.leads = all2.filter(x => x.action === 'sent');
+        MP.loadErr = '';
+      }
+    }catch(e2){ /* فشلت تاني */ }
+  }
   renderMobileProofs();
 }
 
@@ -13511,7 +13607,23 @@ async function mpAddLinks(){
       });
 
       if(r && r.card){
-        MP.addRes.added.push({ handle: r.card.handle || link, uid: r.card.uid });
+        // ⚠️ الـ function بترجّع الكارت حتى لو المؤثر موجود خلاص.
+        //    الكود كان بيحطه في "اتضاف" — فالموظفة تلزق نفس
+        //    اللينك تاني وتشوف "اتضاف" وهو مضاف من الأول.
+        // ✅ الـ function بترجّع duplicate: true لو موجود خلاص
+        const already = r.duplicate === true;
+
+        if(already){
+          const h = String(r.card.handle || '').replace('@','');
+          MP.addRes.taken.push({
+            link,
+            msg: r.isMine
+              ? '🔁 @' + h + ' موجود عندك خلاص'
+              : (r.message || '🔁 @' + h + ' مع موظفة تانية'),
+          });
+        } else {
+          MP.addRes.added.push({ handle: r.card.handle || link, uid: r.card.uid });
+        }
       } else {
         MP.addRes.bad.push({ link, msg: 'مش مفهوم' });
       }
@@ -13718,6 +13830,7 @@ function renderMobileProofs(){
           + '<span>الباقي (' + need + ') الأسماء فيهم مش واضحة — '
           +   'اختاري المؤثر بنفسك عشان يترفعوا.</span>'
           + '<span class="tip">💡 اضغطي على الصورة تتكبّر وتشوفي الاسم</span>'
+          + '<button class="mp-dbg" onclick="mpDiag()">🔍 ليه مش بيتربطوا؟</button>'
           + '</div>';
       }
     }
@@ -13730,6 +13843,15 @@ function renderMobileProofs(){
       ...MP.items.filter(x => x.state === 'ready' && x.uid),    // جاهزة
       ...MP.items.filter(x => !['ready','fail'].includes(x.state)),
     ];
+
+    // ⚠️ القايمة فاضية — ده السبب الحقيقي لو كل الصور فشلت
+    if(!MP.cands.length && MP.items.length){
+      body += '<div class="mp-err">'
+        + '<b>⚠️ قايمة المؤثرين مالتحمّلتش</b>'
+        + '<span>عشان كده مفيش صورة بتتربط. اقفلي النافذة وافتحيها تاني، '
+        +   'ولو فضلت كده كلّمي محمد.</span>'
+        + '</div>';
+    }
 
     body += '<div class="mp-list">';
     ordered.forEach((it, i) => {
@@ -13875,6 +13997,59 @@ function mpRetry(id){
   it.msg = '';
   renderMobileProofs();
   mpUpload();
+}
+
+// 🔍 تشخيص — ليه الصور مش بتتربط
+//
+// ⚠️ مفيش Console على الموبايل، فلازم نوري المعلومة جوه الموقع.
+function mpDiag(){
+  const bad = MP.items.filter(x => x.state === 'ready' && !x.uid);
+
+  let h = '<div class="dg-box">'
+    + '<div class="dg-hd"><b>🔍 تشخيص الربط</b>'
+    +   '<button class="dg-x">✕</button></div>'
+    + '<div class="dg-body">'
+    + '<div class="dg-row"><span>مؤثرين في قايمتك</span><b>'
+    +   MP.cands.length + '</b></div>'
+    + '<div class="dg-row"><span>صور محتاجة اختيار</span><b>'
+    +   bad.length + '</b></div>';
+
+  if(!MP.cands.length){
+    h += '<div class="dg-warn">⚠️ قايمة المؤثرين فاضية — '
+      +  'اقفلي النافذة وافتحيها تاني</div>';
+  }
+
+  h += '<div class="dg-list">';
+  bad.slice(0, 8).forEach((it, i) => {
+    const read = it.visionRead || '';
+    let top = [];
+    if(read){
+      top = MP.cands.map(c => ({
+        h: c.handle,
+        s: Math.max(simScore_(read, c.handle),
+                    c.display ? nameScore_(read, c.display) : 0,
+                    /[\u0600-\u06FF]/.test(read) ? phonScore_(read, c.handle) : 0),
+      })).sort((a, b) => b.s - a.s).slice(0, 3);
+    }
+    h += '<div class="dg-it">'
+      + '<b>صورة ' + (i + 1) + '</b>'
+      + '<div>الاسم اللي اتقرا: <code>' + (read ? esc(read) : '— مقراش حاجة') + '</code></div>'
+      + (top.length
+        ? '<div>أقرب مؤثرين: ' + top.map(x =>
+            '<code>' + esc(x.h) + ' ' + x.s + '%</code>').join(' · ') + '</div>'
+        : '')
+      + '</div>';
+  });
+  h += '</div></div></div>';
+
+  const ov = document.createElement('div');
+  ov.className = 'dg-ov';
+  ov.innerHTML = h;
+  document.body.appendChild(ov);
+  requestAnimationFrame(() => ov.classList.add('show'));
+  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),180); };
+  ov.querySelector('.dg-x').onclick = close;
+  ov.onclick = e => { if(e.target === ov) close(); };
 }
 
 // 🔎 تكبير الصورة — عشان تشوفي اسم المؤثر فيها
