@@ -13112,7 +13112,9 @@ function matchCandidate_(handles){
     let best = null, bestScore = 0;
     for(const c of list){
       const h = String(c.handle || '');
-      const d = String(c.display || '');
+      // ⚠️ "—" علامة إن الموديل مالقاش اسم — مش اسم حقيقي
+      const d0 = String(c.display || '');
+      const d = (d0 === '—') ? '' : d0;
       for(const x of handles){
         const isAr = /[\u0600-\u06FF]/.test(x);
 
