@@ -5675,6 +5675,13 @@
   }
   .pn-a:hover{ filter:brightness(.96) }
   body.dark .pn-a{ background:#14432a; color:#86efac; border-color:#166534 }
+
+  /* ⚠️ سبب فشل الربط */
+  .pn-why{
+    font-size:11px; padding:4px 9px; border-radius:7px;
+    background:#FEF3C7; color:#92400E; line-height:1.6;
+  }
+  body.dark .pn-why{ background:#3d2c0d; color:#fcd34d }
 </style>
 </head>
 <body>
@@ -12972,11 +12979,13 @@ async function autoAddInfluencer(username, platform, display){
 
   }catch(e){
     const m = String(e.message || '');
+    // 🚫 شريك متعاقد — نستخدم رسالة السيرفر عشان فيها اسم الشريك
     if(m.includes('شريك') || m.includes('متعاقد') || m.includes('اتحدّد بـ')){
-      return { partner: true, msg: '🚫 شريك عندنا — مااتضافش' };
+      return { partner: true, msg: '🚫 ' + m.replace(/^شريك مسجّل — /, 'شريك عندنا: ') };
     }
-    if(m.includes('موجود') || m.includes('مسجّل')){
-      return { taken: true, msg: '🔁 المؤثر ده مع موظفة تانية' };
+    // 🔁 مع موظفة تانية — رسالة السيرفر فيها اسمها
+    if(m.includes('تبع ') || m.includes(' مع ') || m.includes('موجود') || m.includes('مسجّل')){
+      return { taken: true, msg: '🔁 ' + m };
     }
     return null;
   }
@@ -13329,7 +13338,12 @@ async function runOCR_(){
               it.label  = 'إرسال';
             }
             it.autoAdded = true;
-          } else if(add && (add.partner || add.taken)){
+          } else if(add && add.partner){
+            // 🚫 شريك — مش محتاجة مراجعة، السبب واضح
+            it.blocked  = add.msg;
+            it.noUpload = true;
+          } else if(add && add.taken){
+            // 🔁 مع موظفة تانية — الإدارة تراجع
             it.blocked = add.msg;
           }
         }
@@ -14406,7 +14420,9 @@ async function mpUploadPending(list){
       const r = await callApi('verifyProof', {
         token: SESSION.token, action: 'addPending',
         url, hash, aiName: it.visionRead || '',
-        platform: it.visPlatform || '', ocr: it.ocr || '',
+        platform: it.visPlatform || '',
+        // 💡 نمرّر سبب الفشل — الإدارة تشوفه في الداشبورد
+        ocr: (it.blocked ? '[' + it.blocked + '] ' : '') + (it.ocr || ''),
         type: 'sent',
       });
 
@@ -14430,7 +14446,9 @@ async function mpUploadPending(list){
 
 async function mpUpload(){
   const list = MP.items.filter(x => x.state === 'ready' && x.uid);
-  const pend = MP.items.filter(x => x.state === 'ready' && !x.uid);
+  // ⚠️ صور الشركاء متترفعش — السبب واضح ومفيش فايدة من المراجعة
+  const pend = MP.items.filter(x =>
+    x.state === 'ready' && !x.uid && !x.noUpload);
   if(!list.length && !pend.length) return;
 
   const LANES = 4;
@@ -14877,6 +14895,10 @@ function dbPending(r){
       +   (it.ai_name
           ? '<div class="pn-ai">🤖 قرا: <b>' + esc(it.ai_name) + '</b></div>'
           : '<div class="pn-ai none">🤖 مقراش اسم</div>')
+      +   (/^\[/.test(it.ocr || '')
+          ? '<div class="pn-why">⚠️ ' +
+            esc(String(it.ocr).match(/^\[([^\]]+)\]/)?.[1] || '') + '</div>'
+          : '')
 
       +   (sg.length
           ? '<div class="pn-sg">'
