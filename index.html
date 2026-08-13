@@ -5990,6 +5990,7 @@ const FN_MAP = {
   verifyVision:   "verify-vision",
   coachMessage:   "coach-message",
   readHandle:     "read-handle",
+  enrichAi:       "enrich-ai",
   partners:       "sync-partners",
   adminAction:    "admin-action",
   sendReport:     "send-report",
@@ -12835,6 +12836,9 @@ async function autoAddInfluencer(username, platform, display){
           token: SESSION.token, action: 'setDisplayName',
           uid: c.uid, name: display,
         }).catch(()=>{});
+      } else {
+        // 🌐 مفيش اسم — نجيبه من اللينك
+        callApi('enrichAi', { token: SESSION.token, uid: c.uid }).catch(()=>{});
       }
 
       return { ok: true, uid: c.uid, handle: c.handle };
@@ -13415,7 +13419,24 @@ async function mpAddLinks(){
   if(MP.addRes.added.length){
     toastOk('✅ اتضاف ' + MP.addRes.added.length + ' مؤثر');
     invalidateCache();
-    boot();          // بيعيد تحميل الكروت والعدّادات
+    boot();
+
+    // 🌐 نجيب أسماءهم في الخلفية — عشان الصور تتربط من أول مرة
+    //    ⚠️ مش بنستنى — الموظفة تكمّل شغلها عادي
+    (async () => {
+      for(const x of MP.addRes.added.slice(0, 40)){
+        if(!x.uid) continue;
+        try{
+          await callApi('enrichAi', { token: SESSION.token, uid: x.uid });
+        }catch(e){ /* ثانوي */ }
+        await new Promise(r => setTimeout(r, 300));
+      }
+      // نحدّث القايمة بالأسماء الجديدة
+      try{
+        MP.loaded = false;
+        await mpLoadLists();
+      }catch(e){}
+    })();
   }
 }
 
