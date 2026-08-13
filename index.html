@@ -13164,6 +13164,26 @@ async function runOCR_(){
         // 🎯 ③ المطابقة الضبابية
         let m = names.length ? matchCandidate_(names) : null;
 
+        // 🔁 ③b مالقاش؟ نجرّب كل كلمة في الاسم لوحدها
+        //    "هنوف عبد الله" → نجرّب "هنوف" و "عبد" و "الله"
+        if(!m && vis && vis.display){
+          const parts = String(vis.display).split(/\s+/)
+            .filter(w => w.length >= 3);
+          for(const w of parts){
+            m = matchCandidate_([w]);
+            if(m) break;
+          }
+        }
+
+        // 🔁 ③c وكل اسم من الـ OCR لوحده
+        if(!m && names.length > 1){
+          for(const one of names){
+            if(String(one).length < 4) continue;
+            m = matchCandidate_([one]);
+            if(m) break;
+          }
+        }
+
         // ➕ ④ مالقاش؟ نضيفه تلقائي — مفيش صورة تفضل بغير مؤثر
         if(!m && vis && vis.isChat && vis.names.length){
           const uname = vis.names[0];
@@ -13703,8 +13723,16 @@ function renderMobileProofs(){
     }
 
     // ═══ الصور ═══
+    // 📌 المحتاجة اختيار فوق — عشان مانخليهاش تدوّر
+    const ordered = [
+      ...MP.items.filter(x => x.state === 'ready' && !x.uid),   // محتاجة اختيار
+      ...MP.items.filter(x => x.state === 'fail'),              // فشلت
+      ...MP.items.filter(x => x.state === 'ready' && x.uid),    // جاهزة
+      ...MP.items.filter(x => !['ready','fail'].includes(x.state)),
+    ];
+
     body += '<div class="mp-list">';
-    MP.items.forEach((it, i) => {
+    ordered.forEach((it, i) => {
       const CONF = {
         high:   { c:'ok',   t:'✅ دقة عالية' },
         medium: { c:'warn', t:'⚠️ راجعي' },
