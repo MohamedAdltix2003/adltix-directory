@@ -12907,6 +12907,85 @@ function simScore_(a, b){
   return Math.round((1 - d / Math.max(x.length, y.length)) * 100);
 }
 
+// ═══════════════════════════════════════════════════════════
+// 🔤 المطابقة الصوتية عربي ↔ إنجليزي
+//
+// ⚠️ المشكلة: سناب بيعرض "هنوف عبدالله" والمؤثر عندنا
+//    اسمه "hanouf.na" — مقارنة الحروف مستحيلة.
+//
+//    الحل: نحوّل العربي للاتيني بالنطق، ونشيل الحركات،
+//    فـ "هنوف" تبقى "hnf" و "hanouf" تبقى "hnf" → تطابق.
+// ═══════════════════════════════════════════════════════════
+const AR2LAT = {
+  'ا':'a','أ':'a','إ':'a','آ':'a','ى':'a','ب':'b','ت':'t','ث':'t',
+  'ج':'j','ح':'h','خ':'k','د':'d','ذ':'d','ر':'r','ز':'z','س':'s',
+  'ش':'s','ص':'s','ض':'d','ط':'t','ظ':'z','ع':'a','غ':'g','ف':'f',
+  'ق':'k','ك':'k','ل':'l','م':'m','ن':'n','ه':'h','ة':'h','و':'w',
+  'ي':'y','ء':'','ؤ':'w','ئ':'y',
+};
+
+function translit_(v){
+  let out = '';
+  for(const ch of String(v || '')){
+    if(AR2LAT[ch] !== undefined) out += AR2LAT[ch];
+    else if(/[a-z0-9]/i.test(ch)) out += ch.toLowerCase();
+    else if(/\s/.test(ch)) out += ' ';
+  }
+  return out.replace(/\s+/g, ' ').trim();
+}
+
+// نشيل الحركات والتكرار — الجوهر الصوتي بس
+function phon_(v){
+  return translit_(v)
+    .replace(/[aeiouwy]/g, '')
+    .replace(/(.)\1+/g, '$1')
+    .replace(/[^a-z]/g, '')
+    // ⚠️ التاء المربوطة بتتحول h — "نهلة" تبقى nhlh مش nhl.
+    //    نشيلها من الآخر عشان تطابق "nahla".
+    .replace(/h$/, '');
+}
+
+// نطابق كل كلمة في الاسم مع الهاندل
+function phonScore_(arName, handle){
+  const words = String(arName || '').split(/\s+/).filter(w => w.length >= 2);
+  const b = phon_(handle);
+  if(b.length < 2) return 0;
+
+  // ⚠️ الكلمة الأولى هي الاسم الأول — الأهم في الهاندل.
+  //    "نهلة محمد" كانت بتروح لـ mohamed_ali لأن "محمد" طابقت.
+  let best = 0;
+  for(let wi = 0; wi < words.length; wi++){
+    const w = words[wi];
+    const a = phon_(w);
+    if(a.length < 2) continue;
+
+    // الكلمات اللي بعد الأولى وزنها أقل
+    const weight = wi === 0 ? 1 : 0.72;
+
+    // التطابق من البداية بس — عشان مانربطش "أحمد" بـ sara_ahmed
+    if(a === b || b.startsWith(a) || a.startsWith(b)){
+      best = Math.max(best, Math.round(95 * weight)); continue;
+    }
+
+    const d = lev_(a, b);
+    best = Math.max(best,
+      Math.round((1 - d / Math.max(a.length, b.length)) * 100 * weight));
+
+    // ⚠️ الكلمة لازم تبدأ الهاندل — مش أي مكان فيه.
+    //    "أحمد فتحي" كان بيتربط بـ sara_ahmed لأن ahmed جواه.
+    if(a.length >= 3 && b.startsWith(a)){
+      best = Math.max(best, Math.round(92 * weight));
+    }
+  }
+
+  // الاسم الكامل
+  const full = phon_(arName);
+  if(full.length >= 3 && (b.startsWith(full) || full.startsWith(b))){
+    best = Math.max(best, 95);
+  }
+  return best;
+}
+
 // 👤 مقارنة الأسماء العربي — الكلمات مش الحروف
 function arabNorm_(v){
   return String(v || '')
@@ -12962,19 +13041,29 @@ function matchCandidate_(handles){
       for(const x of handles){
         const isAr = /[\u0600-\u06FF]/.test(x);
 
-        // 🔤 الهاندل إنجليزي — نقارنه بالنصوص اللاتينية بس
+        // 🔤 ① الهاندل — إنجليزي بإنجليزي
         if(!isAr && core_(h).length >= 3){
           const s1 = simScore_(x, h);
           if(s1 > bestScore){ bestScore = s1; best = c; }
         }
 
-        // 👤 الاسم المعروض — لازم نفس اللغة
+        // 👤 ② الاسم المعروض — نفس اللغة
         if(d.length >= 3){
           const dAr = /[\u0600-\u06FF]/.test(d);
           if(isAr === dAr){
             const s2 = nameScore_(x, d);
             if(s2 > bestScore){ bestScore = s2; best = c; }
           }
+        }
+
+        // 🔤 ③ صوتيًا — "هنوف" ≈ "hanouf.na"
+        //    ⚠️ دي اللي بتحل سناب: الصورة فيها الاسم العربي
+        //       والمؤثر عندنا بهاندل إنجليزي.
+        if(isAr && h.length >= 3){
+          // ⚠️ الصوتي حده أعلى (75) — الاسم التاني بيدي 68%
+          //    وكان بيربط "نهلة محمد" بـ mohamed_ali.
+          const s3 = phonScore_(x, h);
+          if(s3 >= 75 && s3 > bestScore){ bestScore = s3; best = c; }
         }
       }
     }
