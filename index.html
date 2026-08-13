@@ -5628,6 +5628,44 @@
              color:#B91C1C; margin-bottom:5px }
   .mp-err span{ display:block; font-size:11.5px; color:#7f1d1d; line-height:1.75 }
   body.dark .mp-err b, body.dark .mp-err span{ color:#fca5a5 }
+
+  /* 📥 تاب المستنية ربط */
+  .pn-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr));
+            gap:10px; margin-top:12px }
+  .pn-c{ display:flex; gap:10px; padding:10px; border-radius:13px;
+         border:1px solid var(--line);
+         background:color-mix(in srgb,var(--line) 10%,transparent) }
+  .pn-im{ width:70px; height:104px; border-radius:9px; overflow:hidden;
+          flex-shrink:0; background:var(--line); display:block; cursor:zoom-in }
+  .pn-im img{ width:100%; height:100%; object-fit:cover; display:block }
+  .pn-d{ flex:1; min-width:0; display:flex; flex-direction:column; gap:6px }
+  .pn-hd{ display:flex; justify-content:space-between; align-items:baseline }
+  .pn-hd b{ font-size:12.5px; color:var(--ink) }
+  .pn-hd span{ font-size:10px; color:var(--muted);
+               direction:ltr; unicode-bidi:isolate }
+  .pn-ai{ font-size:11.5px; color:var(--muted) }
+  .pn-ai b{ color:var(--ink); font-weight:800 }
+  .pn-ai.none{ opacity:.6; font-style:italic }
+  .pn-sg{ display:flex; flex-wrap:wrap; gap:5px }
+  .pn-b{
+    font-family:inherit; font-size:11px; font-weight:700; cursor:pointer;
+    padding:5px 10px; border-radius:8px; border:1px solid var(--line);
+    background:var(--surface); color:var(--ink);
+    direction:ltr; unicode-bidi:isolate;
+    display:inline-flex; align-items:center; gap:5px;
+  }
+  .pn-b:hover{ background:#DCFCE7; border-color:#86EFAC; color:#15803D }
+  .pn-b i{ font-style:normal; font-size:9.5px; opacity:.6 }
+  .pn-no{ font-size:11px; color:var(--muted); font-style:italic }
+  .pn-act{ display:flex; gap:6px; margin-top:auto }
+  .pn-s, .pn-x{
+    font-family:inherit; font-size:11px; font-weight:700; cursor:pointer;
+    padding:5px 11px; border-radius:8px; border:1px solid var(--line);
+    background:transparent; color:var(--muted);
+  }
+  .pn-s:hover{ background:#DBEAFE; color:#1D4ED8; border-color:#93C5FD }
+  .pn-x:hover{ background:#FEE2E2; color:#B91C1C; border-color:#FCA5A5 }
+  @media (max-width:520px){ .pn-grid{ grid-template-columns:1fr } }
 </style>
 </head>
 <body>
@@ -6065,6 +6103,7 @@ const FN_MAP = {
   verifyVision:   "verify-vision",
   coachMessage:   "coach-message",
   readHandle:     "read-handle",
+  guessNames:     "guess-names",
   enrichAi:       "enrich-ai",
   partners:       "sync-partners",
   adminAction:    "admin-action",
@@ -6081,7 +6120,7 @@ const FN_MAP = {
   approve:        "admin-action",
   unarchive:      "admin-action"
 };
-const ADMIN_ACTIONS = { "delete":"delete", moveToNew:"archive", changeNiche:"changeNiche", approve:"approve", unarchive:"unarchive" };
+const ADMIN_ACTIONS = { "delete":"delete", moveToNew:"archive", changeNiche:"changeNiche", approve:"approve", unarchive:"unarchive", resolvePending:"resolvePending", dropPending:"dropPending" };
 
 // Supabase بيحدّ أي طلب بـ 1000 صف كحد أقصى (إعداد max-rows).
 // كنا بنطلب 2000 فكان بيرجّع 1000 ويرمي الباقي في صمت —
@@ -10441,6 +10480,7 @@ function renderDashboard(){
     ['tasks',    '📋', 'المهام'],
     ['targets',  '🎯', 'التارجت'],
     ['sheets',   '📗', 'الشيتات'],
+    ['pending',  '📥', 'مستنية ربط'],
     ['rejects',  '❌', 'أسباب الرفض'],
     ['deals',    '🎯', 'الصفقات'],
     ['leads',    '📇', 'المؤثرين'],
@@ -10487,6 +10527,7 @@ function dbTabContent(r){
     case 'tasks':    return dbTasks(r);
     case 'targets':  return dbTargets(r);
     case 'sheets':   return dbSheets(r);
+    case 'pending':  return dbPending(r);
     case 'rejects':  return dbRejects(r);
     case 'deals':    return dbDeals(r);
     case 'leads':    return dbLeads(r);
@@ -13928,11 +13969,9 @@ function renderMobileProofs(){
     if(!MP.loading){
       body += '<div class="mp-foot">'
         + '<button class="mp-more" onclick="mpPick()">📸 زودي</button>'
-        + '<button class="mp-go"' + (ready ? '' : ' disabled')
+        + '<button class="mp-go"' + ((ready + need) ? '' : ' disabled')
         +   ' onclick="mpUpload()">'
-        +   (need
-              ? 'ارفعي الجاهزين (' + ready + ')'
-              : 'ارفعي الكل — ' + ready)
+        +   'ارفعي الكل — ' + (ready + need)
         +   '</button>'
         + '</div>';
     }
@@ -14335,9 +14374,56 @@ async function mpUploadOne(it){
 //
 // ⚠️ الرفع بالتسلسل كان بياخد دقيقتين لـ 40 صورة.
 //    المتوازي بيخلّصهم في نص الوقت أو أقل.
+// 📥 رفع الصور اللي الـ AI مقدرش يربطها
+//
+// ⚠️ الموظفة مش المفروض تدوّر في 1500 مؤثر. الصورة تترفع
+//    وتستنى في الداشبورد بمقترحات، والإدارة تربطها.
+async function mpUploadPending(list){
+  let done = 0;
+  for(const it of list){
+    it.state = 'uploading';
+    renderMobileProofs();
+    try{
+      const hash = await fileHash(it.file);
+      const b64  = await fileToBase64(it.file);
+
+      const up = await retry_(() => callApi('logAction', {
+        token: SESSION.token, uid: '', actionType: 'pending',
+        imageBase64: b64, mode: 'pending',
+      }), 3);
+
+      const url = (up && up.screenshotUrl) || '';
+      if(!url) throw new Error('الصورة مترفعتش');
+
+      const r = await callApi('verifyProof', {
+        token: SESSION.token, action: 'addPending',
+        url, hash, aiName: it.visionRead || '',
+        platform: it.visPlatform || '', ocr: it.ocr || '',
+        type: 'sent',
+      });
+
+      if(r && r.duplicate){
+        it.state = 'dup';
+        it.msg = 'الصورة دي مرفوعة قبل كده';
+      } else {
+        it.state = 'ok';
+        it.msg   = '📥 اترفعت — الفريق هيربطها';
+        done++;
+      }
+    }catch(e){
+      it.state = 'fail';
+      it.msg = 'محتاجة إعادة';
+      it.canRetry = true;
+    }
+    renderMobileProofs();
+  }
+  return done;
+}
+
 async function mpUpload(){
   const list = MP.items.filter(x => x.state === 'ready' && x.uid);
-  if(!list.length) return;
+  const pend = MP.items.filter(x => x.state === 'ready' && !x.uid);
+  if(!list.length && !pend.length) return;
 
   const LANES = 4;
   let idx = 0;
@@ -14369,6 +14455,10 @@ async function mpUpload(){
     await Promise.all(Array.from(
       { length: Math.min(3, failed.length) }, lane2));
   }
+
+  // 📥 اللي مالوش مؤثر — يترفع معلّق
+  let pendN = 0;
+  if(pend.length) pendN = await mpUploadPending(pend);
 
   const ok = MP.items.filter(x => x.state === 'ok').length;
   const stillBad = MP.items.filter(x => x.state === 'fail').length;
@@ -14720,6 +14810,167 @@ async function dbShMail(btn){
       loadDashboard();
     }catch(e){ ov.querySelector('#gmErr').textContent = e.message; }
   };
+}
+
+// ═══════════════════════════════════════════════════════════
+// 📥 تاب الإثباتات المستنية ربط
+//
+// ⚠️ الصور اللي الـ AI مقدرش يربطها. لكل صورة مقترحات من
+//    المؤثرين اللي الموظفة ضافتهم في نفس الوقت — دوسة واحدة
+//    بتربط وتسجّل الأكشن وتخلّي الصورة تختفي.
+// ═══════════════════════════════════════════════════════════
+let _pnStaff = 'all';
+
+function dbPending(r){
+  const d = r.pending || {};
+  const items = d.items || [];
+  const n = v => Number(v || 0);
+
+  if(!n(d.total)){
+    return '<div class="db-empty">✅ مفيش إثباتات مستنية — كله متربط</div>';
+  }
+
+  let h = '';
+
+  // ═══ الملخّص ═══
+  h += '<div class="db-kpis">'
+    +   dbCard('📥', 'مستنية ربط', d.total, '', n(d.total) > 50 ? 'bad' : '')
+    + '</div>';
+
+  // فلتر الموظفات
+  const staff = d.by_staff || [];
+  if(staff.length > 1){
+    h += '<div class="db-row">'
+      + '<button class="db-rp' + (_pnStaff==='all'?' on':'') + '" '
+      +   'onclick="dbPnStaff(\'all\')">الكل (' + d.total + ')</button>'
+      + staff.map(x =>
+          '<button class="db-rp' + (_pnStaff===x.staff?' on':'') + '" '
+          + 'onclick="dbPnStaff(\'' + esc(x.staff) + '\')">'
+          + esc(x.staff) + ' (' + x.count + ')</button>').join('')
+      + '</div>';
+  }
+
+  const list = items.filter(x => _pnStaff === 'all' || x.staff === _pnStaff);
+
+  h += '<div class="pn-grid">';
+  list.slice(0, 60).forEach(it => {
+    const sg = it.suggest || [];
+    h += '<div class="pn-c" id="pn' + it.id + '">'
+      + '<a class="pn-im" href="' + esc(it.url) + '" target="_blank" rel="noopener">'
+      +   '<img src="' + esc(it.url) + '" loading="lazy" onerror="this.remove()">'
+      + '</a>'
+      + '<div class="pn-d">'
+      +   '<div class="pn-hd">'
+      +     '<b>' + esc(it.staff) + '</b>'
+      +     '<span>' + fmtShort(it.ts) + '</span>'
+      +   '</div>'
+      +   (it.ai_name
+          ? '<div class="pn-ai">🤖 قرا: <b>' + esc(it.ai_name) + '</b></div>'
+          : '<div class="pn-ai none">🤖 مقراش اسم</div>')
+
+      +   (sg.length
+          ? '<div class="pn-sg">'
+            + sg.map(x =>
+                '<button class="pn-b" onclick="dbPnLink(' + it.id + ',\''
+                + esc(x.uid) + '\')">@' + esc(x.handle)
+                + '<i>' + x.mins + 'د</i></button>').join('')
+            + '</div>'
+          : '<div class="pn-no">مفيش مقترحين — دوّري بنفسك</div>')
+
+      +   '<div class="pn-act">'
+      +     '<button class="pn-s" onclick="dbPnSearch(' + it.id + ')">🔍 دوّر</button>'
+      +     '<button class="pn-x" onclick="dbPnDrop(' + it.id + ')">🗑️</button>'
+      +   '</div>'
+      + '</div></div>';
+  });
+  h += '</div>';
+
+  if(list.length > 60){
+    h += '<div class="db-more">+ ' + (list.length - 60) + ' غيرهم</div>';
+  }
+
+  return h;
+}
+
+function dbPnStaff(v){ _pnStaff = v; renderDashboard(); }
+
+// ✅ ربط الصورة بمؤثر
+async function dbPnLink(id, uid){
+  const card = document.getElementById('pn' + id);
+  if(card) card.style.opacity = '.5';
+  try{
+    const r = await callApi('adminAction', {
+      token: SESSION.token, action: 'resolvePending', id, uid,
+    });
+    if(card){
+      card.style.transition = 'all .3s';
+      card.style.transform = 'scale(.9)';
+      card.style.opacity = '0';
+      setTimeout(() => card.remove(), 300);
+    }
+    toastOk('✅ اتربط بـ @' + String(r.handle || '').replace('@',''));
+  }catch(e){
+    if(card) card.style.opacity = '1';
+    toastErr(e.message);
+  }
+}
+
+// 🗑️ رفض
+async function dbPnDrop(id){
+  if(!confirm('متأكد إنك عايز تمسح الإثبات ده؟')) return;
+  const card = document.getElementById('pn' + id);
+  try{
+    await callApi('adminAction', {
+      token: SESSION.token, action: 'dropPending', id,
+    });
+    if(card) card.remove();
+    toastOk('🗑️ اتمسح');
+  }catch(e){ toastErr(e.message); }
+}
+
+// 🔍 بحث يدوي
+function dbPnSearch(id){
+  const ov = document.createElement('div');
+  ov.className = 'cf-overlay';
+  ov.innerHTML = '<div class="cf-box" style="max-width:480px">'
+    + '<b style="display:block;margin-bottom:11px">🔍 اختار المؤثر</b>'
+    + '<input class="mp-search" id="pnQ" placeholder="اسم الحساب أو اللينك…">'
+    + '<div class="mp-res" id="pnR" style="max-height:300px"></div>'
+    + '<div class="cf-btns"><button class="cf-no">إلغاء</button></div></div>';
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>ov.classList.add('show'));
+
+  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
+  ov.querySelector('.cf-no').onclick = close;
+  ov.addEventListener('click', e => { if(e.target === ov) close(); });
+
+  const q = ov.querySelector('#pnQ');
+  const res = ov.querySelector('#pnR');
+
+  const draw = (list) => {
+    res.innerHTML = list.length
+      ? list.slice(0, 30).map(c =>
+          '<button class="mp-cd" data-uid="' + esc(c.uid) + '">'
+          + '<b>@' + esc(c.handle) + '</b>'
+          + '<span>' + esc(c.assignedTo || '') + '</span></button>').join('')
+      : '<div class="mp-empty">مفيش نتايج</div>';
+    res.querySelectorAll('.mp-cd').forEach(b => {
+      b.onclick = () => { close(); dbPnLink(id, b.dataset.uid); };
+    });
+  };
+
+  q.oninput = () => {
+    let t = q.value.trim().toLowerCase()
+      .replace(/^https?:\/\//, '').replace(/^www\./, '')
+      .replace(/\?.*$/, '').replace(/\/+$/, '');
+    const m = t.match(/(?:instagram|tiktok|snapchat)\.com\/(?:add\/|@)?([\w.\-]+)/i);
+    if(m) t = m[1];
+    t = t.replace(/^@/, '');
+    if(t.length < 2){ res.innerHTML = ''; return; }
+    draw(CREATORS.filter(c =>
+      String(c.handle || '').toLowerCase().includes(t)).slice(0, 30));
+  };
+  setTimeout(()=>q.focus(), 150);
 }
 
 // ═══════════════════════════════════════════════════════════
