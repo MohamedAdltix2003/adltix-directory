@@ -12945,26 +12945,41 @@ function nameScore_(a, b){
 function matchCandidate_(handles){
   if(!handles || !handles.length || !MP.cands.length) return null;
 
-  let best = null, bestScore = 0;
-  for(const c of MP.cands){
-    const h = String(c.handle || '');
-    const d = String(c.display || '');
+  // 🕐 اللي اتضافوا النهاردة أولوية — الموظفة بترفع اللينك
+  //    وبعدها الصورة على طول، فده الأرجح.
+  const today = MP.cands.filter(c => c.added_today);
+  const rest  = MP.cands.filter(c => !c.added_today);
 
-    for(const x of handles){
-      // 🔤 مطابقة الهاندل — إنجليزي
-      if(core_(h).length >= 3){
-        const s1 = simScore_(x, h);
-        if(s1 > bestScore){ bestScore = s1; best = c; }
-      }
-      // 👤 مطابقة الاسم المعروض — عربي أو إنجليزي
-      if(d.length >= 3){
-        const s2 = nameScore_(x, d);
-        if(s2 > bestScore){ bestScore = s2; best = c; }
+  const scan = (list, bonus) => {
+    let best = null, bestScore = 0;
+    for(const c of list){
+      const h = String(c.handle || '');
+      const d = String(c.display || '');
+      for(const x of handles){
+        if(core_(h).length >= 3){
+          const s1 = simScore_(x, h);
+          if(s1 > bestScore){ bestScore = s1; best = c; }
+        }
+        if(d.length >= 3){
+          const s2 = nameScore_(x, d);
+          if(s2 > bestScore){ bestScore = s2; best = c; }
+        }
       }
     }
-  }
-  // 78% = الحد الآمن (اختُبر على الحالتين)
-  return bestScore >= 78 ? { cand: best, score: bestScore } : null;
+    return { best, score: bestScore + (bestScore > 0 ? (bonus || 0) : 0) };
+  };
+
+  // ① اللي ضافتهم النهاردة — حد أقل (65%) لأن الاحتمال أعلى
+  const t = scan(today, 0);
+  if(t.best && t.score >= 65) return { cand: t.best, score: t.score };
+
+  // ② الباقي — حد أعلى (78%) عشان مانغلطش
+  const r = scan(rest, 0);
+  if(r.best && r.score >= 78) return { cand: r.best, score: r.score };
+
+  // ③ آخر فرصة — أعلى نتيجة لو معقولة
+  const all = [t, r].filter(x => x.best).sort((a, b) => b.score - a.score)[0];
+  return (all && all.score >= 60) ? { cand: all.best, score: all.score } : null;
 }
 
 // ═══════════════════════════════════════════
