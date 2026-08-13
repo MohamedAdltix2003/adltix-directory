@@ -5947,7 +5947,8 @@ let _rendered = 0;
 const PAGE_SIZE = 24;
 
 try {
-  const raw = sessionStorage.getItem('adltix_session');
+  const raw = localStorage.getItem('adltix_session')
+           || sessionStorage.getItem('adltix_session');
   if (raw) {
     SESSION = JSON.parse(raw);
   }
@@ -7059,9 +7060,33 @@ function toggleScrapingView(){
 }
 
 // ===== Auth =====
-function loadSession(){ try{ const raw=sessionStorage.getItem('adltix_session'); return raw?JSON.parse(raw):null; }catch(e){ return null; } }
-function saveSession(s){ sessionStorage.setItem('adltix_session', JSON.stringify(s)); }
-function clearSession(){ sessionStorage.removeItem('adltix_session'); }
+// 🔐 الجلسة في localStorage — بتفضل لحد ما تعملي خروج.
+//
+// ⚠️ كانت في sessionStorage، وده بيتمسح أول ما التاب يقفل
+//    أو الموبايل يفرّغ الذاكرة — فكانوا بيتطلب منهم دخول
+//    كل ما يروحوا يجيبوا صورة ويرجعوا.
+function loadSession(){
+  try{
+    const raw = localStorage.getItem('adltix_session')
+             || sessionStorage.getItem('adltix_session');   // ترحيل القديم
+    if(!raw) return null;
+    const s = JSON.parse(raw);
+    // ننقله للتخزين الدائم
+    try{ localStorage.setItem('adltix_session', raw); }catch(e){}
+    return s;
+  }catch(e){ return null; }
+}
+
+function saveSession(s){
+  const v = JSON.stringify(s);
+  try{ localStorage.setItem('adltix_session', v); }catch(e){}
+  try{ sessionStorage.setItem('adltix_session', v); }catch(e){}
+}
+
+function clearSession(){
+  try{ localStorage.removeItem('adltix_session'); }catch(e){}
+  try{ sessionStorage.removeItem('adltix_session'); }catch(e){}
+}
 
 async function doLogin(){
   const user=document.getElementById('lg-user').value.trim();
