@@ -12777,10 +12777,11 @@ async function readHandleAI(file){
 
     const names = [];
     if(r.username) names.push(String(r.username).toLowerCase());
-    if(r.display)  names.push(String(r.display).toLowerCase());
+    if(r.display)  names.push(String(r.display));
 
     return {
       names,
+      display: String(r.display || ''),
       isChat: r.is_chat !== false,
       platform: r.platform || '',
     };
@@ -12801,7 +12802,7 @@ const AUTO_PLAT = {
   youtube:   'https://youtube.com/@',
 };
 
-async function autoAddInfluencer(username, platform){
+async function autoAddInfluencer(username, platform, display){
   const u = String(username || '').replace(/^@/, '').trim();
   if(u.length < 3) return null;
 
@@ -12822,10 +12823,19 @@ async function autoAddInfluencer(username, platform){
       // نضيفه لقايمة المرشّحين فورًا
       MP.cands.unshift({
         uid: c.uid, handle: String(c.handle || u).replace('@',''),
+        display: display || '',
         platform: c.platform, followers: c.followers || 0,
         avatar: c.avatarUrl || '', action: 'sent', seq: 1,
         due: true, added_today: true,
       });
+
+      // 💾 نخزّن الاسم المعروض مع الإضافة
+      if(display){
+        callApi('verifyProof', {
+          token: SESSION.token, action: 'setDisplayName',
+          uid: c.uid, name: display,
+        }).catch(()=>{});
+      }
 
       return { ok: true, uid: c.uid, handle: c.handle };
     }
@@ -12893,19 +12903,67 @@ function simScore_(a, b){
   return Math.round((1 - d / Math.max(x.length, y.length)) * 100);
 }
 
+// 👤 مقارنة الأسماء العربي — الكلمات مش الحروف
+function arabNorm_(v){
+  return String(v || '')
+    .replace(/[\u064B-\u0652\u0640]/g, '')   // تشكيل ومدّات
+    .replace(/[أإآا]/g, 'ا').replace(/[ىي]/g, 'ي')
+    .replace(/[ةه]/g, 'ه').replace(/[ؤئء]/g, 'ء')
+    .replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+// نسبة الكلمات المشتركة — "هنوف عبدالله" vs "هنوف عبد الله"
+function nameScore_(a, b){
+  const A = arabNorm_(a), B = arabNorm_(b);
+  if(!A || !B) return 0;
+  if(A === B) return 100;
+
+  const wa = A.split(' ').filter(w => w.length >= 2);
+  const wb = B.split(' ').filter(w => w.length >= 2);
+  if(!wa.length || !wb.length) return 0;
+
+  // الاسم الكامل جوه التاني
+  if(A.includes(B) || B.includes(A)) return 92;
+
+  // ⚠️ "عبدالله" و "عبد الله" نفس الاسم — نشيل المسافات ونقارن
+  const ja = A.replace(/\s/g, ''), jb = B.replace(/\s/g, '');
+  if(ja === jb) return 100;
+  if(ja.includes(jb) || jb.includes(ja)){
+    return Math.round(Math.min(ja.length, jb.length) /
+                      Math.max(ja.length, jb.length) * 95);
+  }
+
+  let hits = 0;
+  for(const w of wa){
+    if(wb.some(x => x === w || (w.length >= 4 && (x.includes(w) || w.includes(x))))){
+      hits++;
+    }
+  }
+  return Math.round(hits / Math.max(wa.length, wb.length) * 100);
+}
+
 function matchCandidate_(handles){
   if(!handles || !handles.length || !MP.cands.length) return null;
 
   let best = null, bestScore = 0;
   for(const c of MP.cands){
     const h = String(c.handle || '');
-    if(core_(h).length < 3) continue;
+    const d = String(c.display || '');
+
     for(const x of handles){
-      const sc = simScore_(x, h);
-      if(sc > bestScore){ bestScore = sc; best = c; }
+      // 🔤 مطابقة الهاندل — إنجليزي
+      if(core_(h).length >= 3){
+        const s1 = simScore_(x, h);
+        if(s1 > bestScore){ bestScore = s1; best = c; }
+      }
+      // 👤 مطابقة الاسم المعروض — عربي أو إنجليزي
+      if(d.length >= 3){
+        const s2 = nameScore_(x, d);
+        if(s2 > bestScore){ bestScore = s2; best = c; }
+      }
     }
   }
-  // 78% = الحد الآمن (اختُبر: 86% أقل نجاح · 44% أعلى فشل)
+  // 78% = الحد الآمن (اختُبر على الحالتين)
   return bestScore >= 78 ? { cand: best, score: bestScore } : null;
 }
 
@@ -12980,7 +13038,7 @@ async function runOCR_(){
           it.msg = '⏳ بنضيف @' + uname + '…';
           renderMobileProofs();
 
-          const add = await autoAddInfluencer(uname, vis.platform);
+          const add = await autoAddInfluencer(uname, vis.platform, vis.display);
 
           if(add && add.ok){
             m = matchCandidate_([add.handle, uname]);
@@ -13004,6 +13062,15 @@ async function runOCR_(){
           it.seq    = m.cand.seq;
           it.label  = m.cand.action === 'followup'
                       ? ('متابعة ' + m.cand.seq) : 'إرسال';
+
+          // 💾 نخزّن الاسم المعروض — عشان الصور الجاية تتربط أسرع
+          if(vis && vis.display && !m.cand.display){
+            m.cand.display = vis.display;
+            callApi('verifyProof', {
+              token: SESSION.token, action: 'setDisplayName',
+              uid: m.cand.uid, name: vis.display,
+            }).catch(()=>{});
+          }
         }
       }
 
