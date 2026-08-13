@@ -5546,6 +5546,13 @@
     border-radius:12px; margin-bottom:11px; cursor:zoom-in;
     background:color-mix(in srgb,var(--line) 25%,transparent);
   }
+
+  /* ➕ المؤثر اتضاف تلقائي */
+  .mp-new{
+    font-size:10px; font-weight:800; padding:2px 8px; border-radius:6px;
+    background:#DBEAFE; color:#1D4ED8;
+  }
+  body.dark .mp-new{ background:#1a2f4d; color:#93c5fd }
 </style>
 </head>
 <body>
@@ -12756,6 +12763,62 @@ async function readHandleAI(file){
 }
 
 // ═══════════════════════════════════════════════════════════
+// ➕ إضافة المؤثر تلقائي لو الموديل قرا اسمه وهو مش موجود
+//
+// ⚠️ الهدف: مفيش صورة تفضل بغير مؤثر.
+//    الفحص بيمشي عادي — الشركاء بيترفضوا، واللي عند
+//    موظفة تانية بيتقال عليه.
+// ═══════════════════════════════════════════════════════════
+const AUTO_PLAT = {
+  instagram: 'https://instagram.com/',
+  tiktok:    'https://tiktok.com/@',
+  snapchat:  'https://snapchat.com/add/',
+  youtube:   'https://youtube.com/@',
+};
+
+async function autoAddInfluencer(username, platform){
+  const u = String(username || '').replace(/^@/, '').trim();
+  if(u.length < 3) return null;
+
+  const base = AUTO_PLAT[String(platform || '').toLowerCase()]
+             || AUTO_PLAT.instagram;
+
+  try{
+    const r = await callApi('addManualLead', {
+      token: SESSION.token, link: base + u,
+      niche: '', country: '', platform: '',
+    });
+
+    if(r && r.card){
+      const c = mapRawToCard(r.card);
+      CREATORS.unshift(c);
+      invalidateCache();
+
+      // نضيفه لقايمة المرشّحين فورًا
+      MP.cands.unshift({
+        uid: c.uid, handle: String(c.handle || u).replace('@',''),
+        platform: c.platform, followers: c.followers || 0,
+        avatar: c.avatarUrl || '', action: 'sent', seq: 1,
+        due: true, added_today: true,
+      });
+
+      return { ok: true, uid: c.uid, handle: c.handle };
+    }
+    return null;
+
+  }catch(e){
+    const m = String(e.message || '');
+    if(m.includes('شريك') || m.includes('متعاقد') || m.includes('اتحدّد بـ')){
+      return { partner: true, msg: '🚫 شريك عندنا — مااتضافش' };
+    }
+    if(m.includes('موجود') || m.includes('مسجّل')){
+      return { taken: true, msg: '🔁 المؤثر ده مع موظفة تانية' };
+    }
+    return null;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
 // 🎯 مطابقة ضبابية — بتمسك أخطاء الـ OCR
 //
 // ⚠️ المطابقة القديمة كانت بتطلب تطابق شبه كامل، فـ 4 من كل
@@ -12884,7 +12947,31 @@ async function runOCR_(){
         ])];
 
         // 🎯 ③ المطابقة الضبابية
-        const m = names.length ? matchCandidate_(names) : null;
+        let m = names.length ? matchCandidate_(names) : null;
+
+        // ➕ ④ مالقاش؟ نضيفه تلقائي — مفيش صورة تفضل بغير مؤثر
+        if(!m && vis && vis.isChat && vis.names.length){
+          const uname = vis.names[0];
+          it.msg = '⏳ بنضيف @' + uname + '…';
+          renderMobileProofs();
+
+          const add = await autoAddInfluencer(uname, vis.platform);
+
+          if(add && add.ok){
+            m = matchCandidate_([add.handle, uname]);
+            if(!m){
+              it.uid    = add.uid;
+              it.handle = String(add.handle || uname).replace('@','');
+              it.action = 'sent';
+              it.seq    = 1;
+              it.label  = 'إرسال';
+            }
+            it.autoAdded = true;
+          } else if(add && (add.partner || add.taken)){
+            it.blocked = add.msg;
+          }
+        }
+
         if(m){
           it.uid    = m.cand.uid;
           it.handle = m.cand.handle;
@@ -12899,14 +12986,20 @@ async function runOCR_(){
       if(it.conf === 'low'){
         it.msg = (ai.reasons || [])[0] || 'مش واضح إنها محادثة';
       } else if(it.uid){
-        it.msg = '';
+        // ➕ اتضاف تلقائي؟ نطمّنها
+        it.msg = it.autoAdded ? '➕ اتضاف تلقائي' : '';
+      } else if(it.blocked){
+        it.msg = it.blocked;
       } else {
-        const seen = [...new Set([
-          ...(ai.handles || []),
-          ...extractHandles_(ai.ocr || ''),
-        ])].filter(h => h.length >= 4);
+        // 👁️ اللي الموديل قراه أدق من الـ OCR
+        const seen = it.visionRead
+          ? [it.visionRead]
+          : [...new Set([
+              ...(ai.handles || []),
+              ...extractHandles_(ai.ocr || ''),
+            ])].filter(h => h.length >= 4);
         it.msg = seen.length
-          ? '⚠️ @' + seen[0] + ' مش في قايمتك — ضيفيه من تابة ➕'
+          ? '⚠️ @' + seen[0] + ' مش في قايمتك — اختاريه'
           : 'مالقيتش اسم المؤثر — اختاريه';
       }
       it.state = 'ready';
@@ -13401,6 +13494,7 @@ function renderMobileProofs(){
           + '<div class="mp-r">'
           +   '<span class="mp-tag">' + esc(it.label) + '</span>'
           +   '<span class="mp-cf ' + cf.c + '">' + cf.t + '</span>'
+          +   (it.autoAdded ? '<span class="mp-new">➕ جديد</span>' : '')
           + '</div>'
           + (risky
             ? '<span class="mp-warn">⚠️ الصورة دي هتظهر للإدارة كإثبات مشكوك فيه</span>'
