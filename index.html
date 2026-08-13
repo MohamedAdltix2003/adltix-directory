@@ -13870,10 +13870,9 @@ function renderMobileProofs(){
       if(need){
         body += '<div class="mp-need">'
           + '<b>🤖 ' + ready + ' من ' + n + ' اتربطوا تلقائي</b>'
-          + '<span>الباقي (' + need + ') الأسماء فيهم مش واضحة — '
-          +   'اختاري المؤثر بنفسك عشان يترفعوا.</span>'
-          + '<span class="tip">💡 اضغطي على الصورة تتكبّر وتشوفي الاسم</span>'
-          + '<button class="mp-dbg" onclick="mpDiag()">🔍 ليه مش بيتربطوا؟</button>'
+          + '<span>الباقي (' + need + ') الذكاء الاصطناعي بيحلّلهم — '
+          +   'ارفعيهم عادي وهيتربطوا خلال شوية.</span>'
+          + '<span class="tip">✅ كله بيتحسب في التارجت بتاعك</span>'
           + '</div>';
       }
     }
@@ -14407,7 +14406,7 @@ async function mpUploadPending(list){
         it.msg = 'الصورة دي مرفوعة قبل كده';
       } else {
         it.state = 'ok';
-        it.msg   = '📥 اترفعت — الفريق هيربطها';
+        it.msg   = '🤖 الـ AI بيحللها — هتظهر خلال دقايق';
         done++;
       }
     }catch(e){
@@ -14469,7 +14468,9 @@ async function mpUpload(){
   }
 
   if(ok){
-    toastOk('✅ اترفع ' + ok + ' إثبات');
+    toastOk(pendN
+      ? '✅ اترفع ' + ok + ' إثبات · 🤖 ' + pendN + ' تحت التحليل'
+      : '✅ اترفع ' + ok + ' إثبات');
     invalidateCache();
     try{ buildAllPills(); }catch(e){}
     try{ applyFilters(); }catch(e){}
