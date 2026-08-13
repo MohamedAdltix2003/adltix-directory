@@ -5553,6 +5553,19 @@
     background:#DBEAFE; color:#1D4ED8;
   }
   body.dark .mp-new{ background:#1a2f4d; color:#93c5fd }
+
+  /* 📝 رسالة الصور المحتاجة اختيار */
+  .mp-need{
+    padding:12px 14px; border-radius:12px; margin:10px 0;
+    background:#FEF3C7; border:1px solid #FCD34D;
+  }
+  body.dark .mp-need{ background:#3d2c0d; border-color:#92400E }
+  .mp-need b{ display:block; font-size:13px; font-weight:800;
+              color:#92400E; margin-bottom:5px }
+  .mp-need span{ display:block; font-size:11.5px; color:#78350F;
+                 line-height:1.75 }
+  .mp-need .tip{ margin-top:6px; font-size:11px; opacity:.85 }
+  body.dark .mp-need b, body.dark .mp-need span{ color:#fcd34d }
 </style>
 </head>
 <body>
@@ -13677,6 +13690,16 @@ function renderMobileProofs(){
         + (need ? '<span class="need">❓ ' + need + ' محتاج اختيار</span>' : '')
         + (okN  ? '<span class="up">📤 ' + okN + ' اترفع</span>' : '')
         + '</div>';
+
+      // 📝 رسالة واضحة لو فيه صور محتاجة اختيار
+      if(need){
+        body += '<div class="mp-need">'
+          + '<b>🤖 ' + ready + ' من ' + n + ' اتربطوا تلقائي</b>'
+          + '<span>الباقي (' + need + ') الأسماء فيهم مش واضحة — '
+          +   'اختاري المؤثر بنفسك عشان يترفعوا.</span>'
+          + '<span class="tip">💡 اضغطي على الصورة تتكبّر وتشوفي الاسم</span>'
+          + '</div>';
+      }
     }
 
     // ═══ الصور ═══
@@ -13754,7 +13777,11 @@ function renderMobileProofs(){
       body += '<div class="mp-foot">'
         + '<button class="mp-more" onclick="mpPick()">📸 زودي</button>'
         + '<button class="mp-go"' + (ready ? '' : ' disabled')
-        +   ' onclick="mpUpload()">ارفعي الكل — ' + ready + '</button>'
+        +   ' onclick="mpUpload()">'
+        +   (need
+              ? 'ارفعي الجاهزين (' + ready + ')'
+              : 'ارفعي الكل — ' + ready)
+        +   '</button>'
         + '</div>';
     }
   }
@@ -13938,23 +13965,40 @@ function mpPickCand(id){
   draw((today.length ? today : MP.cands).slice(0, 40));
   // 🔍 البحث بأي حاجة — لينك كامل، اسم حساب، أو جزء منه
   q.oninput = () => {
-    let t = q.value.trim().toLowerCase();
+    const raw = q.value.trim();
+    if(!raw){ draw(MP.cands); return; }
+
+    // ⚠️ ننضّف اللينك الأول — www. كانت بتتشال بعد القراءة
+    //    فالبحث بلينك كامل مكانش بيشتغل.
+    let t = raw.toLowerCase()
+      .replace(/^https?:\/\//, '')
+      .replace(/^www\./, '')
+      .replace(/\?.*$/, '')
+      .replace(/#.*$/, '')
+      .replace(/\/+$/, '');
+
+    // نطلّع اسم الحساب من أي شكل لينك
+    const m = t.match(
+      /(?:instagram|tiktok|snapchat|youtube|facebook)\.com\/(?:add\/|@|p\/)?([\w.\-]+)/i);
+    if(m) t = m[1];
+
+    t = t.replace(/^@/, '').trim();
     if(!t){ draw(MP.cands); return; }
 
-    // لو لزقت لينك، نطلّع اسم الحساب منه
-    const m = t.match(
-      /(?:instagram|tiktok|snapchat|youtube)\.com\/(?:add\/|@)?([\w.\-]+)/i);
-    if(m) t = m[1];
-    t = t.replace(/^@/, '').replace(/\/+$/, '');
-
-    // نشيل بقايا اللينك لو الموظفة لزقت جزء منه
-    t = t.replace(/^https?:\/\//, '').replace(/^www\./, '')
-         .replace(/\?.*$/, '');
-
+    // 🔍 بحث واسع — الهاندل، الاسم المعروض، أو صوتيًا
+    const isAr = /[\u0600-\u06FF]/.test(t);
     draw(MP.cands.filter(c => {
       const h = String(c.handle || '').toLowerCase();
       const u = String(c.uid || '').toLowerCase();
-      return h.includes(t) || u.includes(t) || t.includes(h);
+      const d = String(c.display || '').toLowerCase();
+
+      if(h.includes(t) || u.includes(t) || d.includes(t)) return true;
+      if(t.length >= 4 && (t.includes(h) || t.includes(d))) return true;
+
+      // 🔊 عربي مع هاندل إنجليزي
+      if(isAr && h.length >= 3 && phonScore_(t, h) >= 75) return true;
+
+      return false;
     }));
   };
   setTimeout(()=>q.focus(), 150);
