@@ -15079,12 +15079,12 @@ function dbPending(r){
     +   (noName ? dbCard('🤖', 'مالهاش أسماء', noName, 'محتاجة قراءة') : '')
     + '</div>';
 
-  // 🔄 إعادة قراءة الأسماء
-  if(noName){
+  // 🤖 القراءة والربط التلقائي
+  if(n(d.total)){
     h += '<div class="pn-rr">'
-      + '<span>' + noName + ' صورة الموديل مقراش أسماءها — '
-      +   'جرّب تقراهم تاني عشان تطلع مقترحات.</span>'
-      + '<button class="pn-rrb" onclick="dbPnReread()">🔄 اقرا الأسماء</button>'
+      + '<span>الذكاء الاصطناعي هيقرا الأسماء ويربط اللي واضح تلقائي — '
+      +   'واللي مش واضح هيفضل بمقترحات.</span>'
+      + '<button class="pn-rrb" onclick="dbPnReread()">🤖 اقرا واربط</button>'
       + '</div>';
   }
 
@@ -15159,25 +15159,34 @@ function dbPending(r){
 function dbPnStaff(v){ _pnStaff = v; renderDashboard(); }
 
 // 🔄 إعادة قراءة أسماء الصور المعلّقة
+// 🤖 يقرا الأسماء ويربط اللي واضح — دفعة واحدة
 async function dbPnReread(){
   const btn = document.querySelector('.pn-rrb');
-  if(btn){ btn.disabled = true; btn.textContent = '⏳ بنقرا…'; }
+  if(btn){ btn.disabled = true; }
 
-  let total = 0;
+  let read = 0, linked = 0, rounds = 0;
   try{
-    for(let i = 1; i <= 15; i++){
+    // ⚠️ بياخد وقت — 15 صورة في الدفعة عشان الموديل ميقفش
+    for(let i = 1; i <= 40; i++){
       const r = await callApi('adminAction', {
-        token: SESSION.token, action: 'rereadPending', limit: 20,
+        token: SESSION.token, action: 'rereadPending', limit: 15,
       });
-      total += Number(r.updated || 0);
-      if(btn) btn.textContent = '⏳ ' + total + ' اتقرا…';
+      read   += Number(r.read || 0);
+      linked += Number(r.linked || 0);
+      rounds++;
+
+      if(btn){
+        btn.textContent = '⏳ اتربط ' + linked + ' · اتقرا ' + read;
+      }
       if(r.done) break;
-      await new Promise(s => setTimeout(s, 600));
+      await new Promise(s => setTimeout(s, 500));
     }
-    toastOk('✅ ' + total + ' صورة اتقرت — بنحدّث');
+
+    toastOk('✅ اتربط ' + linked + ' تلقائي · ' + read + ' اتقرا اسمهم');
     setTimeout(() => loadDashboard(true), 900);
+
   }catch(e){
-    if(btn){ btn.disabled = false; btn.textContent = '🔄 اقرا الأسماء'; }
+    if(btn){ btn.disabled = false; btn.textContent = '🤖 اقرا واربط'; }
     toastErr(e.message);
   }
 }
