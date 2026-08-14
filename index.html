@@ -5655,6 +5655,11 @@
     display:inline-flex; align-items:center; gap:5px;
   }
   .pn-b:hover{ background:#DCFCE7; border-color:#86EFAC; color:#15803D }
+  .pn-b b{ font-weight:800; direction:ltr; unicode-bidi:isolate }
+  .pn-b u{
+    text-decoration:none; font-size:10px; opacity:.75; font-weight:600;
+    max-width:90px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
   .pn-b i{ font-style:normal; font-size:9.5px; opacity:.6 }
   .pn-no{ font-size:11px; color:var(--muted); font-style:italic }
   .pn-act{ display:flex; gap:6px; margin-top:auto }
@@ -5703,6 +5708,62 @@
   }
   .dz-x:hover{ background:rgba(255,255,255,.32) }
   .pn-im, .rj-im{ cursor:zoom-in }
+
+  /* 🔍 نافذة اختيار المؤثر — في الداشبورد */
+  .pn-sbox{
+    max-width:460px !important; width:100%;
+    padding:0 !important; text-align:right !important;
+    max-height:84vh; display:flex; flex-direction:column; overflow:hidden;
+  }
+  .pn-shd{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 16px; border-bottom:1px solid var(--line);
+  }
+  .pn-shd b{ font-size:14.5px; color:var(--ink) }
+  .pn-sx{
+    width:30px; height:30px; border-radius:8px; cursor:pointer;
+    border:1px solid var(--line); background:transparent; color:var(--muted);
+    font-size:14px;
+  }
+  .pn-sx:hover{ background:#FEE2E2; color:#DC2626; border-color:#FCA5A5 }
+
+  .pn-sq{
+    margin:12px 16px 8px; padding:11px 14px; font-family:inherit;
+    font-size:13.5px; border:1px solid var(--line); border-radius:11px;
+    background:var(--surface); color:var(--ink); outline:none;
+    width:calc(100% - 32px); box-sizing:border-box;
+  }
+  .pn-sq:focus{ border-color:var(--brand) }
+
+  .pn-sr{
+    flex:1; overflow-y:auto; padding:4px 12px 14px;
+    display:flex; flex-direction:column; gap:5px;
+  }
+  .pn-si{
+    display:block; width:100%; text-align:right; cursor:pointer;
+    padding:10px 13px; border-radius:11px; border:1px solid var(--line);
+    background:var(--surface); font-family:inherit; transition:all .12s;
+  }
+  .pn-si:hover{ background:#DCFCE7; border-color:#86EFAC }
+  body.dark .pn-si:hover{ background:#14432a; border-color:#166534 }
+
+  .pn-sn{
+    font-size:13px; font-weight:800; color:var(--ink);
+    direction:ltr; unicode-bidi:isolate; text-align:start;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .pn-sm{
+    display:flex; align-items:center; gap:8px; margin-top:3px;
+    font-size:11px; color:var(--muted);
+  }
+  .pn-sm span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+  .pn-sm i{
+    font-style:normal; margin-inline-start:auto; flex-shrink:0;
+    direction:ltr; unicode-bidi:isolate; opacity:.75;
+  }
+  .pn-sload, .pn-sempty{
+    padding:26px 14px; text-align:center; font-size:12.5px; color:var(--muted);
+  }
 </style>
 </head>
 <body>
@@ -14969,15 +15030,20 @@ function dbPending(r){
 
       +   (sg.length
           ? '<div class="pn-sg">'
-            + sg.map(x =>
-                '<button class="pn-b" onclick="dbPnLink(' + it.id + ',\''
-                + esc(x.uid) + '\')">@' + esc(x.handle)
-                + '<i>' + x.mins + 'د</i></button>').join('')
+            + sg.map(x => {
+                const d = String(x.display || '');
+                return '<button class="pn-b" onclick="dbPnLink(' + it.id + ',\''
+                  + esc(x.uid) + '\')" title="' + esc(d) + '">'
+                  + '<b>@' + esc(x.handle) + '</b>'
+                  + (d && d !== '—' ? '<u>' + esc(d) + '</u>' : '')
+                  + '<i>' + x.mins + 'د</i></button>';
+              }).join('')
             + '</div>'
           : '<div class="pn-no">مفيش مقترحين — دوّري بنفسك</div>')
 
       +   '<div class="pn-act">'
-      +     '<button class="pn-s" onclick="dbPnSearch(' + it.id + ')">🔍 دوّر</button>'
+      +     '<button class="pn-s" onclick="dbPnSearch(' + it.id + ',\''
+      +       esc(it.staff) + '\')">🔍 دوّر</button>'
       +     '<button class="pn-a" onclick="dbPnAdd(' + it.id + ',\''
       +       esc(it.staff) + '\',\'' + esc(it.ai_name || '') + '\',\''
       +       esc(it.platform || '') + '\')">➕ ضيفه</button>'
@@ -15110,48 +15176,90 @@ async function dbPnDrop(id){
 }
 
 // 🔍 بحث يدوي
-function dbPnSearch(id){
+// 🔍 بحث يدوي عن المؤثر
+//
+// ⚠️ الأدمن مش عنده CREATORS محمّلة زي الموظفة — بنجيب
+//    المرشّحين من السيرفر حسب الموظفة صاحبة الصورة.
+let _pnCands = {};
+
+async function dbPnSearch(id, staff){
   const ov = document.createElement('div');
   ov.className = 'cf-overlay';
-  ov.innerHTML = '<div class="cf-box" style="max-width:480px">'
-    + '<b style="display:block;margin-bottom:11px">🔍 اختار المؤثر</b>'
-    + '<input class="mp-search" id="pnQ" placeholder="اسم الحساب أو اللينك…">'
-    + '<div class="mp-res" id="pnR" style="max-height:300px"></div>'
-    + '<div class="cf-btns"><button class="cf-no">إلغاء</button></div></div>';
+  ov.innerHTML = '<div class="cf-box pn-sbox">'
+    + '<div class="pn-shd"><b>🔍 اختار المؤثر</b>'
+    +   '<button class="pn-sx">✕</button></div>'
+    + '<input class="pn-sq" id="pnQ" placeholder="اسم الحساب أو اللينك…" autocomplete="off">'
+    + '<div class="pn-sr" id="pnR"><div class="pn-sload">⏳ بنحمّل…</div></div>'
+    + '</div>';
   document.body.appendChild(ov);
   requestAnimationFrame(()=>ov.classList.add('show'));
 
   const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
-  ov.querySelector('.cf-no').onclick = close;
+  ov.querySelector('.pn-sx').onclick = close;
   ov.addEventListener('click', e => { if(e.target === ov) close(); });
 
-  const q = ov.querySelector('#pnQ');
+  const q   = ov.querySelector('#pnQ');
   const res = ov.querySelector('#pnR');
 
-  const draw = (list) => {
-    res.innerHTML = list.length
-      ? list.slice(0, 30).map(c =>
-          '<button class="mp-cd" data-uid="' + esc(c.uid) + '">'
-          + '<b>@' + esc(c.handle) + '</b>'
-          + '<span>' + esc(c.assignedTo || '') + '</span></button>').join('')
-      : '<div class="mp-empty">مفيش نتايج</div>';
-    res.querySelectorAll('.mp-cd').forEach(b => {
+  // 📥 نجيب مؤثري الموظفة
+  let list = _pnCands[staff] || null;
+  if(!list){
+    try{
+      const r = await callApi('getLeads', {
+        token: SESSION.token, staff, limit: 3000,
+      });
+      list = (r.items || []).filter(c =>
+        !c.outcome_type &&
+        ['new',''].includes(String(c.message_status || 'new').toLowerCase()));
+      _pnCands[staff] = list;
+    }catch(e){ list = []; }
+  }
+
+  const draw = (arr) => {
+    if(!arr.length){
+      res.innerHTML = '<div class="pn-sempty">مفيش نتايج</div>';
+      return;
+    }
+    res.innerHTML = arr.slice(0, 40).map(c => {
+      const h = String(c.handle || '').replace('@','');
+      const d = String(c.display_name || '');
+      const f = Number(c.followers || 0);
+      return '<button class="pn-si" data-uid="' + esc(c.uid) + '">'
+        + '<div class="pn-sn">@' + esc(h) + '</div>'
+        + '<div class="pn-sm">'
+        +   (d && d !== '—' ? '<span>' + esc(d) + '</span>' : '')
+        +   (f ? '<i>' + f.toLocaleString('en') + '</i>' : '')
+        + '</div></button>';
+    }).join('');
+
+    res.querySelectorAll('.pn-si').forEach(b => {
       b.onclick = () => { close(); dbPnLink(id, b.dataset.uid); };
     });
   };
+
+  draw(list.slice(0, 40));
 
   q.oninput = () => {
     let t = q.value.trim().toLowerCase()
       .replace(/^https?:\/\//, '').replace(/^www\./, '')
       .replace(/\?.*$/, '').replace(/\/+$/, '');
-    const m = t.match(/(?:instagram|tiktok|snapchat)\.com\/(?:add\/|@)?([\w.\-]+)/i);
+    const m = t.match(
+      /(?:instagram|tiktok|snapchat|youtube)\.com\/(?:add\/|@)?([\w.\-]+)/i);
     if(m) t = m[1];
-    t = t.replace(/^@/, '');
-    if(t.length < 2){ res.innerHTML = ''; return; }
-    draw(CREATORS.filter(c =>
-      String(c.handle || '').toLowerCase().includes(t)).slice(0, 30));
+    t = t.replace(/^@/, '').trim();
+
+    if(!t){ draw(list.slice(0, 40)); return; }
+
+    const isAr = /[\u0600-\u06FF]/.test(t);
+    draw(list.filter(c => {
+      const h = String(c.handle || '').toLowerCase().replace('@','');
+      const d = String(c.display_name || '').toLowerCase();
+      if(h.includes(t) || d.includes(t)) return true;
+      if(isAr && h.length >= 3 && phonScore_(t, h) >= 75) return true;
+      return false;
+    }));
   };
-  setTimeout(()=>q.focus(), 150);
+  setTimeout(()=>q.focus(), 200);
 }
 
 // ═══════════════════════════════════════════════════════════
