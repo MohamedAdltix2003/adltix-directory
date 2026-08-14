@@ -13145,7 +13145,11 @@ function simScore_(a, b){
   const x = core_(a), y = core_(b);
   if(!x || !y) return 0;
   if(x === y) return 100;
-  if(x.length < 3 || y.length < 3) return 0;
+  // ⚠️ الأسماء القصيرة (زي NAH) بتطابق أي حاجة فيها الحروف دي.
+  //    "أمينة" اتربطت بـ @NAH.
+  //    التطابق الكامل مسموح، والجزئي محتاج 5 حروف.
+  if(x.length < 4 || y.length < 4) return 0;
+  if((x.length < 5 || y.length < 5) && x !== y) return 0;
   if(x.includes(y) || y.includes(x)){
     return Math.round(Math.min(x.length, y.length) /
                       Math.max(x.length, y.length) * 95);
@@ -13196,7 +13200,8 @@ function phon_(v){
 function phonScore_(arName, handle){
   const words = String(arName || '').split(/\s+/).filter(w => w.length >= 2);
   const b = phon_(handle);
-  if(b.length < 2) return 0;
+  // ⚠️ الهاندل القصير مش كفاية للمطابقة الصوتية
+  if(b.length < 4) return 0;
 
   // ⚠️ الكلمة الأولى هي الاسم الأول — الأهم في الهاندل.
   //    "نهلة محمد" كانت بتروح لـ mohamed_ali لأن "محمد" طابقت.
@@ -13478,10 +13483,12 @@ async function runOCR_(){
         if(m){
           it.uid    = m.cand.uid;
           it.handle = m.cand.handle;
-          it.action = m.cand.action;
-          it.seq    = m.cand.seq;
-          it.label  = m.cand.action === 'followup'
-                      ? ('متابعة ' + m.cand.seq) : 'إرسال';
+          // ⚠️ الفريق بيبعت إرسال بس — مفيش متابعات.
+          //    الصورة كانت بتتسجّل "متابعة" لو المؤثر اتبعتله قبل
+          //    كده، وده كان بيلخبط الأرقام.
+          it.action = 'sent';
+          it.seq    = 1;
+          it.label  = 'إرسال';
 
           // 💾 نخزّن الاسم المعروض — عشان الصور الجاية تتربط أسرع
           if(vis && vis.display && !m.cand.display){
@@ -13598,9 +13605,10 @@ async function runOCR_(){
       if(m){
         it.uid    = m.cand.uid;
         it.handle = m.cand.handle;
-        it.action = m.cand.action;
-        it.seq    = m.cand.seq;
-        it.label  = m.cand.action === 'followup' ? ('متابعة ' + m.cand.seq) : 'إرسال';
+        // ⚠️ الفريق بيبعت إرسال بس — مفيش متابعات
+        it.action = 'sent';
+        it.seq    = 1;
+        it.label  = 'إرسال';
         it.score  = m.score;
 
         // 🎯 درجة الثقة
@@ -14320,8 +14328,8 @@ function mpPickCand(id){
         const c = MP.cands.find(x => x.uid === b.dataset.uid);
         if(c){
           it.uid = c.uid; it.handle = c.handle;
-          it.action = c.action; it.seq = c.seq;
-          it.label = c.action === 'followup' ? ('متابعة ' + c.seq) : 'إرسال';
+          it.action = 'sent'; it.seq = 1;
+          it.label = 'إرسال';
           it.manual = true;      // اختارته بإيدها — بيتسجّل للإدارة
 
           // 🔄 نعيد الفحص بالموديل مع المؤثر الجديد.
