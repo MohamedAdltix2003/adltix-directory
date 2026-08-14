@@ -5764,6 +5764,23 @@
   .pn-sload, .pn-sempty{
     padding:26px 14px; text-align:center; font-size:12.5px; color:var(--muted);
   }
+
+  /* 🔄 إعادة قراءة الأسماء */
+  .pn-rr{
+    display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    padding:12px 14px; border-radius:12px; margin:11px 0;
+    background:#DBEAFE; border:1px solid #93C5FD;
+  }
+  body.dark .pn-rr{ background:#1a2f4d; border-color:#1e40af }
+  .pn-rr span{ flex:1; min-width:180px; font-size:12px;
+               color:#1E40AF; line-height:1.7 }
+  body.dark .pn-rr span{ color:#93c5fd }
+  .pn-rrb{
+    font-family:inherit; font-size:12px; font-weight:800; cursor:pointer;
+    padding:8px 16px; border-radius:9px; border:none;
+    background:#1D4ED8; color:#fff;
+  }
+  .pn-rrb:disabled{ opacity:.6; cursor:default }
 </style>
 </head>
 <body>
@@ -6218,7 +6235,7 @@ const FN_MAP = {
   approve:        "admin-action",
   unarchive:      "admin-action"
 };
-const ADMIN_ACTIONS = { "delete":"delete", moveToNew:"archive", changeNiche:"changeNiche", approve:"approve", unarchive:"unarchive", resolvePending:"resolvePending", dropPending:"dropPending", addAndResolve:"addAndResolve" };
+const ADMIN_ACTIONS = { "delete":"delete", moveToNew:"archive", changeNiche:"changeNiche", approve:"approve", unarchive:"unarchive", resolvePending:"resolvePending", dropPending:"dropPending", addAndResolve:"addAndResolve", rereadPending:"rereadPending" };
 
 // Supabase بيحدّ أي طلب بـ 1000 صف كحد أقصى (إعداد max-rows).
 // كنا بنطلب 2000 فكان بيرجّع 1000 ويرمي الباقي في صمت —
@@ -14993,9 +15010,21 @@ function dbPending(r){
   let h = '';
 
   // ═══ الملخّص ═══
+  const noName = items.filter(x => !x.ai_name).length;
+
   h += '<div class="db-kpis">'
     +   dbCard('📥', 'مستنية ربط', d.total, '', n(d.total) > 50 ? 'bad' : '')
+    +   (noName ? dbCard('🤖', 'مالهاش أسماء', noName, 'محتاجة قراءة') : '')
     + '</div>';
+
+  // 🔄 إعادة قراءة الأسماء
+  if(noName){
+    h += '<div class="pn-rr">'
+      + '<span>' + noName + ' صورة الموديل مقراش أسماءها — '
+      +   'جرّب تقراهم تاني عشان تطلع مقترحات.</span>'
+      + '<button class="pn-rrb" onclick="dbPnReread()">🔄 اقرا الأسماء</button>'
+      + '</div>';
+  }
 
   // فلتر الموظفات
   const staff = d.by_staff || [];
@@ -15066,6 +15095,30 @@ function dbPending(r){
 }
 
 function dbPnStaff(v){ _pnStaff = v; renderDashboard(); }
+
+// 🔄 إعادة قراءة أسماء الصور المعلّقة
+async function dbPnReread(){
+  const btn = document.querySelector('.pn-rrb');
+  if(btn){ btn.disabled = true; btn.textContent = '⏳ بنقرا…'; }
+
+  let total = 0;
+  try{
+    for(let i = 1; i <= 15; i++){
+      const r = await callApi('adminAction', {
+        token: SESSION.token, action: 'rereadPending', limit: 20,
+      });
+      total += Number(r.updated || 0);
+      if(btn) btn.textContent = '⏳ ' + total + ' اتقرا…';
+      if(r.done) break;
+      await new Promise(s => setTimeout(s, 600));
+    }
+    toastOk('✅ ' + total + ' صورة اتقرت — بنحدّث');
+    setTimeout(() => loadDashboard(true), 900);
+  }catch(e){
+    if(btn){ btn.disabled = false; btn.textContent = '🔄 اقرا الأسماء'; }
+    toastErr(e.message);
+  }
+}
 
 // ✅ ربط الصورة بمؤثر
 async function dbPnLink(id, uid){
