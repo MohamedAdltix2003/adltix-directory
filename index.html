@@ -5682,6 +5682,27 @@
     background:#FEF3C7; color:#92400E; line-height:1.6;
   }
   body.dark .pn-why{ background:#3d2c0d; color:#fcd34d }
+
+  /* 🔎 تكبير الصور في الداشبورد */
+  .dz-ov{
+    position:fixed; inset:0; z-index:10040;
+    background:rgba(12,10,9,.93);
+    display:flex; align-items:center; justify-content:center;
+    padding:20px; opacity:0; transition:opacity .18s;
+  }
+  .dz-ov.show{ opacity:1 }
+  .dz-ov img{
+    max-width:100%; max-height:92vh; border-radius:12px;
+    box-shadow:0 12px 44px rgba(0,0,0,.55);
+  }
+  .dz-x{
+    position:absolute; top:16px; inset-inline-end:16px;
+    width:44px; height:44px; border-radius:50%; cursor:pointer;
+    border:none; background:rgba(255,255,255,.18); color:#fff;
+    font-size:20px; backdrop-filter:blur(8px); z-index:2;
+  }
+  .dz-x:hover{ background:rgba(255,255,255,.32) }
+  .pn-im, .rj-im{ cursor:zoom-in }
 </style>
 </head>
 <body>
@@ -12898,7 +12919,14 @@ function extractHandles_(text){
 //
 //    ده أدق بكتير، والمطابقة الضبابية بتبقى الطبقة التانية.
 // ═══════════════════════════════════════════════════════════
+// 🚦 عداد بسيط — لو Groq رفض بسبب الحد، نوقف المحاولات
+//    ⚠️ من غيره كل صورة بتستهلك محاولة فاشلة وبتبطّئ الرفع.
+let _visionOff = 0;
+
 async function readHandleAI(file){
+  // الموديل واقف مؤقتًا؟
+  if(_visionOff && Date.now() < _visionOff) return null;
+
   try{
     const b64 = await fileToBase64(file);
     if(!b64) return null;
@@ -12906,6 +12934,13 @@ async function readHandleAI(file){
     const r = await callApi('readHandle', {
       token: SESSION.token, image: b64,
     });
+
+    // 🚦 كل المفاتيح وصلت لحدها — نوقف دقيقة ونكمّل
+    //    ⚠️ الصور دي هتروح للمعلّقة وautolink هيربطها
+    if(r && (r.all_busy || String(r.error || '').includes('429'))){
+      _visionOff = Date.now() + 60000;
+      return null;
+    }
     if(!r || r.skip) return null;
 
     const names = [];
@@ -13167,8 +13202,10 @@ function matchCandidate_(handles){
   const today = MP.cands.filter(c => c.added_today);
   const rest  = MP.cands.filter(c => !c.added_today);
 
+  // ⚠️ لو فيه أكتر من مؤثر بنفس الدرجة تقريبًا، الربط تخمين.
+  //    أحسن تروح للمعلّقة وتتراجع من الداشبورد.
   const scan = (list, bonus) => {
-    let best = null, bestScore = 0;
+    let best = null, bestScore = 0, second = 0;
     for(const c of list){
       const h = String(c.handle || '');
       // ⚠️ "—" علامة إن الموديل مالقاش اسم — مش اسم حقيقي
@@ -13180,7 +13217,8 @@ function matchCandidate_(handles){
         // 🔤 ① الهاندل — إنجليزي بإنجليزي
         if(!isAr && core_(h).length >= 3){
           const s1 = simScore_(x, h);
-          if(s1 > bestScore){ bestScore = s1; best = c; }
+          if(s1 > bestScore){ second = bestScore; bestScore = s1; best = c; }
+          else if(s1 > second && c !== best){ second = s1; }
         }
 
         // 👤 ② الاسم المعروض — نفس اللغة
@@ -13188,7 +13226,8 @@ function matchCandidate_(handles){
           const dAr = /[\u0600-\u06FF]/.test(d);
           if(isAr === dAr){
             const s2 = nameScore_(x, d);
-            if(s2 > bestScore){ bestScore = s2; best = c; }
+            if(s2 > bestScore){ second = bestScore; bestScore = s2; best = c; }
+            else if(s2 > second && c !== best){ second = s2; }
           }
         }
 
@@ -13199,11 +13238,19 @@ function matchCandidate_(handles){
           // ⚠️ الصوتي حده أعلى (75) — الاسم التاني بيدي 68%
           //    وكان بيربط "نهلة محمد" بـ mohamed_ali.
           const s3 = phonScore_(x, h);
-          if(s3 >= 75 && s3 > bestScore){ bestScore = s3; best = c; }
+          if(s3 >= 75 && s3 > bestScore){ second = bestScore; bestScore = s3; best = c; }
+          else if(s3 >= 75 && s3 > second && c !== best){ second = s3; }
         }
       }
     }
-    return { best, score: bestScore + (bestScore > 0 ? (bonus || 0) : 0) };
+    // 🔒 الفرق بين الأول والتاني لازم يبقى واضح (10 نقاط)
+    //    وإلا الربط تخمين — نسيبها للمراجعة.
+    const clear = bestScore - second >= 10 || bestScore >= 95;
+    return {
+      best: clear ? best : null,
+      score: clear ? bestScore + (bonus || 0) : 0,
+      ambiguous: !clear && bestScore > 0,
+    };
   };
 
   // ① اللي ضافتهم النهاردة — حد أقل (65%) لأن الاحتمال أعلى
@@ -13231,7 +13278,9 @@ async function mpPick(){
 }
 
 async function mpFiles(files){
-  const list = Array.from(files || []).slice(0, 40);
+  // ⚠️ كان الحد 40 — الموظفة بترفع 50-80 في المرة.
+  //    150 حد معقول يمنع تعليق المتصفح.
+  const list = Array.from(files || []).slice(0, 100);
   if(!list.length) return;
 
   MP.items = list.map((f, i) => ({
@@ -13724,7 +13773,7 @@ async function mpAddLinks(){
     // 🌐 نجيب أسماءهم في الخلفية — عشان الصور تتربط من أول مرة
     //    ⚠️ مش بنستنى — الموظفة تكمّل شغلها عادي
     (async () => {
-      for(const x of MP.addRes.added.slice(0, 40)){
+      for(const x of MP.addRes.added.slice(0, 150)){
         if(!x.uid) continue;
         try{
           await callApi('enrichAi', { token: SESSION.token, uid: x.uid });
@@ -13870,7 +13919,7 @@ function renderMobileProofs(){
     body = '<div class="mp-empty">'
       + '<div class="mp-ei">📸</div>'
       + '<b>اختاري صور الإثبات</b>'
-      + '<span>تقدري تختاري لحد 40 صورة مرة واحدة. '
+      + '<span>تقدري تختاري لحد 100 صورة مرة واحدة. '
       +   'النظام هيقرا اسم الحساب من كل صورة ويربطها بالمؤثر لوحده.</span>'
       + '<button class="mp-pick" onclick="mpPick()">📸 اختاري من الاستوديو</button>'
       + '</div>';
@@ -14841,6 +14890,23 @@ async function dbShMail(btn){
 }
 
 // ═══════════════════════════════════════════════════════════
+// 🔎 تكبير أي صورة في الداشبورد
+function dbZoom(url){
+  const ov = document.createElement('div');
+  ov.className = 'dz-ov';
+  ov.innerHTML = '<button class="dz-x" aria-label="إغلاق">✕</button>'
+    + '<img src="' + esc(url) + '" alt="">';
+  document.body.appendChild(ov);
+  requestAnimationFrame(() => ov.classList.add('show'));
+
+  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),180); };
+  ov.querySelector('.dz-x').onclick = close;
+  ov.onclick = e => { if(e.target === ov) close(); };
+  // Esc تقفل كمان
+  const esc_ = e => { if(e.key === 'Escape'){ close(); document.removeEventListener('keydown', esc_); } };
+  document.addEventListener('keydown', esc_);
+}
+
 // 📥 تاب الإثباتات المستنية ربط
 //
 // ⚠️ الصور اللي الـ AI مقدرش يربطها. لكل صورة مقترحات من
@@ -14884,9 +14950,10 @@ function dbPending(r){
   list.slice(0, 60).forEach(it => {
     const sg = it.suggest || [];
     h += '<div class="pn-c" id="pn' + it.id + '">'
-      + '<a class="pn-im" href="' + esc(it.url) + '" target="_blank" rel="noopener">'
+      + '<div class="pn-im" onclick="dbZoom(\'' + esc(it.url) + '\')" '
+      +   'title="اضغط للتكبير">'
       +   '<img src="' + esc(it.url) + '" loading="lazy" onerror="this.remove()">'
-      + '</a>'
+      + '</div>'
       + '<div class="pn-d">'
       +   '<div class="pn-hd">'
       +     '<b>' + esc(it.staff) + '</b>'
@@ -15174,8 +15241,9 @@ function dbRejects(r){
       const cls = x.rtype === 'fixed' ? 'fx' : (x.rtype === 'gifts' ? 'gf' : 'ot');
       h += '<div class="rj-c ' + cls + '">'
         + (x.proof
-          ? '<a class="rj-im" href="' + esc(x.proof) + '" target="_blank" rel="noopener">'
-            + '<img src="' + esc(x.proof) + '" loading="lazy" onerror="this.remove()"></a>'
+          ? '<div class="rj-im" onclick="dbZoom(\'' + esc(x.proof) + '\')" '
+            + 'title="اضغط للتكبير">'
+            + '<img src="' + esc(x.proof) + '" loading="lazy" onerror="this.remove()"></div>'
           : '<div class="rj-im no">📷</div>')
         + '<div class="rj-d">'
         +   '<b>' + esc(x.handle) + '</b>'
