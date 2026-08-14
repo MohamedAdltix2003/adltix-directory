@@ -5834,6 +5834,35 @@
   .nh-note.b span{ color:#1E3A8A }
   body.dark .nh-note span{ color:#86efac; opacity:.85 }
   body.dark .nh-note.b span{ color:#93c5fd; opacity:.85 }
+
+  /* 🔄 اختيار نوع الإثبات */
+  .mp-kind{
+    display:flex; gap:6px; padding:0 0 12px;
+    border-bottom:1px solid var(--line); margin-bottom:13px;
+  }
+  .mp-kb{
+    flex:1; font-family:inherit; font-size:12px; font-weight:700;
+    cursor:pointer; padding:9px 8px; border-radius:10px;
+    border:1px solid var(--line); background:var(--surface);
+    color:var(--muted); transition:all .14s;
+  }
+  .mp-kb:hover{ border-color:var(--brand) }
+  .mp-kb.on{
+    background:var(--brand); border-color:var(--brand);
+    color:#fff; font-weight:800;
+  }
+
+  /* 🔄 المتابعات والاشتراكات — في الشريط */
+  .tg-ex{
+    display:flex; flex-wrap:wrap; gap:9px; margin-top:9px;
+    padding-top:9px; border-top:1px solid rgba(255,255,255,.16);
+  }
+  .tg-ex span{
+    font-size:11.5px; font-weight:700; color:rgba(255,255,255,.9);
+    padding:3px 10px; border-radius:7px; background:rgba(255,255,255,.14);
+  }
+  .tg-ex .s{ background:rgba(134,239,172,.22); color:#dcfce7 }
+  .tg-ex .d{ background:rgba(252,211,77,.22); color:#fef3c7 }
 </style>
 </head>
 <body>
@@ -12850,6 +12879,9 @@ const MP = {
   open: false,
   tab: 'leads',                   // leads / follow / add / proofs
   items: [], cands: [], loading: false,
+  // 🔄 نوع الإثبات — الموظفة بتختاره قبل الرفع
+  //    ⚠️ لو اختارت غلط، السيرفر بيصحّح تلقائي
+  kind: 'sent',
   ocrReady: false, worker: null, done: 0,
   addBusy: false, addRes: null,
   leads: [], follows: [], listBusy: false, loaded: false,
@@ -13433,6 +13465,17 @@ function matchCandidate_(handles){
 // ═══════════════════════════════════════════
 // اختيار الصور
 // ═══════════════════════════════════════════
+// 🔄 تغيير نوع الإثبات
+function mpKind(k){
+  if(MP.items.length){
+    if(!confirm('تغيير النوع هيمسح الصور المختارة — متأكدة؟')) return;
+    MP.items = [];
+    MP.done = 0;
+  }
+  MP.kind = k;
+  renderMobileProofs();
+}
+
 async function mpPick(){
   const inp = document.getElementById('mpFile');
   if(inp) inp.click();
@@ -13991,6 +14034,17 @@ function renderMobileProofs(){
     requestAnimationFrame(()=>ov.classList.add('show'));
   }
 
+  // 🔄 شريط نوع الإثبات
+  const kindBar =
+      '<div class="mp-kind">'
+    +   '<button class="mp-kb' + (MP.kind==='sent' ? ' on' : '') + '" '
+    +     'onclick="mpKind(\'sent\')">📤 إرسال</button>'
+    +   '<button class="mp-kb' + (MP.kind==='followup' ? ' on' : '') + '" '
+    +     'onclick="mpKind(\'followup\')">🔄 متابعة</button>'
+    +   '<button class="mp-kb' + (MP.kind==='subscribed' ? ' on' : '') + '" '
+    +     'onclick="mpKind(\'subscribed\')">🎉 اشتراك</button>'
+    + '</div>';
+
   const n = MP.items.length;
   const ready = MP.items.filter(x => x.state === 'ready' && x.uid).length;
   const need  = MP.items.filter(x => x.state === 'ready' && !x.uid).length;
@@ -14091,14 +14145,22 @@ function renderMobileProofs(){
 
   // ═══ مفيش صور لسه ═══
   if(!n){
-    body = '<div class="mp-empty">'
-      + '<div class="mp-ei">📸</div>'
-      + '<b>اختاري صور الإثبات</b>'
+    body = kindBar
+      + '<div class="mp-empty">'
+      + '<div class="mp-ei">' + (MP.kind==='followup' ? '🔄'
+          : MP.kind==='subscribed' ? '🎉' : '📸') + '</div>'
+      + '<b>' + (MP.kind==='followup' ? 'صور المتابعات'
+          : MP.kind==='subscribed' ? 'صور الاشتراكات'
+          : 'اختاري صور الإثبات') + '</b>'
       + '<span>تقدري تختاري لحد 100 صورة مرة واحدة. '
-      +   'النظام هيقرا اسم الحساب من كل صورة ويربطها بالمؤثر لوحده.</span>'
+      +   'النظام هيقرا اسم الحساب من كل صورة ويربطها بالمؤثر لوحده.'
+      +   (MP.kind==='followup'
+          ? '<br><b>🔄 المتابعات مالهاش تارجت — ليها عدّاد لوحدها.</b>' : '')
+      + '</span>'
       + '<button class="mp-pick" onclick="mpPick()">📸 اختاري من الاستوديو</button>'
       + '</div>';
   } else {
+    body = kindBar;
     // ═══ شريط التقدّم ═══
     if(MP.loading){
       const pct = n ? Math.round(MP.done / n * 100) : 0;
@@ -14541,7 +14603,16 @@ async function mpUploadOne(it){
       if(hash){
         const chk = await retry_(() => callApi('verifyProof', {
           token: SESSION.token, action: 'check', hash, uid: it.uid,
+          actionType: MP.kind,
         }), 3) || {};
+        // 💡 السيرفر صحّح النوع؟ (اخترت إرسال وهو متابعة)
+        if(chk.corrected && chk.actionType){
+          it.action = chk.actionType;
+          it.seq    = chk.seq || 1;
+          it.label  = chk.actionType === 'followup'
+                      ? ('متابعة ' + (chk.seq || 1)) : 'إرسال';
+        }
+
         if(chk.accepted === false){
           it.state = 'dup';
           it.msg = chk.message || 'الصورة دي مرفوعة قبل كده';
@@ -14559,7 +14630,7 @@ async function mpUploadOne(it){
       // 🔒 الخطوة الحاسمة — بتتحاول 4 مرات
       const res = await retry_(() => callApi('logAction', {
         token: SESSION.token, uid: it.uid,
-        actionType: it.action, imageBase64: b64,
+        actionType: it.action || MP.kind, imageBase64: b64,
         mode: 'new', seq: it.seq || undefined,
       }), 4);
 
@@ -14822,6 +14893,7 @@ function renderTargetBar(){
 
   const T = d.targets||{}, today = d.today||{}, month = d.month||{}, C = d.calc||{};
   const rej = d.rejections||{};
+  const EX  = d.extra||{};
   const tOwn = today.own||{}, tSite = today.site||{};
   const mOwn = month.own||{}, mSite = month.site||{};
 
@@ -14868,6 +14940,17 @@ function renderTargetBar(){
     +     (tProof ? '<span>📸 ' + dbF(tProof) + ' إثبات</span>' : '')
     +     '<span class="m">🗓️ ' + dbF(mAll) + ' الشهر</span>'
     +   '</div>'
+    // 🔄 المتابعات والاشتراكات — عدّادات منفصلة عن التارجت
+    +   ((dbN(EX.followups_today) || dbN(EX.subs_today) || dbN(EX.due_now))
+      ? '<div class="tg-ex">'
+        + (dbN(EX.followups_today)
+          ? '<span>🔄 ' + dbF(EX.followups_today) + ' متابعة</span>' : '')
+        + (dbN(EX.subs_today)
+          ? '<span class="s">🎉 ' + dbF(EX.subs_today) + ' اشتراك</span>' : '')
+        + (dbN(EX.due_now)
+          ? '<span class="d">⏳ ' + dbF(EX.due_now) + ' مستحق متابعة</span>' : '')
+        + '</div>'
+      : '')
     // 💡 شرح مختصر — الموظفات مش فاهمين الفرق بين الأرقام
     +   '<button class="tg-help" onclick="showNumsHelp()">'
     +     '❓ يعني إيه الأرقام دي؟</button>'
