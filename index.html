@@ -5781,6 +5781,10 @@
     background:#1D4ED8; color:#fff;
   }
   .pn-rrb:disabled{ opacity:.6; cursor:default }
+
+  /* 🤖 الإثباتات تحت التحليل — في الشريط العلوي */
+  .tg-an .p{ color:#1D4ED8; font-weight:800 }
+  body.dark .tg-an .p{ color:#93c5fd }
 </style>
 </head>
 <body>
@@ -14777,7 +14781,8 @@ function renderTargetBar(){
   const mCls = C.onTrack ? 'ok' : mPct>=50 ? 'mid' : 'low';
 
   // 📊 الإجمالي: اللي رفعتهم + الموقع
-  const tAll  = dbN(tOwn.sent) + dbN(tSite.sent);
+  // ⚠️ لازم يشمل المعلّقة — كان بيقول 26 والتارجت 48
+  const tAll  = dbN(tOwn.sent) + dbN(tSite.sent) + dPend;
   const mAll  = dbN(mOwn.sent) + dbN(mSite.sent);
   const tProof = dbN(tOwn.proofs) + dbN(tSite.proofs) + dPend;
 
@@ -14799,6 +14804,7 @@ function renderTargetBar(){
     +   '<div class="tg-an">'
     +     '<span class="o">📤 ' + dbF(tOwn.sent) + ' رفعتيهم</span>'
     +     '<span class="s">🌐 ' + dbF(tSite.sent) + ' من الموقع</span>'
+    +     (dPend ? '<span class="p">🤖 ' + dbF(dPend) + ' تحت التحليل</span>' : '')
     +     (tProof ? '<span>📸 ' + dbF(tProof) + ' إثبات</span>' : '')
     +     '<span class="m">🗓️ ' + dbF(mAll) + ' الشهر</span>'
     +   '</div>'
