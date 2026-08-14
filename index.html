@@ -14711,8 +14711,12 @@ function renderTargetBar(){
   const tOwn = today.own||{}, tSite = today.site||{};
   const mOwn = month.own||{}, mSite = month.site||{};
 
-  const dDone = dbN(tOwn.sent), dTarget = dbN(T.daily);
-  const mDone = dbN(mOwn.sent), mTarget = dbN(T.monthly);
+  // 📥 الإثباتات المعلّقة عدّت الفحص (محادثة حقيقية ومش مكررة)
+  //    فبتتحسب في التارجت فورًا — الموظفة متستناش الربط.
+  const dPend = dbN(today.pending);
+  const mPend = dbN(month.pending);
+  const dDone = dbN(tOwn.sent) + dPend, dTarget = dbN(T.daily);
+  const mDone = dbN(mOwn.sent) + mPend, mTarget = dbN(T.monthly);
   const dPct = dbN(C.dailyPct), mPct = dbN(C.monthlyPct);
 
   const dCls = dPct>=100 ? 'done' : dPct>=60 ? 'ok' : dPct>=30 ? 'mid' : 'low';
@@ -14721,7 +14725,7 @@ function renderTargetBar(){
   // 📊 الإجمالي: اللي رفعتهم + الموقع
   const tAll  = dbN(tOwn.sent) + dbN(tSite.sent);
   const mAll  = dbN(mOwn.sent) + dbN(mSite.sent);
-  const tProof = dbN(tOwn.proofs) + dbN(tSite.proofs);
+  const tProof = dbN(tOwn.proofs) + dbN(tSite.proofs) + dPend;
 
   box.style.display = '';
   box.innerHTML =
@@ -14759,7 +14763,8 @@ function renderTargetBar(){
           ? '<b class="win">🎉 خلّصتي تارجت النهاردة</b>'
           : 'باقي <b>'+dbF(dbN(C.dailyLeft))+'</b> رسالة')
     +       (dbN(tOwn.followups) ? '<span>🔄 '+dbF(tOwn.followups)+'</span>' : '')
-    +       (dbN(tOwn.proofs) ? '<span>📸 '+dbF(tOwn.proofs)+'</span>' : '')
+    +       ((dbN(tOwn.proofs) + dPend)
+          ? '<span>📸 '+dbF(dbN(tOwn.proofs) + dPend)+'</span>' : '')
     +     '</div>'
     +   '</div>'
 
