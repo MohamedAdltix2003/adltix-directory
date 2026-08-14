@@ -5822,6 +5822,12 @@
   .nh-note{ padding:11px 13px; border-radius:11px; margin-bottom:9px;
             background:#DCFCE7 }
   .nh-note.b{ background:#DBEAFE }
+  .nh-note.g{ background:#F3E8FF }
+  body.dark .nh-note.g{ background:#2e1065 }
+  .nh-note.g b{ color:#6B21A8 }
+  .nh-note.g span{ color:#581C87 }
+  body.dark .nh-note.g b, body.dark .nh-note.g span{ color:#d8b4fe }
+  .nh-note span b{ font-weight:900 }
   body.dark .nh-note{ background:#14432a }
   body.dark .nh-note.b{ background:#1a2f4d }
   .nh-note b{ display:block; font-size:12px; font-weight:800;
@@ -15203,40 +15209,80 @@ async function dbShMail(btn){
 }
 
 // ═══════════════════════════════════════════════════════════
-// ❓ شرح الأرقام — بمثال
+// ❓ شرح الأرقام — بأرقامها هي
 function showNumsHelp(){
-  const ov = document.createElement('div');
-  ov.className = 'cf-overlay';
-  ov.innerHTML = '<div class="cf-box nh-box">'
-    + '<div class="nh-hd"><b>📊 يعني إيه الأرقام دي؟</b>'
+  const d = _target.data || {};
+  const T = d.targets||{}, today = d.today||{}, EX = d.extra||{};
+  const tOwn = today.own||{}, tSite = today.site||{};
+
+  const own   = dbN(tOwn.sent);
+  const site  = dbN(tSite.sent);
+  const pend  = dbN(today.pending);
+  const total = own + site + pend;
+  const tgt   = dbN(T.daily);
+  const fu    = dbN(EX.followups_today);
+  const subs  = dbN(EX.subs_today);
+  const due   = dbN(EX.due_now);
+
+  const row = (icon, label, val, note) =>
+      '<div class="nh-r">'
+    +   '<span>' + icon + ' ' + label + '</span>'
+    +   '<b>' + dbF(val) + '</b>'
+    +   '<i>' + note + '</i>'
+    + '</div>';
+
+  let h = '<div class="cf-box nh-box">'
+    + '<div class="nh-hd"><b>📊 أرقامك النهاردة</b>'
     +   '<button class="nh-x">✕</button></div>'
 
     + '<div class="nh-ex">'
-    +   '<div class="nh-t">مثال</div>'
-    +   '<div class="nh-r"><span>📤 رفعتيهم</span>'
-    +     '<b>51</b><i>مؤثرين ضفتيهم بنفسك وبعتّيلهم</i></div>'
-    +   '<div class="nh-r"><span>🌐 من الموقع</span>'
-    +     '<b>1</b><i>مؤثرين النظام وزّعهم عليكي</i></div>'
-    +   '<div class="nh-r"><span>🤖 تحت التحليل</span>'
-    +     '<b>33</b><i>صور اترفعت والذكاء الاصطناعي بيربطها</i></div>'
-    +   '<div class="nh-sum">📊 الإجمالي <b>85</b></div>'
-    + '</div>'
-
-    + '<div class="nh-note">'
-    +   '<b>مهم</b>'
-    +   '<span>كل الصور اللي بترفعيها بتتحسب في التارجت فورًا — '
-    +     'حتى اللي لسه تحت التحليل.</span>'
-    + '</div>'
-
-    + '<div class="nh-note b">'
-    +   '<b>ليه الزرار تحت رقمه أكبر؟</b>'
-    +   '<span>زرار «اتبعت» بيعد كل اللي بعتّيلهم من أول الشهر — '
-    +     'والرقم فوق للنهاردة بس.</span>'
-    + '</div>'
-
-    + '<div class="cf-btns"><button class="cf-yes ok">تمام</button></div>'
+    +   row('📤', 'رفعتيهم', own, 'مؤثرين ضفتيهم بنفسك وبعتّيلهم')
+    +   (site ? row('🌐', 'من الموقع', site, 'مؤثرين النظام وزّعهم عليكي') : '')
+    +   (pend ? row('🤖', 'تحت التحليل', pend, 'صور اترفعت والنظام بيربطها') : '')
+    +   '<div class="nh-sum">📊 الإجمالي <b>' + dbF(total) + '</b></div>'
     + '</div>';
 
+  // 🎯 حالة التارجت
+  if(tgt){
+    const left = tgt - total;
+    h += '<div class="nh-note' + (left <= 0 ? '' : ' b') + '">'
+      + '<b>' + (left <= 0
+          ? (total > tgt ? '🔥 عدّيتي التارجت بـ ' + dbF(total - tgt) + ' رسالة'
+                          : '🎉 خلّصتي التارجت')
+          : '🎯 تارجت النهاردة ' + dbF(tgt)) + '</b>'
+      + '<span>' + (left <= 0
+          ? 'شغل ممتاز — كل رسالة زيادة محسوبة ليكي.'
+          : 'فاضل <b>' + dbF(left) + '</b> رسالة على التارجت.') + '</span>'
+      + '</div>';
+  }
+
+  // 🔄 المتابعات والاشتراكات
+  if(fu || subs || due){
+    h += '<div class="nh-note g">'
+      + '<b>🔄 المتابعات والاشتراكات</b>'
+      + '<span>'
+      +   (fu   ? 'عملتي <b>' + dbF(fu) + '</b> متابعة النهاردة. ' : '')
+      +   (subs ? 'و<b>' + dbF(subs) + '</b> اشتراك. ' : '')
+      +   (due  ? '<br>فيه <b>' + dbF(due) + '</b> مؤثر مستحق متابعة دلوقتي.' : '')
+      +   '<br>دول مالهمش تارجت — عدّاد لوحده.'
+      + '</span>'
+      + '</div>';
+  }
+
+  // ℹ️ الفرق بين الرقمين
+  if(pend){
+    h += '<div class="nh-note">'
+      + '<b>يعني إيه «تحت التحليل»؟</b>'
+      + '<span>صور رفعتيها والنظام لسه بيدوّر على المؤثر بتاعها. '
+      +   'محسوبة في التارجت من دلوقتي — مش هتضيع.</span>'
+      + '</div>';
+  }
+
+  h += '<div class="cf-btns"><button class="cf-yes ok">تمام</button></div></div>';
+
+  const ov = document.createElement('div');
+  ov.className = 'cf-overlay';
+  ov.innerHTML = h;
   document.body.appendChild(ov);
   requestAnimationFrame(()=>ov.classList.add('show'));
   const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
