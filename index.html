@@ -5785,6 +5785,55 @@
   /* 🤖 الإثباتات تحت التحليل — في الشريط العلوي */
   .tg-an .p{ color:#1D4ED8; font-weight:800 }
   body.dark .tg-an .p{ color:#93c5fd }
+
+  /* ❓ شرح الأرقام */
+  .tg-help{
+    margin-top:9px; font-family:inherit; font-size:11px; font-weight:700;
+    cursor:pointer; padding:5px 12px; border-radius:8px;
+    border:1px solid rgba(255,255,255,.25);
+    background:rgba(255,255,255,.12); color:rgba(255,255,255,.9);
+  }
+  .tg-help:hover{ background:rgba(255,255,255,.22) }
+
+  .nh-box{ max-width:420px !important; text-align:right !important }
+  .nh-hd{ display:flex; align-items:center; justify-content:space-between;
+          margin-bottom:14px }
+  .nh-hd b{ font-size:15px; color:var(--ink) }
+  .nh-x{ width:28px; height:28px; border-radius:8px; cursor:pointer;
+         border:1px solid var(--line); background:transparent; color:var(--muted) }
+
+  .nh-ex{ padding:13px; border-radius:13px; margin-bottom:12px;
+          background:color-mix(in srgb,var(--line) 22%,transparent) }
+  .nh-t{ font-size:11px; font-weight:800; color:var(--muted); margin-bottom:9px }
+  .nh-r{ display:flex; align-items:baseline; gap:8px; padding:6px 0;
+         border-bottom:1px dashed var(--line) }
+  .nh-r > span{ font-size:12px; font-weight:700; color:var(--ink);
+                min-width:96px; flex-shrink:0 }
+  .nh-r > b{ font-size:15px; font-weight:900; color:var(--brand);
+             min-width:28px; font-family:'Space Grotesk','Tajawal',sans-serif }
+  .nh-r > i{ font-style:normal; font-size:10.5px; color:var(--muted);
+             line-height:1.5 }
+  .nh-sum{ display:flex; justify-content:space-between; align-items:center;
+           padding-top:10px; margin-top:4px; font-size:13px;
+           font-weight:800; color:var(--ink) }
+  .nh-sum b{ font-size:19px; color:var(--brand);
+             font-family:'Space Grotesk','Tajawal',sans-serif }
+
+  .nh-note{ padding:11px 13px; border-radius:11px; margin-bottom:9px;
+            background:#DCFCE7 }
+  .nh-note.b{ background:#DBEAFE }
+  body.dark .nh-note{ background:#14432a }
+  body.dark .nh-note.b{ background:#1a2f4d }
+  .nh-note b{ display:block; font-size:12px; font-weight:800;
+              color:#15803D; margin-bottom:4px }
+  .nh-note.b b{ color:#1E40AF }
+  body.dark .nh-note b{ color:#86efac }
+  body.dark .nh-note.b b{ color:#93c5fd }
+  .nh-note span{ display:block; font-size:11.5px; line-height:1.8;
+                 color:#166534 }
+  .nh-note.b span{ color:#1E3A8A }
+  body.dark .nh-note span{ color:#86efac; opacity:.85 }
+  body.dark .nh-note.b span{ color:#93c5fd; opacity:.85 }
 </style>
 </head>
 <body>
@@ -14819,6 +14868,9 @@ function renderTargetBar(){
     +     (tProof ? '<span>📸 ' + dbF(tProof) + ' إثبات</span>' : '')
     +     '<span class="m">🗓️ ' + dbF(mAll) + ' الشهر</span>'
     +   '</div>'
+    // 💡 شرح مختصر — الموظفات مش فاهمين الفرق بين الأرقام
+    +   '<button class="tg-help" onclick="showNumsHelp()">'
+    +     '❓ يعني إيه الأرقام دي؟</button>'
     + '</div>'
 
     + '<div class="tg-row">'
@@ -15035,6 +15087,48 @@ async function dbShMail(btn){
 }
 
 // ═══════════════════════════════════════════════════════════
+// ❓ شرح الأرقام — بمثال
+function showNumsHelp(){
+  const ov = document.createElement('div');
+  ov.className = 'cf-overlay';
+  ov.innerHTML = '<div class="cf-box nh-box">'
+    + '<div class="nh-hd"><b>📊 يعني إيه الأرقام دي؟</b>'
+    +   '<button class="nh-x">✕</button></div>'
+
+    + '<div class="nh-ex">'
+    +   '<div class="nh-t">مثال</div>'
+    +   '<div class="nh-r"><span>📤 رفعتيهم</span>'
+    +     '<b>51</b><i>مؤثرين ضفتيهم بنفسك وبعتّيلهم</i></div>'
+    +   '<div class="nh-r"><span>🌐 من الموقع</span>'
+    +     '<b>1</b><i>مؤثرين النظام وزّعهم عليكي</i></div>'
+    +   '<div class="nh-r"><span>🤖 تحت التحليل</span>'
+    +     '<b>33</b><i>صور اترفعت والذكاء الاصطناعي بيربطها</i></div>'
+    +   '<div class="nh-sum">📊 الإجمالي <b>85</b></div>'
+    + '</div>'
+
+    + '<div class="nh-note">'
+    +   '<b>مهم</b>'
+    +   '<span>كل الصور اللي بترفعيها بتتحسب في التارجت فورًا — '
+    +     'حتى اللي لسه تحت التحليل.</span>'
+    + '</div>'
+
+    + '<div class="nh-note b">'
+    +   '<b>ليه الزرار تحت رقمه أكبر؟</b>'
+    +   '<span>زرار «اتبعت» بيعد كل اللي بعتّيلهم من أول الشهر — '
+    +     'والرقم فوق للنهاردة بس.</span>'
+    + '</div>'
+
+    + '<div class="cf-btns"><button class="cf-yes ok">تمام</button></div>'
+    + '</div>';
+
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>ov.classList.add('show'));
+  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
+  ov.querySelector('.nh-x').onclick = close;
+  ov.querySelector('.cf-yes').onclick = close;
+  ov.addEventListener('click', e => { if(e.target === ov) close(); });
+}
+
 // 🔎 تكبير أي صورة في الداشبورد
 function dbZoom(url){
   const ov = document.createElement('div');
