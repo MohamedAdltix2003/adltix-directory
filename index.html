@@ -13509,6 +13509,15 @@ async function runOCR_(){
           }
         }
 
+        // 🔒 المؤثر ده اتاخد في صورة تانية في نفس الرفعة؟
+        //
+        // ⚠️ اسم @NAH (3 حروف) طابق 25 صورة — كلهم اتربطوا بيه
+        //    والباقي اترفض كمكرر وضاع.
+        if(m && MP.items.some(x => x !== it && x.uid === m.cand.uid)){
+          m = null;
+          it.dupTarget = true;
+        }
+
         if(m){
           it.uid    = m.cand.uid;
           it.handle = m.cand.handle;
@@ -13536,6 +13545,8 @@ async function runOCR_(){
       } else if(it.uid){
         // ➕ اتضاف تلقائي؟ نطمّنها
         it.msg = it.autoAdded ? '➕ اتضاف تلقائي' : '';
+      } else if(it.dupTarget){
+        it.msg = '⚠️ المؤثر ده اتاخد في صورة تانية';
       } else if(it.blocked){
         it.msg = it.blocked;
       } else {
