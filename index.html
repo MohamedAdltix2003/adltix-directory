@@ -14732,8 +14732,12 @@ function renderTargetBar(){
   //    فبتتحسب في التارجت فورًا — الموظفة متستناش الربط.
   const dPend = dbN(today.pending);
   const mPend = dbN(month.pending);
-  const dDone = dbN(tOwn.sent) + dPend, dTarget = dbN(T.daily);
-  const mDone = dbN(mOwn.sent) + mPend, mTarget = dbN(T.monthly);
+  // ⚠️ التارجت كان بيعد "اللي رفعتيهم" بس — والموظفة بعتت
+  //    للكل سواء رفعتهم بنفسها أو جالها من التوزيع.
+  const dDone = dbN(tOwn.sent) + dbN(tSite.sent) + dPend;
+  const dTarget = dbN(T.daily);
+  const mDone = dbN(mOwn.sent) + dbN(mSite.sent) + mPend;
+  const mTarget = dbN(T.monthly);
   const dPct = dbN(C.dailyPct), mPct = dbN(C.monthlyPct);
 
   const dCls = dPct>=100 ? 'done' : dPct>=60 ? 'ok' : dPct>=30 ? 'mid' : 'low';
@@ -14779,7 +14783,8 @@ function renderTargetBar(){
     +       (dPct>=100
           ? '<b class="win">🎉 خلّصتي تارجت النهاردة</b>'
           : 'باقي <b>'+dbF(dbN(C.dailyLeft))+'</b> رسالة')
-    +       (dbN(tOwn.followups) ? '<span>🔄 '+dbF(tOwn.followups)+'</span>' : '')
+    +       ((dbN(tOwn.followups) + dbN(tSite.followups))
+          ? '<span>🔄 '+dbF(dbN(tOwn.followups) + dbN(tSite.followups))+'</span>' : '')
     +       ((dbN(tOwn.proofs) + dPend)
           ? '<span>📸 '+dbF(dbN(tOwn.proofs) + dPend)+'</span>' : '')
     +     '</div>'
