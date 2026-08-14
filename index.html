@@ -5863,6 +5863,22 @@
   }
   .tg-ex .s{ background:rgba(134,239,172,.22); color:#dcfce7 }
   .tg-ex .d{ background:rgba(252,211,77,.22); color:#fef3c7 }
+
+  /* 🔥 التارجت اتخطّى — شريط ذهبي */
+  .tg-b.done span{
+    background:linear-gradient(90deg,#F59E0B,#FCD34D,#F59E0B);
+    background-size:200% 100%;
+    animation:tgGlow 2.4s ease-in-out infinite;
+  }
+  @keyframes tgGlow{
+    0%,100%{ background-position:0% 50% }
+    50%    { background-position:100% 50% }
+  }
+  .tg-n .win{
+    color:#B45309; font-weight:800;
+    display:inline-flex; align-items:center; gap:4px;
+  }
+  body.dark .tg-n .win{ color:#fcd34d }
 </style>
 </head>
 <body>
@@ -14915,7 +14931,9 @@ function renderTargetBar(){
   const dTarget = dbN(T.daily);
   const mDone = dbN(mOwn.sent) + dbN(mSite.sent) + mPend;
   const mTarget = dbN(T.monthly);
-  const dPct = dbN(C.dailyPct), mPct = dbN(C.monthlyPct);
+  // ⚠️ السيرفر بيحسبها من own.sent بس — نحسبها من الرقم الكامل
+  const dPct = dTarget ? Math.round(dDone / dTarget * 100) : 0;
+  const mPct = mTarget ? Math.round(mDone / mTarget * 100) : 0;
 
   const dCls = dPct>=100 ? 'done' : dPct>=60 ? 'ok' : dPct>=30 ? 'mid' : 'low';
   const mCls = C.onTrack ? 'ok' : mPct>=50 ? 'mid' : 'low';
@@ -14971,10 +14989,14 @@ function renderTargetBar(){
     +     '<div class="tg-tag own">📤 اللي رفعتيهم</div>'
     +     '<div class="tg-h"><span>📅 النهاردة</span>'
     +       '<b>'+dbF(dDone)+'<i>/'+dbF(dTarget)+'</i></b></div>'
-    +     '<div class="tg-b"><span style="width:'+Math.min(100,dPct)+'%"></span></div>'
+    +     '<div class="tg-b' + (dPct>=100 ? ' done' : '') + '">'
+    +       '<span style="width:'+Math.min(100,dPct)+'%"></span></div>'
     +     '<div class="tg-n">'
     +       (dPct>=100
-          ? '<b class="win">🎉 خلّصتي تارجت النهاردة</b>'
+          ? (dDone > dTarget
+            ? '<b class="win">🔥 عدّيتي التارجت بـ '
+              + dbF(dDone - dTarget) + ' رسالة</b>'
+            : '<b class="win">🎉 خلّصتي تارجت النهاردة</b>')
           : 'باقي <b>'+dbF(Math.max(0, dTarget - dDone))+'</b> رسالة')
     +       ((dbN(tOwn.followups) + dbN(tSite.followups))
           ? '<span>🔄 '+dbF(dbN(tOwn.followups) + dbN(tSite.followups))+'</span>' : '')
@@ -14988,9 +15010,12 @@ function renderTargetBar(){
     +     '<div class="tg-tag own">📤 اللي رفعتيهم</div>'
     +     '<div class="tg-h"><span>🗓️ الشهر</span>'
     +       '<b>'+dbF(mDone)+'<i>/'+dbF(mTarget)+'</i></b></div>'
-    +     '<div class="tg-b"><span style="width:'+Math.min(100,mPct)+'%"></span></div>'
+    +     '<div class="tg-b' + (mPct>=100 ? ' done' : '') + '">'
+    +       '<span style="width:'+Math.min(100,mPct)+'%"></span></div>'
     +     '<div class="tg-n">'
-    +       'باقي <b>'+dbF(Math.max(0, mTarget - mDone))+'</b>'
+    +       (mPct >= 100
+          ? '<b class="win">🏆 خلّصتي تارجت الشهر</b>'
+          : 'باقي <b>'+dbF(Math.max(0, mTarget - mDone))+'</b>')
     +       '<span>⏳ '+dbN(month.days_left)+' يوم</span>'
     +       (() => {
             // ⚠️ نحسبه محليًا — السيرفر بيحسبه من own.sent بس
