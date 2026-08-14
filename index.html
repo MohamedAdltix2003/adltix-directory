@@ -14821,7 +14821,7 @@ function renderTargetBar(){
     +     '<div class="tg-n">'
     +       (dPct>=100
           ? '<b class="win">🎉 خلّصتي تارجت النهاردة</b>'
-          : 'باقي <b>'+dbF(dbN(C.dailyLeft))+'</b> رسالة')
+          : 'باقي <b>'+dbF(Math.max(0, dTarget - dDone))+'</b> رسالة')
     +       ((dbN(tOwn.followups) + dbN(tSite.followups))
           ? '<span>🔄 '+dbF(dbN(tOwn.followups) + dbN(tSite.followups))+'</span>' : '')
     +       ((dbN(tOwn.proofs) + dPend)
@@ -14836,11 +14836,18 @@ function renderTargetBar(){
     +       '<b>'+dbF(mDone)+'<i>/'+dbF(mTarget)+'</i></b></div>'
     +     '<div class="tg-b"><span style="width:'+Math.min(100,mPct)+'%"></span></div>'
     +     '<div class="tg-n">'
-    +       'باقي <b>'+dbF(dbN(C.monthlyLeft))+'</b>'
+    +       'باقي <b>'+dbF(Math.max(0, mTarget - mDone))+'</b>'
     +       '<span>⏳ '+dbN(month.days_left)+' يوم</span>'
-    +       (dbN(C.perDayNeeded)
-          ? '<span class="'+(C.onTrack?'':'warn')+'">🎯 '+dbF(dbN(C.perDayNeeded))+'/يوم</span>'
-          : '')
+    +       (() => {
+            // ⚠️ نحسبه محليًا — السيرفر بيحسبه من own.sent بس
+            const left = Math.max(0, mTarget - mDone);
+            const days = Math.max(1, dbN(month.days_left) || 1);
+            const need = Math.ceil(left / days);
+            const ok   = dDone >= need;
+            return need
+              ? '<span class="'+(ok?'':'warn')+'">🎯 '+dbF(need)+'/يوم</span>'
+              : '';
+          })()
     +     '</div>'
     +   '</div>'
 
