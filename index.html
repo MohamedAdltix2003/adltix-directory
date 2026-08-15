@@ -13361,16 +13361,24 @@ async function autoAddByLink(link){
       // موجود خلاص؟
       const existed = r.duplicate === true;
 
-      if(!existed){
-        const c = mapRawToCard(r.card);
-        CREATORS.unshift(c);
-        invalidateCache();
+      // ⚠️ لازم نضيفه للمرشحين دايمًا — الرفع بيفحص القايمة دي.
+      //    لو موجود خلاص وماضفناهوش، الفحص بيرفض الإثبات.
+      const uid = r.card.uid;
+      if(!MP.cands.some(c => c.uid === uid)){
         MP.cands.unshift({
-          uid: c.uid, handle: String(c.handle || '').replace('@',''),
-          display: c.display_name || '', platform: c.platform,
-          followers: c.followers || 0, avatar: c.avatarUrl || '',
+          uid,
+          handle: String(r.card.handle || '').replace('@',''),
+          display: r.card.display_name || '',
+          platform: r.card.platform || MP.plat || '',
+          followers: r.card.followers || 0,
+          avatar: r.card.avatar_url || '',
           action: 'sent', seq: 1, due: true, added_today: true,
         });
+      }
+      if(!existed){
+        const c = mapRawToCard(r.card);
+        if(!CREATORS.some(x => x.uid === c.uid)) CREATORS.unshift(c);
+        invalidateCache();
       }
 
       return {
@@ -13405,18 +13413,37 @@ async function autoAddInfluencer(username, platform, display){
     });
 
     if(r && r.card){
+      // 🔎 موجود عند حد تاني؟ الرد بيقول
+      //
+      // ⚠️ الإضافة بتنجح حتى لو المؤثر موجود — فلازم نفحص
+      //    الرد بدل ما نستنى خطأ.
+      const owner = String(r.owner || '').trim();
+      const mine  = r.isMine === true
+                 || owner === (SESSION.staffName || SESSION.username);
+
+      if(r.duplicate && owner && !mine){
+        return { taken: true, uid: r.card.uid,
+                 msg: '🔁 المؤثر ده مع ' + owner };
+      }
+      if(r.card.signup_status && r.card.signup_status !== 'pending'){
+        return { subscribed: true, uid: r.card.uid,
+                 msg: '🎉 المؤثر ده مشترك خلاص' };
+      }
+
       const c = mapRawToCard(r.card);
-      CREATORS.unshift(c);
+      if(!CREATORS.some(x => x.uid === c.uid)) CREATORS.unshift(c);
       invalidateCache();
 
       // نضيفه لقايمة المرشّحين فورًا
-      MP.cands.unshift({
-        uid: c.uid, handle: String(c.handle || u).replace('@',''),
-        display: display || '',
-        platform: c.platform, followers: c.followers || 0,
-        avatar: c.avatarUrl || '', action: 'sent', seq: 1,
-        due: true, added_today: true,
-      });
+      if(!MP.cands.some(x => x.uid === c.uid)){
+        MP.cands.unshift({
+          uid: c.uid, handle: String(c.handle || u).replace('@',''),
+          display: display || '',
+          platform: c.platform, followers: c.followers || 0,
+          avatar: c.avatarUrl || '', action: 'sent', seq: 1,
+          due: true, added_today: true,
+        });
+      }
 
       // 💾 نخزّن الاسم المعروض مع الإضافة
       if(display){
@@ -13874,16 +13901,28 @@ async function runOCR_(){
           renderMobileProofs();
 
           const add = await autoAddByLink(link);
-          if(add && add.uid){
+
+          if(add && add.partner){
+            // 🚫 شريك — متترفعش حتى في سناب
+            it.blocked  = add.msg;
+            it.noUpload = true;
+
+          } else if(add && (add.taken || add.subscribed)){
+            // 👻 سناب — يترفع للمعلّقة عشان الترتيب مايبوظش،
+            //    والإدارة تشوف السبب وتمسح.
+            it.blocked  = add.msg;
+            it.snapNote = add.msg;
+
+          } else if(add && add.uid){
             it.uid    = add.uid;
             it.handle = String(add.handle || '').replace('@','');
             it.action = MP.kind;
             it.seq    = 1;
             it.label  = MP.kind === 'followup' ? 'متابعة' : 'إرسال';
             it.autoAdded = add.isNew === true;
+
           } else if(add && add.blocked){
-            it.blocked  = add.msg;
-            it.noUpload = add.partner === true;
+            it.blocked = add.msg;
           }
         }
       }
@@ -13951,7 +13990,14 @@ async function runOCR_(){
           const add = await autoAddInfluencer(
             uname, MP.plat || vis.platform, vis.display);
 
-          if(add && add.ok){
+          // 🚫 إنستجرام وتيك توك — لو مع حد تاني أو مشترك، متترفعش
+          //
+          // ⚠️ سناب مختلف: كله بيترفع عشان الترتيب مايبوظش،
+          //    والإدارة بتشوف وتمسح.
+          if(add && (add.taken || add.subscribed) && MP.plat !== 'snapchat'){
+            it.blocked  = add.msg;
+            it.noUpload = true;
+          } else if(add && add.ok){
             m = matchCandidate_([add.handle, uname]);
             if(!m){
               it.uid    = add.uid;
@@ -14009,6 +14055,8 @@ async function runOCR_(){
         it.msg = it.autoAdded ? '➕ اتضاف تلقائي' : '';
       } else if(it.dupTarget){
         it.msg = '⚠️ المؤثر ده اتاخد في صورة تانية';
+      } else if(it.snapNote){
+        it.msg = '⚠️ ' + it.snapNote + ' — هيترفع للمراجعة';
       } else if(it.blocked){
         it.msg = it.blocked;
       } else {
@@ -15146,7 +15194,10 @@ async function mpUploadPending(list){
         token: SESSION.token, action: 'addPending',
         url, hash, aiName: it.visionRead || '',
         platform: it.visPlatform || '',
-        ocr: (it.blocked ? '[' + it.blocked + '] ' : '') + (it.ocr || ''),
+        ocr: (it.snapNote ? '[' + it.snapNote + '] ' : '')
+           + (it.blocked && !it.snapNote ? '[' + it.blocked + '] ' : '')
+           + (it.snapLink ? it.snapLink + ' ' : '')
+           + (it.ocr || ''),
         type: 'sent',
       }), 4);
 
