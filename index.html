@@ -10698,13 +10698,15 @@ function closeDashboard(){
   setTimeout(()=>ov.remove(), 240);
 }
 
-async function loadDashboard(){
+async function loadDashboard(force, pendingStaff){
   const shell = document.querySelector('#dbOv .db-shell');
   if(!shell) return;
   shell.innerHTML = '<div class="db-load"><span class="lm-spin"></span> بنجهّز الداشبورد…</div>';
   try{
     const body = { token: SESSION.token };
     if(_dash.from && _dash.to){ body.from = _dash.from; body.to = _dash.to; }
+    // 🔎 فلتر الإثباتات المعلّقة — موظفة واحدة في المرة
+    if(pendingStaff) body.pendingStaff = pendingStaff;
     const r = await callApi('dashboard', body);
     _dash.data = r;
     renderDashboard();
@@ -15514,7 +15516,14 @@ function dbPending(r){
   return h;
 }
 
-function dbPnStaff(v){ _pnStaff = v; renderDashboard(); }
+// 🔎 فلتر الموظفات — بيجيب صورها من السيرفر
+//
+// ⚠️ 226 صورة في رد واحد بتسقط النداء. بنجيب موظفة
+//    واحدة في المرة — أسرع وأخف على الـ Egress.
+function dbPnStaff(v){
+  _pnStaff = v;
+  loadDashboard(true, v === 'all' ? '' : v);
+}
 
 // 🔄 إعادة قراءة أسماء الصور المعلّقة
 // 🤖 يقرا الأسماء ويربط اللي واضح — دفعة واحدة
