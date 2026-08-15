@@ -5885,6 +5885,20 @@
     display:inline-flex; align-items:center; gap:4px;
   }
   body.dark .tg-n .win{ color:#fcd34d }
+
+  /* 💡 مستوى المقترحات */
+  .pn-tier{
+    font-size:10.5px; font-weight:700; color:var(--muted);
+    margin-bottom:4px; opacity:.85;
+  }
+  .pn-sm em{
+    font-style:normal; font-size:10px; opacity:.65;
+    direction:ltr; unicode-bidi:isolate;
+  }
+  .pn-shd span{
+    font-size:11px; color:var(--muted); margin-inline-start:auto;
+    margin-inline-end:10px; font-weight:700;
+  }
 </style>
 </head>
 <body>
@@ -6342,7 +6356,7 @@ const FN_MAP = {
   approve:        "admin-action",
   unarchive:      "admin-action"
 };
-const ADMIN_ACTIONS = { "delete":"delete", moveToNew:"archive", changeNiche:"changeNiche", approve:"approve", unarchive:"unarchive", resolvePending:"resolvePending", dropPending:"dropPending", addAndResolve:"addAndResolve", rereadPending:"rereadPending" };
+const ADMIN_ACTIONS = { "delete":"delete", moveToNew:"archive", changeNiche:"changeNiche", approve:"approve", unarchive:"unarchive", resolvePending:"resolvePending", dropPending:"dropPending", addAndResolve:"addAndResolve", rereadPending:"rereadPending", searchLeads:"searchLeads" };
 
 // Supabase بيحدّ أي طلب بـ 1000 صف كحد أقصى (إعداد max-rows).
 // كنا بنطلب 2000 فكان بيرجّع 1000 ويرمي الباقي في صمت —
@@ -15361,7 +15375,14 @@ function dbPending(r){
 
   h += '<div class="pn-grid">';
   list.slice(0, 60).forEach(it => {
-    const sg = it.suggest || [];
+    // 💡 المقترحات المتدرّجة — الأقرب زمنيًا الأول
+    const S = it.sg || {};
+    const sg = S.items || it.suggest || [];
+    const tierLabel = {
+      near:  'ضافتهم في نفس الوقت',
+      today: 'ضافتهم النهاردة',
+      name:  'الأقرب للاسم',
+    }[S.tier] || 'مقترحين';
     h += '<div class="pn-c" id="pn' + it.id + '">'
       + '<div class="pn-im" onclick="dbZoom(\'' + esc(it.url) + '\')" '
       +   'title="اضغط للتكبير">'
@@ -15381,17 +15402,21 @@ function dbPending(r){
           : '')
 
       +   (sg.length
-          ? '<div class="pn-sg">'
+          ? '<div class="pn-tier">💡 ' + esc(tierLabel) + '</div>'
+            + '<div class="pn-sg">'
             + sg.map(x => {
                 const d = String(x.display || '');
+                const m = Number(x.mins || 0);
                 return '<button class="pn-b" onclick="dbPnLink(' + it.id + ',\''
                   + esc(x.uid) + '\')" title="' + esc(d) + '">'
                   + '<b>@' + esc(x.handle) + '</b>'
-                  + (d && d !== '—' ? '<u>' + esc(d) + '</u>' : '')
-                  + '<i>' + x.mins + 'د</i></button>';
+                  + (d ? '<u>' + esc(d) + '</u>' : '')
+                  + '<i>' + (m < 60 ? m + 'د' : Math.round(m/60) + 'س') + '</i>'
+                  + '</button>';
               }).join('')
             + '</div>'
-          : '<div class="pn-no">مفيش مقترحين — دوّري بنفسك</div>')
+          : '<div class="pn-no">🚩 المؤثر ده غالبًا مش عندها — '
+            + 'دوّري أو ضيفيه</div>')
 
       +   '<div class="pn-act">'
       +     '<button class="pn-s" onclick="dbPnSearch(' + it.id + ',\''
@@ -15572,6 +15597,7 @@ async function dbPnSearch(id, staff){
   ov.className = 'cf-overlay';
   ov.innerHTML = '<div class="cf-box pn-sbox">'
     + '<div class="pn-shd"><b>🔍 اختار المؤثر</b>'
+    +   '<span>' + esc(staff) + '</span>'
     +   '<button class="pn-sx">✕</button></div>'
     + '<input class="pn-sq" id="pnQ" placeholder="اسم الحساب أو اللينك…" autocomplete="off">'
     + '<div class="pn-sr" id="pnR"><div class="pn-sload">⏳ بنحمّل…</div></div>'
@@ -15586,34 +15612,22 @@ async function dbPnSearch(id, staff){
   const q   = ov.querySelector('#pnQ');
   const res = ov.querySelector('#pnR');
 
-  // 📥 نجيب مؤثري الموظفة
-  let list = _pnCands[staff] || null;
-  if(!list){
-    try{
-      const r = await callApi('getLeads', {
-        token: SESSION.token, staff, limit: 3000,
-      });
-      list = (r.items || []).filter(c =>
-        !c.outcome_type &&
-        ['new',''].includes(String(c.message_status || 'new').toLowerCase()));
-      _pnCands[staff] = list;
-    }catch(e){ list = []; }
-  }
-
   const draw = (arr) => {
-    if(!arr.length){
+    if(!arr || !arr.length){
       res.innerHTML = '<div class="pn-sempty">مفيش نتايج</div>';
       return;
     }
-    res.innerHTML = arr.slice(0, 40).map(c => {
-      const h = String(c.handle || '').replace('@','');
-      const d = String(c.display_name || '');
+    res.innerHTML = arr.map(c => {
+      const d = String(c.display || '');
       const f = Number(c.followers || 0);
+      const m = Number(c.mins || 0);
       return '<button class="pn-si" data-uid="' + esc(c.uid) + '">'
-        + '<div class="pn-sn">@' + esc(h) + '</div>'
+        + '<div class="pn-sn">@' + esc(c.handle) + '</div>'
         + '<div class="pn-sm">'
-        +   (d && d !== '—' ? '<span>' + esc(d) + '</span>' : '')
+        +   (d ? '<span>' + esc(d) + '</span>' : '')
         +   (f ? '<i>' + f.toLocaleString('en') + '</i>' : '')
+        +   (m < 1440 ? '<em>' + (m < 60 ? m + 'د' : Math.round(m/60) + 'س')
+                        + '</em>' : '')
         + '</div></button>';
     }).join('');
 
@@ -15622,28 +15636,36 @@ async function dbPnSearch(id, staff){
     });
   };
 
-  draw(list.slice(0, 40));
+  // 🔍 البحث في السيرفر — مؤثري الموظفة اللي مالهمش إثبات
+  //    ⚠️ أدق من التحميل الكامل، وأسرع بكتير
+  let timer = null;
+  const run = async (term) => {
+    res.innerHTML = '<div class="pn-sload">⏳ بندوّر…</div>';
+    try{
+      const r = await callApi('adminAction', {
+        token: SESSION.token, action: 'searchLeads',
+        staff, q: term || '',
+      });
+      draw(r.items || []);
+    }catch(e){
+      res.innerHTML = '<div class="pn-sempty">❌ ' + esc(e.message) + '</div>';
+    }
+  };
 
   q.oninput = () => {
-    let t = q.value.trim().toLowerCase()
+    let t = q.value.trim()
       .replace(/^https?:\/\//, '').replace(/^www\./, '')
       .replace(/\?.*$/, '').replace(/\/+$/, '');
     const m = t.match(
       /(?:instagram|tiktok|snapchat|youtube)\.com\/(?:add\/|@)?([\w.\-]+)/i);
     if(m) t = m[1];
-    t = t.replace(/^@/, '').trim();
+    t = t.replace(/^@/, '');
 
-    if(!t){ draw(list.slice(0, 40)); return; }
-
-    const isAr = /[\u0600-\u06FF]/.test(t);
-    draw(list.filter(c => {
-      const h = String(c.handle || '').toLowerCase().replace('@','');
-      const d = String(c.display_name || '').toLowerCase();
-      if(h.includes(t) || d.includes(t)) return true;
-      if(isAr && h.length >= 3 && phonScore_(t, h) >= 75) return true;
-      return false;
-    }));
+    clearTimeout(timer);
+    timer = setTimeout(() => run(t), 280);
   };
+
+  run('');
   setTimeout(()=>q.focus(), 200);
 }
 
