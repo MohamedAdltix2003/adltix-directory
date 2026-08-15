@@ -13973,6 +13973,11 @@ async function mpFiles(files){
     uid: '', handle: '', action: '', seq: 1, label: '',
     conf: '', ocr: '', signals: {}, score: 0,
     msg: '',
+    // 👻 سناب — نثبّت اللينك على الصورة من دلوقتي
+    //
+    // ⚠️ indexOf أثناء الفحص بيبوظ لو الترتيب اتغيّر،
+    //    فبنربط اللينك بالصورة وقت الاختيار.
+    snapLink: MP.plat === 'snapchat' ? (MP.snapLinks[i] || '') : '',
   }));
   MP.done = 0;
   renderMobileProofs();
@@ -14003,10 +14008,8 @@ async function runOCR_(){
       // ⚠️ العدد اتأكد قبل الرفع، فالترتيب مضمون.
       //    اللينك بيتضاف لو مش موجود، ويتربط بالصورة.
       if(MP.plat === 'snapchat' && !it.uid){
-        const idx = MP.items.indexOf(it);
-        const link = MP.snapLinks[idx] || '';
+        const link = it.snapLink || '';
         if(link){
-          it.snapLink = link;
           it.msg = '⏳ بنربط…';
           renderMobileProofs();
 
@@ -14022,7 +14025,8 @@ async function runOCR_(){
           //    السبب بيتسجّل والإدارة تشوفه وتقرر.
           if(add && add.uid){
             it.uid    = add.uid;
-            it.handle = String(add.handle || '').replace('@','');
+            it.handle = String(add.handle || '').replace('@','')
+                     || (add.uid.split(':')[1] || '');
             it.action = MP.kind;
             it.seq    = 1;
             it.label  = MP.kind === 'followup' ? 'متابعة' : 'إرسال';
