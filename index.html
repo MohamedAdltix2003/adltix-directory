@@ -5899,6 +5899,14 @@
     font-size:11px; color:var(--muted); margin-inline-start:auto;
     margin-inline-end:10px; font-weight:700;
   }
+
+  /* 💡 زرار جلب المقترحين */
+  .pn-load{
+    font-family:inherit; font-size:11.5px; font-weight:700; cursor:pointer;
+    padding:6px 13px; border-radius:9px; border:1px dashed var(--line);
+    background:transparent; color:var(--muted); width:100%;
+  }
+  .pn-load:hover{ border-color:var(--brand); color:var(--brand) }
 </style>
 </head>
 <body>
@@ -6356,7 +6364,7 @@ const FN_MAP = {
   approve:        "admin-action",
   unarchive:      "admin-action"
 };
-const ADMIN_ACTIONS = { "delete":"delete", moveToNew:"archive", changeNiche:"changeNiche", approve:"approve", unarchive:"unarchive", resolvePending:"resolvePending", dropPending:"dropPending", addAndResolve:"addAndResolve", rereadPending:"rereadPending", searchLeads:"searchLeads" };
+const ADMIN_ACTIONS = { "delete":"delete", moveToNew:"archive", changeNiche:"changeNiche", approve:"approve", unarchive:"unarchive", resolvePending:"resolvePending", dropPending:"dropPending", addAndResolve:"addAndResolve", rereadPending:"rereadPending", searchLeads:"searchLeads", proofSuggest:"proofSuggest" };
 
 // Supabase بيحدّ أي طلب بـ 1000 صف كحد أقصى (إعداد max-rows).
 // كنا بنطلب 2000 فكان بيرجّع 1000 ويرمي الباقي في صمت —
@@ -15480,6 +15488,7 @@ function dbPending(r){
             esc(String(it.ocr).match(/^\[([^\]]+)\]/)?.[1] || '') + '</div>'
           : '')
 
+      +   '<div id="sg' + it.id + '">'
       +   (sg.length
           ? '<div class="pn-tier">💡 ' + esc(tierLabel) + '</div>'
             + '<div class="pn-sg">'
@@ -15494,8 +15503,9 @@ function dbPending(r){
                   + '</button>';
               }).join('')
             + '</div>'
-          : '<div class="pn-no">🚩 المؤثر ده غالبًا مش عندها — '
-            + 'دوّري أو ضيفيه</div>')
+          : '<button class="pn-load" onclick="dbPnSuggest(' + it.id + ')">'
+            + '💡 هات المقترحين</button>')
+      +   '</div>'
 
       +   '<div class="pn-act">'
       +     '<button class="pn-s" onclick="dbPnSearch(' + it.id + ',\''
@@ -15520,6 +15530,40 @@ function dbPending(r){
 //
 // ⚠️ 226 صورة في رد واحد بتسقط النداء. بنجيب موظفة
 //    واحدة في المرة — أسرع وأخف على الـ Egress.
+// 💡 جلب مقترحات صورة واحدة
+async function dbPnSuggest(id){
+  const box = document.getElementById('sg' + id);
+  if(!box) return;
+  box.innerHTML = '<div class="pn-tier">⏳ بندوّر…</div>';
+
+  try{
+    const r = await callApi('adminAction', {
+      token: SESSION.token, action: 'proofSuggest', id,
+    });
+    const items = r.items || [];
+    const tier = { near:'ضافتهم في نفس الوقت', today:'ضافتهم النهاردة',
+                   name:'الأقرب للاسم' }[r.tier] || 'مقترحين';
+
+    box.innerHTML = items.length
+      ? '<div class="pn-tier">💡 ' + esc(tier) + '</div>'
+        + '<div class="pn-sg">'
+        + items.map(x => {
+            const d = String(x.display || '');
+            const m = Number(x.mins || 0);
+            return '<button class="pn-b" onclick="dbPnLink(' + id + ',\''
+              + esc(x.uid) + '\')">'
+              + '<b>@' + esc(x.handle) + '</b>'
+              + (d ? '<u>' + esc(d) + '</u>' : '')
+              + '<i>' + (m < 60 ? m + 'د' : Math.round(m/60) + 'س') + '</i>'
+              + '</button>';
+          }).join('')
+        + '</div>'
+      : '<div class="pn-no">🚩 مالقاش — دوّري أو ضيفيه</div>';
+  }catch(e){
+    box.innerHTML = '<div class="pn-no">❌ ' + esc(e.message) + '</div>';
+  }
+}
+
 function dbPnStaff(v){
   _pnStaff = v;
   loadDashboard(true, v === 'all' ? '' : v);
