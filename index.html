@@ -13997,15 +13997,11 @@ async function runOCR_(){
 
           const add = await autoAddByLink(link);
 
-          if(add && add.partner){
-            // 🚫 شريك — متترفعش حتى في سناب
-            it.blocked  = add.msg;
-            it.noUpload = true;
-
-          } else if(add && (add.taken || add.subscribed)){
-            // 👻 سناب — بيترفع عشان الترتيب، والإدارة تشوف
-            // 👻 سناب — يترفع للمعلّقة عشان الترتيب مايبوظش،
-            //    والإدارة تشوف السبب وتمسح.
+          // 👻 سناب — كله بيترفع عشان الترتيب مايبوظش.
+          //
+          // ⚠️ الشريك والمشترك واللي عند حد تاني كلهم بيترفعوا
+          //    ويجوا للإدارة بالسبب — بدل ما نكسر الترتيب.
+          if(add && (add.partner || add.taken || add.subscribed)){
             it.blocked  = add.msg;
             it.snapNote = add.msg;
 
