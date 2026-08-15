@@ -6024,6 +6024,95 @@
     background:#DBEAFE; color:#1E40AF; font-size:11.5px; line-height:1.75;
   }
   body.dark .mp-sn-tip{ background:#1a2f4d; color:#93c5fd }
+
+  /* 📊 ملخّص الفحص */
+  .mp-res2{ margin-bottom:14px }
+  .mp-r2h{
+    font-size:12.5px; color:var(--muted); margin-bottom:9px;
+  }
+  .mp-r2h b{ font-size:17px; font-weight:900; color:var(--ink);
+             font-family:'Space Grotesk','Tajawal',sans-serif }
+  .mp-r2g{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(88px,1fr));
+    gap:7px; margin-bottom:11px;
+  }
+  .mp-r2c{
+    padding:11px 8px; border-radius:12px; text-align:center;
+  }
+  .mp-r2c b{
+    display:block; font-size:21px; font-weight:900; line-height:1.1;
+    font-family:'Space Grotesk','Tajawal',sans-serif;
+  }
+  .mp-r2c span{ display:block; font-size:10.5px; font-weight:700; margin-top:4px }
+  .mp-r2c.ok  { background:#DCFCE7; color:#15803D }
+  .mp-r2c.wait{ background:#DBEAFE; color:#1D4ED8 }
+  .mp-r2c.bad { background:#FEE2E2; color:#B91C1C }
+  .mp-r2c.up  { background:#F3E8FF; color:#6B21A8 }
+  body.dark .mp-r2c.ok  { background:#14432a; color:#86efac }
+  body.dark .mp-r2c.wait{ background:#1a2f4d; color:#93c5fd }
+  body.dark .mp-r2c.bad { background:#3d1414; color:#fca5a5 }
+  body.dark .mp-r2c.up  { background:#2e1065; color:#d8b4fe }
+
+  .mp-r2n{
+    padding:12px 14px; border-radius:12px; margin-bottom:8px;
+  }
+  .mp-r2n b{ display:block; font-size:13px; font-weight:800; margin-bottom:4px }
+  .mp-r2n span{ display:block; font-size:11.5px; line-height:1.75; opacity:.9 }
+  .mp-r2n.ok  { background:#DCFCE7; color:#15803D }
+  .mp-r2n.warn{ background:#FEF3C7; color:#92400E }
+  .mp-r2n.bad { background:#FEE2E2; color:#B91C1C }
+  body.dark .mp-r2n.ok  { background:#14432a; color:#86efac }
+  body.dark .mp-r2n.warn{ background:#3d2c0d; color:#fcd34d }
+  body.dark .mp-r2n.bad { background:#3d1414; color:#fca5a5 }
+
+  /* 📊 ملخّص الرفعة */
+  .mp-rep{
+    border:1px solid var(--line); border-radius:14px;
+    overflow:hidden; margin:14px 0 10px;
+  }
+  .mp-rep-h{
+    padding:11px 14px; font-size:12.5px; font-weight:800; color:var(--ink);
+    background:color-mix(in srgb,var(--line) 20%,transparent);
+    border-bottom:1px solid var(--line);
+  }
+  .mp-rep-b{ padding:4px 0 }
+  .mp-rep-r{
+    display:flex; align-items:center; gap:11px;
+    padding:9px 14px; font-size:12.5px;
+  }
+  .mp-rep-r b{
+    font-size:19px; font-weight:900; min-width:34px;
+    font-family:'Space Grotesk','Tajawal',sans-serif;
+  }
+  .mp-rep-r span{ color:var(--muted); font-weight:600 }
+  .mp-rep-r.ok   b{ color:#15803D }
+  .mp-rep-r.wait b{ color:#1D4ED8 }
+  .mp-rep-r.no   b{ color:#B91C1C }
+  body.dark .mp-rep-r.ok b  { color:#86efac }
+  body.dark .mp-rep-r.wait b{ color:#93c5fd }
+  body.dark .mp-rep-r.no b  { color:#fca5a5 }
+
+  .mp-rep-f{
+    padding:11px 14px; border-top:1px solid var(--line);
+    background:#FEF3C7; display:flex; flex-direction:column; gap:9px;
+  }
+  body.dark .mp-rep-f{ background:#3d2c0d }
+  .mp-rep-f span{ font-size:11.5px; color:#92400E; line-height:1.75 }
+  body.dark .mp-rep-f span{ color:#fcd34d }
+  .mp-rep-x{
+    font-family:inherit; font-size:11.5px; font-weight:800; cursor:pointer;
+    padding:7px 14px; border-radius:9px; border:none;
+    background:#92400E; color:#fff; align-self:flex-start;
+  }
+  .mp-rep-x:hover{ filter:brightness(1.1) }
+
+  /* 🚫 صورة محجوبة */
+  .mp-blk{
+    font-size:11px; font-weight:800; padding:3px 10px; border-radius:7px;
+    background:#FEE2E2; color:#B91C1C;
+  }
+  body.dark .mp-blk{ background:#3d1414; color:#fca5a5 }
+  .mp-c.blocked{ opacity:.6 }
 </style>
 </head>
 <body>
@@ -14467,9 +14556,14 @@ function renderMobileProofs(){
     : '';
 
   const n = MP.items.length;
-  const ready = MP.items.filter(x => x.state === 'ready' && x.uid).length;
-  const need  = MP.items.filter(x => x.state === 'ready' && !x.uid).length;
-  const okN   = MP.items.filter(x => x.state === 'ok').length;
+  // 🔢 التصنيف الدقيق — كل حالة لوحدها
+  const R = MP.items.filter(x => x.state === 'ready');
+  const ready   = R.filter(x => x.uid).length;                    // جاهز يترفع
+  const blocked = R.filter(x => x.noUpload).length;               // متحجوب
+  const pend    = R.filter(x => !x.uid && !x.noUpload).length;    // للمراجعة
+  const need    = pend;
+  const okN     = MP.items.filter(x => x.state === 'ok').length;
+  const upN     = ready + pend;                                   // اللي هيترفع فعلًا
 
   let body = '';
 
@@ -14608,21 +14702,48 @@ function renderMobileProofs(){
         + '<div class="mp-st">🔍 بنقرا الأسماء… ' + MP.done + '/' + n + '</div>'
         + '</div>';
     } else {
-      body += '<div class="mp-sum">'
-        + '<span class="ok">✅ ' + ready + ' جاهز</span>'
-        + (need ? '<span class="need">❓ ' + need + ' محتاج اختيار</span>' : '')
-        + (okN  ? '<span class="up">📤 ' + okN + ' اترفع</span>' : '')
+      // 📊 الملخّص — كل حالة برقمها
+      const taken = R.filter(x => x.noUpload && /مع /.test(x.blocked||'')).length;
+      const subs  = R.filter(x => x.noUpload && /مشترك/.test(x.blocked||'')).length;
+      const part  = R.filter(x => x.noUpload && /شريك/.test(x.blocked||'')).length;
+
+      body += '<div class="mp-res2">'
+        + '<div class="mp-r2h">'
+        +   '<b>' + n + '</b> صورة اتفحصت'
+        + '</div>'
+        + '<div class="mp-r2g">'
+        +   (ready ? '<div class="mp-r2c ok"><b>' + ready + '</b>'
+                   + '<span>✅ جاهزة</span></div>' : '')
+        +   (pend  ? '<div class="mp-r2c wait"><b>' + pend + '</b>'
+                   + '<span>🤖 تحت التحليل</span></div>' : '')
+        +   (taken ? '<div class="mp-r2c bad"><b>' + taken + '</b>'
+                   + '<span>🔁 مع موظفة تانية</span></div>' : '')
+        +   (subs  ? '<div class="mp-r2c bad"><b>' + subs + '</b>'
+                   + '<span>🎉 مشتركين</span></div>' : '')
+        +   (part  ? '<div class="mp-r2c bad"><b>' + part + '</b>'
+                   + '<span>🚫 شركاء</span></div>' : '')
+        +   (okN   ? '<div class="mp-r2c up"><b>' + okN + '</b>'
+                   + '<span>📤 اترفعت</span></div>' : '')
+        + '</div>'
+
+        + (upN
+          ? '<div class="mp-r2n ok">'
+            + '<b>هيترفع ' + upN + ' صورة</b>'
+            + '<span>كلها هتتحسب في التارجت بتاعك'
+            + (pend ? ' — واللي تحت التحليل هيتربط خلال دقايق' : '')
+            + '</span></div>'
+          : '<div class="mp-r2n bad">'
+            + '<b>🚫 مفيش صورة تترفع</b>'
+            + '<span>كل الصور دي لمؤثرين مش في قايمتك</span></div>')
+
+        + (blocked
+          ? '<div class="mp-r2n warn">'
+            + '<b>⚠️ ' + blocked + ' صورة مش هتترفع</b>'
+            + '<span>المؤثرين دول مع موظفات تانيات أو مشتركين خلاص</span>'
+            + '</div>'
+          : '')
         + '</div>';
 
-      // 📝 رسالة واضحة لو فيه صور محتاجة اختيار
-      if(need){
-        body += '<div class="mp-need">'
-          + '<b>🤖 ' + ready + ' من ' + n + ' اتربطوا تلقائي</b>'
-          + '<span>الباقي (' + need + ') الذكاء الاصطناعي بيحلّلهم — '
-          +   'ارفعيهم عادي وهيتربطوا خلال شوية.</span>'
-          + '<span class="tip">✅ كله بيتحسب في التارجت بتاعك</span>'
-          + '</div>';
-      }
     }
 
     // ═══ الصور ═══
@@ -14694,6 +14815,16 @@ function renderMobileProofs(){
           +   '<button class="mp-ch" onclick="mpPickCand(\'' + it.id + '\')">🔍 غيّري</button>'
           +   '<button class="mp-del" onclick="mpRemove(\'' + it.id + '\')">🗑️ احذفي</button>'
           + '</div>';
+      } else if(it.noUpload){
+        // 🚫 محجوبة — مش هتترفع
+        body += '<div class="mp-r">'
+          +   '<span class="mp-blk">🚫 مش هتترفع</span>'
+          + '</div>'
+          + '<span class="mp-msg">' + esc(it.msg || it.blocked || '') + '</span>'
+          + '<div class="mp-btns">'
+          +   '<button class="mp-del" onclick="mpRemove(\'' + it.id + '\')">'
+          +     '🗑️ احذفي</button>'
+          + '</div>';
       } else {
         // ⚠️ التحذير للصور المشكوك فيها بس — مش لكل صورة مالهاش مؤثر
         const risky2 = (it.conf === 'low' || it.conf === 'none');
@@ -14712,13 +14843,68 @@ function renderMobileProofs(){
     });
     body += '</div>';
 
+    // ═══ 📊 الملخّص قبل الرفع ═══
+    //
+    // ⚠️ الموظفة لازم تعرف بالظبط: كام هيترفع وكام لأ وليه.
+    if(!MP.loading && n){
+      const taken  = R.filter(x => x.noUpload &&
+                      /مع |تبع /.test(String(x.blocked||''))).length;
+      const subs   = R.filter(x => x.noUpload &&
+                      /مشترك/.test(String(x.blocked||''))).length;
+      const partn  = R.filter(x => x.noUpload &&
+                      /شريك/.test(String(x.blocked||''))).length;
+      const other  = blocked - taken - subs - partn;
+
+      body += '<div class="mp-rep">'
+        + '<div class="mp-rep-h">📊 ملخّص الرفعة</div>'
+        + '<div class="mp-rep-b">'
+
+        + (ready ? '<div class="mp-rep-r ok">'
+            + '<b>' + ready + '</b><span>✅ جاهزة — متربطة بالمؤثر</span>'
+            + '</div>' : '')
+
+        + (pend ? '<div class="mp-rep-r wait">'
+            + '<b>' + pend + '</b><span>🤖 هتترفع — النظام هيربطها</span>'
+            + '</div>' : '')
+
+        + (taken ? '<div class="mp-rep-r no">'
+            + '<b>' + taken + '</b><span>🔁 مع موظفة تانية — مش هتترفع</span>'
+            + '</div>' : '')
+
+        + (subs ? '<div class="mp-rep-r no">'
+            + '<b>' + subs + '</b><span>🎉 مشتركين خلاص — مش هتترفع</span>'
+            + '</div>' : '')
+
+        + (partn ? '<div class="mp-rep-r no">'
+            + '<b>' + partn + '</b><span>🚫 شركاء عندنا — مش هتترفع</span>'
+            + '</div>' : '')
+
+        + (other > 0 ? '<div class="mp-rep-r no">'
+            + '<b>' + other + '</b><span>⚠️ مش هتترفع</span>'
+            + '</div>' : '')
+
+        + '</div>'
+
+        + (blocked
+          ? '<div class="mp-rep-f">'
+            + '<span>الصور اللي مش هتترفع متعلّمة بـ 🚫 تحت — '
+            +   'امسحيها أو سيبيها، مش هتتحسب عليكي.</span>'
+            + (blocked > 1
+              ? '<button class="mp-rep-x" onclick="mpDropBlocked()">'
+                + '🗑️ امسحي الـ ' + blocked + ' كلهم</button>'
+              : '')
+            + '</div>'
+          : '')
+        + '</div>';
+    }
+
     // ═══ الأزرار ═══
     if(!MP.loading){
       body += '<div class="mp-foot">'
         + '<button class="mp-more" onclick="mpPick()">📸 زودي</button>'
-        + '<button class="mp-go"' + ((ready + need) ? '' : ' disabled')
+        + '<button class="mp-go"' + (upN ? '' : ' disabled')
         +   ' onclick="mpUpload()">'
-        +   'ارفعي الكل — ' + (ready + need)
+        +   (upN ? 'ارفعي ' + upN + ' صورة' : '🚫 مفيش صور تترفع')
         +   '</button>'
         + '</div>';
     }
@@ -14785,6 +14971,17 @@ function shortLink_(u){
 }
 
 // 🔄 إعادة محاولة الرفع
+// 🗑️ مسح كل الصور اللي مش هتترفع
+function mpDropBlocked(){
+  const bad = MP.items.filter(x => x.noUpload);
+  if(!bad.length) return;
+  if(!confirm('تمسحي ' + bad.length + ' صورة مش هتترفع؟')) return;
+  MP.items = MP.items.filter(x => !x.noUpload);
+  MP.done = MP.items.length;
+  renderMobileProofs();
+  toastOk('🗑️ اتمسحوا ' + bad.length);
+}
+
 // 🔄 إعادة رفع صورة فشلت
 //
 // ⚠️ الرفعة الأولى ممكن تكون نجحت والرد ضاع في النت.
