@@ -6060,6 +6060,7 @@
   .mp-r2n span{ display:block; font-size:11.5px; line-height:1.75; opacity:.9 }
   .mp-r2n.ok  { background:#DCFCE7; color:#15803D }
   .mp-r2n.warn{ background:#FEF3C7; color:#92400E }
+  .mp-r2n .mp-rep-x{ margin-top:8px; align-self:flex-start }
   .mp-r2n.bad { background:#FEE2E2; color:#B91C1C }
   body.dark .mp-r2n.ok  { background:#14432a; color:#86efac }
   body.dark .mp-r2n.warn{ background:#3d2c0d; color:#fcd34d }
@@ -14726,7 +14727,13 @@ function renderMobileProofs(){
                    + '<span>📤 اترفعت</span></div>' : '')
         + '</div>'
 
-        + (upN
+        // ⚠️ بعد الرفع، upN بيبقى صفر لأن الحالة اتغيّرت لـ ok.
+        //    الرسالة السالبة كانت بتظهر رغم إن الصور اترفعت.
+        + (okN && !upN
+          ? '<div class="mp-r2n ok">'
+            + '<b>✅ اترفع ' + okN + ' إثبات</b>'
+            + '<span>كلها اتحسبت في التارجت بتاعك</span></div>'
+          : upN
           ? '<div class="mp-r2n ok">'
             + '<b>هيترفع ' + upN + ' صورة</b>'
             + '<span>كلها هتتحسب في التارجت بتاعك'
@@ -14739,7 +14746,12 @@ function renderMobileProofs(){
         + (blocked
           ? '<div class="mp-r2n warn">'
             + '<b>⚠️ ' + blocked + ' صورة مش هتترفع</b>'
-            + '<span>المؤثرين دول مع موظفات تانيات أو مشتركين خلاص</span>'
+            + '<span>المؤثرين دول مع موظفات تانيات أو مشتركين خلاص — '
+            +   'متعلّمة بـ 🚫 تحت</span>'
+            + (blocked > 1
+              ? '<button class="mp-rep-x" onclick="mpDropBlocked()">'
+                + '🗑️ امسحيهم كلهم</button>'
+              : '')
             + '</div>'
           : '')
         + '</div>';
@@ -14842,61 +14854,6 @@ function renderMobileProofs(){
       body += '</div></div>';
     });
     body += '</div>';
-
-    // ═══ 📊 الملخّص قبل الرفع ═══
-    //
-    // ⚠️ الموظفة لازم تعرف بالظبط: كام هيترفع وكام لأ وليه.
-    if(!MP.loading && n){
-      const taken  = R.filter(x => x.noUpload &&
-                      /مع |تبع /.test(String(x.blocked||''))).length;
-      const subs   = R.filter(x => x.noUpload &&
-                      /مشترك/.test(String(x.blocked||''))).length;
-      const partn  = R.filter(x => x.noUpload &&
-                      /شريك/.test(String(x.blocked||''))).length;
-      const other  = blocked - taken - subs - partn;
-
-      body += '<div class="mp-rep">'
-        + '<div class="mp-rep-h">📊 ملخّص الرفعة</div>'
-        + '<div class="mp-rep-b">'
-
-        + (ready ? '<div class="mp-rep-r ok">'
-            + '<b>' + ready + '</b><span>✅ جاهزة — متربطة بالمؤثر</span>'
-            + '</div>' : '')
-
-        + (pend ? '<div class="mp-rep-r wait">'
-            + '<b>' + pend + '</b><span>🤖 هتترفع — النظام هيربطها</span>'
-            + '</div>' : '')
-
-        + (taken ? '<div class="mp-rep-r no">'
-            + '<b>' + taken + '</b><span>🔁 مع موظفة تانية — مش هتترفع</span>'
-            + '</div>' : '')
-
-        + (subs ? '<div class="mp-rep-r no">'
-            + '<b>' + subs + '</b><span>🎉 مشتركين خلاص — مش هتترفع</span>'
-            + '</div>' : '')
-
-        + (partn ? '<div class="mp-rep-r no">'
-            + '<b>' + partn + '</b><span>🚫 شركاء عندنا — مش هتترفع</span>'
-            + '</div>' : '')
-
-        + (other > 0 ? '<div class="mp-rep-r no">'
-            + '<b>' + other + '</b><span>⚠️ مش هتترفع</span>'
-            + '</div>' : '')
-
-        + '</div>'
-
-        + (blocked
-          ? '<div class="mp-rep-f">'
-            + '<span>الصور اللي مش هتترفع متعلّمة بـ 🚫 تحت — '
-            +   'امسحيها أو سيبيها، مش هتتحسب عليكي.</span>'
-            + (blocked > 1
-              ? '<button class="mp-rep-x" onclick="mpDropBlocked()">'
-                + '🗑️ امسحي الـ ' + blocked + ' كلهم</button>'
-              : '')
-            + '</div>'
-          : '')
-        + '</div>';
-    }
 
     // ═══ الأزرار ═══
     if(!MP.loading){
