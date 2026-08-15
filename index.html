@@ -5938,6 +5938,24 @@
   body.dark .pn-cr.bad { background:#3d1414; color:#fca5a5 }
 
   .cf-yes:disabled{ opacity:.45; cursor:default }
+
+  /* ↩️ توست التراجع */
+  .tst-undo{
+    position:fixed; bottom:24px; inset-inline-start:50%;
+    transform:translate(-50%, 20px); z-index:10050;
+    display:flex; align-items:center; gap:12px;
+    padding:12px 16px; border-radius:12px;
+    background:#1C1917; color:#fff; font-size:13px; font-weight:700;
+    box-shadow:0 8px 28px rgba(0,0,0,.35);
+    opacity:0; transition:all .25s;
+  }
+  .tst-undo.show{ opacity:1; transform:translate(-50%, 0) }
+  .tst-undo button{
+    font-family:inherit; font-size:12px; font-weight:800; cursor:pointer;
+    padding:6px 13px; border-radius:8px; border:none;
+    background:rgba(255,255,255,.2); color:#fff;
+  }
+  .tst-undo button:hover{ background:rgba(255,255,255,.32) }
 </style>
 </head>
 <body>
@@ -6395,7 +6413,7 @@ const FN_MAP = {
   approve:        "admin-action",
   unarchive:      "admin-action"
 };
-const ADMIN_ACTIONS = { "delete":"delete", moveToNew:"archive", changeNiche:"changeNiche", approve:"approve", unarchive:"unarchive", resolvePending:"resolvePending", dropPending:"dropPending", addAndResolve:"addAndResolve", rereadPending:"rereadPending", searchLeads:"searchLeads", proofSuggest:"proofSuggest", checkLink:"checkLink" };
+const ADMIN_ACTIONS = { "delete":"delete", moveToNew:"archive", changeNiche:"changeNiche", approve:"approve", unarchive:"unarchive", resolvePending:"resolvePending", dropPending:"dropPending", addAndResolve:"addAndResolve", rereadPending:"rereadPending", searchLeads:"searchLeads", proofSuggest:"proofSuggest", checkLink:"checkLink", undoResolve:"undoResolve" };
 
 // Supabase بيحدّ أي طلب بـ 1000 صف كحد أقصى (إعداد max-rows).
 // كنا بنطلب 2000 فكان بيرجّع 1000 ويرمي الباقي في صمت —
@@ -15527,7 +15545,8 @@ function dbPending(r){
                 const d = String(x.display || '');
                 const m = Number(x.mins || 0);
                 return '<button class="pn-b" onclick="dbPnLink(' + it.id + ',\''
-                  + esc(x.uid) + '\')" title="' + esc(d) + '">'
+                  + esc(x.uid) + '\',\'' + esc(x.handle) + '\')" '
+                  + 'title="' + esc(d) + '">'
                   + '<b>@' + esc(x.handle) + '</b>'
                   + (d ? '<u>' + esc(d) + '</u>' : '')
                   + '<i>' + (m < 60 ? m + 'د' : Math.round(m/60) + 'س') + '</i>'
@@ -15634,7 +15653,38 @@ async function dbPnReread(){
 }
 
 // ✅ ربط الصورة بمؤثر
-async function dbPnLink(id, uid){
+// ↩️ آخر ربط — للتراجع
+let _lastLink = null;
+
+function toastUndo(msg, id){
+  const t = document.createElement('div');
+  t.className = 'tst-undo';
+  t.innerHTML = '<span>' + esc(msg) + '</span>'
+    + '<button onclick="dbPnUndo(' + id + ')">↩️ تراجع</button>';
+  document.body.appendChild(t);
+  requestAnimationFrame(() => t.classList.add('show'));
+  setTimeout(() => {
+    t.classList.remove('show');
+    setTimeout(() => t.remove(), 300);
+  }, 15000);
+}
+
+async function dbPnUndo(id){
+  try{
+    await callApi('adminAction', {
+      token: SESSION.token, action: 'undoResolve', id,
+    });
+    document.querySelectorAll('.tst-undo').forEach(x => x.remove());
+    toastOk('↩️ اترجع — الصورة رجعت للمعلّقة');
+    setTimeout(() => loadDashboard(true, _pnStaff === 'all' ? '' : _pnStaff), 700);
+  }catch(e){ toastErr(e.message); }
+}
+
+async function dbPnLink(id, uid, handle){
+  // ⚠️ الربط بيسجّل أكشن حقيقي — تأكيد قبل التنفيذ
+  const h = handle || String(uid).split(':')[1] || uid;
+  if(!confirm('تربط الصورة دي بـ @' + h + '؟')) return;
+
   const card = document.getElementById('pn' + id);
   if(card) card.style.opacity = '.5';
   try{
@@ -15647,7 +15697,9 @@ async function dbPnLink(id, uid){
       card.style.opacity = '0';
       setTimeout(() => card.remove(), 300);
     }
-    toastOk('✅ اتربط بـ @' + String(r.handle || '').replace('@',''));
+    // ↩️ زرار تراجع — 15 ثانية
+    _lastLink = { id, uid, handle: r.handle };
+    toastUndo('✅ اتربط بـ @' + String(r.handle || '').replace('@',''), id);
   }catch(e){
     if(card) card.style.opacity = '1';
     toastErr(e.message);
@@ -15815,7 +15867,8 @@ async function dbPnSearch(id, staff){
       const d = String(c.display || '');
       const f = Number(c.followers || 0);
       const m = Number(c.mins || 0);
-      return '<button class="pn-si" data-uid="' + esc(c.uid) + '">'
+      return '<button class="pn-si" data-uid="' + esc(c.uid) + '" '
+        + 'data-h="' + esc(c.handle) + '">'
         + '<div class="pn-sn">@' + esc(c.handle) + '</div>'
         + '<div class="pn-sm">'
         +   (d ? '<span>' + esc(d) + '</span>' : '')
@@ -15826,7 +15879,7 @@ async function dbPnSearch(id, staff){
     }).join('');
 
     res.querySelectorAll('.pn-si').forEach(b => {
-      b.onclick = () => { close(); dbPnLink(id, b.dataset.uid); };
+      b.onclick = () => { close(); dbPnLink(id, b.dataset.uid, b.dataset.h); };
     });
   };
 
