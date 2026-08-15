@@ -13438,7 +13438,11 @@ const AUTO_PLAT = {
 // ⚠️ بترجّع الـ uid سواء كان موجود أو اتضاف دلوقتي.
 //    الشريك بيترفض، واللي عند موظفة تانية بيتقال عليه.
 async function autoAddByLink(link){
-  const clean = String(link || '').trim();
+  // ⚠️ لينكات المشاركة فيها ?share_id=... و &locale=...
+  //    لو بعتناها زي ما هي، الـ uid بيتبني غلط.
+  const clean = String(link || '').trim()
+    .replace(/[?#].*$/, '')
+    .replace(/\/+$/, '');
   if(clean.length < 8) return null;
 
   try{
@@ -13900,10 +13904,11 @@ function mpSnapNext(){
   // ننضّف ونشيل المكرر
   const seen = new Set();
   const links = raw.split(/[\n,]+/)
-    .map(x => x.trim())
-    .filter(Boolean)
+    // ⚠️ ننضّف لينكات المشاركة — ?share_id و &locale
+    .map(x => x.trim().replace(/[?#].*$/, '').replace(/\/+$/, ''))
+    .filter(x => x.length >= 8)
     .filter(x => {
-      const k = x.toLowerCase().replace(/[?#].*$/, '').replace(/\/+$/, '');
+      const k = x.toLowerCase();
       if(seen.has(k)) return false;
       seen.add(k); return true;
     });
