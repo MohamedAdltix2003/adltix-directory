@@ -13160,9 +13160,9 @@ let _visionFails = 0;
 async function readHandleAI(file){
   // ⚠️ الموديل واقف؟ نرجّع فورًا — من غير نداء ولا انتظار.
   //    ده اللي كان بيبطّئ الرفع لما المفاتيح تخلص.
+  // ⚠️ مبنوقفش دلوقتي — فيه احتياطي Florence على السيرفر.
+  //    لو Groq وقف، الـ function بتستخدمه تلقائي.
   if(_visionOff && Date.now() < _visionOff) return null;
-  // فشل 3 مرات ورا بعض؟ نوقف الرفعة دي كلها
-  if(_visionFails >= 3) return null;
 
   try{
     const b64 = await fileToBase64(file);
@@ -13174,14 +13174,12 @@ async function readHandleAI(file){
 
     // 🚦 كل المفاتيح وصلت لحدها — نوقف دقيقة ونكمّل
     //    ⚠️ الصور دي هتروح للمعلّقة وautolink هيربطها
+    // 🚦 الاتنين وقفوا؟ نستنى شوية
     if(r && (r.all_busy || String(r.error || '').includes('429'))){
-      _visionFails = 99;
-      _visionOff = Date.now() + 120000;
+      _visionOff = Date.now() + 45000;
       return null;
     }
-    if(!r || r.skip){ _visionFails++; return null; }
-
-    _visionFails = 0;
+    if(!r || r.skip) return null;
 
     const names = [];
     if(r.username) names.push(String(r.username).toLowerCase());
@@ -14392,9 +14390,34 @@ function shortLink_(u){
 }
 
 // 🔄 إعادة محاولة الرفع
-function mpRetry(id){
+// 🔄 إعادة رفع صورة فشلت
+//
+// ⚠️ الرفعة الأولى ممكن تكون نجحت والرد ضاع في النت.
+//    نتأكد بالبصمة قبل ما نعيد — عشان مانرفعش مكرر.
+async function mpRetry(id){
   const it = MP.items.find(x => x.id === id);
   if(!it) return;
+
+  it.state = 'uploading';
+  it.msg = '⏳ بنتأكد…';
+  renderMobileProofs();
+
+  try{
+    const hash = await fileHash(it.file);
+    const chk = await callApi('verifyProof', {
+      token: SESSION.token, action: 'check',
+      hash, uid: it.uid || '', actionType: it.action || MP.kind,
+    }).catch(() => null);
+
+    // اترفعت خلاص؟ نعلّمها ناجحة
+    if(chk && chk.accepted === false && chk.reason === 'duplicate'){
+      it.state = 'ok';
+      it.msg   = '✅ كانت اترفعت خلاص';
+      renderMobileProofs();
+      return;
+    }
+  }catch(e){ /* نكمّل الإعادة عادي */ }
+
   it.state = 'ready';
   it.msg = '';
   renderMobileProofs();
@@ -14793,6 +14816,23 @@ async function mpUploadPending(list){
       try{
         await waitNet_();
         const hash2 = await fileHash(it.file);
+
+        // ⚠️ الرفعة الأولى ممكن تكون نجحت والرد ضاع.
+        //    نتأكد قبل ما نرفع تاني — عشان مانسجّلش مكرر.
+        const chk2 = await callApi('verifyProof', {
+          token: SESSION.token, action: 'check',
+          hash: hash2, uid: '', actionType: 'sent',
+        }).catch(() => null);
+
+        if(chk2 && chk2.accepted === false){
+          // اترفعت خلاص — نعلّمها ناجحة
+          it.state = 'ok';
+          it.msg   = '🤖 الـ AI بيحللها — هتظهر خلال دقايق';
+          done++;
+          renderMobileProofs();
+          continue;
+        }
+
         const b64_2 = await fileToBase64(it.file);
         const up2 = await retry_(() => callApi('logAction', {
           token: SESSION.token, uid: '', actionType: 'pending',
