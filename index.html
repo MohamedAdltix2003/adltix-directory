@@ -5956,6 +5956,74 @@
     background:rgba(255,255,255,.2); color:#fff;
   }
   .tst-undo button:hover{ background:rgba(255,255,255,.32) }
+
+  /* 📍 مسار الاختيار */
+  .mp-crumb{
+    display:flex; align-items:center; gap:7px; padding:0 0 12px;
+    border-bottom:1px solid var(--line); margin-bottom:13px;
+    font-size:12px; font-weight:700; color:var(--ink);
+  }
+  .mp-crumb button{
+    width:28px; height:28px; border-radius:8px; cursor:pointer;
+    border:1px solid var(--line); background:transparent;
+    color:var(--muted); font-size:13px; flex-shrink:0;
+  }
+  .mp-crumb button:hover{ background:var(--brand-soft); color:var(--brand) }
+  .mp-crumb i{ font-style:normal; color:var(--muted); opacity:.6 }
+
+  /* 📱 اختيار النوع والمنصة */
+  .mp-choose{ padding:4px 0 }
+  .mp-ch-t{
+    font-size:11.5px; font-weight:800; color:var(--muted);
+    margin:14px 2px 8px;
+  }
+  .mp-ch-t:first-child{ margin-top:2px }
+  .mp-ch-g{ display:grid; grid-template-columns:1fr 1fr; gap:8px }
+  .mp-ch-g.p{ grid-template-columns:1fr }
+  .mp-ch-b{
+    display:flex; flex-direction:column; align-items:flex-start; gap:2px;
+    padding:13px 14px; border-radius:13px; cursor:pointer;
+    border:1px solid var(--line); background:var(--surface);
+    font-family:inherit; text-align:start; transition:all .14s;
+  }
+  .mp-ch-b:hover{ border-color:var(--brand); transform:translateY(-1px) }
+  .mp-ch-b.on{
+    border-color:var(--brand); background:var(--brand-soft);
+    box-shadow:inset 0 0 0 1px var(--brand);
+  }
+  .mp-ch-b .i{ font-size:19px; line-height:1.2 }
+  .mp-ch-b b{ font-size:13.5px; font-weight:800; color:var(--ink) }
+  .mp-ch-b u{
+    text-decoration:none; font-size:11px; color:var(--muted); line-height:1.5;
+  }
+  .mp-ch-g.p .mp-ch-b{
+    flex-direction:row; align-items:center; gap:11px;
+  }
+  .mp-ch-g.p .mp-ch-b .i{ font-size:22px }
+  .mp-ch-g.p .mp-ch-b b{ flex-shrink:0 }
+  .mp-ch-g.p .mp-ch-b u{ margin-inline-start:auto; text-align:end }
+
+  /* 👻 لينكات سناب */
+  .mp-snap{ padding:2px 0 }
+  .mp-sn-h{ margin-bottom:11px }
+  .mp-sn-h b{ display:block; font-size:15px; color:var(--ink) }
+  .mp-sn-h span{ display:block; font-size:11.5px; color:var(--muted);
+                 margin-top:3px }
+  .mp-sn-ta{
+    width:100%; box-sizing:border-box; padding:12px 14px;
+    font-family:ui-monospace,monospace; font-size:12px; line-height:1.9;
+    border:1px solid var(--line); border-radius:12px;
+    background:var(--surface); color:var(--ink); outline:none;
+    direction:ltr; unicode-bidi:isolate; resize:vertical;
+  }
+  .mp-sn-ta:focus{ border-color:var(--brand) }
+  .mp-sn-n{ font-size:11.5px; color:var(--muted); margin:8px 2px }
+  .mp-sn-n b{ color:var(--brand); font-weight:900; font-size:14px }
+  .mp-sn-tip{
+    padding:10px 13px; border-radius:11px; margin:10px 0 14px;
+    background:#DBEAFE; color:#1E40AF; font-size:11.5px; line-height:1.75;
+  }
+  body.dark .mp-sn-tip{ background:#1a2f4d; color:#93c5fd }
 </style>
 </head>
 <body>
@@ -12984,6 +13052,12 @@ const MP = {
   // 🔄 نوع الإثبات — الموظفة بتختاره قبل الرفع
   //    ⚠️ لو اختارت غلط، السيرفر بيصحّح تلقائي
   kind: 'sent',
+  // 📱 المنصة — بتحدد طريقة الرفع كلها
+  //    إنستجرام/تيك توك → صور بس، النظام يقرا الهاندل
+  //    سناب → لينكات + صور بالترتيب
+  plat: '',
+  snapLinks: [],                  // لينكات سناب — سطر لكل واحد
+  snapStep: 'links',              // links → shots
   ocrReady: false, worker: null, done: 0,
   addBusy: false, addRes: null,
   leads: [], follows: [], listBusy: false, loaded: false,
@@ -12998,6 +13072,8 @@ async function openMobileProofs(){
   MP.items = [];
   MP.done = 0;
   MP.addRes = null;
+  // 📱 نبدأ من شاشة الاختيار كل مرة
+  MP.plat = ''; MP.snapLinks = []; MP.snapStep = 'links';
   renderMobileProofs();
 
   mpLoadLists();
@@ -13266,6 +13342,54 @@ const AUTO_PLAT = {
   snapchat:  'https://snapchat.com/add/',
   youtube:   'https://youtube.com/@',
 };
+
+// 🔗 إضافة/إيجاد مؤثر من لينك مباشر
+//
+// ⚠️ بترجّع الـ uid سواء كان موجود أو اتضاف دلوقتي.
+//    الشريك بيترفض، واللي عند موظفة تانية بيتقال عليه.
+async function autoAddByLink(link){
+  const clean = String(link || '').trim();
+  if(clean.length < 8) return null;
+
+  try{
+    const r = await callApi('addManualLead', {
+      token: SESSION.token, link: clean,
+      niche: '', country: '', platform: '',
+    });
+
+    if(r && r.card && r.card.uid){
+      // موجود خلاص؟
+      const existed = r.duplicate === true;
+
+      if(!existed){
+        const c = mapRawToCard(r.card);
+        CREATORS.unshift(c);
+        invalidateCache();
+        MP.cands.unshift({
+          uid: c.uid, handle: String(c.handle || '').replace('@',''),
+          display: c.display_name || '', platform: c.platform,
+          followers: c.followers || 0, avatar: c.avatarUrl || '',
+          action: 'sent', seq: 1, due: true, added_today: true,
+        });
+      }
+
+      return {
+        uid: r.card.uid,
+        handle: r.card.handle || '',
+        isNew: !existed,
+      };
+    }
+    return null;
+
+  }catch(e){
+    const m = String(e.message || '');
+    if(m.includes('شريك') || m.includes('متعاقد') || m.includes('اتحدّد بـ')){
+      return { blocked: true, partner: true,
+               msg: '🚫 ' + m.replace(/^شريك مسجّل — /, 'شريك عندنا: ') };
+    }
+    return { blocked: true, msg: '🔁 ' + m };
+  }
+}
 
 async function autoAddInfluencer(username, platform, display){
   const u = String(username || '').replace(/^@/, '').trim();
@@ -13574,13 +13698,108 @@ function matchCandidate_(handles){
 // ═══════════════════════════════════════════
 // اختيار الصور
 // ═══════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+// 📍 اختيار نوع الإثبات والمنصة
+//
+// ⚠️ المنصة بتحدد طريقة الرفع كلها:
+//    إنستجرام/تيك توك → صور بس، النظام يقرا الهاندل ويضيفه
+//    سناب → لينكات الأول، وبعدها الصور بنفس الترتيب
+// ═══════════════════════════════════════════════════════════
+function mpChooser_(){
+  const K = [
+    ['sent',     '📤', 'إثبات إرسال',  'أول رسالة للمؤثر'],
+    ['followup', '🔄', 'متابعة',       'رسالة تانية — مالهاش تارجت'],
+  ];
+  const P = [
+    ['instagram', '📸', 'إنستجرام', 'ارفعي الصور بس'],
+    ['tiktok',    '🎵', 'تيك توك',  'ارفعي الصور بس'],
+    ['snapchat',  '👻', 'سناب شات', 'لينكات + صور بالترتيب'],
+  ];
+
+  return '<div class="mp-choose">'
+    + '<div class="mp-ch-t">١ · نوع الإثبات</div>'
+    + '<div class="mp-ch-g">'
+    +   K.map(([v,i,l,d]) =>
+        '<button class="mp-ch-b' + (MP.kind===v ? ' on' : '') + '" '
+        + 'onclick="mpKind(\'' + v + '\')">'
+        + '<span class="i">' + i + '</span>'
+        + '<b>' + l + '</b><u>' + d + '</u></button>').join('')
+    + '</div>'
+
+    + '<div class="mp-ch-t">٢ · المنصة</div>'
+    + '<div class="mp-ch-g p">'
+    +   P.map(([v,i,l,d]) =>
+        '<button class="mp-ch-b" onclick="mpPlat(\'' + v + '\')">'
+        + '<span class="i">' + i + '</span>'
+        + '<b>' + l + '</b><u>' + d + '</u></button>').join('')
+    + '</div>'
+    + '</div>';
+}
+
+// 👻 شاشة لينكات سناب
+function mpSnapLinks_(){
+  const n = MP.snapLinks.length;
+  return '<div class="mp-snap">'
+    + '<div class="mp-sn-h">'
+    +   '<b>👻 لينكات سناب</b>'
+    +   '<span>الصق اللينكات — واحد في كل سطر</span>'
+    + '</div>'
+    + '<textarea id="mpSnapTa" class="mp-sn-ta" rows="9" '
+    +   'placeholder="https://snapchat.com/add/hanouf.na&#10;'
+    +   'https://snapchat.com/add/sara_m&#10;…">'
+    +   esc(MP.snapLinks.join('\n')) + '</textarea>'
+    + '<div class="mp-sn-n">'
+    +   (n ? '<b>' + n + '</b> لينك جاهز' : 'مفيش لينكات لسه')
+    + '</div>'
+    + '<div class="mp-sn-tip">'
+    +   '💡 بعد كده هترفعي الصور <b>بنفس الترتيب</b> — '
+    +   'أول صورة لأول لينك.'
+    + '</div>'
+    + '<button class="mp-pick" onclick="mpSnapNext()">'
+    +   'التالي — الصور ←</button>'
+    + '</div>';
+}
+
+// 📱 اختيار المنصة
+function mpPlat(v){
+  MP.plat = v;
+  MP.snapStep = v === 'snapchat' ? 'links' : 'shots';
+  renderMobileProofs();
+}
+
+// ↩️ رجوع للاختيار
+function mpReset(){
+  if(MP.items.length && !confirm('هترجع؟ الصور المختارة هتتمسح')) return;
+  MP.plat = ''; MP.items = []; MP.done = 0;
+  MP.snapLinks = []; MP.snapStep = 'links';
+  renderMobileProofs();
+}
+
+// ➡️ من اللينكات للصور
+function mpSnapNext(){
+  const ta = document.getElementById('mpSnapTa');
+  const raw = ta ? ta.value : '';
+
+  // ننضّف ونشيل المكرر
+  const seen = new Set();
+  const links = raw.split(/[\n,]+/)
+    .map(x => x.trim())
+    .filter(Boolean)
+    .filter(x => {
+      const k = x.toLowerCase().replace(/[?#].*$/, '').replace(/\/+$/, '');
+      if(seen.has(k)) return false;
+      seen.add(k); return true;
+    });
+
+  if(!links.length){ toastErr('الصق اللينكات الأول'); return; }
+
+  MP.snapLinks = links;
+  MP.snapStep = 'shots';
+  renderMobileProofs();
+}
+
 // 🔄 تغيير نوع الإثبات
 function mpKind(k){
-  if(MP.items.length){
-    if(!confirm('تغيير النوع هيمسح الصور المختارة — متأكدة؟')) return;
-    MP.items = [];
-    MP.done = 0;
-  }
   MP.kind = k;
   renderMobileProofs();
 }
@@ -13591,9 +13810,22 @@ async function mpPick(){
 }
 
 async function mpFiles(files){
-  // ⚠️ كان الحد 40 — الموظفة بترفع 50-80 في المرة.
-  //    150 حد معقول يمنع تعليق المتصفح.
   const list = Array.from(files || []).slice(0, 100);
+
+  // 🔢 سناب — العدد لازم يطابق اللينكات بالظبط
+  //
+  // ⚠️ لو ناقص صورة في النص، كل اللي بعدها هتتزحلق وتتربط
+  //    بمؤثر غلط. فبنوقف بدل ما نغلط.
+  if(MP.plat === 'snapchat'){
+    const need = MP.snapLinks.length;
+    if(list.length !== need){
+      alert('⚠️ العدد مش متساوي\n\n'
+        + 'اللينكات: ' + need + '\n'
+        + 'الصور: ' + list.length + '\n\n'
+        + 'لازم يكونوا نفس العدد عشان الترتيب يظبط.');
+      return;
+    }
+  }
   if(!list.length) return;
 
   MP.items = list.map((f, i) => ({
@@ -13628,6 +13860,33 @@ async function runOCR_(){
       it.matched = ai.matched;
       it.signals = ai.signals;
       it.ocr     = ai.ocr;
+
+      // 👻 سناب — الربط بالترتيب مع اللينكات
+      //
+      // ⚠️ العدد اتأكد قبل الرفع، فالترتيب مضمون.
+      //    اللينك بيتضاف لو مش موجود، ويتربط بالصورة.
+      if(MP.plat === 'snapchat' && !it.uid){
+        const idx = MP.items.indexOf(it);
+        const link = MP.snapLinks[idx] || '';
+        if(link){
+          it.snapLink = link;
+          it.msg = '⏳ بنربط…';
+          renderMobileProofs();
+
+          const add = await autoAddByLink(link);
+          if(add && add.uid){
+            it.uid    = add.uid;
+            it.handle = String(add.handle || '').replace('@','');
+            it.action = MP.kind;
+            it.seq    = 1;
+            it.label  = MP.kind === 'followup' ? 'متابعة' : 'إرسال';
+            it.autoAdded = add.isNew === true;
+          } else if(add && add.blocked){
+            it.blocked  = add.msg;
+            it.noUpload = add.partner === true;
+          }
+        }
+      }
 
       // 🔗 مالوش مؤثر لسه — نطابق على تلات طبقات
       if(!it.uid){
@@ -13688,7 +13947,9 @@ async function runOCR_(){
           it.msg = '⏳ بنضيف @' + uname + '…';
           renderMobileProofs();
 
-          const add = await autoAddInfluencer(uname, vis.platform, vis.display);
+          // ⚠️ المنصة اللي اختارتها أدق من اللي الموديل خمّنه
+          const add = await autoAddInfluencer(
+            uname, MP.plat || vis.platform, vis.display);
 
           if(add && add.ok){
             m = matchCandidate_([add.handle, uname]);
@@ -14144,16 +14405,18 @@ function renderMobileProofs(){
     requestAnimationFrame(()=>ov.classList.add('show'));
   }
 
-  // 🔄 شريط نوع الإثبات
-  const kindBar =
-      '<div class="mp-kind">'
-    +   '<button class="mp-kb' + (MP.kind==='sent' ? ' on' : '') + '" '
-    +     'onclick="mpKind(\'sent\')">📤 إرسال</button>'
-    +   '<button class="mp-kb' + (MP.kind==='followup' ? ' on' : '') + '" '
-    +     'onclick="mpKind(\'followup\')">🔄 متابعة</button>'
-    +   '<button class="mp-kb' + (MP.kind==='subscribed' ? ' on' : '') + '" '
-    +     'onclick="mpKind(\'subscribed\')">🎉 اشتراك</button>'
-    + '</div>';
+  // 📍 شريط المسار — نوع الإثبات + المنصة
+  const PLAT_L = { instagram:'📸 إنستجرام', tiktok:'🎵 تيك توك',
+                   snapchat:'👻 سناب شات' };
+  const KIND_L = { sent:'📤 إرسال', followup:'🔄 متابعة' };
+
+  const crumbs = MP.plat
+    ? '<div class="mp-crumb">'
+      + '<button onclick="mpReset()">↩️</button>'
+      + '<span>' + KIND_L[MP.kind] + '</span>'
+      + '<i>›</i><span>' + PLAT_L[MP.plat] + '</span>'
+      + '</div>'
+    : '';
 
   const n = MP.items.length;
   const ready = MP.items.filter(x => x.state === 'ready' && x.uid).length;
@@ -14253,24 +14516,42 @@ function renderMobileProofs(){
     return;
   }
 
-  // ═══ مفيش صور لسه ═══
+  // ═══ ① لسه ماختارتش المنصة ═══
+  if(!MP.plat){
+    ov.innerHTML = mpShell_(mpChooser_());
+    mpBind_();
+    return;
+  }
+
+  // ═══ ② سناب — اللينكات الأول ═══
+  if(MP.plat === 'snapchat' && MP.snapStep === 'links'){
+    ov.innerHTML = mpShell_(crumbs + mpSnapLinks_());
+    mpBind_();
+    return;
+  }
+
+  // ═══ ③ مفيش صور لسه ═══
   if(!n){
-    body = kindBar
+    const isSnap = MP.plat === 'snapchat';
+    body = crumbs
       + '<div class="mp-empty">'
-      + '<div class="mp-ei">' + (MP.kind==='followup' ? '🔄'
-          : MP.kind==='subscribed' ? '🎉' : '📸') + '</div>'
-      + '<b>' + (MP.kind==='followup' ? 'صور المتابعات'
-          : MP.kind==='subscribed' ? 'صور الاشتراكات'
+      + '<div class="mp-ei">' + (MP.kind==='followup' ? '🔄' : '📸') + '</div>'
+      + '<b>' + (isSnap
+          ? 'دلوقتي الصور — ' + MP.snapLinks.length + ' صورة'
           : 'اختاري صور الإثبات') + '</b>'
-      + '<span>تقدري تختاري لحد 100 صورة مرة واحدة. '
-      +   'النظام هيقرا اسم الحساب من كل صورة ويربطها بالمؤثر لوحده.'
+      + '<span>'
+      +   (isSnap
+          ? 'ارفعي الصور <b>بنفس ترتيب اللينكات</b> — أول صورة لأول لينك.'
+            + '<br>لازم يكونوا <b>' + MP.snapLinks.length + '</b> صورة بالظبط.'
+          : 'لحد 100 صورة مرة واحدة. النظام هيقرا اسم الحساب من كل صورة، '
+            + 'يجيب اللينك، ويضيفه ليكي تلقائي.')
       +   (MP.kind==='followup'
           ? '<br><b>🔄 المتابعات مالهاش تارجت — ليها عدّاد لوحدها.</b>' : '')
       + '</span>'
       + '<button class="mp-pick" onclick="mpPick()">📸 اختاري من الاستوديو</button>'
       + '</div>';
   } else {
-    body = kindBar;
+    body = crumbs;
     // ═══ شريط التقدّم ═══
     if(MP.loading){
       const pct = n ? Math.round(MP.done / n * 100) : 0;
@@ -14439,7 +14720,14 @@ function mpBind_(){
   }
 }
 
-function mpTab(t){ MP.tab = t; renderMobileProofs(); }
+function mpTab(t){
+  // ⚠️ خرجنا من الإثباتات؟ نصفّر الاختيار
+  if(MP.tab === 'proofs' && t !== 'proofs' && !MP.items.length){
+    MP.plat = ''; MP.snapLinks = []; MP.snapStep = 'links';
+  }
+  MP.tab = t;
+  renderMobileProofs();
+}
 
 // اختصار اللينك للعرض
 function shortLink_(u){
