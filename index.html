@@ -13989,6 +13989,36 @@ async function runOCR_(){
   MP.loading = true;
   renderMobileProofs();
 
+  // 👻 سناب — الربط باللينك قبل أي فحص
+  //
+  // ⚠️ الفحص ممكن يفشل أو الموديل يقف — والربط لازم يتم
+  //    برضه، لأن اللينك هو المصدر الوحيد هنا.
+  if(MP.plat === 'snapchat'){
+    for(const it of MP.items){
+      const link = it.snapLink || '';
+      if(!link || it.uid) continue;
+
+      it.msg = '⏳ بنربط…';
+      renderMobileProofs();
+
+      const add = await autoAddByLink(link);
+      const uid = (add && add.uid) || uidFromLink_(link);
+
+      if(uid){
+        it.uid    = uid;
+        it.handle = String((add && add.handle) || '').replace('@','')
+                 || (uid.split(':')[1] || '');
+        it.action = MP.kind;
+        it.seq    = 1;
+        it.label  = MP.kind === 'followup' ? 'متابعة' : 'إرسال';
+        it.autoAdded = !!(add && add.isNew);
+        if(add && (add.partner || add.taken || add.subscribed || add.blocked)){
+          it.snapNote = add.msg;
+        }
+      }
+    }
+  }
+
   // 🤖 نجرّب الموديل الأول — أدق بكتير من الـ OCR المحلي
   let aiWorks = true;
   for(const it of MP.items){
@@ -14003,63 +14033,11 @@ async function runOCR_(){
       it.signals = ai.signals;
       it.ocr     = ai.ocr;
 
-      // 👻 سناب — الربط بالترتيب مع اللينكات
-      //
-      // ⚠️ العدد اتأكد قبل الرفع، فالترتيب مضمون.
-      //    اللينك بيتضاف لو مش موجود، ويتربط بالصورة.
-      if(MP.plat === 'snapchat' && !it.uid){
-        const link = it.snapLink || '';
-        if(link){
-          it.msg = '⏳ بنربط…';
-          renderMobileProofs();
-
-          const add = await autoAddByLink(link);
-
-          // 👻 سناب — كله بيترفع عشان الترتيب مايبوظش.
-          //
-          // ⚠️ الشريك والمشترك واللي عند حد تاني كلهم بيترفعوا
-          //    ويجوا للإدارة بالسبب — بدل ما نكسر الترتيب.
-          // 👻 سناب — الربط باللينك دايمًا، حتى لو شريك أو مشترك.
-          //
-          // ⚠️ الترتيب هو الرابط الوحيد هنا — فمنكسرهوش.
-          //    السبب بيتسجّل والإدارة تشوفه وتقرر.
-          if(add && add.uid){
-            it.uid    = add.uid;
-            it.handle = String(add.handle || '').replace('@','')
-                     || (add.uid.split(':')[1] || '');
-            it.action = MP.kind;
-            it.seq    = 1;
-            it.label  = MP.kind === 'followup' ? 'متابعة' : 'إرسال';
-            it.autoAdded = add.isNew === true;
-            // ملاحظة للإدارة — من غير ما نمنع الربط
-            if(add.partner || add.taken || add.subscribed){
-              it.snapNote = add.msg;
-            }
-
-          } else if(add && add.blocked){
-            // 🔗 الإضافة اترفضت — بس نربط باللينك برضه
-            it.snapNote = add.msg;
-            it.uid    = add.uid || uidFromLink_(link);
-            it.handle = (it.uid || '').split(':')[1] || '';
-            it.action = MP.kind;
-            it.seq    = 1;
-            it.label  = MP.kind === 'followup' ? 'متابعة' : 'إرسال';
-          }
-
-          // ⚠️ سناب اتعامل باللينك — منكملش للمطابقة بالاسم،
-          //    عشان الرسالة متتكتبش فوق السبب الحقيقي.
-          it.state = 'ready';
-          it.msg = it.snapNote
-            ? '⚠️ ' + cleanMsg_(it.snapNote)
-            : (it.uid ? '' : '🤖 تحت التحليل');
-          MP.done++;
-          renderMobileProofs();
-          continue;
-        }
-      }
-
       // 🔗 مالوش مؤثر لسه — نطابق على تلات طبقات
-      if(!it.uid){
+      //
+      // ⚠️ سناب اتربط باللينك خلاص — منطابقش بالاسم عشان
+      //    مانكتبش فوق الربط الصحيح.
+      if(!it.uid && MP.plat !== 'snapchat'){
         // 👁️ ① الموديل — بيقرا الاسم من الهيدر مباشرةً
         let names = [];
         const vis = await readHandleAI(it.file);
