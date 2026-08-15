@@ -13138,7 +13138,7 @@ async function refreshTargetBar(){
 const MP = {
   open: false,
   tab: 'leads',                   // leads / follow / add / proofs
-  items: [], cands: [], loading: false,
+  items: [], cands: [], loading: false, uploading: false,
   // 🔄 نوع الإثبات — الموظفة بتختاره قبل الرفع
   //    ⚠️ لو اختارت غلط، السيرفر بيصحّح تلقائي
   kind: 'sent',
@@ -13998,6 +13998,7 @@ async function runOCR_(){
             it.noUpload = true;
 
           } else if(add && (add.taken || add.subscribed)){
+            // 👻 سناب — بيترفع عشان الترتيب، والإدارة تشوف
             // 👻 سناب — يترفع للمعلّقة عشان الترتيب مايبوظش،
             //    والإدارة تشوف السبب وتمسح.
             it.blocked  = add.msg;
@@ -14729,7 +14730,11 @@ function renderMobileProofs(){
 
         // ⚠️ بعد الرفع، upN بيبقى صفر لأن الحالة اتغيّرت لـ ok.
         //    الرسالة السالبة كانت بتظهر رغم إن الصور اترفعت.
-        + (okN && !upN
+        + (MP.uploading
+          ? '<div class="mp-r2n ok">'
+            + '<b>⏳ بنرفع…</b>'
+            + '<span>استني لحد ما يخلص</span></div>'
+          : okN && !upN
           ? '<div class="mp-r2n ok">'
             + '<b>✅ اترفع ' + okN + ' إثبات</b>'
             + '<span>كلها اتحسبت في التارجت بتاعك</span></div>'
@@ -14767,8 +14772,8 @@ function renderMobileProofs(){
       ...MP.items.filter(x => !['ready','fail'].includes(x.state)),
     ];
 
-    // ⚠️ القايمة فاضية — ده السبب الحقيقي لو كل الصور فشلت
-    if(!MP.cands.length && MP.items.length){
+    // ⚠️ القايمة فاضية — بس سناب مش محتاجها، بيربط باللينكات
+    if(!MP.cands.length && MP.items.length && MP.plat !== 'snapchat'){
       body += '<div class="mp-err">'
         + '<b>⚠️ قايمة المؤثرين مالتحمّلتش</b>'
         + '<span>عشان كده مفيش صورة بتتربط. اقفلي النافذة وافتحيها تاني، '
@@ -14827,7 +14832,7 @@ function renderMobileProofs(){
           +   '<button class="mp-ch" onclick="mpPickCand(\'' + it.id + '\')">🔍 غيّري</button>'
           +   '<button class="mp-del" onclick="mpRemove(\'' + it.id + '\')">🗑️ احذفي</button>'
           + '</div>';
-      } else if(it.noUpload){
+      } else if(it.noUpload && MP.plat !== 'snapchat'){
         // 🚫 محجوبة — مش هتترفع
         body += '<div class="mp-r">'
           +   '<span class="mp-blk">🚫 مش هتترفع</span>'
@@ -15413,6 +15418,7 @@ async function mpUploadPending(list){
 }
 
 async function mpUpload(){
+  MP.uploading = true;
   const list = MP.items.filter(x => x.state === 'ready' && x.uid);
   // ⚠️ صور الشركاء متترفعش — السبب واضح ومفيش فايدة من المراجعة
   const pend = MP.items.filter(x =>
@@ -15454,6 +15460,7 @@ async function mpUpload(){
   let pendN = 0;
   if(pend.length) pendN = await mpUploadPending(pend);
 
+  MP.uploading = false;
   const ok = MP.items.filter(x => x.state === 'ok').length;
   const stillBad = MP.items.filter(x => x.state === 'fail').length;
 
