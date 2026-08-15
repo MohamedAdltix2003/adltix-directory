@@ -14020,6 +14020,16 @@ async function runOCR_(){
           } else if(add && add.blocked){
             it.blocked = add.msg;
           }
+
+          // ⚠️ سناب اتعامل باللينك — منكملش للمطابقة بالاسم،
+          //    عشان الرسالة متتكتبش فوق السبب الحقيقي.
+          it.state = 'ready';
+          it.msg = it.blocked
+            ? (it.noUpload ? it.blocked : '⚠️ ' + it.blocked + ' — هيترفع للمراجعة')
+            : (it.uid ? '' : '🤖 تحت التحليل');
+          MP.done++;
+          renderMobileProofs();
+          continue;
         }
       }
 
