@@ -13153,10 +13153,16 @@ function extractHandles_(text){
 // 🚦 عداد بسيط — لو Groq رفض بسبب الحد، نوقف المحاولات
 //    ⚠️ من غيره كل صورة بتستهلك محاولة فاشلة وبتبطّئ الرفع.
 let _visionOff = 0;
+// ⚠️ 100 صورة × نداء = الحصة بتخلص، وكل محاولة فاشلة بتضيّع
+//    وقت. لما يوقف، الرفع بيكمّل والصور تروح للمعلّقة.
+let _visionFails = 0;
 
 async function readHandleAI(file){
-  // الموديل واقف مؤقتًا؟
+  // ⚠️ الموديل واقف؟ نرجّع فورًا — من غير نداء ولا انتظار.
+  //    ده اللي كان بيبطّئ الرفع لما المفاتيح تخلص.
   if(_visionOff && Date.now() < _visionOff) return null;
+  // فشل 3 مرات ورا بعض؟ نوقف الرفعة دي كلها
+  if(_visionFails >= 3) return null;
 
   try{
     const b64 = await fileToBase64(file);
@@ -13169,10 +13175,13 @@ async function readHandleAI(file){
     // 🚦 كل المفاتيح وصلت لحدها — نوقف دقيقة ونكمّل
     //    ⚠️ الصور دي هتروح للمعلّقة وautolink هيربطها
     if(r && (r.all_busy || String(r.error || '').includes('429'))){
-      _visionOff = Date.now() + 60000;
+      _visionFails = 99;
+      _visionOff = Date.now() + 120000;
       return null;
     }
-    if(!r || r.skip) return null;
+    if(!r || r.skip){ _visionFails++; return null; }
+
+    _visionFails = 0;
 
     const names = [];
     if(r.username) names.push(String(r.username).toLowerCase());
@@ -14645,10 +14654,15 @@ async function mpUploadOne(it){
 
       // 2️⃣ فحص التكرار
       if(hash){
-        const chk = await retry_(() => callApi('verifyProof', {
+        // ⚠️ الفحص ثانوي — لو فشل، الرفع يكمّل عادي.
+      //    كان بيوقع الرفع كله لما الموديل يقف.
+      let chk = {};
+      try{
+        chk = await retry_(() => callApi('verifyProof', {
           token: SESSION.token, action: 'check', hash, uid: it.uid,
           actionType: MP.kind,
-        }), 3) || {};
+        }), 2) || {};
+      }catch(e){ chk = {}; }
         // 💡 السيرفر صحّح النوع؟ (اخترت إرسال وهو متابعة)
         if(chk.corrected && chk.actionType){
           it.action = chk.actionType;
@@ -14756,14 +14770,15 @@ async function mpUploadPending(list){
       const url = (up && up.screenshotUrl) || '';
       if(!url) throw new Error('الصورة مترفعتش');
 
-      const r = await callApi('verifyProof', {
+      // ⚠️ إعادة محاولة — الصورة مرفوعة خلاص، والتسجيل
+      //    لو فشل بتضيع. 4 محاولات مع انتظار النت.
+      const r = await retry_(() => callApi('verifyProof', {
         token: SESSION.token, action: 'addPending',
         url, hash, aiName: it.visionRead || '',
         platform: it.visPlatform || '',
-        // 💡 نمرّر سبب الفشل — الإدارة تشوفه في الداشبورد
         ocr: (it.blocked ? '[' + it.blocked + '] ' : '') + (it.ocr || ''),
         type: 'sent',
-      });
+      }), 4);
 
       if(r && r.duplicate){
         it.state = 'dup';
@@ -14774,9 +14789,31 @@ async function mpUploadPending(list){
         done++;
       }
     }catch(e){
-      it.state = 'fail';
-      it.msg = 'محتاجة إعادة';
-      it.canRetry = true;
+      // 🌐 النت قطع؟ نستنى ونعيد مرة أخيرة
+      try{
+        await waitNet_();
+        const hash2 = await fileHash(it.file);
+        const b64_2 = await fileToBase64(it.file);
+        const up2 = await retry_(() => callApi('logAction', {
+          token: SESSION.token, uid: '', actionType: 'pending',
+          imageBase64: b64_2, mode: 'pending',
+        }), 3);
+        const url2 = (up2 && up2.screenshotUrl) || '';
+        if(url2){
+          await retry_(() => callApi('verifyProof', {
+            token: SESSION.token, action: 'addPending',
+            url: url2, hash: hash2, aiName: it.visionRead || '',
+            platform: it.visPlatform || '', ocr: it.ocr || '', type: 'sent',
+          }), 3);
+          it.state = 'ok';
+          it.msg   = '🤖 الـ AI بيحللها — هتظهر خلال دقايق';
+          done++;
+        } else { throw new Error('فشل'); }
+      }catch(e2){
+        it.state = 'fail';
+        it.msg = '📶 النت قطع — دوسي 🔄 جنبها';
+        it.canRetry = true;
+      }
     }
     renderMobileProofs();
   }
