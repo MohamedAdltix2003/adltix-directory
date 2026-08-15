@@ -13433,6 +13433,15 @@ const AUTO_PLAT = {
   youtube:   'https://youtube.com/@',
 };
 
+// 🔗 نستخرج الـ uid من اللينك — للربط حتى لو الإضافة رفضت
+function uidFromLink_(link){
+  const m = String(link || '').toLowerCase()
+    .replace(/^https?:\/\//, '').replace(/^www\./, '')
+    .replace(/[?#].*$/, '').replace(/\/+$/, '')
+    .match(/(instagram|tiktok|snapchat|youtube)\.com\/(?:add\/|@)?([\w.\-]+)/);
+  return m ? m[1] + ':' + m[2] : '';
+}
+
 // 🔗 إضافة/إيجاد مؤثر من لينك مباشر
 //
 // ⚠️ بترجّع الـ uid سواء كان موجود أو اتضاف دلوقتي.
@@ -13485,11 +13494,17 @@ async function autoAddByLink(link){
 
   }catch(e){
     const m = String(e.message || '');
-    if(m.includes('شريك') || m.includes('متعاقد') || m.includes('اتحدّد بـ')){
-      return { blocked: true, partner: true,
-               msg: '🚫 ' + m.replace(/^شريك مسجّل — /, 'شريك عندنا: ') };
+    // ⚠️ نرجّع الـ uid من اللينك برضه — سناب بيربط بيه دايمًا،
+    //    والسبب بيتسجّل للإدارة.
+    const uid = uidFromLink_(clean);
+    const nm  = m.replace(/\s*\[[^\]]*\]\s*/g, '').trim();
+
+    if(nm.includes('شريك') || nm.includes('متعاقد') || nm.includes('اتحدّد بـ')){
+      return { blocked: true, partner: true, uid,
+               msg: '🚫 ' + nm.replace(/^شريك مسجّل — /, 'شريك عندنا: ')
+                              .replace(/\s*·\s*اتحدّد بـ.*$/, '') };
     }
-    return { blocked: true, msg: '🔁 ' + m };
+    return { blocked: true, uid, msg: '🔁 ' + nm };
   }
 }
 
@@ -14001,27 +14016,37 @@ async function runOCR_(){
           //
           // ⚠️ الشريك والمشترك واللي عند حد تاني كلهم بيترفعوا
           //    ويجوا للإدارة بالسبب — بدل ما نكسر الترتيب.
-          if(add && (add.partner || add.taken || add.subscribed)){
-            it.blocked  = add.msg;
-            it.snapNote = add.msg;
-
-          } else if(add && add.uid){
+          // 👻 سناب — الربط باللينك دايمًا، حتى لو شريك أو مشترك.
+          //
+          // ⚠️ الترتيب هو الرابط الوحيد هنا — فمنكسرهوش.
+          //    السبب بيتسجّل والإدارة تشوفه وتقرر.
+          if(add && add.uid){
             it.uid    = add.uid;
             it.handle = String(add.handle || '').replace('@','');
             it.action = MP.kind;
             it.seq    = 1;
             it.label  = MP.kind === 'followup' ? 'متابعة' : 'إرسال';
             it.autoAdded = add.isNew === true;
+            // ملاحظة للإدارة — من غير ما نمنع الربط
+            if(add.partner || add.taken || add.subscribed){
+              it.snapNote = add.msg;
+            }
 
           } else if(add && add.blocked){
-            it.blocked = add.msg;
+            // 🔗 الإضافة اترفضت — بس نربط باللينك برضه
+            it.snapNote = add.msg;
+            it.uid    = add.uid || uidFromLink_(link);
+            it.handle = (it.uid || '').split(':')[1] || '';
+            it.action = MP.kind;
+            it.seq    = 1;
+            it.label  = MP.kind === 'followup' ? 'متابعة' : 'إرسال';
           }
 
           // ⚠️ سناب اتعامل باللينك — منكملش للمطابقة بالاسم،
           //    عشان الرسالة متتكتبش فوق السبب الحقيقي.
           it.state = 'ready';
-          it.msg = it.blocked
-            ? (it.noUpload ? it.blocked : '⚠️ ' + it.blocked + ' — هيترفع للمراجعة')
+          it.msg = it.snapNote
+            ? '⚠️ ' + cleanMsg_(it.snapNote)
             : (it.uid ? '' : '🤖 تحت التحليل');
           MP.done++;
           renderMobileProofs();
@@ -14571,9 +14596,11 @@ function renderMobileProofs(){
   const n = MP.items.length;
   // 🔢 التصنيف الدقيق — كل حالة لوحدها
   const R = MP.items.filter(x => x.state === 'ready');
-  const ready   = R.filter(x => x.uid).length;                    // جاهز يترفع
-  const blocked = R.filter(x => x.noUpload).length;               // متحجوب
-  const pend    = R.filter(x => !x.uid && !x.noUpload).length;    // للمراجعة
+  // ⚠️ اللي عليه ملاحظة (شريك/مشترك) بيتعد "للمراجعة" مش "جاهز"
+  const ready   = R.filter(x => x.uid && !x.snapNote).length;
+  const blocked = R.filter(x => x.noUpload).length;
+  const pend    = R.filter(x => !x.noUpload
+                    && (!x.uid || x.snapNote)).length;
   const need    = pend;
   const okN     = MP.items.filter(x => x.state === 'ok').length;
   const upN     = ready + pend;                                   // اللي هيترفع فعلًا
@@ -14840,7 +14867,9 @@ function renderMobileProofs(){
             ? '<span class="mp-warn">⚠️ الصورة دي هتظهر للإدارة كإثبات مشكوك فيه</span>'
             : '')
           + '<div class="mp-btns">'
-          +   '<button class="mp-ch" onclick="mpPickCand(\'' + it.id + '\')">🔍 غيّري</button>'
+          // 👻 سناب — الربط باللينك، مفيش تغيير
+          +   (MP.plat === 'snapchat' ? ''
+              : '<button class="mp-ch" onclick="mpPickCand(\'' + it.id + '\')">🔍 غيّري</button>')
           +   '<button class="mp-del" onclick="mpRemove(\'' + it.id + '\')">🗑️ احذفي</button>'
           + '</div>';
       } else if(it.noUpload && MP.plat !== 'snapchat'){
@@ -14860,9 +14889,13 @@ function renderMobileProofs(){
           + (it.msg ? '<span class="mp-msg">' + esc(it.msg) + '</span>' : '')
           + (risky2
             ? '<span class="mp-warn">⚠️ لو رفعتيها هتظهر للإدارة كإثبات مشكوك فيه</span>'
+            : MP.plat === 'snapchat'
+            ? '<span class="mp-msg">هتترفع وتتربط باللينك</span>'
             : '<span class="mp-msg">الصورة سليمة — اختاري المؤثر بس</span>')
           + '<div class="mp-btns">'
-          +   '<button class="mp-ch pick" onclick="mpPickCand(\'' + it.id + '\')">🔍 اختاري المؤثر</button>'
+          // 👻 سناب — الربط باللينك، مفيش اختيار
+          +   (MP.plat === 'snapchat' ? ''
+              : '<button class="mp-ch pick" onclick="mpPickCand(\'' + it.id + '\')">🔍 اختاري المؤثر</button>')
           +   '<button class="mp-del" onclick="mpRemove(\'' + it.id + '\')">🗑️ احذفي</button>'
           + '</div>';
       }
@@ -15430,10 +15463,14 @@ async function mpUploadPending(list){
 
 async function mpUpload(){
   MP.uploading = true;
-  const list = MP.items.filter(x => x.state === 'ready' && x.uid);
+
+  // 👻 سناب — اللي فيه ملاحظة (شريك/مشترك/عند حد تاني) بيروح
+  //    للمعلّقة مش للتسجيل المباشر، لأن الأكشن هيترفض.
+  const list = MP.items.filter(x =>
+    x.state === 'ready' && x.uid && !x.snapNote);
   // ⚠️ صور الشركاء متترفعش — السبب واضح ومفيش فايدة من المراجعة
   const pend = MP.items.filter(x =>
-    x.state === 'ready' && !x.uid && !x.noUpload);
+    x.state === 'ready' && !x.noUpload && (!x.uid || x.snapNote));
   if(!list.length && !pend.length) return;
 
   const LANES = 4;
