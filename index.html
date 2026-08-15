@@ -5907,6 +5907,37 @@
     background:transparent; color:var(--muted); width:100%;
   }
   .pn-load:hover{ border-color:var(--brand); color:var(--brand) }
+
+  /* 🔎 فحص اللينك قبل الإضافة */
+  .pn-abox{ max-width:440px !important; text-align:right !important; padding:0 !important }
+  .pn-abox .pn-shd{ padding:14px 16px; border-bottom:1px solid var(--line) }
+  .pn-abox .pn-sq{ margin:12px 16px 6px; width:calc(100% - 32px) }
+  .pn-abox .cf-btns{ padding:12px 16px 16px }
+
+  .pn-ai2{
+    margin:10px 16px 0; padding:8px 12px; border-radius:9px;
+    font-size:11.5px; color:var(--muted);
+    background:color-mix(in srgb,var(--line) 20%,transparent);
+  }
+  .pn-ai2 b{ color:var(--ink); font-weight:800 }
+
+  .pn-chk{ padding:0 16px; min-height:8px }
+  .pn-cw{ font-size:11.5px; color:var(--muted); padding:6px 0 }
+  .pn-cr{
+    padding:10px 12px; border-radius:10px; margin-top:6px;
+    display:flex; flex-direction:column; gap:3px;
+  }
+  .pn-cr b{ font-size:12.5px; font-weight:800 }
+  .pn-cr span{ font-size:11px; opacity:.85;
+               direction:ltr; unicode-bidi:isolate; text-align:start }
+  .pn-cr.ok  { background:#DCFCE7; color:#15803D }
+  .pn-cr.warn{ background:#FEF3C7; color:#92400E }
+  .pn-cr.bad { background:#FEE2E2; color:#B91C1C }
+  body.dark .pn-cr.ok  { background:#14432a; color:#86efac }
+  body.dark .pn-cr.warn{ background:#3d2c0d; color:#fcd34d }
+  body.dark .pn-cr.bad { background:#3d1414; color:#fca5a5 }
+
+  .cf-yes:disabled{ opacity:.45; cursor:default }
 </style>
 </head>
 <body>
@@ -6364,7 +6395,7 @@ const FN_MAP = {
   approve:        "admin-action",
   unarchive:      "admin-action"
 };
-const ADMIN_ACTIONS = { "delete":"delete", moveToNew:"archive", changeNiche:"changeNiche", approve:"approve", unarchive:"unarchive", resolvePending:"resolvePending", dropPending:"dropPending", addAndResolve:"addAndResolve", rereadPending:"rereadPending", searchLeads:"searchLeads", proofSuggest:"proofSuggest" };
+const ADMIN_ACTIONS = { "delete":"delete", moveToNew:"archive", changeNiche:"changeNiche", approve:"approve", unarchive:"unarchive", resolvePending:"resolvePending", dropPending:"dropPending", addAndResolve:"addAndResolve", rereadPending:"rereadPending", searchLeads:"searchLeads", proofSuggest:"proofSuggest", checkLink:"checkLink" };
 
 // Supabase بيحدّ أي طلب بـ 1000 صف كحد أقصى (إعداد max-rows).
 // كنا بنطلب 2000 فكان بيرجّع 1000 ويرمي الباقي في صمت —
@@ -15627,40 +15658,71 @@ async function dbPnLink(id, uid){
 //
 // ⚠️ الحالة: الموظفة نسيت تضيفه قبل ما تبعت.
 function dbPnAdd(id, staff, aiName, platform){
-  // 💡 نقترح اللينك من اللي الموديل قراه
   const guess = pnGuessLink_(aiName, platform);
 
   const ov = document.createElement('div');
   ov.className = 'cf-overlay';
-  ov.innerHTML = '<div class="cf-box" style="max-width:460px;text-align:right">'
-    + '<b style="display:block;margin-bottom:4px">➕ ضيف المؤثر لـ ' + esc(staff) + '</b>'
+  ov.innerHTML = '<div class="cf-box pn-abox">'
+    + '<div class="pn-shd"><b>➕ ضيف المؤثر لـ ' + esc(staff) + '</b>'
+    +   '<button class="pn-sx">✕</button></div>'
     + (aiName
-      ? '<div style="font-size:11.5px;color:var(--muted);margin-bottom:11px">'
-        + '🤖 الموديل قرا: <b>' + esc(aiName) + '</b></div>'
+      ? '<div class="pn-ai2">🤖 الموديل قرا: <b>' + esc(aiName) + '</b></div>'
       : '')
-    + '<input class="mp-search" id="pnLink" placeholder="لينك الحساب…" '
-    +   'value="' + esc(guess) + '">'
-    + (guess
-      ? '<div style="font-size:11px;color:#15803D;margin-top:6px">'
-        + '💡 اقتراح — راجعه قبل ما تأكّد</div>'
-      : '')
+    + '<input class="pn-sq" id="pnLink" placeholder="لينك الحساب…" '
+    +   'value="' + esc(guess) + '" autocomplete="off">'
+    + '<div id="pnChk" class="pn-chk"></div>'
     + '<div class="cf-btns">'
     +   '<button class="cf-no">إلغاء</button>'
-    +   '<button class="cf-yes ok" id="pnGo">✅ ضيف واربط</button>'
+    +   '<button class="cf-yes ok" id="pnGo" disabled>✅ ضيف واربط</button>'
     + '</div></div>';
 
   document.body.appendChild(ov);
   requestAnimationFrame(()=>ov.classList.add('show'));
   const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
-  ov.querySelector('.cf-no').onclick = close;
+  ov.querySelector('.pn-sx').onclick = close;
   ov.addEventListener('click', e => { if(e.target === ov) close(); });
 
   const inp = ov.querySelector('#pnLink');
   const go  = ov.querySelector('#pnGo');
+  const chk = ov.querySelector('#pnChk');
+  let timer = null, lastOk = false;
+
+  // 🔎 فحص اللينك — مين عنده المؤثر ده؟
+  const check = async (link) => {
+    if(link.length < 8){ chk.innerHTML = ''; go.disabled = true; return; }
+    chk.innerHTML = '<div class="pn-cw">⏳ بنفحص…</div>';
+    go.disabled = true;
+
+    try{
+      const r = await callApi('adminAction', {
+        token: SESSION.token, action: 'checkLink', link, staff,
+      });
+
+      lastOk = r.valid === true;
+      go.disabled = !lastOk;
+
+      const cls = r.valid ? 'ok' : (r.partner || r.hasProof ? 'bad' : 'warn');
+      chk.innerHTML = '<div class="pn-cr ' + cls + '">'
+        + '<b>' + esc(r.message || '') + '</b>'
+        + (r.handle ? '<span>@' + esc(r.handle)
+            + (r.display ? ' · ' + esc(r.display) : '') + '</span>' : '')
+        + (r.owner && !r.mine
+            ? '<span>👤 عند ' + esc(r.owner) + '</span>' : '')
+        + '</div>';
+    }catch(e){
+      chk.innerHTML = '<div class="pn-cr bad"><b>❌ ' + esc(e.message) + '</b></div>';
+      go.disabled = true;
+    }
+  };
+
+  inp.oninput = () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => check(inp.value.trim()), 400);
+  };
 
   go.onclick = async () => {
+    if(!lastOk) return;
     const link = inp.value.trim();
-    if(link.length < 8){ toastErr('اكتب اللينك'); return; }
     go.disabled = true; go.textContent = '⏳ بنضيف…';
     try{
       const r = await callApi('adminAction', {
@@ -15680,6 +15742,8 @@ function dbPnAdd(id, staff, aiName, platform){
       toastErr(e.message);
     }
   };
+
+  if(guess) check(guess);
   setTimeout(()=>inp.focus(), 150);
 }
 
