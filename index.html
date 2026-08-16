@@ -14849,9 +14849,6 @@ function renderMobileProofs(){
             ? '<span class="mp-warn">⚠️ الصورة دي هتظهر للإدارة كإثبات مشكوك فيه</span>'
             : '')
           + '<div class="mp-btns">'
-          // 👻 سناب — الربط باللينك، مفيش تغيير
-          +   (MP.plat === 'snapchat' ? ''
-              : '<button class="mp-ch" onclick="mpPickCand(\'' + it.id + '\')">🔍 غيّري</button>')
           +   '<button class="mp-del" onclick="mpRemove(\'' + it.id + '\')">🗑️ احذفي</button>'
           + '</div>';
       } else if(it.noUpload && MP.plat !== 'snapchat'){
@@ -14869,15 +14866,13 @@ function renderMobileProofs(){
         const risky2 = (it.conf === 'low' || it.conf === 'none');
         body += '<div class="mp-r"><span class="mp-cf ' + cf.c + '">' + cf.t + '</span></div>'
           + (it.msg ? '<span class="mp-msg">' + esc(it.msg) + '</span>' : '')
-          + (risky2
-            ? '<span class="mp-warn">⚠️ لو رفعتيها هتظهر للإدارة كإثبات مشكوك فيه</span>'
-            : MP.plat === 'snapchat'
-            ? '<span class="mp-msg">هتترفع وتتربط باللينك</span>'
-            : '<span class="mp-msg">الصورة سليمة — اختاري المؤثر بس</span>')
+          + '<span class="mp-msg">'
+          +   (MP.plat === 'snapchat'
+              ? 'هتترفع وتتربط باللينك'
+              : '🤖 هتترفع والنظام هيربطها — مش محتاجة منك حاجة')
+          + '</span>'
+          // 🚫 مفيش اختيار مؤثر — النظام بيربط لوحده
           + '<div class="mp-btns">'
-          // 👻 سناب — الربط باللينك، مفيش اختيار
-          +   (MP.plat === 'snapchat' ? ''
-              : '<button class="mp-ch pick" onclick="mpPickCand(\'' + it.id + '\')">🔍 اختاري المؤثر</button>')
           +   '<button class="mp-del" onclick="mpRemove(\'' + it.id + '\')">🗑️ احذفي</button>'
           + '</div>';
       }
