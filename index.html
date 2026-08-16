@@ -14086,12 +14086,31 @@ async function runOCR_(){
   }
 
   // 🤖 نجرّب الموديل الأول — أدق بكتير من الـ OCR المحلي
+  //
+  // ⚠️ فشل صورة واحدة كان بيوقف الفحص كله — 32 صورة من 36
+  //    طلعت "مش واضحة" وهي سليمة. دلوقتي بنعيد المحاولة
+  //    ومنستسلمش غير بعد 3 فشل ورا بعض.
   let aiWorks = true;
+  let aiFails = 0;
   for(const it of MP.items){
     if(!aiWorks) break;
     try{
-      const ai = await verifyShotAI(it.file, it.uid || '');
-      if(!ai){ aiWorks = false; break; }
+      let ai = await verifyShotAI(it.file, it.uid || '');
+
+      // محاولة تانية قبل ما نستسلم
+      if(!ai){
+        await new Promise(r => setTimeout(r, 700));
+        ai = await verifyShotAI(it.file, it.uid || '');
+      }
+
+      if(!ai){
+        aiFails++;
+        if(aiFails >= 3){ aiWorks = false; break; }
+        MP.done++;
+        renderMobileProofs();
+        continue;
+      }
+      aiFails = 0;
 
       it.conf    = ai.conf;
       it.score   = ai.score;
