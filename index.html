@@ -15336,7 +15336,7 @@ async function waitNet_(maxMs){
 //
 // ⚠️ "مكرر" معناها الرفع نجح خلاص. الإعادة كانت بتسجّل
 //    محاولة مكررة في كل مرة — 219 رفض لـ 45 صورة.
-const NO_RETRY = /مكرر|اترفع(ت)? قبل|duplicate|قايمتك|شريك|مشترك|صلاحية|مسموح/i;
+const NO_RETRY = /مكرر|اترفع(ت)? قبل|رفعتيها|duplicate|already_saved|اتسجّلت خلاص|قايمتك|شريك|مشترك|صلاحية|مسموح/i;
 
 async function retry_(fn, tries){
   const N = tries || 4;
@@ -15371,12 +15371,14 @@ async function mpUploadOne(it){
       if(hash){
         // ⚠️ الفحص ثانوي — لو فشل، الرفع يكمّل عادي.
       //    كان بيوقع الرفع كله لما الموديل يقف.
+      // ⚠️ مفيش إعادة — الفحص نفسه بيسجّل رفض في كل نداء،
+      //    والإعادة كانت بتضاعف "المحاولات المكررة".
       let chk = {};
       try{
-        chk = await retry_(() => callApi('verifyProof', {
+        chk = await callApi('verifyProof', {
           token: SESSION.token, action: 'check', hash, uid: it.uid,
           actionType: MP.kind,
-        }), 2) || {};
+        }) || {};
       }catch(e){ chk = {}; }
         // 💡 السيرفر صحّح النوع؟ (اخترت إرسال وهو متابعة)
         if(chk.corrected && chk.actionType){
@@ -15384,6 +15386,14 @@ async function mpUploadOne(it){
           it.seq    = chk.seq || 1;
           it.label  = chk.actionType === 'followup'
                       ? ('متابعة ' + (chk.seq || 1)) : 'إرسال';
+        }
+
+        // ✅ اترفعت خلاص من ثواني — مش مكررة
+        if(chk.alreadySaved){
+          it.state = 'ok';
+          it.msg   = '✅ اتسجّلت';
+          renderMobileProofs();
+          return;
         }
 
         if(chk.accepted === false){
