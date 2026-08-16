@@ -14013,9 +14013,27 @@ async function mpPick(){
 }
 
 async function mpFiles(files){
-  const list = Array.from(files || []).slice(0, 100);
+  let list = Array.from(files || []).slice(0, 100);
 
-  // 🔢 سناب — العدد لازم يطابق اللينكات بالظبط
+  if(!list.length) return;
+
+  // 🔁 ① نشيل المكرر الأول
+  //
+  // ⚠️ البصمة لسه ماتسجّلتش في السيرفر، فالفحص هناك مش
+  //    هيمسكها — لازم نمسكها هنا قبل أي حاجة.
+  const seenHash = new Set();
+  const clean = [];
+  for(const f of list){
+    const h = await fileHash(f);
+    if(h && seenHash.has(h)) continue;
+    if(h) seenHash.add(h);
+    clean.push(f);
+  }
+  const dropped = list.length - clean.length;
+  list = clean;
+  if(!list.length) return;
+
+  // 🔢 ② سناب — العدد لازم يطابق اللينكات بعد التنظيف
   //
   // ⚠️ لو ناقص صورة في النص، كل اللي بعدها هتتزحلق وتتربط
   //    بمؤثر غلط. فبنوقف بدل ما نغلط.
@@ -14024,12 +14042,14 @@ async function mpFiles(files){
     if(list.length !== need){
       alert('⚠️ العدد مش متساوي\n\n'
         + 'اللينكات: ' + need + '\n'
-        + 'الصور: ' + list.length + '\n\n'
+        + 'الصور: ' + list.length
+        + (dropped ? '  (اتشال ' + dropped + ' مكرر)' : '') + '\n\n'
         + 'لازم يكونوا نفس العدد عشان الترتيب يظبط.');
       return;
     }
   }
-  if(!list.length) return;
+
+  if(dropped) toastOk('🔁 اتشال ' + dropped + ' صورة مكررة');
 
   MP.items = list.map((f, i) => ({
     id: 'i' + Date.now() + '_' + i,
@@ -15380,13 +15400,9 @@ async function mpUploadOne(it){
           actionType: MP.kind,
         }) || {};
       }catch(e){ chk = {}; }
-        // 💡 السيرفر صحّح النوع؟ (اخترت إرسال وهو متابعة)
-        if(chk.corrected && chk.actionType){
-          it.action = chk.actionType;
-          it.seq    = chk.seq || 1;
-          it.label  = chk.actionType === 'followup'
-                      ? ('متابعة ' + (chk.seq || 1)) : 'إرسال';
-        }
+        // ⚠️ التصحيح التلقائي اتشال — كان بيغيّر "إرسال" لـ
+        //    "متابعة" في الشاشة ويقلق الموظفة، والأكشن أصلاً
+        //    بيتسجّل بالنوع اللي هي اختارته.
 
         // ✅ اترفعت خلاص من ثواني — مش مكررة
         if(chk.alreadySaved){
