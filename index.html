@@ -6186,6 +6186,17 @@
            background:#DBEAFE; color:#1E40AF; font-size:11.5px; line-height:1.7 }
   body.dark .fx-tip{ background:#1a2f4d; color:#93c5fd }
   .fx-box .cf-btns{ padding:0 16px 16px }
+
+  /* 🔗 زرار تعديل اللينك في الكارت */
+  .btn.fixlnk{ font-size:14px; padding:0 10px }
+  .btn.fixlnk:hover{ border-color:var(--brand); color:var(--brand) }
+
+  /* 📷 صورة الإثبات في نافذة التعديل */
+  .fx-shot{
+    display:block; width:calc(100% - 32px); margin:12px 16px 0;
+    max-height:260px; object-fit:contain; border-radius:11px;
+    background:var(--line); cursor:zoom-in;
+  }
 </style>
 </head>
 <body>
@@ -7672,6 +7683,18 @@ function card(c){
   html += '<div class="actions">';
   html += '<a class="btn primary" href="'+esc(c.url)+'" target="_blank" rel="noopener">زيارة الحساب الرسمي</a>';
   html += '<button class="btn ghost" title="نسخ الحساب" onclick="copyTxt(\'@'+esc(c.handle)+'\',this)">⧉</button>';
+
+  // 🔗 تعديل اللينك — لو الـ AI ربط الإثبات غلط
+  //
+  // ⚠️ بيظهر للموظفة على المؤثرين اللي اتبعتلهم بس،
+  //    عشان تصلّح الربط قبل ما تعمل متابعة.
+  if(isStaff && c.uid
+     && ['sent','followup','contacted'].includes(
+          String(c.messageStatus || '').toLowerCase())){
+    html += '<button class="btn ghost fixlnk" title="اللينك غلط؟ عدّليه" '
+         +  'onclick="fixLinkDlg(\'' + esc(c.uid) + '\',\''
+         +  esc(c.handle) + '\')">🔗</button>';
+  }
   html += '</div>';
   
   // ===== الزراير الثلاثة للـ staff =====
@@ -18034,12 +18057,25 @@ function fmtDate_(t){
 }
 
 // 🔗 تعديل اللينك — لو الربط طلع غلط
-function fixLinkDlg(uid, handle){
+async function fixLinkDlg(uid, handle){
+  // 📷 نجيب صورة الإثبات — الموظفة تشوف اللي اتربط
+  let shot = '';
+  try{
+    const r = await callApi('verifyProof', {
+      token: SESSION.token, action: 'lastProof', uid,
+    });
+    shot = r.url || '';
+  }catch(e){ /* هادئ */ }
+
   const ov = document.createElement('div');
   ov.className = 'cf-overlay';
   ov.innerHTML = '<div class="cf-box fx-box">'
     + '<div class="fx-h"><b>🔗 عدّلي لينك المؤثر</b>'
     +   '<button class="fx-x">✕</button></div>'
+    + (shot
+      ? '<img class="fx-shot" src="' + esc(shot) + '" '
+        + 'onclick="dbZoom(\'' + esc(shot) + '\')" loading="lazy">'
+      : '')
     + '<div class="fx-cur">دلوقتي مربوط بـ <b>@' + esc(handle) + '</b></div>'
     + '<input class="fx-in" id="fxLink" placeholder="الصق اللينك الصح…" '
     +   'autocomplete="off">'
