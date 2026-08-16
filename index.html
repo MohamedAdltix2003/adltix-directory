@@ -6114,6 +6114,78 @@
   }
   body.dark .mp-blk{ background:#3d1414; color:#fca5a5 }
   .mp-c.blocked{ opacity:.6 }
+
+  /* 🏷️ الإثباتات المعلَّمة */
+  .fg-g{ display:grid; gap:13px;
+         grid-template-columns:repeat(auto-fill,minmax(300px,1fr)) }
+  .fg-c{
+    border:1px solid var(--line); border-radius:15px; overflow:hidden;
+    background:var(--surface);
+  }
+  .fg-c.p{ border-inline-start:4px solid #7C3AED }
+  .fg-c.s{ border-inline-start:4px solid #15803D }
+  .fg-c.t{ border-inline-start:4px solid #D97706 }
+
+  .fg-h{ display:flex; gap:11px; padding:12px }
+  .fg-im{
+    width:64px; height:88px; object-fit:cover; border-radius:9px;
+    cursor:zoom-in; flex-shrink:0; background:var(--line);
+  }
+  .fg-i{ display:flex; flex-direction:column; gap:3px; min-width:0 }
+  .fg-i b{ font-size:13.5px; font-weight:800; color:var(--ink);
+           direction:ltr; unicode-bidi:isolate; text-align:start }
+  .fg-i u{ text-decoration:none; font-size:11.5px; color:var(--muted) }
+  .fg-b{
+    font-size:11px; font-weight:800; padding:3px 9px; border-radius:7px;
+    align-self:flex-start; margin-top:3px;
+  }
+  .fg-c.p .fg-b{ background:#F3E8FF; color:#6B21A8 }
+  .fg-c.s .fg-b{ background:#DCFCE7; color:#15803D }
+  .fg-c.t .fg-b{ background:#FEF3C7; color:#92400E }
+  body.dark .fg-c.p .fg-b{ background:#2e1065; color:#d8b4fe }
+  body.dark .fg-c.s .fg-b{ background:#14432a; color:#86efac }
+  body.dark .fg-c.t .fg-b{ background:#3d2c0d; color:#fcd34d }
+
+  .fg-d{ padding:0 12px 10px; display:flex; flex-direction:column; gap:5px }
+  .fg-r{ display:flex; justify-content:space-between; align-items:baseline;
+         gap:10px; font-size:11.5px; padding:4px 0;
+         border-bottom:1px dashed var(--line) }
+  .fg-r:last-child{ border-bottom:none }
+  .fg-r span{ color:var(--muted); flex-shrink:0 }
+  .fg-r b{ color:var(--ink); font-weight:700; text-align:end }
+  .fg-r b.mono{ font-family:ui-monospace,monospace; font-size:11px;
+                direction:ltr; unicode-bidi:isolate }
+
+  .fg-a{ padding:0 12px 12px }
+  .fg-a button{
+    width:100%; font-family:inherit; font-size:12px; font-weight:700;
+    cursor:pointer; padding:9px; border-radius:10px;
+    border:1px solid var(--line); background:transparent; color:var(--muted);
+  }
+  .fg-a button:hover{ border-color:var(--brand); color:var(--brand) }
+
+  /* 🔗 نافذة تعديل اللينك */
+  .fx-box{ max-width:420px !important; text-align:right !important;
+           padding:0 !important }
+  .fx-h{ display:flex; align-items:center; justify-content:space-between;
+         padding:14px 16px; border-bottom:1px solid var(--line) }
+  .fx-h b{ font-size:14.5px; color:var(--ink) }
+  .fx-x{ width:28px; height:28px; border-radius:8px; cursor:pointer;
+         border:1px solid var(--line); background:transparent; color:var(--muted) }
+  .fx-cur{ padding:12px 16px 0; font-size:12px; color:var(--muted) }
+  .fx-cur b{ color:var(--ink); direction:ltr; unicode-bidi:isolate }
+  .fx-in{
+    margin:10px 16px; width:calc(100% - 32px); box-sizing:border-box;
+    padding:11px 14px; font-family:ui-monospace,monospace; font-size:12px;
+    border:1px solid var(--line); border-radius:11px;
+    background:var(--surface); color:var(--ink); outline:none;
+    direction:ltr; unicode-bidi:isolate;
+  }
+  .fx-in:focus{ border-color:var(--brand) }
+  .fx-tip{ margin:0 16px 14px; padding:10px 12px; border-radius:10px;
+           background:#DBEAFE; color:#1E40AF; font-size:11.5px; line-height:1.7 }
+  body.dark .fx-tip{ background:#1a2f4d; color:#93c5fd }
+  .fx-box .cf-btns{ padding:0 16px 16px }
 </style>
 </head>
 <body>
@@ -6351,6 +6423,9 @@
     </button>
     <button class="vtab" data-v="imported" onclick="setView('imported')">
       <span class="vt-i">📄</span><span class="vt-t">اللي رفعتهم</span><span class="vt-n" id="vnImported">0</span>
+    </button>
+    <button class="vtab" data-v="flagged" onclick="setView('flagged')">
+      <span class="vt-i">🏷️</span><span class="vt-t">ملاحظات</span><span class="vt-n" id="vnFlag">0</span>
     </button>
     <button class="vtab" data-v="followups" onclick="setView('followups')">
       <span class="vt-i">🔄</span><span class="vt-t">المتابعات</span><span class="vt-n" id="vnFollow">0</span>
@@ -6713,6 +6788,9 @@ function buildAllPills(){
     if(state.view === 'imported')  return mine;
     // ⚠️ لو السيرفر رجّع قايمة المستحقين، نستخدمها — أدق من
     //    الحساب المحلي لأنها بتقرا من actions_log مش من الكارت.
+    // 🏷️ الملاحظات — عرضها مستقل، فمفيش فلترة هنا
+    if(state.view === 'flagged') return false;
+
     if(state.view === 'followups'){
       if(MP.follows && MP.follows.length){
         return MP.follows.some(f => f.uid === c.uid);
@@ -9113,6 +9191,29 @@ function render(){
   isRendering=true;
   try{
     renderActiveFilters();
+
+    // 🏷️ تابة الملاحظات — عرض مستقل بكروت مختلفة
+    if(state.view === 'flagged'){
+      const grid = document.getElementById("grid");
+      const emp  = document.getElementById("empty");
+      if(grid){
+        grid.style.display = _flagged.items.length ? "block" : "none";
+        grid.innerHTML = _flagged.items.length
+          ? '<div class="fg-g">' + _flagged.items.map(flaggedCard_).join('') + '</div>'
+          : '';
+      }
+      if(emp){
+        emp.style.display = _flagged.items.length ? "none" : "block";
+        emp.textContent = _flagged.loaded
+          ? '✅ مفيش ملاحظات — كل إثباتاتك سليمة'
+          : '⏳ بنحمّل…';
+      }
+      const sh = document.getElementById("shown");
+      if(sh) sh.textContent = _flagged.items.length;
+      isRendering = false;
+      return;
+    }
+
     _list=applyFilters(); _rendered=0;
     const grid=document.getElementById("grid");
     if(grid){
@@ -13546,9 +13647,10 @@ async function autoAddInfluencer(username, platform, display){
 
   // 🌐 مش في القايمة — ندوّر في السيرفر بكل البدائل
   try{
-    const fv = await callApi('adminAction', {
+    // ⚠️ verify-proof مش admin-action — الموظفة مالهاش صلاحية أدمن
+    const fv = await callApi('verifyProof', {
       token: SESSION.token, action: 'findVariant',
-      name: u, platform, staff: SESSION.staffName || SESSION.username,
+      name: u, platform,
     });
     if(fv && fv.found){
       if(fv.sent)  return { taken: true, uid: fv.uid,
@@ -14237,13 +14339,19 @@ async function runOCR_(){
           const add = await autoAddInfluencer(
             uname, MP.plat || vis.platform, vis.display);
 
-          // 🚫 إنستجرام وتيك توك — لو مع حد تاني أو مشترك، متترفعش
+          // 🏷️ كل حاجة بتترفع وبتتحسب — والملاحظة بتتسجّل
           //
-          // ⚠️ سناب مختلف: كله بيترفع عشان الترتيب مايبوظش،
-          //    والإدارة بتشوف وتمسح.
-          if(add && (add.taken || add.subscribed) && MP.plat !== 'snapchat'){
-            it.blocked  = add.msg;
-            it.noUpload = true;
+          // ⚠️ المدير طلب إن المشترك واللي مع موظفة تانية
+          //    يترفعوا برضه، ويظهروا للموظفة في تابة مستقلة.
+          if(add && (add.taken || add.subscribed || add.partner)){
+            it.uid    = add.uid || '';
+            it.handle = String(add.handle || uname).replace('@','');
+            it.action = MP.kind;
+            it.seq    = 1;
+            it.label  = MP.kind === 'followup' ? 'متابعة' : 'إرسال';
+            it.flag   = add.partner ? 'partner'
+                      : add.subscribed ? 'subscribed' : 'taken';
+            it.flagNote = String(add.msg || '').replace(/^[🚫🔁🎉]\s*/, '');
           } else if(add && add.ok){
             m = matchCandidate_([add.handle, uname]);
             if(!m){
@@ -15456,6 +15564,8 @@ async function mpUploadOne(it){
         token: SESSION.token, uid: it.uid,
         actionType: it.action || MP.kind, imageBase64: b64,
         mode: 'new', seq: it.seq || undefined,
+        flag: it.flag || undefined,
+        flagNote: it.flagNote || undefined,
       }), 4);
 
       it.logged = true;    // 🔒 من هنا الأكشن مسجّل
@@ -17835,6 +17945,129 @@ function renderQuotaBar(){
         : '');
 }
 
+// 🏷️ الإثباتات المعلَّمة — مشترك / مع موظفة تانية / شريك
+//
+// ⚠️ الصور دي اترفعت واتحسبت عادي — الملاحظة للعلم بس،
+//    والموظفة تقدر تعدّل اللينك لو الربط طلع غلط.
+let _flagged = { items: [], loaded: false, busy: false };
+
+async function loadFlagged(){
+  if(_flagged.busy) return;
+  _flagged.busy = true;
+  try{
+    const r = await callApi('verifyProof', {
+      token: SESSION.token, action: 'flagged',
+    });
+    _flagged.items  = r.items || [];
+    _flagged.loaded = true;
+    set('vnFlag', _flagged.items.length);
+    render();
+  }catch(e){ /* هادئ */ }
+  _flagged.busy = false;
+}
+
+function flaggedCard_(x){
+  const d = x.details || {};
+  const F = {
+    partner:    { c:'p', i:'🤝', t:'شريك متعاقد' },
+    subscribed: { c:'s', i:'🎉', t:'مشترك معانا' },
+    taken:      { c:'t', i:'🔁', t:'مع موظفة تانية' },
+  }[x.flag] || { c:'t', i:'🏷️', t:'ملاحظة' };
+
+  let rows = '';
+  if(x.flag === 'taken'){
+    rows = '<div class="fg-r"><span>الموظفة</span><b>'
+         + esc(d.owner || x.note) + '</b></div>'
+         + (d.sent_at ? '<div class="fg-r"><span>بعتتله</span><b>'
+            + esc(fmtDate_(d.sent_at)) + '</b></div>' : '');
+  } else {
+    rows = (d.partner_id ? '<div class="fg-r"><span>رقم الشريك</span>'
+            + '<b class="mono">' + esc(d.partner_id) + '</b></div>' : '')
+         + (d.full_name ? '<div class="fg-r"><span>الاسم</span><b>'
+            + esc(d.full_name) + '</b></div>' : '')
+         + (d.company ? '<div class="fg-r"><span>الشركة</span><b>'
+            + esc(d.company) + '</b></div>' : '')
+         + (d.orders ? '<div class="fg-r"><span>الطلبات</span><b>'
+            + dbF(d.orders) + '</b></div>' : '')
+         + (d.sales ? '<div class="fg-r"><span>المبيعات</span><b>'
+            + dbF(Math.round(d.sales)) + '</b></div>' : '')
+         + (d.manager ? '<div class="fg-r"><span>المسؤول</span><b>'
+            + esc(d.manager) + '</b></div>' : '');
+  }
+
+  return '<div class="fg-c ' + F.c + '">'
+    + '<div class="fg-h">'
+    +   '<img class="fg-im" src="' + esc(x.url) + '" loading="lazy" '
+    +     'onclick="dbZoom(\'' + esc(x.url) + '\')">'
+    +   '<div class="fg-i">'
+    +     '<b>@' + esc(x.handle || '—') + '</b>'
+    +     (x.display ? '<u>' + esc(x.display) + '</u>' : '')
+    +     '<span class="fg-b">' + F.i + ' ' + F.t + '</span>'
+    +   '</div>'
+    + '</div>'
+    + (rows ? '<div class="fg-d">' + rows + '</div>' : '')
+    + '<div class="fg-a">'
+    +   '<button onclick="fixLinkDlg(\'' + esc(x.uid) + '\',\''
+    +     esc(x.handle) + '\')">🔗 عدّلي اللينك</button>'
+    + '</div>'
+    + '</div>';
+}
+
+function fmtDate_(t){
+  try{
+    return new Date(t).toLocaleDateString('ar-EG',
+      { day:'numeric', month:'short' });
+  }catch(e){ return ''; }
+}
+
+// 🔗 تعديل اللينك — لو الربط طلع غلط
+function fixLinkDlg(uid, handle){
+  const ov = document.createElement('div');
+  ov.className = 'cf-overlay';
+  ov.innerHTML = '<div class="cf-box fx-box">'
+    + '<div class="fx-h"><b>🔗 عدّلي لينك المؤثر</b>'
+    +   '<button class="fx-x">✕</button></div>'
+    + '<div class="fx-cur">دلوقتي مربوط بـ <b>@' + esc(handle) + '</b></div>'
+    + '<input class="fx-in" id="fxLink" placeholder="الصق اللينك الصح…" '
+    +   'autocomplete="off">'
+    + '<div class="fx-tip">💡 الإثبات هيتنقل للحساب الجديد، '
+    +   'والقديم هيرجع زي ما كان.</div>'
+    + '<div class="cf-btns">'
+    +   '<button class="cf-no">إلغاء</button>'
+    +   '<button class="cf-yes ok" id="fxGo">✅ انقلي</button>'
+    + '</div></div>';
+
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>ov.classList.add('show'));
+  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
+  ov.querySelector('.fx-x').onclick = close;
+  ov.querySelector('.cf-no').onclick = close;
+  ov.addEventListener('click', e => { if(e.target === ov) close(); });
+
+  const inp = ov.querySelector('#fxLink');
+  const go  = ov.querySelector('#fxGo');
+  setTimeout(()=>inp.focus(), 150);
+
+  go.onclick = async () => {
+    const link = inp.value.trim();
+    if(link.length < 8){ toastErr('الصق اللينك'); return; }
+    go.disabled = true; go.textContent = '⏳ بننقل…';
+    try{
+      const r = await callApi('verifyProof', {
+        token: SESSION.token, action: 'fixLink', uid, link,
+      });
+      close();
+      toastOk('✅ اتنقل لـ @' + String(r.handle || '').replace('@',''));
+      _flagged.loaded = false;
+      loadFlagged();
+      invalidateCache();
+    }catch(e){
+      go.disabled = false; go.textContent = '✅ انقلي';
+      toastErr(e.message);
+    }
+  };
+}
+
 // 🔄 نحمّل المستحقين من السيرفر — أدق من الحساب المحلي
 let _fuLoading = false;
 async function loadFollowsDue(){
@@ -17858,6 +18091,8 @@ function setView(v){
   if(v !== 'imported'){ state.days = 'all'; state.sentf = 'all'; }
   // 🔄 تابة المتابعات — نجيب المستحقين من السيرفر
   if(v === 'followups') loadFollowsDue();
+  // 🏷️ تابة الملاحظات
+  if(v === 'flagged' && !_flagged.loaded) loadFlagged();
   if(v !== 'followups'){ state.late = 'all'; state.round = 'all'; }
   document.querySelectorAll('.vtab').forEach(b =>
     b.classList.toggle('on', b.getAttribute('data-v') === v));
