@@ -15408,6 +15408,7 @@ async function mpUploadOne(it){
       }), 4);
 
       it.logged = true;    // 🔒 من هنا الأكشن مسجّل
+      it.upUrl  = (res && res.screenshotUrl) || '';   // للإنقاذ لو لزم
       const url = (res && res.screenshotUrl) || null;
 
       // 4️⃣ تسجيل البصمة
@@ -15449,10 +15450,37 @@ async function mpUploadOne(it){
       renderMobileProofs();
       return;
     }
-    it.state = 'fail';
+
     const m = String(e.message || '');
+
+    // 🚫 خطأ نهائي (مكرر/شريك/مش بتاعها) — مفيش فايدة من الإعادة
+    if(NO_RETRY.test(m)){
+      it.state = 'dup';
+      it.msg = m.replace(/\s*\[[^\]]*\]\s*/g, '').trim();
+      renderMobileProofs();
+      return;
+    }
+
+    // 🛟 شبكة أمان — التسجيل فشل، نرفعها للمراجعة بدل ما تضيع
+    //
+    // ⚠️ 39 صورة ضاعت النهاردة كده: اترفعت للتخزين، والأكشن
+    //    فشل، والصورة مارجعتش لأي مكان.
+    try{
+      it.msg = '🛟 بننقذها للمراجعة…';
+      renderMobileProofs();
+
+      const saved = await mpUploadPending([it]);
+      if(saved){
+        it.state = 'ok';
+        it.msg   = '🤖 اترفعت للمراجعة — الإدارة هتربطها';
+        renderMobileProofs();
+        return;
+      }
+    }catch(e2){ /* الإنقاذ فشل كمان */ }
+
+    it.state = 'fail';
     it.msg = m.includes('Failed to fetch') || m.includes('NetworkError')
-      ? 'النت فصل'
+      ? '📶 النت فصل — دوسي 🔄'
       : (m.includes('413') || m.includes('too large')
         ? 'الصورة كبيرة أوي' : 'محتاجة إعادة');
     it.canRetry = true;
