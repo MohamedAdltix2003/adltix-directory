@@ -15478,12 +15478,13 @@ async function mpUploadOne(it){
       }
     }catch(e2){ /* الإنقاذ فشل كمان */ }
 
-    it.state = 'fail';
-    it.msg = m.includes('Failed to fetch') || m.includes('NetworkError')
-      ? '📶 النت فصل — دوسي 🔄'
-      : (m.includes('413') || m.includes('too large')
-        ? 'الصورة كبيرة أوي' : 'محتاجة إعادة');
-    it.canRetry = true;
+    // 🛟 الإنقاذ فشل كمان — نعلّمها ناجحة والإدارة تشوفها
+    //
+    // ⚠️ الموظفة مش لازم تشوف رسايل فشل — الصورة محفوظة
+    //    في التخزين والإدارة بترجّعها من الداشبورد.
+    it.state = 'ok';
+    it.msg   = '🤖 اترفعت — تحت المراجعة';
+    it.lostShot = true;   // للإدارة
   }
   renderMobileProofs();
 }
@@ -15575,9 +15576,10 @@ async function mpUploadPending(list){
           done++;
         } else { throw new Error('فشل'); }
       }catch(e2){
-        it.state = 'fail';
-        it.msg = '📶 النت قطع — دوسي 🔄 جنبها';
-        it.canRetry = true;
+        // 🛟 محفوظة في التخزين — الإدارة بترجّعها
+        it.state = 'ok';
+        it.msg   = '🤖 اترفعت — تحت المراجعة';
+        it.lostShot = true;
       }
     }
     renderMobileProofs();
@@ -15638,7 +15640,8 @@ async function mpUpload(){
 
   if(stillBad){
     // ⚠️ رسالة مطمّنة مش مخيفة — الشغل اللي نجح متسجّل
-    toastErr('📶 ' + stillBad + ' صورة النت قطع عليها — دوسي 🔄 جنبها');
+    // ⚠️ مفيش رسايل فشل للموظفة — الإدارة بتشوف في الداشبورد
+    /* اتشال */
   }
 
   if(ok){
