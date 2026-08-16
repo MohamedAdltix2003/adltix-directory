@@ -6571,7 +6571,7 @@ const FN_MAP = {
   approve:        "admin-action",
   unarchive:      "admin-action"
 };
-const ADMIN_ACTIONS = { "delete":"delete", moveToNew:"archive", changeNiche:"changeNiche", approve:"approve", unarchive:"unarchive", resolvePending:"resolvePending", dropPending:"dropPending", addAndResolve:"addAndResolve", rereadPending:"rereadPending", searchLeads:"searchLeads", proofSuggest:"proofSuggest", checkLink:"checkLink", undoResolve:"undoResolve" };
+const ADMIN_ACTIONS = { "delete":"delete", moveToNew:"archive", changeNiche:"changeNiche", approve:"approve", unarchive:"unarchive", resolvePending:"resolvePending", dropPending:"dropPending", addAndResolve:"addAndResolve", rereadPending:"rereadPending", searchLeads:"searchLeads", proofSuggest:"proofSuggest", checkLink:"checkLink", undoResolve:"undoResolve", findVariant:"findVariant" };
 
 // Supabase بيحدّ أي طلب بـ 1000 صف كحد أقصى (إعداد max-rows).
 // كنا بنطلب 2000 فكان بيرجّع 1000 ويرمي الباقي في صمت —
@@ -13415,6 +13415,9 @@ async function readHandleAI(file){
       display: String(r.display || ''),
       isChat: r.is_chat !== false,
       platform: r.platform || '',
+      // ⚠️ الاسم فيه فاصل و Groq مقدرش يتأكد منه
+      needsReview: r.needs_review === true,
+      note: String(r.note || ''),
     };
   }catch(e){ return null; }
 }
@@ -13508,9 +13511,72 @@ async function autoAddByLink(link){
   }
 }
 
+// 🔤 بدائل الاسم — Florence بيخلط بين . و _ و -
+//
+// ⚠️ "n.altheyabi" ممكن يكون "n_altheyabi" في الحقيقة.
+//    بنجرّب البدائل بالترتيب لحد ما نلاقي حساب موجود.
+function nameVariants_(u){
+  const out = [u];
+  const seps = ['.', '_', '-'];
+  // نبدّل كل فاصل بالتانيين
+  for(const from of seps){
+    if(!u.includes(from)) continue;
+    for(const to of seps){
+      if(to === from) continue;
+      const v = u.split(from).join(to);
+      if(!out.includes(v)) out.push(v);
+    }
+  }
+  // من غير فواصل خالص
+  const bare = u.replace(/[._-]/g, '');
+  if(bare.length >= 3 && !out.includes(bare)) out.push(bare);
+  return out.slice(0, 5);
+}
+
 async function autoAddInfluencer(username, platform, display){
   const u = String(username || '').replace(/^@/, '').trim();
   if(u.length < 3) return null;
+
+  // 🔍 المؤثر موجود بشكل تاني؟ نلاقيه قبل ما نضيف نسخة غلط
+  for(const v of nameVariants_(u)){
+    const hit = MP.cands.find(c =>
+      String(c.handle || '').toLowerCase() === v.toLowerCase());
+    if(hit) return { ok: true, uid: hit.uid, handle: hit.handle };
+  }
+
+  // 🌐 مش في القايمة — ندوّر في السيرفر بكل البدائل
+  try{
+    const fv = await callApi('adminAction', {
+      token: SESSION.token, action: 'findVariant',
+      name: u, platform, staff: SESSION.staffName || SESSION.username,
+    });
+    if(fv && fv.found){
+      if(fv.sent)  return { taken: true, uid: fv.uid,
+                            msg: '🚫 اترفعله إثبات قبل كده' };
+      if(fv.owner && !fv.mine) return { taken: true, uid: fv.uid,
+                            msg: '🔁 المؤثر ده مع ' + fv.owner };
+      return { ok: true, uid: fv.uid, handle: fv.handle };
+    }
+  }catch(e){ /* نكمّل للإضافة */ }
+
+  // 🔎 الموديل بيقرا "_" كـ "." أو "-" أحيانًا.
+  //
+  // ⚠️ "n.altheyabi" الصح "n_altheyabi" — فقبل ما نضيف مؤثر
+  //    جديد، نشوف لو فيه واحد موجود بنفس الحروف.
+  const uc = core_(u);
+  if(uc.length >= 5){
+    const hit = (MP.cands || []).find(c => core_(c.handle) === uc);
+    if(hit){
+      return { ok: true, uid: hit.uid, handle: hit.handle, existed: true };
+    }
+    const inCr = (CREATORS || []).find(c =>
+      core_(String(c.handle || '').replace('@','')) === uc);
+    if(inCr){
+      return { ok: true, uid: inCr.uid,
+               handle: String(inCr.handle || '').replace('@',''),
+               existed: true };
+    }
+  }
 
   const base = AUTO_PLAT[String(platform || '').toLowerCase()]
              || AUTO_PLAT.instagram;
@@ -14092,6 +14158,17 @@ async function runOCR_(){
             renderMobileProofs();
             continue;
           }
+          // 📥 الاسم مشكوك فيه؟ للمراجعة بدل ما نضيف غلط
+          if(vis.needsReview){
+            it.msg = '🔍 الاسم محتاج مراجعة — هيترفع للإدارة';
+            it.visionRead = uname;
+            it.reviewNote = vis.note || 'الاسم فيه فاصل';
+            it.state = 'ready';
+            MP.done++;
+            renderMobileProofs();
+            continue;
+          }
+
           it.msg = '⏳ بنضيف @' + uname + '…';
           renderMobileProofs();
 
@@ -15374,7 +15451,8 @@ async function mpUploadPending(list){
         token: SESSION.token, action: 'addPending',
         url, hash, aiName: it.visionRead || '',
         platform: it.visPlatform || '',
-        ocr: (it.snapNote ? '[' + it.snapNote + '] ' : '')
+        ocr: (it.reviewNote ? '[🔍 ' + it.reviewNote + '] ' : '')
+           + (it.snapNote ? '[' + it.snapNote + '] ' : '')
            + (it.blocked && !it.snapNote ? '[' + it.blocked + '] ' : '')
            + (it.snapLink ? it.snapLink + ' ' : '')
            + (it.ocr || ''),
