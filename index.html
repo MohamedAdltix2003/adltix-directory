@@ -13822,8 +13822,27 @@ function nameScore_(a, b){
   return Math.round(hits / Math.max(wa.length, wb.length) * 100);
 }
 
+// 🎯 المطابقة — التطابق الكامل بالهاندل بس
+//
+// ⚠️ المطابقة الصوتية بالاسم العربي كانت بتربط غلط:
+//    "ameeramalallah" اتربط بـ "amera8__"
+//    "dantilna" اتربط بـ "al.marri"
+//    أي حاجة أقل من تطابق كامل بتروح للإدارة بمقترح.
 function matchCandidate_(handles){
   if(!handles || !handles.length || !MP.cands.length) return null;
+
+  // ✅ تطابق كامل للهاندل — ده الوحيد الموثوق
+  for(const h of handles){
+    const q = String(h || '').replace(/^@/, '').trim().toLowerCase();
+    if(q.length < 3) continue;
+    const hit = MP.cands.find(c =>
+      String(c.handle || '').replace(/^@/, '').trim().toLowerCase() === q);
+    if(hit) return { cand: hit, score: 100 };
+  }
+
+  // 🔒 مفيش تطابق كامل؟ نرجّع أقرب مرشّح كـ "اقتراح" بس —
+  //    الكود اللي بره بيرفض أي score أقل من 100.
+  const _origScan = true;
 
   // 🕐 اللي اتضافوا النهاردة أولوية — الموظفة بترفع اللينك
   //    وبعدها الصورة على طول، فده الأرجح.
@@ -14162,6 +14181,7 @@ async function runOCR_(){
 
         // 🎯 ③ المطابقة الضبابية
         let m = names.length ? matchCandidate_(names) : null;
+        if(m && m.score < 100){ it.nearMiss = m.cand.handle; m = null; }
 
         // 🔁 ③b مالقاش؟ نجرّب كل كلمة في الاسم لوحدها
         //    "هنوف عبد الله" → نجرّب "هنوف" و "عبد" و "الله"
@@ -14170,6 +14190,7 @@ async function runOCR_(){
             .filter(w => w.length >= 3);
           for(const w of parts){
             m = matchCandidate_([w]);
+            if(m && m.score < 100){ it.nearMiss = m.cand.handle; m = null; }
             if(m) break;
           }
         }
@@ -14179,6 +14200,7 @@ async function runOCR_(){
           for(const one of names){
             if(String(one).length < 4) continue;
             m = matchCandidate_([one]);
+            if(m && m.score < 100){ it.nearMiss = m.cand.handle; m = null; }
             if(m) break;
           }
         }
@@ -14199,7 +14221,7 @@ async function runOCR_(){
           }
           // 📥 الاسم مشكوك فيه؟ للمراجعة بدل ما نضيف غلط
           if(vis.needsReview){
-            it.msg = '🔍 الاسم محتاج مراجعة — هيترفع للإدارة';
+            it.msg = '';   // الرسالة الموحّدة تحت
             it.visionRead = uname;
             it.reviewNote = vis.note || 'الاسم فيه فاصل';
             it.state = 'ready';
@@ -14995,10 +15017,13 @@ function renderMobileProofs(){
         const risky2 = (it.conf === 'low' || it.conf === 'none');
         body += '<div class="mp-r"><span class="mp-cf ' + cf.c + '">' + cf.t + '</span></div>'
           + (it.msg ? '<span class="mp-msg">' + esc(it.msg) + '</span>' : '')
+          // ⚠️ لو فيه رسالة خاصة (مراجعة/ملاحظة) منكتبش فوقها
           + '<span class="mp-msg">'
-          +   (MP.plat === 'snapchat'
+          +   (it.msg
+              ? esc(it.msg)
+              : MP.plat === 'snapchat'
               ? 'هتترفع وتتربط باللينك'
-              : '🤖 هتترفع والنظام هيربطها — مش محتاجة منك حاجة')
+              : '🤖 هتترفع والنظام هيربطها')
           + '</span>'
           // 🚫 مفيش اختيار مؤثر — النظام بيربط لوحده
           + '<div class="mp-btns">'
