@@ -15332,6 +15332,12 @@ async function waitNet_(maxMs){
 }
 
 // 🔁 إعادة المحاولة — بمهلة قصيرة عشان مانطوّلش على الموظفة
+// 🚫 أخطاء مالهاش لازمة إعادة — الإعادة بتزوّد الضرر
+//
+// ⚠️ "مكرر" معناها الرفع نجح خلاص. الإعادة كانت بتسجّل
+//    محاولة مكررة في كل مرة — 219 رفض لـ 45 صورة.
+const NO_RETRY = /مكرر|اترفع(ت)? قبل|duplicate|قايمتك|شريك|مشترك|صلاحية|مسموح/i;
+
 async function retry_(fn, tries){
   const N = tries || 4;
   let last;
@@ -15341,6 +15347,8 @@ async function retry_(fn, tries){
       return await fn();
     }catch(e){
       last = e;
+      // خطأ نهائي؟ منعيدش
+      if(NO_RETRY.test(String(e && e.message || ''))) throw e;
       if(i < N - 1){
         await new Promise(r => setTimeout(r, 400 + i * 500));
       }
