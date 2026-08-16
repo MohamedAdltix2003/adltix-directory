@@ -6197,6 +6197,28 @@
     max-height:260px; object-fit:contain; border-radius:11px;
     background:var(--line); cursor:zoom-in;
   }
+
+  /* 💬 رسالة "تحت التحليل" للموظفة */
+  .mp-und{
+    padding:10px 12px; border-radius:11px; margin-top:7px;
+    background:#DBEAFE; display:flex; flex-direction:column; gap:4px;
+  }
+  body.dark .mp-und{ background:#1a2f4d }
+  .mp-und b{ font-size:12px; font-weight:800; color:#1E40AF }
+  .mp-und span{ font-size:11px; line-height:1.8; color:#1E3A8A }
+  body.dark .mp-und b{ color:#93c5fd }
+  body.dark .mp-und span{ color:#93c5fd; opacity:.85 }
+
+  /* 📢 رسالة الصورة تحت التحليل */
+  .mp-note{
+    padding:10px 13px; border-radius:11px; margin:7px 0 9px;
+    background:#DBEAFE; display:flex; flex-direction:column; gap:4px;
+  }
+  body.dark .mp-note{ background:#1a2f4d }
+  .mp-note b{ font-size:12px; font-weight:800; color:#1E40AF }
+  .mp-note span{ font-size:11px; line-height:1.75; color:#1E3A8A }
+  body.dark .mp-note b{ color:#93c5fd }
+  body.dark .mp-note span{ color:#93c5fd; opacity:.85 }
 </style>
 </head>
 <body>
@@ -14349,9 +14371,7 @@ async function runOCR_(){
           const uname = String(vis.names[0] || '').trim();
           if(/[\u0600-\u06FF\s]/.test(uname) || uname.length < 3){
             // اسم عربي أو قصير — مش هاندل، منضيفش
-            it.msg = uname
-              ? '⚠️ "' + uname + '" مش في قايمتك — اختاريه'
-              : 'مالقيتش اسم المؤثر — اختاريه';
+            it.msg = '';   // الرسالة الموحّدة تحت
             it.state = 'ready';
             MP.done++;
             renderMobileProofs();
@@ -14445,7 +14465,7 @@ async function runOCR_(){
         // ➕ اتضاف تلقائي؟ نطمّنها
         it.msg = it.autoAdded ? '➕ اتضاف تلقائي' : '';
       } else if(it.dupTarget){
-        it.msg = '⚠️ المؤثر ده اتاخد في صورة تانية';
+        it.msg = '';   // الرسالة الموحّدة تحت
       } else if(it.snapNote){
         it.msg = '⚠️ ' + it.snapNote + ' — هيترفع للمراجعة';
       } else if(it.blocked){
@@ -14458,9 +14478,7 @@ async function runOCR_(){
               ...(ai.handles || []),
               ...extractHandles_(ai.ocr || ''),
             ])].filter(h => h.length >= 4);
-        it.msg = seen.length
-          ? '⚠️ @' + seen[0] + ' مش في قايمتك — اختاريه'
-          : 'مالقيتش اسم المؤثر — اختاريه';
+        it.msg = '';   // الرسالة الموحّدة تحت
       }
       it.state = 'ready';
       MP.done++;
@@ -15159,17 +15177,21 @@ function renderMobileProofs(){
       } else {
         // ⚠️ التحذير للصور المشكوك فيها بس — مش لكل صورة مالهاش مؤثر
         const risky2 = (it.conf === 'low' || it.conf === 'none');
-        body += '<div class="mp-r"><span class="mp-cf ' + cf.c + '">' + cf.t + '</span></div>'
-          + (it.msg ? '<span class="mp-msg">' + esc(it.msg) + '</span>' : '')
-          // ⚠️ لو فيه رسالة خاصة (مراجعة/ملاحظة) منكتبش فوقها
-          + '<span class="mp-msg">'
-          +   (it.msg
-              ? esc(it.msg)
-              : MP.plat === 'snapchat'
-              ? 'هتترفع وتتربط باللينك'
-              : '🤖 هتترفع والنظام هيربطها')
-          + '</span>'
-          // 🚫 مفيش اختيار مؤثر — النظام بيربط لوحده
+        // 📢 رسالة واحدة واضحة — مش رسايل متضاربة
+        //
+        // ⚠️ الموظفة كانت بتشوف "مش في قايمتك" و"اتاخد في صورة
+        //    تانية" وتتلخبط. دي كلها نفس النتيجة: تحت التحليل.
+        body += '<div class="mp-r"><span class="mp-cf ' + cf.c + '">'
+          +   cf.t + '</span></div>'
+          + '<div class="mp-note">'
+          +   '<b>' + (MP.plat === 'snapchat'
+                ? '🔗 هتتربط باللينك'
+                : '🤖 الـ AI مشافش اسم الحساب في الصورة') + '</b>'
+          +   '<span>' + (MP.plat === 'snapchat'
+                ? 'الترتيب اللي حطيتيه هو اللي هيتربط.'
+                : 'اتحسبت في التارجت بتاعك وتحت التحليل — '
+                  + 'ولو مالقيناهوش هنتواصل معاكي.') + '</span>'
+          + '</div>'
           + '<div class="mp-btns">'
           +   '<button class="mp-del" onclick="mpRemove(\'' + it.id + '\')">🗑️ احذفي</button>'
           + '</div>';
