@@ -14336,7 +14336,20 @@ async function runOCR_(){
         continue;
       }
 
-      const m = matchCandidate_(handles);
+      let m = matchCandidate_(handles);
+
+      // 🎯 التطابق الكامل بس بيتربط تلقائي
+      //
+      // ⚠️ الموديل بيغلط في الفواصل (. مقابل _) والأسماء
+      //    المتشابهة. أي حاجة أقل من 100% بتيجي للإدارة
+      //    بمقترحات — أأمن من ربط غلط.
+      if(m && m.score < 100){
+        it.nearMiss = m.cand.handle + ' (' + m.score + '%)';
+        // 💡 نحفظ الاسم المقروء — المقترحات في الداشبورد
+        //    بتشتغل بيه
+        if(!it.visionRead) it.visionRead = handles[0] || '';
+        m = null;
+      }
 
       if(m){
         it.uid    = m.cand.uid;
@@ -15451,7 +15464,8 @@ async function mpUploadPending(list){
         token: SESSION.token, action: 'addPending',
         url, hash, aiName: it.visionRead || '',
         platform: it.visPlatform || '',
-        ocr: (it.reviewNote ? '[🔍 ' + it.reviewNote + '] ' : '')
+        ocr: (it.nearMiss ? '[≈ قريب من @' + it.nearMiss + '] ' : '')
+           + (it.reviewNote ? '[🔍 ' + it.reviewNote + '] ' : '')
            + (it.snapNote ? '[' + it.snapNote + '] ' : '')
            + (it.blocked && !it.snapNote ? '[' + it.blocked + '] ' : '')
            + (it.snapLink ? it.snapLink + ' ' : '')
