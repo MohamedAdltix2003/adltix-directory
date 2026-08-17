@@ -14336,7 +14336,14 @@ async function runOCR_(){
         it.seq    = 1;
         it.label  = MP.kind === 'followup' ? 'متابعة' : 'إرسال';
         it.autoAdded = !!(add && add.isNew);
-        if(add && (add.partner || add.taken || add.subscribed || add.blocked)){
+        // 🏷️ نفس معالجة إنستجرام — الملاحظة بتتسجّل مع الأكشن
+        //    عشان تظهر في تابة الملاحظات
+        if(add && (add.partner || add.taken || add.subscribed)){
+          it.snapNote = add.msg;
+          it.flag     = add.partner ? 'partner'
+                      : add.subscribed ? 'subscribed' : 'taken';
+          it.flagNote = String(add.msg || '').replace(/^[🚫🔁🎉]\s*/, '');
+        } else if(add && add.blocked){
           it.snapNote = add.msg;
         }
       }
@@ -14952,10 +14959,9 @@ function renderMobileProofs(){
   // 🔢 التصنيف الدقيق — كل حالة لوحدها
   const R = MP.items.filter(x => x.state === 'ready');
   // ⚠️ اللي عليه ملاحظة (شريك/مشترك) بيتعد "للمراجعة" مش "جاهز"
-  const ready   = R.filter(x => x.uid && !x.snapNote).length;
+  const ready   = R.filter(x => x.uid).length;
   const blocked = R.filter(x => x.noUpload).length;
-  const pend    = R.filter(x => !x.noUpload
-                    && (!x.uid || x.snapNote)).length;
+  const pend    = R.filter(x => !x.noUpload && !x.uid).length;
   const need    = pend;
   const okN     = MP.items.filter(x => x.state === 'ok').length;
   const upN     = ready + pend;                                   // اللي هيترفع فعلًا
@@ -15282,7 +15288,8 @@ function mpShell_(body){
   const T = [
     ['leads',  '📋', 'مؤثريني'],
     ['follow', '🔄', 'متابعات'],
-    ['add',    '➕', 'إضافة'],
+    // ⚠️ تابة الإضافة اتشالت — الإضافة بقت من الإثباتات بس،
+    //    عشان كل مؤثر يتضاف يبقى معاه إثبات.
     ['proofs', '📷', 'إثباتات'],
   ];
   return '<div class="mp-box">'
@@ -15870,13 +15877,14 @@ async function mpUploadPending(list){
 async function mpUpload(){
   MP.uploading = true;
 
-  // 👻 سناب — اللي فيه ملاحظة (شريك/مشترك/عند حد تاني) بيروح
-  //    للمعلّقة مش للتسجيل المباشر، لأن الأكشن هيترفض.
-  const list = MP.items.filter(x =>
-    x.state === 'ready' && x.uid && !x.snapNote);
+  // ✅ كله بيتسجّل — والملاحظة بتتحفظ مع الأكشن
+  //
+  // ⚠️ كان اللي عليه ملاحظة بيروح للمعلّقة. دلوقتي بيتسجّل
+  //    عادي وبيظهر في تابة الملاحظات.
+  const list = MP.items.filter(x => x.state === 'ready' && x.uid);
   // ⚠️ صور الشركاء متترفعش — السبب واضح ومفيش فايدة من المراجعة
   const pend = MP.items.filter(x =>
-    x.state === 'ready' && !x.noUpload && (!x.uid || x.snapNote));
+    x.state === 'ready' && !x.noUpload && !x.uid);
   if(!list.length && !pend.length) return;
 
   const LANES = 4;
