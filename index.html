@@ -14484,13 +14484,16 @@ async function runOCR_(){
               it.label  = 'إرسال';
             }
             it.autoAdded = true;
-          } else if(add && add.partner){
-            // 🚫 شريك — مش محتاجة مراجعة، السبب واضح
-            it.blocked  = add.msg;
-            it.noUpload = true;
-          } else if(add && add.taken){
-            // 🔁 مع موظفة تانية — الإدارة تراجع
-            it.blocked = add.msg;
+          } else if(add && (add.partner || add.taken || add.subscribed)){
+            // 🏷️ كله بيترفع ويتحسب — الملاحظة بتتسجّل معاه
+            it.uid    = add.uid || '';
+            it.handle = String(add.handle || uname).replace('@','');
+            it.action = MP.kind;
+            it.seq    = 1;
+            it.label  = MP.kind === 'followup' ? 'متابعة' : 'إرسال';
+            it.flag   = add.partner ? 'partner'
+                      : add.subscribed ? 'subscribed' : 'taken';
+            it.flagNote = String(add.msg || '').replace(/^[🚫🔁🎉]\s*/, '');
           }
         }
 
