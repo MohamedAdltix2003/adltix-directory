@@ -15707,19 +15707,12 @@ async function mpUploadOne(it){
           return;
         }
 
-        // 🎉 المؤثر مشترك؟ الصورة تترفع للمراجعة مش تترفض
-        //
-        // ⚠️ الموظفة تشوف مين اشترك معاه، والصورة بتوصل
-        //    للإدارة في تابة الملاحظات.
-        if(chk.reason === 'subscribed'){
-          // نكمّل الرفع عادي — بس بملاحظة إنه مشترك
+        // 🎉 المؤثر مشترك؟ ملاحظة بس — بيتحسب عادي
+        if(chk.reason === 'subscribed' || chk.flag === 'subscribed'){
           it.flag     = 'subscribed';
           it.flagNote = String(chk.message || '').replace(/^🎉\s*/, '');
           it.msg      = '🎉 ' + (chk.message || 'مشترك معانا');
-          it.noCount  = true;
-        } else
-
-        if(chk.accepted === false){
+        } else if(chk.accepted === false){
           it.state = 'dup';
           it.msg = chk.message || 'الصورة دي مرفوعة قبل كده';
           renderMobileProofs();
@@ -16556,7 +16549,7 @@ function dbTabFlagged(){
             + (det.orders ? '<div class="fg-r"><span>الطلبات</span><b>'
                 + dbF(det.orders) + '</b></div>' : '')
             + '<div class="fg-r"><span>يتحسب؟</span>'
-            + '<b class="no">🚫 لأ</b></div>';
+            + '<b class="ok">✅ أيوه</b></div>';
     } else {
       rows += (det.partner_id ? '<div class="fg-r"><span>رقم الشريك</span>'
                 + '<b class="mono">' + esc(det.partner_id) + '</b></div>' : '')
