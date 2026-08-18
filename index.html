@@ -6274,6 +6274,12 @@
           border:1px solid var(--line); background:transparent;
           color:var(--muted); flex-shrink:0 }
   .gs-cp:hover{ border-color:var(--brand); color:var(--brand) }
+
+  /* 🏷️ يتحسب ولا لأ */
+  .fg-r b.ok{ color:#15803D }
+  .fg-r b.no{ color:#B91C1C }
+  body.dark .fg-r b.ok{ color:#86efac }
+  body.dark .fg-r b.no{ color:#fca5a5 }
 </style>
 </head>
 <body>
@@ -11180,6 +11186,7 @@ function renderDashboard(){
     ['targets',  '🎯', 'التارجت'],
     ['sheets',   '📗', 'الشيتات'],
     ['pending',  '📥', 'مستنية ربط'],
+    ['flagged',  '🏷️', 'الملاحظات'],
     ['rejects',  '❌', 'أسباب الرفض'],
     ['deals',    '🎯', 'الصفقات'],
     ['leads',    '📇', 'المؤثرين'],
@@ -11227,6 +11234,7 @@ function dbTabContent(r){
     case 'targets':  return dbTargets(r);
     case 'sheets':   return dbSheets(r);
     case 'pending':  return dbPending(r);
+    case 'flagged':  return dbTabFlagged();
     case 'rejects':  return dbRejects(r);
     case 'deals':    return dbDeals(r);
     case 'leads':    return dbLeads(r);
@@ -15699,6 +15707,18 @@ async function mpUploadOne(it){
           return;
         }
 
+        // 🎉 المؤثر مشترك؟ الصورة تترفع للمراجعة مش تترفض
+        //
+        // ⚠️ الموظفة تشوف مين اشترك معاه، والصورة بتوصل
+        //    للإدارة في تابة الملاحظات.
+        if(chk.reason === 'subscribed'){
+          // نكمّل الرفع عادي — بس بملاحظة إنه مشترك
+          it.flag     = 'subscribed';
+          it.flagNote = String(chk.message || '').replace(/^🎉\s*/, '');
+          it.msg      = '🎉 ' + (chk.message || 'مشترك معانا');
+          it.noCount  = true;
+        } else
+
         if(chk.accepted === false){
           it.state = 'dup';
           it.msg = chk.message || 'الصورة دي مرفوعة قبل كده';
@@ -16459,6 +16479,110 @@ function dbZoom(url){
   // Esc تقفل كمان
   const esc_ = e => { if(e.key === 'Escape'){ close(); document.removeEventListener('keydown', esc_); } };
   document.addEventListener('keydown', esc_);
+}
+
+// 🏷️ تاب الملاحظات — مشترك / مع موظفة تانية / شريك
+//
+// ⚠️ الإثباتات دي اترفعت واتحسبت (ما عدا المشترك)،
+//    والملاحظة للمتابعة والمراجعة.
+let _flagStaff = 'all';
+let _flagData  = null;
+
+async function dbLoadFlagged(staff){
+  try{
+    const r = await callApi('adminAction', {
+      token: SESSION.token, action: 'flaggedAll',
+      staff: staff === 'all' ? '' : staff,
+    });
+    _flagData = r;
+    dbRender();
+  }catch(e){ toastErr(e.message); }
+}
+
+function dbFlagStaff(v){ _flagStaff = v; dbLoadFlagged(v); }
+
+function dbTabFlagged(){
+  const d = _flagData;
+  if(!d) { dbLoadFlagged(_flagStaff); return '<div class="db-ld">⏳ بنحمّل…</div>'; }
+
+  const items = d.items || [];
+  const K = d.by_flag || {};
+  let h = '';
+
+  h += '<div class="db-cards">'
+    + dbCard('🏷️', 'كل الملاحظات', d.total || 0, '')
+    + dbCard('🎉', 'مشتركين', K.subscribed || 0, '')
+    + dbCard('🔁', 'مع موظفة تانية', K.taken || 0, '')
+    + dbCard('🤝', 'شركاء', K.partner || 0, '')
+    + '</div>';
+
+  const staff = d.by_staff || [];
+  if(staff.length > 1){
+    h += '<div class="db-row">'
+      + '<button class="db-rp' + (_flagStaff==='all'?' on':'') + '" '
+      +   'onclick="dbFlagStaff(\'all\')">الكل (' + (d.total||0) + ')</button>'
+      + staff.map(x =>
+          '<button class="db-rp' + (_flagStaff===x.staff?' on':'') + '" '
+          + 'onclick="dbFlagStaff(\'' + esc(x.staff) + '\')">'
+          + esc(x.staff) + ' (' + x.count + ')</button>').join('')
+      + '</div>';
+  }
+
+  if(!items.length){
+    return h + '<div class="db-ld">✅ مفيش ملاحظات</div>';
+  }
+
+  h += '<div class="fg-g">' + items.map(x => {
+    const det = x.details || {};
+    const F = {
+      partner:    { c:'p', i:'🤝', t:'شريك متعاقد' },
+      subscribed: { c:'s', i:'🎉', t:'مشترك معانا' },
+      taken:      { c:'t', i:'🔁', t:'مع موظفة تانية' },
+    }[x.flag] || { c:'t', i:'🏷️', t:'ملاحظة' };
+
+    let rows = '<div class="fg-r"><span>الموظفة</span><b>'
+             + esc(x.staff) + '</b></div>';
+
+    if(x.flag === 'taken'){
+      rows += '<div class="fg-r"><span>المؤثر عند</span><b>'
+            + esc(det.owner || x.note) + '</b></div>'
+            + '<div class="fg-r"><span>يتحسب؟</span>'
+            + '<b class="ok">✅ أيوه</b></div>';
+    } else if(x.flag === 'subscribed'){
+      rows += (det.by_staff ? '<div class="fg-r"><span>اشترك مع</span><b>'
+                + esc(det.by_staff) + '</b></div>' : '')
+            + (det.partner_id ? '<div class="fg-r"><span>رقم الشريك</span>'
+                + '<b class="mono">' + esc(det.partner_id) + '</b></div>' : '')
+            + (det.orders ? '<div class="fg-r"><span>الطلبات</span><b>'
+                + dbF(det.orders) + '</b></div>' : '')
+            + '<div class="fg-r"><span>يتحسب؟</span>'
+            + '<b class="no">🚫 لأ</b></div>';
+    } else {
+      rows += (det.partner_id ? '<div class="fg-r"><span>رقم الشريك</span>'
+                + '<b class="mono">' + esc(det.partner_id) + '</b></div>' : '')
+            + (det.full_name ? '<div class="fg-r"><span>الاسم</span><b>'
+                + esc(det.full_name) + '</b></div>' : '')
+            + (det.orders ? '<div class="fg-r"><span>الطلبات</span><b>'
+                + dbF(det.orders) + '</b></div>' : '')
+            + '<div class="fg-r"><span>يتحسب؟</span>'
+            + '<b class="ok">✅ أيوه</b></div>';
+    }
+
+    return '<div class="fg-c ' + F.c + '">'
+      + '<div class="fg-h">'
+      +   '<img class="fg-im" src="' + esc(x.url) + '" loading="lazy" '
+      +     'onclick="dbZoom(\'' + esc(x.url) + '\')">'
+      +   '<div class="fg-i">'
+      +     '<b>@' + esc(x.handle || '—') + '</b>'
+      +     (x.display ? '<u>' + esc(x.display) + '</u>' : '')
+      +     '<span class="fg-b">' + F.i + ' ' + F.t + '</span>'
+      +   '</div>'
+      + '</div>'
+      + '<div class="fg-d">' + rows + '</div>'
+      + '</div>';
+  }).join('') + '</div>';
+
+  return h;
 }
 
 // 📥 تاب الإثباتات المستنية ربط
