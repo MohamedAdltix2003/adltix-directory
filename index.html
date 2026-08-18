@@ -14328,6 +14328,13 @@ async function runOCR_(){
       const add = await autoAddByLink(link);
       const uid = (add && add.uid) || uidFromLink_(link);
 
+      // 🔒 نفس المؤثر اتاخد في صورة تانية؟ (لينك مكرر)
+      if(uid && MP.items.some(x => x !== it && x.uid === uid)){
+        it.dupTarget = true;
+        it.msg = '';
+        continue;
+      }
+
       if(uid){
         it.uid    = uid;
         it.handle = String((add && add.handle) || '').replace('@','')
@@ -14382,6 +14389,14 @@ async function runOCR_(){
       it.matched = ai.matched;
       it.signals = ai.signals;
       it.ocr     = ai.ocr;
+
+      // 🔒 المؤثر ده اتاخد في صورة تانية؟ نسيبها للإدارة
+      //
+      // ⚠️ ده الحارس العام — بيغطي كل المسارات (المطابقة،
+      //    الإضافة التلقائية، والبدائل). من غيره ممكن نفس
+      //    الحساب يتربط بكذا صورة في نفس الرفعة.
+      const takenNow_ = (u) => !!u &&
+        MP.items.some(x => x !== it && x.uid === u);
 
       // 🔗 مالوش مؤثر لسه — نطابق على تلات طبقات
       //
@@ -14465,6 +14480,15 @@ async function runOCR_(){
           //
           // ⚠️ المدير طلب إن المشترك واللي مع موظفة تانية
           //    يترفعوا برضه، ويظهروا للموظفة في تابة مستقلة.
+          // 🔒 المؤثر اتاخد في صورة تانية؟ نوقف
+          if(add && add.uid && takenNow_(add.uid)){
+            it.dupTarget = true;
+            it.state = 'ready';
+            MP.done++;
+            renderMobileProofs();
+            continue;
+          }
+
           if(add && (add.taken || add.subscribed || add.partner)){
             it.uid    = add.uid || '';
             it.handle = String(add.handle || uname).replace('@','');
