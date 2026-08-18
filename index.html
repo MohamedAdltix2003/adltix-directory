@@ -14967,6 +14967,7 @@ function renderMobileProofs(){
   const pend    = R.filter(x => !x.noUpload && !x.uid).length;
   const need    = pend;
   const okN     = MP.items.filter(x => x.state === 'ok').length;
+  const dupN    = MP.items.filter(x => x.state === 'dup').length;
   const upN     = ready + pend;                                   // اللي هيترفع فعلًا
 
   let body = '';
@@ -15138,7 +15139,8 @@ function renderMobileProofs(){
             + '<span>استني لحد ما يخلص</span></div>'
           : okN && !upN
           ? '<div class="mp-r2n ok">'
-            + '<b>✅ اترفع ' + okN + ' إثبات</b>'
+            + '<b>✅ اتسجّل ' + okN + ' إثبات'
+            + (dupN ? ' · 🔁 ' + dupN + ' اترفع قبل كده' : '') + '</b>'
             + '<span>كلها اتحسبت في التارجت بتاعك</span></div>'
           : upN
           ? '<div class="mp-r2n ok">'
@@ -15935,10 +15937,18 @@ async function mpUpload(){
     /* اتشال */
   }
 
-  if(ok){
-    toastOk(pendN
-      ? '✅ اترفع ' + ok + ' إثبات · 🤖 ' + pendN + ' تحت التحليل'
-      : '✅ اترفع ' + ok + ' إثبات');
+  // 📊 التفصيل الكامل — الموظفة لازم تعرف كل صورة راحت فين
+  //
+  // ⚠️ الرسالة كانت بتقول "اترفع 57" والمسجّل 56، والصورة
+  //    المرفوضة مكانتش بتظهر — فالموظفة تحسب إن فيه ضياع.
+  const dupN = MP.items.filter(x => x.state === 'dup').length;
+
+  if(ok || dupN){
+    const parts = [];
+    if(ok)    parts.push('✅ ' + ok + ' اتسجّل');
+    if(pendN) parts.push('🤖 ' + pendN + ' تحت التحليل');
+    if(dupN)  parts.push('🔁 ' + dupN + ' اترفع قبل كده');
+    toastOk(parts.join(' · '));
     invalidateCache();
     try{ buildAllPills(); }catch(e){}
     try{ applyFilters(); }catch(e){}
