@@ -15997,25 +15997,41 @@ async function mpUpload(){
   if(list.length > 50 || avgMB > 1.5 || slow) LANES = 2;
   if(list.length > 80 || avgMB > 3 || conn === '2g') LANES = 1;
 
-  let idx = 0;
   let netFails = 0;
 
-  async function lane(){
-    while(idx < list.length){
-      const it = list[idx++];
-      await mpUploadOne(it);
+  // 📦 دفعات — 25 صورة في المرة مع راحة بينهم
+  //
+  // ⚠️ 100 صورة دفعة واحدة كانت بتوقّع الطلبات. التقسيم
+  //    بيدّي السيرفر فرصة يلحق، والموظفة متعملش حاجة.
+  const BATCH = 25;
+  for(let b = 0; b < list.length; b += BATCH){
+    const slice = list.slice(b, b + BATCH);
+    let idx = 0;
 
-      // 🚦 فشل متتالي؟ نبطّأ بدل ما نضيّع الباقي
-      if(it.state === 'fail'){
-        netFails++;
-        if(netFails >= 3){
-          await new Promise(r => setTimeout(r, 1500));
-          netFails = 0;
-        }
-      } else if(netFails > 0) netFails--;
+    const lane = async () => {
+      while(idx < slice.length){
+        const it = slice[idx++];
+        await mpUploadOne(it);
+
+        // 🚦 فشل متتالي؟ نبطّأ بدل ما نضيّع الباقي
+        if(it.state === 'fail'){
+          netFails++;
+          if(netFails >= 3){
+            await new Promise(r => setTimeout(r, 1500));
+            netFails = 0;
+          }
+        } else if(netFails > 0) netFails--;
+      }
+    };
+    await Promise.all(Array.from(
+      { length: Math.min(LANES, slice.length) }, lane));
+
+    // راحة بين الدفعات
+    if(b + BATCH < list.length){
+      await new Promise(r => setTimeout(r, 900));
+      renderMobileProofs();
     }
   }
-  await Promise.all(Array.from({ length: Math.min(LANES, list.length) }, lane));
 
   // 🔁 اللي فشل — جولتين إعادة
   for(let round = 1; round <= 5; round++){
@@ -16033,6 +16049,27 @@ async function mpUpload(){
 
     // مسار واحد في الإعادة — أضمن مع الشبكة الضعيفة
     for(const it of failed) await mpUploadOne(it);
+  }
+
+  // 🛟 إنقاذ الصور اللي وصلت التخزين والتسجيل فشل
+  //
+  // ⚠️ 9 من 98 صورة وصلوا التخزين والأكشن فشل. الإنقاذ
+  //    بيسجّلهم من غير ما الموظفة تعمل حاجة.
+  const stillFail = MP.items.filter(x => x.state === 'fail' && x.uid);
+  if(stillFail.length){
+    try{
+      const r = await callApi('verifyProof', {
+        token: SESSION.token, action: 'rescueMine',
+      });
+      const saved = Number(r.saved || 0);
+      if(saved){
+        stillFail.slice(0, saved).forEach(x => {
+          x.state = 'ok';
+          x.msg = '✅ اتسجّل';
+        });
+        renderMobileProofs();
+      }
+    }catch(e){ /* هادئ */ }
   }
 
   // 📥 اللي مالوش مؤثر — يترفع معلّق
