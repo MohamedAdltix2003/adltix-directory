@@ -13435,6 +13435,9 @@ const MP = {
 
 // ===== فتح الصفحة =====
 async function openMobileProofs(){
+  // 🔄 فيه صور ناقصة من آخر مرة؟ نكمّلها
+  qResume_().catch(()=>{});
+
   MP.open = true;
   MP.tab = 'leads';
   MP.loaded = false;
@@ -15781,13 +15784,27 @@ async function mpUploadOne(it){
       const b64 = await fileToBase64Small(it.file);
 
       // 🔒 الخطوة الحاسمة — بتتحاول 4 مرات
-      const res = await retry_(() => callApi('logAction', {
-        token: SESSION.token, uid: it.uid,
-        actionType: it.action || MP.kind, imageBase64: b64,
-        mode: 'new', seq: it.seq || undefined,
-        flag: it.flag || undefined,
-        flagNote: it.flagNote || undefined,
-      }), 4);
+      //
+      // ⚠️ قبل كل إعادة بنتأكد إن الأكشن مااتسجّلش خلاص —
+      //    عشان مانرفعش نسخة زيادة لو الرد ضاع بس.
+      let tries = 0;
+      const res = await retry_(async () => {
+        if(tries++ > 0){
+          const seen = await callApi('verifyProof', {
+            token: SESSION.token, action: 'lastProof', uid: it.uid,
+          }).catch(() => null);
+          if(seen && seen.url){
+            return { screenshotUrl: seen.url, already: true };
+          }
+        }
+        return await callApi('logAction', {
+          token: SESSION.token, uid: it.uid,
+          actionType: it.action || MP.kind, imageBase64: b64,
+          mode: 'new', seq: it.seq || undefined,
+          flag: it.flag || undefined,
+          flagNote: it.flagNote || undefined,
+        });
+      }, 4);
 
       it.logged = true;    // 🔒 من هنا الأكشن مسجّل
       it.upUrl  = (res && res.screenshotUrl) || '';   // للإنقاذ لو لزم
@@ -15825,6 +15842,7 @@ async function mpUploadOne(it){
       }catch(e){ /* تجاهل */ }
 
       it.state = 'ok';
+      qClear_(it.id);          // 💾 اتسجّلت — نشيلها من الطابور
   }catch(e){
     // ✅ الأكشن اتسجّل خلاص — الفشل في خطوة ثانوية
     if(it.logged){
@@ -15872,6 +15890,85 @@ async function mpUploadOne(it){
   renderMobileProofs();
 }
 
+// 💾 طابور محلي — الصور تفضل محفوظة لو الصفحة اتقفلت
+//
+// ⚠️ إسراء رفعت 23 وخرجت في النص — 9 صور ضاعت لأنها
+//    ماوصلتش السيرفر. دلوقتي بنحفظهم في المتصفح،
+//    ولما ترجع تفتح الموقع بيكمّلوا لوحدهم.
+const QKEY = 'adltix_upload_queue_v1';
+
+async function qSave_(items){
+  try{
+    const box = [];
+    for(const it of items){
+      if(it.state === 'ok') continue;
+      box.push({
+        id: it.id, uid: it.uid || '', handle: it.handle || '',
+        action: it.action || 'sent', seq: it.seq || 1,
+        kind: MP.kind, plat: MP.plat,
+        b64: await fileToBase64Small(it.file),
+        at: Date.now(),
+      });
+    }
+    if(!box.length){ localStorage.removeItem(QKEY); return; }
+    localStorage.setItem(QKEY, JSON.stringify(box));
+  }catch(e){ /* المساحة خلصت — نتجاهل */ }
+}
+
+function qClear_(id){
+  try{
+    const raw = localStorage.getItem(QKEY);
+    if(!raw) return;
+    const box = JSON.parse(raw).filter(x => x.id !== id);
+    if(box.length) localStorage.setItem(QKEY, JSON.stringify(box));
+    else localStorage.removeItem(QKEY);
+  }catch(e){}
+}
+
+// 🔄 نكمّل اللي فضل من آخر مرة
+async function qResume_(){
+  let box;
+  try{
+    const raw = localStorage.getItem(QKEY);
+    if(!raw) return;
+    box = JSON.parse(raw);
+  }catch(e){ return; }
+  if(!Array.isArray(box) || !box.length) return;
+
+  // أقدم من يومين؟ منكملش
+  const fresh = box.filter(x => Date.now() - (x.at || 0) < 172800000);
+  if(!fresh.length){ localStorage.removeItem(QKEY); return; }
+
+  toastOk('🔄 بنكمّل ' + fresh.length + ' صورة من آخر مرة…');
+
+  let done = 0;
+  for(const q of fresh){
+    try{
+      if(q.uid){
+        await callApi('logAction', {
+          token: SESSION.token, uid: q.uid,
+          actionType: q.action, imageBase64: q.b64,
+          mode: 'new', seq: q.seq,
+        });
+      } else {
+        await callApi('logAction', {
+          token: SESSION.token, uid: '', actionType: 'pending',
+          imageBase64: q.b64, mode: 'pending',
+        });
+      }
+      qClear_(q.id);
+      done++;
+    }catch(e){ /* الجولة الجاية */ }
+    await new Promise(r => setTimeout(r, 250));
+  }
+
+  if(done){
+    toastOk('✅ اتسجّل ' + done + ' صورة كانت ناقصة');
+    invalidateCache();
+    refreshTargetBar();
+  }
+}
+
 // ⚡ الرفع الجماعي — 4 صور في نفس الوقت
 //
 // ⚠️ الرفع بالتسلسل كان بياخد دقيقتين لـ 40 صورة.
@@ -15889,13 +15986,21 @@ async function mpUploadPending(list){
       const hash = await fileHash(it.file);
       const b64  = await fileToBase64Small(it.file);
 
-      const up = await retry_(() => callApi('logAction', {
-        token: SESSION.token, uid: '', actionType: 'pending',
-        imageBase64: b64, mode: 'pending',
-      }), 3);
-
-      const url = (up && up.screenshotUrl) || '';
-      if(!url) throw new Error('الصورة مترفعتش');
+      // 📤 نرفع الصورة مرة واحدة بس
+      //
+      // ⚠️ retry_ كانت بترفعها من جديد في كل محاولة —
+      //    صورة واحدة فشلت 13 مرة فبقت 13 نسخة في التخزين
+      //    وولا واحدة اتسجّلت.
+      let url = it.upUrl || '';
+      if(!url){
+        const up = await retry_(() => callApi('logAction', {
+          token: SESSION.token, uid: '', actionType: 'pending',
+          imageBase64: b64, mode: 'pending',
+        }), 3);
+        url = (up && up.screenshotUrl) || '';
+        if(!url) throw new Error('الصورة مترفعتش');
+        it.upUrl = url;      // 💾 نحفظها — الإعادة تستخدمها
+      }
 
       // ⚠️ إعادة محاولة — الصورة مرفوعة خلاص، والتسجيل
       //    لو فشل بتضيع. 4 محاولات مع انتظار النت.
@@ -15983,6 +16088,9 @@ async function mpUpload(){
   const pend = MP.items.filter(x =>
     x.state === 'ready' && !x.noUpload && !x.uid);
   if(!list.length && !pend.length) return;
+
+  // 💾 نحفظ الطابور قبل ما نبدأ — لو الصفحة اتقفلت نكمّل
+  await qSave_([...list, ...pend]);
 
   // ⚡ المسارات حسب حجم الصور والعدد
   //
