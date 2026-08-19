@@ -6307,6 +6307,58 @@
     background:#7C3AED; color:#fff;
   }
   .pn-rep:hover{ filter:brightness(1.1) }
+
+  /* ↔️ اختيار الاستبدال */
+  .mp-swap{
+    padding:12px 14px; border-radius:12px; margin:8px 0 10px;
+    background:#F3E8FF; display:flex; flex-direction:column; gap:5px;
+  }
+  body.dark .mp-swap{ background:#2e1065 }
+  .mp-swap b{ font-size:12.5px; font-weight:800; color:#6B21A8 }
+  .mp-swap span{ font-size:11px; color:#7E22CE; line-height:1.7 }
+  body.dark .mp-swap b{ color:#d8b4fe }
+  body.dark .mp-swap span{ color:#c4b5fd }
+  .mp-sw-b{ display:flex; gap:7px; flex-wrap:wrap; margin-top:6px }
+  .mp-sw-b button{
+    flex:1; min-width:130px; font-family:inherit; font-size:11.5px;
+    font-weight:800; cursor:pointer; padding:9px; border-radius:10px;
+    border:none;
+  }
+  .sw-yes{ background:#7C3AED; color:#fff }
+  .sw-no { background:transparent; color:#6B21A8;
+           border:1px solid #C4B5FD !important }
+  body.dark .sw-no{ color:#d8b4fe; border-color:#6d28d9 !important }
+
+  /* ↔️ نافذة المقارنة */
+  .sw-box{ max-width:480px !important; text-align:right !important;
+           padding:0 !important }
+  .sw-h{ display:flex; align-items:center; justify-content:space-between;
+         padding:14px 16px; border-bottom:1px solid var(--line) }
+  .sw-h b{ font-size:15px; color:var(--ink) }
+  .sw-x{ width:28px; height:28px; border-radius:8px; cursor:pointer;
+         border:1px solid var(--line); background:transparent; color:var(--muted) }
+  .sw-cmp{ display:flex; align-items:center; gap:10px; padding:16px }
+  .sw-side{ flex:1; display:flex; flex-direction:column; gap:6px;
+            align-items:center; min-width:0 }
+  .sw-side u{ text-decoration:none; font-size:11.5px; font-weight:800;
+              color:var(--muted) }
+  .sw-side img{ width:100%; max-height:200px; object-fit:contain;
+                border-radius:10px; background:var(--line) }
+  .sw-ph{ width:100%; height:120px; border-radius:10px; background:var(--line);
+          display:flex; align-items:center; justify-content:center;
+          font-size:11.5px; color:var(--muted) }
+  .sw-side i{ font-style:normal; font-size:11px; font-weight:800;
+              color:#B91C1C }
+  .sw-side.new i{ color:#15803D }
+  body.dark .sw-side i{ color:#fca5a5 }
+  body.dark .sw-side.new i{ color:#86efac }
+  .sw-ar{ font-size:20px; color:var(--muted); flex-shrink:0 }
+  .sw-warn{ margin:0 16px 14px; padding:11px 13px; border-radius:11px;
+            background:#FEE2E2; color:#B91C1C; font-size:11.5px;
+            line-height:1.75 }
+  body.dark .sw-warn{ background:#3d1414; color:#fca5a5 }
+  .sw-box .cf-btns{ padding:0 16px 16px }
+  .cf-yes.bad{ background:#B91C1C !important }
 </style>
 </head>
 <body>
@@ -15332,6 +15384,22 @@ function renderMobileProofs(){
           + '<div class="mp-btns">'
           +   '<button class="mp-del" onclick="mpRemove(\'' + it.id + '\')">🗑️ احذفي</button>'
           + '</div>';
+      } else if(it.canSwap){
+        // ↔️ اترفعله إثبات خلاص — الموظفة تقرر
+        body += '<div class="mp-swap">'
+          +   '<b>🔄 المؤثر ده اترفعله إثبات خلاص</b>'
+          +   '<span>' + esc(it.replaceMsg) + '</span>'
+          +   '<div class="mp-sw-b">'
+          +     '<button class="sw-yes" onclick="mpSwap(\'' + it.id + '\')">'
+          +       '↔️ استبدلي القديمة بدي</button>'
+          +     '<button class="sw-no" onclick="mpSwapSkip(\'' + it.id + '\')">'
+          +       '📥 سيبيها للإدارة</button>'
+          +   '</div>'
+          + '</div>'
+          + '<div class="mp-btns">'
+          +   '<button class="mp-del" onclick="mpRemove(\'' + it.id + '\')">🗑️ احذفي</button>'
+          + '</div>';
+
       } else if(it.noUpload && MP.plat !== 'snapchat'){
         // 🚫 محجوبة — مش هتترفع
         body += '<div class="mp-r">'
@@ -15443,6 +15511,96 @@ function shortLink_(u){
 }
 
 // 🔄 إعادة محاولة الرفع
+// ↔️ الموظفة تستبدل الإثبات القديم بالجديد
+//
+// ⚠️ القديم بيتشال نهائيًا — فبنوريها الصورتين
+//    ونطلب تأكيد صريح.
+async function mpSwap(id){
+  const it = MP.items.find(x => x.id === id);
+  if(!it || !it.swapUid) return;
+
+  // 📷 نجيب الصورة القديمة الأول
+  let oldUrl = '';
+  try{
+    const r = await callApi('verifyProof', {
+      token: SESSION.token, action: 'lastProof', uid: it.swapUid,
+    });
+    oldUrl = r.url || '';
+  }catch(e){ /* هادئ */ }
+
+  const ov = document.createElement('div');
+  ov.className = 'cf-overlay';
+  ov.innerHTML = '<div class="cf-box sw-box">'
+    + '<div class="sw-h"><b>↔️ استبدال الإثبات</b>'
+    +   '<button class="sw-x">✕</button></div>'
+    + '<div class="sw-cmp">'
+    +   '<div class="sw-side">'
+    +     '<u>القديمة</u>'
+    +     (oldUrl ? '<img src="' + esc(oldUrl) + '" loading="lazy">'
+              : '<div class="sw-ph">مفيش صورة</div>')
+    +     '<i>هتتشال</i>'
+    +   '</div>'
+    +   '<div class="sw-ar">←</div>'
+    +   '<div class="sw-side new">'
+    +     '<u>الجديدة</u>'
+    +     '<img src="' + esc(it.preview) + '">'
+    +     '<i>هتتسجّل</i>'
+    +   '</div>'
+    + '</div>'
+    + '<div class="sw-warn">'
+    +   '⚠️ الصورة القديمة هتتشال نهائيًا ومش هترجع. '
+    +   'اتأكدي إن الجديدة هي الصح.'
+    + '</div>'
+    + '<div class="cf-btns">'
+    +   '<button class="cf-no">إلغاء</button>'
+    +   '<button class="cf-yes bad" id="swGo">↔️ أيوه، استبدليها</button>'
+    + '</div></div>';
+
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>ov.classList.add('show'));
+  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
+  ov.querySelector('.sw-x').onclick  = close;
+  ov.querySelector('.cf-no').onclick = close;
+  ov.addEventListener('click', e => { if(e.target === ov) close(); });
+
+  const go = ov.querySelector('#swGo');
+  go.onclick = async () => {
+    go.disabled = true; go.textContent = '⏳ بنستبدل…';
+    try{
+      const hash = await fileHash(it.file);
+      const b64  = await fileToBase64Small(it.file);
+      await callApi('verifyProof', {
+        token: SESSION.token, action: 'swapProof',
+        uid: it.swapUid, imageBase64: b64, hash,
+      });
+      close();
+      it.canSwap = false;
+      it.uid     = it.swapUid;
+      it.state   = 'ok';
+      it.msg     = '↔️ اتستبدلت';
+      renderMobileProofs();
+      toastOk('✅ اتستبدلت — الصورة الجديدة هي المسجّلة دلوقتي');
+      invalidateCache();
+      refreshTargetBar();
+    }catch(e){
+      go.disabled = false; go.textContent = '↔️ أيوه، استبدليها';
+      toastErr(e.message);
+    }
+  };
+}
+
+// 📥 الموظفة سابتها للإدارة
+function mpSwapSkip(id){
+  const it = MP.items.find(x => x.id === id);
+  if(!it) return;
+  it.canSwap      = false;
+  it.replaceUid   = it.swapUid;
+  it.uid          = '';
+  it.kindOverride = 'replace';
+  it.msg          = '📥 هتترفع للإدارة';
+  renderMobileProofs();
+}
+
 // 🗑️ مسح كل الصور اللي مش هتترفع
 function mpDropBlocked(){
   const bad = MP.items.filter(x => x.noUpload);
@@ -15783,12 +15941,14 @@ async function mpUploadOne(it){
         //    دلوقتي الصورة بتترفع للإدارة عشان تقرر
         //    تسيب القديمة ولا تستبدلها.
         } else if(chk.reason === 'already_sent'){
-          it.replaceUid   = it.uid;
-          it.replaceMsg   = String(chk.message || '');
-          it.uid          = '';
-          it.kindOverride = 'replace';
+          // ↔️ الموظفة تقرر: تستبدل ولا تسيبها للإدارة
+          it.canSwap    = true;
+          it.swapUid    = it.uid;
+          it.swapAt     = chk.at || null;
+          it.replaceMsg = String(chk.message || '')
+                          .replace(' — الصورة هتترفع للمراجعة', '');
           it.state = 'ready';
-          it.msg   = '🔄 ' + it.replaceMsg;
+          it.msg   = '';
           renderMobileProofs();
           return;
 
