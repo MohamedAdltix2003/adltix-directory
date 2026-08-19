@@ -15379,6 +15379,27 @@ function renderMobileProofs(){
       } else if(it.state === 'uploading'){
         body += '<b class="mp-h">@' + esc(it.handle) + '</b>'
              +  '<span class="mp-a"><span class="lm-spin"></span> بنرفع…</span>';
+
+      } else if(it.canSwap){
+        // ↔️ اترفعله إثبات خلاص — الموظفة تقرر
+        //
+        // ⚠️ لازم قبل فرع it.uid — الصورة لسه معاها uid
+        //    فكانت بتدخل الفرع الغلط والاختيارين مايظهروش.
+        body += '<b class="mp-h">@' + esc(it.handle || '—') + '</b>'
+          + '<div class="mp-swap">'
+          +   '<b>🔄 المؤثر ده اترفعله إثبات خلاص</b>'
+          +   '<span>' + esc(it.replaceMsg || '') + '</span>'
+          +   '<div class="mp-sw-b">'
+          +     '<button class="sw-yes" onclick="mpSwap(\'' + it.id + '\')">'
+          +       '↔️ استبدلي القديمة بدي</button>'
+          +     '<button class="sw-no" onclick="mpSwapSkip(\'' + it.id + '\')">'
+          +       '📥 سيبيها للإدارة</button>'
+          +   '</div>'
+          + '</div>'
+          + '<div class="mp-btns">'
+          +   '<button class="mp-del" onclick="mpRemove(\'' + it.id + '\')">🗑️ احذفي</button>'
+          + '</div>';
+
       } else if(it.uid){
         const risky = (it.conf === 'low' || it.conf === 'none');
         body += '<b class="mp-h">@' + esc(it.handle) + '</b>'
@@ -15393,22 +15414,6 @@ function renderMobileProofs(){
           + '<div class="mp-btns">'
           +   '<button class="mp-del" onclick="mpRemove(\'' + it.id + '\')">🗑️ احذفي</button>'
           + '</div>';
-      } else if(it.canSwap){
-        // ↔️ اترفعله إثبات خلاص — الموظفة تقرر
-        body += '<div class="mp-swap">'
-          +   '<b>🔄 المؤثر ده اترفعله إثبات خلاص</b>'
-          +   '<span>' + esc(it.replaceMsg) + '</span>'
-          +   '<div class="mp-sw-b">'
-          +     '<button class="sw-yes" onclick="mpSwap(\'' + it.id + '\')">'
-          +       '↔️ استبدلي القديمة بدي</button>'
-          +     '<button class="sw-no" onclick="mpSwapSkip(\'' + it.id + '\')">'
-          +       '📥 سيبيها للإدارة</button>'
-          +   '</div>'
-          + '</div>'
-          + '<div class="mp-btns">'
-          +   '<button class="mp-del" onclick="mpRemove(\'' + it.id + '\')">🗑️ احذفي</button>'
-          + '</div>';
-
       } else if(it.noUpload && MP.plat !== 'snapchat'){
         // 🚫 محجوبة — مش هتترفع
         body += '<div class="mp-r">'
