@@ -15111,9 +15111,12 @@ function renderMobileProofs(){
   // 🔢 التصنيف الدقيق — كل حالة لوحدها
   const R = MP.items.filter(x => x.state === 'ready');
   // ⚠️ اللي عليه ملاحظة (شريك/مشترك) بيتعد "للمراجعة" مش "جاهز"
-  const ready   = R.filter(x => x.uid).length;
+  // ⏸️ الصور المستنية قرار مبتتحسبش في الجاهز
+  const swapN   = R.filter(x => x.canSwap).length;
+  const ready   = R.filter(x => x.uid && !x.canSwap).length;
   const blocked = R.filter(x => x.noUpload).length;
-  const pend    = R.filter(x => !x.noUpload && !x.uid).length;
+  const pend    = R.filter(x =>
+                    !x.noUpload && !x.uid && !x.canSwap).length;
   const need    = pend;
   const okN     = MP.items.filter(x => x.state === 'ok').length;
   const dupN    = MP.items.filter(x => x.state === 'dup').length;
@@ -15301,6 +15304,12 @@ function renderMobileProofs(){
             + '<b>🚫 مفيش صورة تترفع</b>'
             + '<span>كل الصور دي لمؤثرين مش في قايمتك</span></div>')
 
+        + (swapN
+          ? '<div class="mp-r2n warn">'
+            + '<b>⏸️ ' + swapN + ' صورة مستنية قرارك</b>'
+            + '<span>اختاري ↔️ استبدال أو 📥 سيبيها للإدارة</span>'
+            + '</div>'
+          : '')
         + (blocked
           ? '<div class="mp-r2n warn">'
             + '<b>⚠️ ' + blocked + ' صورة مش هتترفع</b>'
@@ -16267,11 +16276,24 @@ async function mpUpload(){
   //
   // ⚠️ كان اللي عليه ملاحظة بيروح للمعلّقة. دلوقتي بيتسجّل
   //    عادي وبيظهر في تابة الملاحظات.
-  const list = MP.items.filter(x => x.state === 'ready' && x.uid);
-  // ⚠️ صور الشركاء متترفعش — السبب واضح ومفيش فايدة من المراجعة
+  // ⏸️ الصور المستنية قرار الموظفة (استبدال) مبتترفعش
+  //
+  // ⚠️ كانت بتدخل في pend وتترفع من غير ما تستنى القرار،
+  //    والزرار كان بيشتغل ومفيش حاجة تبان.
+  const list = MP.items.filter(x =>
+    x.state === 'ready' && x.uid && !x.canSwap);
   const pend = MP.items.filter(x =>
-    x.state === 'ready' && !x.noUpload && !x.uid);
-  if(!list.length && !pend.length) return;
+    x.state === 'ready' && !x.noUpload && !x.uid && !x.canSwap);
+
+  // 🔔 مفيش حاجة تترفع بس فيه صور مستنية قرار؟ نفكّرها
+  const waiting = MP.items.filter(x => x.canSwap).length;
+  if(!list.length && !pend.length){
+    if(waiting){
+      toastErr('⏸️ فيه ' + waiting + ' صورة مستنية قرارك — '
+        + 'اختاري استبدال أو سيبيها للإدارة');
+    }
+    return;
+  }
 
   // 💾 نحفظ الطابور قبل ما نبدأ — لو الصفحة اتقفلت نكمّل
   await qSave_([...list, ...pend]);
