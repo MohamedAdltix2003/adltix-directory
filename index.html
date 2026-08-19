@@ -6299,6 +6299,14 @@
             color:var(--ink) }
   .db-t tr:last-child td{ border-bottom:none }
   .db-t tbody tr:hover{ background:var(--brand-soft) }
+
+  /* ↔️ زرار الاستبدال */
+  .pn-rep{
+    font-family:inherit; font-size:11.5px; font-weight:800; cursor:pointer;
+    padding:7px 12px; border-radius:9px; border:none;
+    background:#7C3AED; color:#fff;
+  }
+  .pn-rep:hover{ filter:brightness(1.1) }
 </style>
 </head>
 <body>
@@ -6761,7 +6769,7 @@ const FN_MAP = {
   approve:        "admin-action",
   unarchive:      "admin-action"
 };
-const ADMIN_ACTIONS = { "delete":"delete", moveToNew:"archive", changeNiche:"changeNiche", approve:"approve", unarchive:"unarchive", resolvePending:"resolvePending", dropPending:"dropPending", addAndResolve:"addAndResolve", rereadPending:"rereadPending", searchLeads:"searchLeads", proofSuggest:"proofSuggest", checkLink:"checkLink", undoResolve:"undoResolve", findVariant:"findVariant", resolveSubscribe:"resolveSubscribe" };
+const ADMIN_ACTIONS = { "delete":"delete", moveToNew:"archive", changeNiche:"changeNiche", approve:"approve", unarchive:"unarchive", resolvePending:"resolvePending", dropPending:"dropPending", addAndResolve:"addAndResolve", rereadPending:"rereadPending", searchLeads:"searchLeads", proofSuggest:"proofSuggest", checkLink:"checkLink", undoResolve:"undoResolve", findVariant:"findVariant", resolveSubscribe:"resolveSubscribe", flaggedAll:"flaggedAll", replaceProof:"replaceProof" };
 
 // Supabase بيحدّ أي طلب بـ 1000 صف كحد أقصى (إعداد max-rows).
 // كنا بنطلب 2000 فكان بيرجّع 1000 ويرمي الباقي في صمت —
@@ -15769,6 +15777,21 @@ async function mpUploadOne(it){
           it.flag     = 'subscribed';
           it.flagNote = String(chk.message || '').replace(/^🎉\s*/, '');
           it.msg      = '🎉 ' + (chk.message || 'مشترك معانا');
+        // 🔄 اترفعله إثبات خلاص؟ للمراجعة بدل الرفض
+        //
+        // ⚠️ الرسالة القديمة كانت "دي متابعة" وتلخبطها.
+        //    دلوقتي الصورة بتترفع للإدارة عشان تقرر
+        //    تسيب القديمة ولا تستبدلها.
+        } else if(chk.reason === 'already_sent'){
+          it.replaceUid   = it.uid;
+          it.replaceMsg   = String(chk.message || '');
+          it.uid          = '';
+          it.kindOverride = 'replace';
+          it.state = 'ready';
+          it.msg   = '🔄 ' + it.replaceMsg;
+          renderMobileProofs();
+          return;
+
         } else if(chk.accepted === false){
           it.state = 'dup';
           it.msg = chk.message || 'الصورة دي مرفوعة قبل كده';
@@ -16008,8 +16031,9 @@ async function mpUploadPending(list){
         token: SESSION.token, action: 'addPending',
         url, hash, aiName: it.visionRead || '',
         platform: it.visPlatform || '',
-        kind: MP.kind,
-        ocr: (it.nearMiss ? '[≈ قريب من @' + it.nearMiss + '] ' : '')
+        kind: it.kindOverride || MP.kind,
+        ocr: (it.replaceUid ? '[↔ ' + it.replaceUid + '] ' : '')
+           + (it.nearMiss ? '[≈ قريب من @' + it.nearMiss + '] ' : '')
            + (it.reviewNote ? '[🔍 ' + it.reviewNote + '] ' : '')
            + (it.snapNote ? '[' + it.snapNote + '] ' : '')
            + (it.blocked && !it.snapNote ? '[' + it.blocked + '] ' : '')
@@ -16818,6 +16842,25 @@ function dbTabFlagged(){
   return h;
 }
 
+// ↔️ استبدال إثبات قديم بالجديد
+//
+// ⚠️ الصورة الجديدة بتاخد مكان القديمة، والقديمة بتتشال.
+//    بنسأل الأول عشان الخطوة دي مالهاش رجعة.
+async function dbReplace(id){
+  if(!confirm('هتستبدلي الإثبات القديم بالصورة دي؟\n\n'
+    + 'القديم هيتشال نهائيًا.')) return;
+  try{
+    const r = await callApi('adminAction', {
+      token: SESSION.token, action: 'replaceProof', id,
+    });
+    toastOk('✅ اتستبدل — @'
+      + String(r.uid || '').split(':')[1]);
+    const el = document.getElementById('pn' + id);
+    if(el) el.remove();
+    loadDashboard(true, _pnStaff === 'all' ? '' : _pnStaff, _pnKind);
+  }catch(e){ toastErr(e.message); }
+}
+
 // 📥 تاب الإثباتات المستنية ربط
 //
 // ⚠️ الصور اللي الـ AI مقدرش يربطها. لكل صورة مقترحات من
@@ -16859,7 +16902,7 @@ function dbPending(r){
   const kSent = Number(K.sent || 0);
   const kSub  = Number(K.subscribed || 0);
   const kFol  = Number(K.followup || 0);
-  if(kSub || kFol){
+  if(kSub || kFol || Number(K.replace || 0)){
     h += '<div class="db-row">'
       + '<button class="db-rp' + (!_pnKind ? ' on' : '') + '" '
       +   'onclick="dbPnKind(\'all\')">الكل (' + d.total + ')</button>'
@@ -16871,6 +16914,10 @@ function dbPending(r){
       + (kFol ? '<button class="db-rp' + (_pnKind==='followup'?' on':'') + '" '
         + 'onclick="dbPnKind(\'followup\')">🔄 متابعة ('
         + kFol + ')</button>' : '')
+      + (Number(K.replace || 0)
+        ? '<button class="db-rp' + (_pnKind==='replace'?' on':'') + '" '
+          + 'onclick="dbPnKind(\'replace\')">↔️ استبدال ('
+          + K.replace + ')</button>' : '')
       + '</div>';
   }
 
@@ -16890,6 +16937,7 @@ function dbPending(r){
   const list = items.filter(x => _pnStaff === 'all' || x.staff === _pnStaff);
 
   h += '<div class="pn-grid">';
+  // ↔️ في تابة الاستبدال — زرار واحد واضح
   list.slice(0, 60).forEach(it => {
     // 💡 المقترحات المتدرّجة — الأقرب زمنيًا الأول
     const S = it.sg || {};
@@ -16939,6 +16987,11 @@ function dbPending(r){
       +   '</div>'
 
       +   '<div class="pn-act">'
+      // ↔️ استبدال — الصورة دي لمؤثر اترفعله إثبات خلاص
+      +     (String(it.kind || '') === 'replace'
+            ? '<button class="pn-rep" onclick="dbReplace(' + it.id + ')">'
+              + '↔️ استبدلي القديمة</button>'
+            : '')
       +     '<button class="pn-s" onclick="dbPnSearch(' + it.id + ',\''
       +       esc(it.staff) + '\')">🔍 دوّر</button>'
       +     '<button class="pn-a" onclick="dbPnAdd(' + it.id + ',\''
