@@ -14727,6 +14727,33 @@ async function runOCR_(){
     }
   }
 
+
+  // ↔️ فحص الإثباتات المكررة — قبل ما تدوس ارفعي
+  //
+  // ⚠️ الفحص ده كان وقت الرفع، فالاختيارين مكانوش بيظهروا
+  //    غير بعد ما تدوس. دلوقتي بيظهروا فورًا بعد المسح.
+  if(MP.kind === 'sent'){
+    const toCheck = MP.items.filter(x =>
+      x.state === 'ready' && x.uid && !x.canSwap);
+
+    for(const it of toCheck){
+      try{
+        const chk = await callApi('verifyProof', {
+          token: SESSION.token, action: 'hasProof', uid: it.uid,
+        });
+        if(chk && chk.has){
+          it.canSwap    = true;
+          it.swapUid    = it.uid;
+          it.swapAt     = chk.at || null;
+          it.oldUrl     = chk.url || '';
+          it.replaceMsg = String(chk.message || '');
+          it.msg = '';
+          renderMobileProofs();
+        }
+      }catch(e){ /* هادئ */ }
+    }
+  }
+
   MP.loading = false;
   renderMobileProofs();
   return;
@@ -15531,16 +15558,27 @@ function shortLink_(u){
 //    ونطلب تأكيد صريح.
 async function mpSwap(id){
   const it = MP.items.find(x => x.id === id);
-  if(!it || !it.swapUid) return;
+  if(!it){ toastErr('الصورة مش موجودة'); return; }
 
-  // 📷 نجيب الصورة القديمة الأول
-  let oldUrl = '';
-  try{
-    const r = await callApi('verifyProof', {
-      token: SESSION.token, action: 'lastProof', uid: it.swapUid,
-    });
-    oldUrl = r.url || '';
-  }catch(e){ /* هادئ */ }
+  // ⚠️ swapUid ممكن تضيع لو الكارت اتعرض قبل ما تتحفظ —
+  //    بنجيبها من أي مصدر متاح بدل ما الزرار يقف صامت.
+  const uid = it.swapUid || it.uid || it.replaceUid || '';
+  if(!uid){
+    toastErr('مش عارفين المؤثر — امسحي الصورة وارفعيها تاني');
+    return;
+  }
+  it.swapUid = uid;
+
+  // 📷 الصورة القديمة — محفوظة من الفحص
+  let oldUrl = it.oldUrl || '';
+  if(!oldUrl){
+    try{
+      const r = await callApi('verifyProof', {
+        token: SESSION.token, action: 'lastProof', uid,
+      });
+      oldUrl = r.url || '';
+    }catch(e){ /* هادئ */ }
+  }
 
   const ov = document.createElement('div');
   ov.className = 'cf-overlay';
@@ -15585,11 +15623,11 @@ async function mpSwap(id){
       const b64  = await fileToBase64Small(it.file);
       await callApi('verifyProof', {
         token: SESSION.token, action: 'swapProof',
-        uid: it.swapUid, imageBase64: b64, hash,
+        uid, imageBase64: b64, hash,
       });
       close();
       it.canSwap = false;
-      it.uid     = it.swapUid;
+      it.uid     = uid;
       it.state   = 'ok';
       it.msg     = '↔️ اتستبدلت';
       renderMobileProofs();
@@ -15608,7 +15646,7 @@ function mpSwapSkip(id){
   const it = MP.items.find(x => x.id === id);
   if(!it) return;
   it.canSwap      = false;
-  it.replaceUid   = it.swapUid;
+  it.replaceUid   = it.swapUid || it.uid || '';
   it.uid          = '';
   it.kindOverride = 'replace';
   it.msg          = '📥 هتترفع للإدارة';
