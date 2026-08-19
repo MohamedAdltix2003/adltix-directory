@@ -15778,7 +15778,7 @@ async function mpUploadOne(it){
       //
       // ⚠️ ده الخطوة الحاسمة. لو نجحت، الأكشن اتسجّل فعلًا —
       //    وأي فشل بعد كده مايستاهلش يقول "فشل الرفع".
-      const b64 = await fileToBase64Small(it.file);
+      const b64 = await fileToBase64(it.file);
 
       // 🔒 الخطوة الحاسمة — بتتحاول 4 مرات
       const res = await retry_(() => callApi('logAction', {
@@ -15887,7 +15887,7 @@ async function mpUploadPending(list){
     renderMobileProofs();
     try{
       const hash = await fileHash(it.file);
-      const b64  = await fileToBase64Small(it.file);
+      const b64  = await fileToBase64(it.file);
 
       const up = await retry_(() => callApi('logAction', {
         token: SESSION.token, uid: '', actionType: 'pending',
@@ -15984,60 +15984,33 @@ async function mpUpload(){
     x.state === 'ready' && !x.noUpload && !x.uid);
   if(!list.length && !pend.length) return;
 
-  // ⚡ عدد المسارات حسب حجم الصور والشبكة
-  //
-  // ⚠️ 4 مسارات مع صور سناب الكبيرة كانت بتخنق الاتصال —
-  //    40 صورة رفعتها رحمة وماوصلتش ولا واحدة.
-  //    بنقلّل المسارات لو الصور تقيلة أو الشبكة بطيئة.
-  const avgMB = list.reduce((a, x) => a + (x.file?.size || 0), 0)
-                / Math.max(1, list.length) / 1048576;
-  const conn  = (navigator.connection || {}).effectiveType || '';
-  const slow  = /2g|3g/i.test(conn);
-
-  let LANES = 4;
-  if(avgMB > 1.5 || slow) LANES = 2;
-  if(avgMB > 3   || conn === '2g') LANES = 1;
-
+  const LANES = 4;
   let idx = 0;
-  let netFails = 0;
 
   async function lane(){
     while(idx < list.length){
       const it = list[idx++];
       await mpUploadOne(it);
-
-      // 🚦 الشبكة بتفشل؟ نبطّأ بدل ما نكمّل ونضيّع الباقي
-      if(it.state === 'fail'){
-        netFails++;
-        if(netFails >= 3){
-          await new Promise(r => setTimeout(r, 1500));
-          netFails = 0;
-        }
-      } else if(netFails > 0) netFails--;
     }
   }
   await Promise.all(Array.from({ length: Math.min(LANES, list.length) }, lane));
 
-  // 🔁 اللي فشل — 5 جولات إعادة بمسار واحد
-  //
-  // ⚠️ جولتين مكانوش كفاية. رحمة رفعت 40 وماوصلتش ولا
-  //    واحدة. دلوقتي بنعيد 5 مرات، ومسار واحد بس عشان
-  //    الشبكة الضعيفة تلحق.
-  for(let round = 1; round <= 5; round++){
+  // 🔁 اللي فشل — جولتين إعادة
+  for(let round = 1; round <= 2; round++){
     const failed = MP.items.filter(x => x.state === 'fail');
     if(!failed.length) break;
 
     await waitNet_(60000);       // نستنى النت لو مقطوع
     await new Promise(r => setTimeout(r, 600 * round));
 
-    failed.forEach(x => {
-      x.state = 'ready';
-      x.msg = '🔄 بنعيد المحاولة (' + round + '/5)…';
-    });
-    renderMobileProofs();
+    failed.forEach(x => { x.state = 'ready'; x.msg = ''; });
 
-    // ⚠️ مسار واحد في الإعادة — الشبكة الضعيفة مش هتتحمّل أكتر
-    for(const it of failed) await mpUploadOne(it);
+    let i2 = 0;
+    const lane2 = async () => {
+      while(i2 < failed.length) await mpUploadOne(failed[i2++]);
+    };
+    await Promise.all(Array.from(
+      { length: Math.min(3, failed.length) }, lane2));
   }
 
   // 📥 اللي مالوش مؤثر — يترفع معلّق
