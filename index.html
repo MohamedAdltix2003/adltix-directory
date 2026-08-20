@@ -6359,6 +6359,48 @@
   body.dark .sw-warn{ background:#3d1414; color:#fca5a5 }
   .sw-box .cf-btns{ padding:0 16px 16px }
   .cf-yes.bad{ background:#B91C1C !important }
+
+  /* 🔍 مراجعة المشكوك فيها */
+  .rv-hint{
+    padding:11px 14px; border-radius:11px; margin-bottom:13px;
+    background:#DBEAFE; color:#1E40AF; font-size:12px; line-height:1.8;
+  }
+  body.dark .rv-hint{ background:#1a2f4d; color:#93c5fd }
+  .rv-hint b{ font-weight:800 }
+
+  .rv-grid{ display:grid; gap:11px;
+            grid-template-columns:repeat(auto-fill,minmax(250px,1fr)) }
+  .rv-c{
+    border:1px solid var(--line); border-radius:14px; overflow:hidden;
+    background:var(--surface); display:flex; flex-direction:column;
+    transition:opacity .2s;
+  }
+  .rv-im{
+    width:100%; height:170px; object-fit:cover; cursor:zoom-in;
+    background:var(--line); display:block;
+  }
+  .rv-im.no{ display:flex; align-items:center; justify-content:center;
+             font-size:26px }
+  .rv-d{ padding:10px 12px; display:flex; flex-direction:column; gap:3px }
+  .rv-d b{ font-size:13px; font-weight:800; color:var(--ink);
+           direction:ltr; unicode-bidi:isolate; text-align:start }
+  .rv-d span{ font-size:11px; color:var(--muted) }
+  .rv-b{ align-self:flex-start; font-size:10.5px; font-weight:800;
+         padding:2px 8px; border-radius:6px;
+         background:#FEE2E2; color:#B91C1C !important; margin-top:2px }
+  body.dark .rv-b{ background:#3d1414; color:#fca5a5 !important }
+  .rv-t{ font-size:10.5px; opacity:.75 }
+
+  .rv-a{ display:flex; gap:6px; padding:0 12px 12px }
+  .rv-a button{
+    flex:1; font-family:inherit; font-size:11.5px; font-weight:800;
+    cursor:pointer; padding:9px 6px; border-radius:9px; border:none;
+  }
+  .rv-ok{ background:#15803D; color:#fff }
+  .rv-no{ background:transparent; color:#B91C1C;
+          border:1px solid #FCA5A5 !important }
+  .rv-ok:hover, .rv-no:hover{ filter:brightness(1.08) }
+  body.dark .rv-no{ color:#fca5a5; border-color:#7f1d1d !important }
 </style>
 </head>
 <body>
@@ -6821,7 +6863,7 @@ const FN_MAP = {
   approve:        "admin-action",
   unarchive:      "admin-action"
 };
-const ADMIN_ACTIONS = { "delete":"delete", moveToNew:"archive", changeNiche:"changeNiche", approve:"approve", unarchive:"unarchive", resolvePending:"resolvePending", dropPending:"dropPending", addAndResolve:"addAndResolve", rereadPending:"rereadPending", searchLeads:"searchLeads", proofSuggest:"proofSuggest", checkLink:"checkLink", undoResolve:"undoResolve", findVariant:"findVariant", resolveSubscribe:"resolveSubscribe", flaggedAll:"flaggedAll", replaceProof:"replaceProof" };
+const ADMIN_ACTIONS = { "delete":"delete", moveToNew:"archive", changeNiche:"changeNiche", approve:"approve", unarchive:"unarchive", resolvePending:"resolvePending", dropPending:"dropPending", addAndResolve:"addAndResolve", rereadPending:"rereadPending", searchLeads:"searchLeads", proofSuggest:"proofSuggest", checkLink:"checkLink", undoResolve:"undoResolve", findVariant:"findVariant", resolveSubscribe:"resolveSubscribe", flaggedAll:"flaggedAll", replaceProof:"replaceProof", reviewProof:"reviewProof", suspectReview:"suspectReview" };
 
 // Supabase بيحدّ أي طلب بـ 1000 صف كحد أقصى (إعداد max-rows).
 // كنا بنطلب 2000 فكان بيرجّع 1000 ويرمي الباقي في صمت —
@@ -11301,6 +11343,7 @@ function renderDashboard(){
     ['sheets',   '📗', 'الشيتات'],
     ['pending',  '📥', 'مستنية ربط'],
     ['flagged',  '🏷️', 'الملاحظات'],
+    ['review',   '🔍', 'مراجعة الشك'],
     ['rejects',  '❌', 'أسباب الرفض'],
     ['deals',    '🎯', 'الصفقات'],
     ['leads',    '📇', 'المؤثرين'],
@@ -11349,6 +11392,7 @@ function dbTabContent(r){
     case 'sheets':   return dbSheets(r);
     case 'pending':  return dbPending(r);
     case 'flagged':  return dbTabFlagged();
+    case 'review':   return dbTabReview();
     case 'rejects':  return dbRejects(r);
     case 'deals':    return dbDeals(r);
     case 'leads':    return dbLeads(r);
@@ -16992,6 +17036,115 @@ function dbZoom(url){
   // Esc تقفل كمان
   const esc_ = e => { if(e.key === 'Escape'){ close(); document.removeEventListener('keydown', esc_); } };
   document.addEventListener('keydown', esc_);
+}
+
+// 🔍 تاب مراجعة الإثباتات المشكوك فيها
+//
+// ⚠️ الـ AI بيغلط ويعلّم محادثات حقيقية كـ "مشكوك فيها".
+//    الإدارة بتراجع وتقرر — واللي يتحوّل لدقة عالية
+//    بيختفي من التقارير.
+let _revStaff = 'all';
+let _revData  = null;
+
+async function dbLoadReview(staff){
+  try{
+    const r = await callApi('adminAction', {
+      token: SESSION.token, action: 'suspectReview',
+      staff: staff === 'all' ? '' : staff,
+    });
+    _revData = r;
+    dbRender();
+  }catch(e){ toastErr(e.message); }
+}
+
+function dbRevStaff(v){ _revStaff = v; dbLoadReview(v); }
+
+async function dbReview(hash, verdict){
+  const txt = verdict === 'high'
+    ? 'هتحوّليها لدقة عالية؟\n\nيعني دي محادثة حقيقية والـ AI غلط.\n'
+      + 'هتختفي من تقرير المشكوك فيها.'
+    : 'هتأكّدي الشك؟\n\nيعني دي فعلًا مش محادثة.\n'
+      + 'هتفضل في التقرير.';
+  if(!confirm(txt)) return;
+
+  try{
+    await callApi('adminAction', {
+      token: SESSION.token, action: 'reviewProof', hash, verdict,
+    });
+    const el = document.getElementById('rv' + hash.slice(0, 12));
+    if(el){
+      el.style.opacity = '0.3';
+      setTimeout(() => el.remove(), 250);
+    }
+    toastOk(verdict === 'high'
+      ? '✅ اتحوّلت لدقة عالية'
+      : '🚩 الشك اتأكّد');
+    _revData = null;
+    setTimeout(() => dbLoadReview(_revStaff), 400);
+  }catch(e){ toastErr(e.message); }
+}
+
+function dbTabReview(){
+  const d = _revData;
+  if(!d){ dbLoadReview(_revStaff); return '<div class="db-ld">⏳ بنحمّل…</div>'; }
+
+  const items = d.items || [];
+  let h = '';
+
+  h += '<div class="db-cards">'
+    + dbCard('🔍', 'مستنية مراجعة', d.total || 0, '',
+             n(d.total) > 30 ? 'bad' : '')
+    + dbCard('✅', 'اتراجعت', d.reviewed || 0, '')
+    + '</div>';
+
+  const staff = d.by_staff || [];
+  if(staff.length > 1){
+    h += '<div class="db-row">'
+      + '<button class="db-rp' + (_revStaff==='all'?' on':'') + '" '
+      +   'onclick="dbRevStaff(\'all\')">الكل (' + (d.total||0) + ')</button>'
+      + staff.map(x =>
+          '<button class="db-rp' + (_revStaff===x.staff?' on':'') + '" '
+          + 'onclick="dbRevStaff(\'' + esc(x.staff) + '\')">'
+          + esc(x.staff) + ' (' + x.count + ')</button>').join('')
+      + '</div>';
+  }
+
+  if(!items.length){
+    return h + '<div class="db-ld">✅ مفيش إثباتات مستنية مراجعة</div>';
+  }
+
+  h += '<div class="rv-hint">'
+    + '💡 شوفي الصورة: لو محادثة حقيقية دوسي <b>✅ دقة عالية</b> '
+    + 'وهتختفي من التقارير. لو فعلًا مش محادثة دوسي <b>🚩 أكّدي الشك</b>.'
+    + '</div>';
+
+  h += '<div class="rv-grid">' + items.map(x => {
+    const C = { low:['🚩','مشكوك'], none:['❔','مفيش فحص'],
+                review:['⚠️','محتاجة مراجعة'] };
+    const [ic, tx] = C[x.conf] || C.none;
+
+    return '<div class="rv-c" id="rv' + esc(String(x.hash).slice(0,12)) + '">'
+      + (x.url
+        ? '<img class="rv-im" src="' + esc(x.url) + '" loading="lazy" '
+          + 'onclick="dbZoom(\'' + esc(x.url) + '\')">'
+        : '<div class="rv-im no">🖼️</div>')
+      + '<div class="rv-d">'
+      +   '<b>@' + esc(x.handle || '—') + '</b>'
+      +   '<span>' + esc(x.staff) + ' · '
+      +     (x.action === 'followup' ? 'متابعة' : 'إرسال') + '</span>'
+      +   '<span class="rv-b">' + ic + ' ' + tx + '</span>'
+      +   '<span class="rv-t">' + fmtShort(x.at) + '</span>'
+      + '</div>'
+      + '<div class="rv-a">'
+      +   '<button class="rv-ok" onclick="dbReview(\'' + esc(x.hash) + '\',\'high\')">'
+      +     '✅ دقة عالية</button>'
+      +   '<button class="rv-no" onclick="dbReview(\'' + esc(x.hash) + '\',\'confirm\')">'
+      +     '🚩 أكّدي الشك</button>'
+      + '</div>'
+      + '</div>';
+  }).join('') + '</div>';
+
+  return h;
 }
 
 // 🏷️ تاب الملاحظات — مشترك / مع موظفة تانية / شريك
