@@ -15618,13 +15618,8 @@ async function mpSwap(id){
   const go = ov.querySelector('#swGo');
   go.onclick = async () => {
     go.disabled = true; go.textContent = '⏳ بنستبدل…';
-    try{
-      const hash = await fileHash(it.file);
-      const b64  = await fileToBase64Small(it.file);
-      await callApi('verifyProof', {
-        token: SESSION.token, action: 'swapProof',
-        uid, imageBase64: b64, hash,
-      });
+
+    const finish = () => {
       close();
       it.canSwap = false;
       it.uid     = uid;
@@ -15634,7 +15629,29 @@ async function mpSwap(id){
       toastOk('✅ اتستبدلت — الصورة الجديدة هي المسجّلة دلوقتي');
       invalidateCache();
       refreshTargetBar();
+    };
+
+    try{
+      const hash = await fileHash(it.file);
+      const b64  = await fileToBase64Small(it.file);
+      await callApi('verifyProof', {
+        token: SESSION.token, action: 'swapProof',
+        uid, imageBase64: b64, hash,
+      });
+      finish();
     }catch(e){
+      // ⚠️ الخطأ ممكن يحصل بعد ما العملية تمت فعلًا —
+      //    بنتأكد من السيرفر بدل ما نقول للموظفة "فشل".
+      try{
+        const chk = await callApi('verifyProof', {
+          token: SESSION.token, action: 'lastProof', uid,
+        });
+        if(chk && chk.url && chk.url !== it.oldUrl){
+          finish();
+          return;
+        }
+      }catch(_){ /* هادئ */ }
+
       go.disabled = false; go.textContent = '↔️ أيوه، استبدليها';
       toastErr(e.message);
     }
