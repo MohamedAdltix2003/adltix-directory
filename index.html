@@ -16429,22 +16429,36 @@ async function mpUpload(){
   //
   // ⚠️ 9 من 98 صورة وصلوا التخزين والأكشن فشل. الإنقاذ
   //    بيسجّلهم من غير ما الموظفة تعمل حاجة.
-  const stillFail = MP.items.filter(x => x.state === 'fail' && x.uid);
-  if(stillFail.length){
-    try{
-      const r = await callApi('verifyProof', {
-        token: SESSION.token, action: 'rescueMine',
-      });
-      const saved = Number(r.saved || 0);
-      if(saved){
-        stillFail.slice(0, saved).forEach(x => {
+  // ⚠️ الإنقاذ بيشتغل دايمًا — مش لما فيه fail بس.
+  //    الصورة ممكن توصل التخزين والأكشن يفشل من غير ما
+  //    الحالة تبقى fail، فالرقم كان بيطلع ناقص.
+  // ⏱️ نستنى ثانيتين — السيرفر بيتجاهل الصور اللي لسه
+  //    بترفع عشان مايسجّلش نص عملية.
+  const missing = MP.items.filter(x => x.state !== 'ok').length;
+  if(missing) await new Promise(r => setTimeout(r, 2200));
+
+  try{
+    const r = await callApi('verifyProof', {
+      token: SESSION.token, action: 'rescueMine',
+    });
+    const saved = Number(r.saved || 0);
+    if(saved){
+      // نعلّم اللي لسه مش ok
+      let left = saved;
+      for(const x of MP.items){
+        if(left <= 0) break;
+        if(x.state !== 'ok'){
           x.state = 'ok';
-          x.msg = '✅ اتسجّل';
-        });
-        renderMobileProofs();
+          x.msg   = '✅ اتسجّل';
+          left--;
+        }
       }
-    }catch(e){ /* هادئ */ }
-  }
+      renderMobileProofs();
+      // 🎯 الرقم يتحدّث فورًا — مش بعد ما تقفل وتفتح
+      invalidateCache();
+      refreshTargetBar();
+    }
+  }catch(e){ /* هادئ */ }
 
   // 📥 اللي مالوش مؤثر — يترفع معلّق
   let pendN = 0;
