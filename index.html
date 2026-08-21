@@ -6401,6 +6401,17 @@
           border:1px solid #FCA5A5 !important }
   .rv-ok:hover, .rv-no:hover{ filter:brightness(1.08) }
   body.dark .rv-no{ color:#fca5a5; border-color:#7f1d1d !important }
+
+  /* 🔴 شارة الصور الناقصة */
+  .mp-fab.has-q{
+    background:linear-gradient(135deg,#B91C1C,#DC2626) !important;
+    color:#fff !important; border-color:#B91C1C !important;
+    animation:qpulse 2.2s ease-in-out infinite;
+  }
+  @keyframes qpulse{
+    0%,100%{ box-shadow:0 4px 16px rgba(185,28,28,.35) }
+    50%    { box-shadow:0 4px 26px rgba(185,28,28,.6) }
+  }
 </style>
 </head>
 <body>
@@ -16186,6 +16197,40 @@ async function mpUploadOne(it){
   renderMobileProofs();
 }
 
+// 🔔 تنبيه لما الرفعة تخلص
+//
+// ⚠️ الموظفة بتفضل قاعدة تبص على الشاشة. الاهتزاز والصوت
+//    بيخلّوها تسيب الموبايل وتشتغل حاجة تانية.
+function buzzDone_(ok, bad){
+  // 📳 اهتزاز — نمط مختلف حسب النتيجة
+  try{
+    if(navigator.vibrate){
+      navigator.vibrate(bad ? [90, 60, 90, 60, 200] : [140, 70, 140]);
+    }
+  }catch(e){}
+
+  // 🔊 نغمة قصيرة
+  try{
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return;
+    const ctx = new AC();
+    const notes = bad ? [440, 330] : [660, 880];
+    notes.forEach((f, i) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.14, ctx.currentTime + i*0.16 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + i*0.16 + 0.22);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(ctx.currentTime + i*0.16);
+      o.stop(ctx.currentTime + i*0.16 + 0.24);
+    });
+    setTimeout(()=>{ try{ ctx.close(); }catch(e){} }, 900);
+  }catch(e){}
+}
+
 // 💾 طابور محلي — الصور تفضل محفوظة لو الصفحة اتقفلت
 //
 // ⚠️ إسراء رفعت 23 وخرجت في النص — 9 صور ضاعت لأنها
@@ -16235,7 +16280,15 @@ async function qResume_(){
   const fresh = box.filter(x => Date.now() - (x.at || 0) < 172800000);
   if(!fresh.length){ localStorage.removeItem(QKEY); return; }
 
-  toastOk('🔄 بنكمّل ' + fresh.length + ' صورة من آخر مرة…');
+  // 🔄 نسأل الأول — الموظفة تعرف إن فيه شغل ناقص
+  const go = confirm(
+    '🔄 فيه ' + fresh.length + ' صورة من آخر مرة مااترفعتش\n\n'
+    + 'عايزة نكمّلهم دلوقتي؟');
+  if(!go){
+    toastOk('📌 محفوظين — هنسألك تاني لما تفتحي الإثباتات');
+    return;
+  }
+  toastOk('🔄 بنكمّل ' + fresh.length + ' صورة…');
 
   let done = 0;
   for(const q of fresh){
@@ -16260,6 +16313,7 @@ async function qResume_(){
 
   if(done){
     toastOk('✅ اتسجّل ' + done + ' صورة كانت ناقصة');
+    buzzDone_(done, fresh.length - done);
     invalidateCache();
     refreshTargetBar();
   }
@@ -16550,6 +16604,8 @@ async function mpUpload(){
     if(pendN) parts.push('🤖 ' + pendN + ' تحت التحليل');
     if(dupN)  parts.push('🔁 ' + dupN + ' اترفع قبل كده');
     toastOk(parts.join(' · '));
+    // 🔔 تنبيه — الموظفة ممكن تكون سايبة الموبايل
+    buzzDone_(ok, dupN);
     invalidateCache();
     try{ buildAllPills(); }catch(e){}
     try{ applyFilters(); }catch(e){}
@@ -16602,7 +16658,27 @@ async function loadMySheet(){
 function renderMySheet(){
   // 📷 زرار رفع الإثباتات — للموظفات بس
   const fab = document.getElementById('mpFab');
-  if(fab) fab.style.display = isAdminSession() ? 'none' : '';
+  if(fab){
+    fab.style.display = isAdminSession() ? 'none' : '';
+
+    // 🔴 فيه صور ناقصة من آخر مرة؟ شارة على الزرار
+    let waiting = 0;
+    try{
+      const raw = localStorage.getItem(QKEY);
+      if(raw){
+        const box = JSON.parse(raw);
+        waiting = Array.isArray(box)
+          ? box.filter(x => Date.now() - (x.at || 0) < 172800000).length
+          : 0;
+      }
+    }catch(e){}
+
+    fab.classList.toggle('has-q', waiting > 0);
+    fab.setAttribute('data-q', waiting || '');
+    fab.textContent = waiting
+      ? '📷 إثباتات · ' + waiting + ' ناقصة'
+      : '📷 إثباتات';
+  }
   // 🔍 زرار البحث الشامل — للموظفات كمان
   const gsf = document.getElementById('gsFab');
   if(gsf) gsf.style.display = isAdminSession() ? 'none' : '';
