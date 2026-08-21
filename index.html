@@ -16213,7 +16213,7 @@ async function mpUploadOne(it){
     //    إن 39 صورة ضاعت والموظفة فاكرة إنها اترفعت.
     //    النجاح الكاذب أسوأ من رسالة الفشل بكتير.
     it.state = 'fail';
-    it.msg   = '⏳ لسه بتترفع — استني شوية';
+    it.msg   = '⏳ بنحاول تاني — متقفليش الصفحة';
     it.canRetry = true;
   }
   renderMobileProofs();
@@ -16565,7 +16565,7 @@ async function mpUploadPending(list){
       }catch(e2){
         // ⏳ فشل فعلي — منعلّمهاش نجاح
         it.state = 'fail';
-        it.msg   = '⏳ لسه بتترفع — استني شوية';
+        it.msg   = '⏳ بنحاول تاني — متقفليش الصفحة';
         it.canRetry = true;
       }
     }
@@ -16662,7 +16662,7 @@ async function mpUpload(){
 
     failed.forEach(x => {
       x.state = 'ready';
-      x.msg = '🔄 بنعيد (' + round + '/5)…';
+      x.msg = '🔄 محاولة ' + round + ' من 5 — استني';
     });
     renderMobileProofs();
 
