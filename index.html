@@ -6412,6 +6412,28 @@
     0%,100%{ box-shadow:0 4px 16px rgba(185,28,28,.35) }
     50%    { box-shadow:0 4px 26px rgba(185,28,28,.6) }
   }
+
+  /* 🗨️ نافذة الصور الناقصة */
+  .qa-box{
+    max-width:360px !important; text-align:center !important;
+    padding:26px 22px !important;
+  }
+  .qa-i{ font-size:42px; margin-bottom:10px }
+  .qa-t{ display:block; font-size:17px; font-weight:800; color:var(--ink) }
+  .qa-s{ display:block; font-size:12.5px; color:var(--muted);
+         line-height:1.8; margin:8px 0 18px }
+  .qa-b{ display:flex; flex-direction:column; gap:8px }
+  .qa-b button{
+    font-family:inherit; font-size:13.5px; font-weight:800; cursor:pointer;
+    padding:12px; border-radius:12px; border:none; transition:filter .14s;
+  }
+  .qa-b button:hover{ filter:brightness(1.08) }
+  .qa-go   { background:linear-gradient(135deg,#15803D,#16A34A); color:#fff }
+  .qa-later{ background:transparent; color:var(--muted);
+             border:1px solid var(--line) !important }
+  .qa-drop { background:transparent; color:#B91C1C;
+             border:1px solid #FCA5A5 !important }
+  body.dark .qa-drop{ color:#fca5a5; border-color:#7f1d1d !important }
 </style>
 </head>
 <body>
@@ -16267,6 +16289,41 @@ function qClear_(id){
   }catch(e){}
 }
 
+// 🗨️ نافذة الاختيار — نكمّل ولا نسيب ولا نمسح
+function qAskDlg_(n){
+  return new Promise(resolve => {
+    const ov = document.createElement('div');
+    ov.className = 'cf-overlay';
+    ov.innerHTML = '<div class="cf-box qa-box">'
+      + '<div class="qa-i">📷</div>'
+      + '<b class="qa-t">فيه ' + n + ' صورة ناقصة</b>'
+      + '<span class="qa-s">من آخر مرة رفعتي فيها — الصور محفوظة '
+      +   'ولسه مااترفعتش.</span>'
+      + '<div class="qa-b">'
+      +   '<button class="qa-go">✅ كمّلي رفعهم</button>'
+      +   '<button class="qa-later">⏰ بعدين</button>'
+      +   '<button class="qa-drop">🗑️ امسحيهم</button>'
+      + '</div></div>';
+
+    document.body.appendChild(ov);
+    requestAnimationFrame(()=>ov.classList.add('show'));
+
+    const done = (v) => {
+      ov.classList.remove('show');
+      setTimeout(()=>ov.remove(), 200);
+      resolve(v);
+    };
+
+    ov.querySelector('.qa-go').onclick    = () => done('go');
+    ov.querySelector('.qa-later').onclick = () => done('later');
+    ov.querySelector('.qa-drop').onclick  = () => {
+      if(confirm('هتمسحي ' + n + ' صورة نهائيًا؟\n\n'
+        + 'مش هيترفعوا ومش هيتحسبوا في التارجت.')) done('drop');
+    };
+    ov.addEventListener('click', e => { if(e.target === ov) done('later'); });
+  });
+}
+
 // 🔄 نكمّل اللي فضل من آخر مرة
 async function qResume_(){
   let box;
@@ -16281,14 +16338,35 @@ async function qResume_(){
   const fresh = box.filter(x => Date.now() - (x.at || 0) < 172800000);
   if(!fresh.length){ localStorage.removeItem(QKEY); return; }
 
-  // 🔄 نسأل الأول — الموظفة تعرف إن فيه شغل ناقص
-  const go = confirm(
-    '🔄 فيه ' + fresh.length + ' صورة من آخر مرة مااترفعتش\n\n'
-    + 'عايزة نكمّلهم دلوقتي؟');
-  if(!go){
+  // 🔄 تلات اختيارات — نكمّل · نسيب · نمسح
+  const choice = await qAskDlg_(fresh.length);
+
+  if(choice === 'later'){
     toastOk('📌 محفوظين — هنسألك تاني لما تفتحي الإثباتات');
     return;
   }
+  if(choice === 'drop'){
+    // 🗑️ نمسح من التخزين كمان لو الصورة وصلت
+    //
+    // ⚠️ بعض الصور بتوصل التخزين والتسجيل يفشل —
+    //    فلازم نشيلها من هناك عشان الإنقاذ مايرجّعهاش.
+    let cleaned = 0;
+    for(const q of fresh){
+      if(!q.hash) continue;
+      try{
+        const r = await callApi('verifyProof', {
+          token: SESSION.token, action: 'dropByHash', hash: q.hash,
+        });
+        if(r && r.removed) cleaned++;
+      }catch(_){ /* هادئ */ }
+    }
+    localStorage.removeItem(QKEY);
+    renderMySheet();
+    toastOk('🗑️ اتمسحوا' + (cleaned ? ' · ' + cleaned + ' من التخزين' : ''));
+    return;
+  }
+  if(choice !== 'go') return;
+
   toastOk('🔄 بنكمّل ' + fresh.length + ' صورة…');
 
   // 🔒 قفل — الاستكمال مايشتغلش مرتين في نفس الوقت
