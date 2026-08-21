@@ -7247,7 +7247,6 @@ function applyFilters(){
       if((state.from || state.to) && isImported && !inDateRange(c.imported_at)) return false;
 
       // فلتر تاريخ الرفع السريع
-      // 📤 اتبعتله ولا لسه
       if(state.sentf && state.sentf !== 'all' && isImported){
         const st = String(c.messageStatus || 'new').toLowerCase();
         const done = !['new',''].includes(st);
@@ -16423,12 +16422,29 @@ async function mpUploadPending(list){
           continue;
         }
 
-        const b64_2 = await fileToBase64(it.file);
-        const up2 = await retry_(() => callApi('logAction', {
-          token: SESSION.token, uid: '', actionType: 'pending',
-          imageBase64: b64_2, mode: 'pending',
-        }), 3);
-        const url2 = (up2 && up2.screenshotUrl) || '';
+        // 📤 محاولة واحدة — retry_ كانت بترفع نسخة كل مرة
+        //
+        // ⚠️ 100 صورة بقوا 130 في التخزين بسبب ده.
+        //    بنسأل الأول لو الصورة اترفعت خلاص.
+        let url2 = it.upUrl || '';
+        if(!url2){
+          try{
+            const seen2 = await callApi('verifyProof', {
+              token: SESSION.token, action: 'findByHash', hash: hash2,
+            });
+            url2 = (seen2 && seen2.url) || '';
+          }catch(_){ /* هادئ */ }
+        }
+        if(!url2){
+          const b64_2 = await fileToBase64Small(it.file);
+          await waitNet_();
+          const up2 = await callApi('logAction', {
+            token: SESSION.token, uid: '', actionType: 'pending',
+            imageBase64: b64_2, mode: 'pending',
+          });
+          url2 = (up2 && up2.screenshotUrl) || '';
+          if(url2) it.upUrl = url2;
+        }
         if(url2){
           await retry_(() => callApi('verifyProof', {
             token: SESSION.token, action: 'addPending',
