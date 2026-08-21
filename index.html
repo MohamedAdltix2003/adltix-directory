@@ -16258,7 +16258,15 @@ function buzzDone_(ok, bad){
 // ⚠️ إسراء رفعت 23 وخرجت في النص — 9 صور ضاعت لأنها
 //    ماوصلتش السيرفر. دلوقتي بنحفظهم في المتصفح،
 //    ولما ترجع تفتح الموقع بيكمّلوا لوحدهم.
-const QKEY = 'adltix_upload_queue_v1';
+// 💾 مفتاح الطابور — لكل موظفة مفتاح لوحدها
+//
+// ⚠️ المفتاح المشترك كان بيخلي صور موظفة تترفع
+//    على حساب موظفة تانية لو اتبدّل الحساب.
+function qKey_(){
+  const who = (typeof SESSION !== 'undefined' && SESSION
+    && (SESSION.staffName || SESSION.username)) || 'x';
+  return 'adltix_upload_queue_v2_' + String(who).toLowerCase();
+}
 
 async function qSave_(items){
   try{
@@ -16274,18 +16282,18 @@ async function qSave_(items){
         at: Date.now(),
       });
     }
-    if(!box.length){ localStorage.removeItem(QKEY); return; }
-    localStorage.setItem(QKEY, JSON.stringify(box));
+    if(!box.length){ localStorage.removeItem(qKey_()); return; }
+    localStorage.setItem(qKey_(), JSON.stringify(box));
   }catch(e){ /* المساحة خلصت — نتجاهل */ }
 }
 
 function qClear_(id){
   try{
-    const raw = localStorage.getItem(QKEY);
+    const raw = localStorage.getItem(qKey_());
     if(!raw) return;
     const box = JSON.parse(raw).filter(x => x.id !== id);
-    if(box.length) localStorage.setItem(QKEY, JSON.stringify(box));
-    else localStorage.removeItem(QKEY);
+    if(box.length) localStorage.setItem(qKey_(), JSON.stringify(box));
+    else localStorage.removeItem(qKey_());
   }catch(e){}
 }
 
@@ -16328,7 +16336,7 @@ function qAskDlg_(n){
 async function qResume_(){
   let box;
   try{
-    const raw = localStorage.getItem(QKEY);
+    const raw = localStorage.getItem(qKey_());
     if(!raw) return;
     box = JSON.parse(raw);
   }catch(e){ return; }
@@ -16336,7 +16344,7 @@ async function qResume_(){
 
   // أقدم من يومين؟ منكملش
   const fresh = box.filter(x => Date.now() - (x.at || 0) < 172800000);
-  if(!fresh.length){ localStorage.removeItem(QKEY); return; }
+  if(!fresh.length){ localStorage.removeItem(qKey_()); return; }
 
   // 🔄 تلات اختيارات — نكمّل · نسيب · نمسح
   const choice = await qAskDlg_(fresh.length);
@@ -16360,7 +16368,7 @@ async function qResume_(){
         if(r && r.removed) cleaned++;
       }catch(_){ /* هادئ */ }
     }
-    localStorage.removeItem(QKEY);
+    localStorage.removeItem(qKey_());
     renderMySheet();
     toastOk('🗑️ اتمسحوا' + (cleaned ? ' · ' + cleaned + ' من التخزين' : ''));
     return;
@@ -16731,6 +16739,20 @@ async function mpUpload(){
     /* اتشال */
   }
 
+  // 🧹 الرفعة خلصت — نفضّي الطابور من اللي نجح
+  //
+  // ⚠️ qClear_ صورة صورة كان بيسيب بقايا لو حصل خطأ،
+  //    والبقايا دي بتترفع في الرفعة الجاية وتضخّم الرقم.
+  try{
+    const left = MP.items.filter(x => x.state !== 'ok' && x.state !== 'dup');
+    if(!left.length){
+      localStorage.removeItem(qKey_());
+    } else {
+      await qSave_(left);
+    }
+    renderMySheet();
+  }catch(e){ /* هادئ */ }
+
   // 📊 التفصيل الكامل — الموظفة لازم تعرف كل صورة راحت فين
   //
   // ⚠️ الرسالة كانت بتقول "اترفع 57" والمسجّل 56، والصورة
@@ -16803,7 +16825,7 @@ function renderMySheet(){
     // 🔴 فيه صور ناقصة من آخر مرة؟ شارة على الزرار
     let waiting = 0;
     try{
-      const raw = localStorage.getItem(QKEY);
+      const raw = localStorage.getItem(qKey_());
       if(raw){
         const box = JSON.parse(raw);
         waiting = Array.isArray(box)
