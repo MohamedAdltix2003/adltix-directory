@@ -7247,6 +7247,7 @@ function applyFilters(){
       if((state.from || state.to) && isImported && !inDateRange(c.imported_at)) return false;
 
       // فلتر تاريخ الرفع السريع
+      // 📤 اتبعتله ولا لسه
       if(state.sentf && state.sentf !== 'all' && isImported){
         const st = String(c.messageStatus || 'new').toLowerCase();
         const done = !['new',''].includes(st);
@@ -16247,6 +16248,7 @@ async function qSave_(items){
         action: it.action || 'sent', seq: it.seq || 1,
         kind: MP.kind, plat: MP.plat,
         b64: await fileToBase64Small(it.file),
+        hash: await fileHash(it.file),   // 🔎 للتأكد قبل الإعادة
         at: Date.now(),
       });
     }
@@ -16289,9 +16291,26 @@ async function qResume_(){
   }
   toastOk('🔄 بنكمّل ' + fresh.length + ' صورة…');
 
+  // 🔒 قفل — الاستكمال مايشتغلش مرتين في نفس الوقت
+  if(window._qBusy) return;
+  window._qBusy = true;
+
   let done = 0;
   for(const q of fresh){
     try{
+      // 🔎 اترفعت خلاص؟ نشيلها من الطابور من غير رفع تاني
+      if(q.hash){
+        try{
+          const seen = await callApi('verifyProof', {
+            token: SESSION.token, action: 'findByHash', hash: q.hash,
+          });
+          if(seen && seen.url){
+            qClear_(q.id);
+            continue;
+          }
+        }catch(_){ /* هادئ */ }
+      }
+
       if(q.uid){
         await callApi('logAction', {
           token: SESSION.token, uid: q.uid,
@@ -16309,6 +16328,8 @@ async function qResume_(){
     }catch(e){ /* الجولة الجاية */ }
     await new Promise(r => setTimeout(r, 250));
   }
+
+  window._qBusy = false;
 
   if(done){
     toastOk('✅ اتسجّل ' + done + ' صورة كانت ناقصة');
