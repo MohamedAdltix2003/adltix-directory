@@ -16343,10 +16343,34 @@ async function mpUploadPending(list){
       //    وولا واحدة اتسجّلت.
       let url = it.upUrl || '';
       if(!url){
-        const up = await retry_(() => callApi('logAction', {
-          token: SESSION.token, uid: '', actionType: 'pending',
-          imageBase64: b64, mode: 'pending',
-        }), 3);
+        // ⚠️ محاولة واحدة بس — retry_ كانت بترفع نسخة
+        //    جديدة في كل مرة. صورة واحدة فشلت 3 مرات
+        //    بقت 3 ملفات في التخزين و3 صفوف في المعلّقة.
+        await waitNet_();
+        let up = null;
+        try{
+          up = await callApi('logAction', {
+            token: SESSION.token, uid: '', actionType: 'pending',
+            imageBase64: b64, mode: 'pending',
+          });
+        }catch(e){
+          // 🔎 الرد ضاع؟ نتأكد الأول قبل ما نعيد
+          try{
+            const seen = await callApi('verifyProof', {
+              token: SESSION.token, action: 'findByHash', hash,
+            });
+            if(seen && seen.url) up = { screenshotUrl: seen.url };
+          }catch(_){ /* هادئ */ }
+
+          // لسه مالقيناش؟ محاولة أخيرة واحدة
+          if(!up){
+            await new Promise(r => setTimeout(r, 900));
+            up = await callApi('logAction', {
+              token: SESSION.token, uid: '', actionType: 'pending',
+              imageBase64: b64, mode: 'pending',
+            });
+          }
+        }
         url = (up && up.screenshotUrl) || '';
         if(!url) throw new Error('الصورة مترفعتش');
         it.upUrl = url;      // 💾 نحفظها — الإعادة تستخدمها
