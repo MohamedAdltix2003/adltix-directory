@@ -6519,6 +6519,17 @@
   .pf-dt{ font-size:10px; color:var(--muted) }
   .pf-nt{ font-size:10px; color:#B45309; margin-top:1px }
   body.dark .pf-nt{ color:#fcd34d }
+
+  /* 🔥 متأخر أسبوع أو أكتر */
+  .mc-b.hot{
+    background:linear-gradient(135deg,#B91C1C,#DC2626);
+    color:#fff; font-weight:800;
+    animation:hotpulse 2.4s ease-in-out infinite;
+  }
+  @keyframes hotpulse{
+    0%,100%{ box-shadow:0 0 0 0 rgba(185,28,28,.4) }
+    50%    { box-shadow:0 0 0 4px rgba(185,28,28,0) }
+  }
 </style>
 </head>
 <body>
@@ -7346,6 +7357,9 @@ function applyFilters(){
       if(c) return Object.assign({}, c, {
         _fuSeq: f.seq, _fuWaited: f.waited,
         _fuOwner: f.owner, _fuShared: f.shared, _fuSub: f.subscribed,
+        urgency: f.urgency, late_days: f.late_days,
+        subscribed: f.subscribed, shared: f.shared, owner: f.owner,
+        seq: f.seq, action: 'followup',
       });
       const h = f.handle || String(f.uid||'').split(':')[1] || '';
       return {
@@ -7363,6 +7377,9 @@ function applyFilters(){
         niche: 'other', _cb: 'all', _ok: true,
         _fuSeq: f.seq, _fuWaited: f.waited,
         _fuOwner: f.owner, _fuShared: f.shared, _fuSub: f.subscribed,
+        urgency: f.urgency, late_days: f.late_days,
+        subscribed: f.subscribed, shared: f.shared, owner: f.owner,
+        seq: f.seq, action: 'followup',
       };
     });
   } else {
@@ -7504,6 +7521,12 @@ function applyFilters(){
 
   // الـ backend بيرجّع البيانات مرتبة بالمتابعين تنازليًا أصلاً،
   // فالترتيب الافتراضي مش محتاج أي sort خالص — ده بيوفّر شغل على 14 ألف صف
+  // 🚩 المتابعات مرتّبة بالأولوية من السيرفر — الأقدم أولاً
+  //
+  // ⚠️ لو الموظفة غيّرت الترتيب، الأولوية بتضيع وتبدأ
+  //    من حد عشوائي بدل أكتر واحد مستني.
+  if(_srvFollows) return r;
+
   if(state.sort==="fol") return r;
   if(!copied) r = r.slice();
   if(state.sort==="fola") r.sort((a,b)=>(a.followers||0)-(b.followers||0));
@@ -15209,14 +15232,22 @@ function mpCard_(c, mode){
   const h  = String(c.handle || '').replace('@','');
   const uid = c.uid;
   const P = { instagram:'📷', tiktok:'🎵', snapchat:'👻', youtube:'▶️' };
-  const late = Number(c.late_days || 0);
+  const late = Number(c.late_days != null ? c.late_days : (c._fuLate || 0));
 
   let badge = '';
   if(mode === 'follow'){
-    const st = c.state || (late > 0 ? 'late' : 'due');
-    const M = { late:['bad','🔴 متأخر '+late+' يوم'],
-                due:['warn','🟡 النهاردة'], waiting:['','⏳ لسه'] };
-    const [cls, txt] = M[st] || M.due;
+    // 🚩 تلات مستويات — المتأخر أسبوع لازم يبان مختلف
+    //
+    // ⚠️ المستوى الواحد كان بيخلي المتأخر يوم زي المتأخر
+    //    شهر — فالموظفة مش عارفة تبدأ منين.
+    const u = c.urgency || (late >= 7 ? 'urgent' : late > 0 ? 'late' : 'due');
+    const M = {
+      urgent: ['hot',  '🔥 متأخر ' + late + ' يوم'],
+      late:   ['bad',  '🔴 متأخر ' + late + ' يوم'],
+      due:    ['warn', '🟡 النهاردة'],
+      waiting:['',     '⏳ لسه'],
+    };
+    const [cls, txt] = M[c.state] || M[u] || M.due;
     badge = '<span class="mc-b ' + cls + '">' + txt + '</span>';
   }
 
