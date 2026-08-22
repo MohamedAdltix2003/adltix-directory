@@ -8383,8 +8383,10 @@ function showInfoBox(title, innerHtml){
     + '<div class="dr">'+innerHtml+'</div>'
     + '<div class="cf-btns"><button class="cf-yes ok" data-x="1">تمام</button></div></div>';
   document.body.appendChild(ov);
+  dlgOpen_();
   requestAnimationFrame(()=>ov.classList.add('show'));
-  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),220); };
+  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),220);
+    dlgClose_(); };
   ov.addEventListener('click',e=>{ if(e.target===ov) close(); });
   ov.querySelector('.cf-yes').onclick=close;
 }
@@ -8568,8 +8570,10 @@ function showCoach(c, handle){
     + '</div>';
 
   document.body.appendChild(ov);
+  dlgOpen_();
   requestAnimationFrame(()=>ov.classList.add('show'));
-  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
+  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200);
+    dlgClose_(); };
   ov.querySelector('.ch-x').onclick = close;
   ov.querySelector('.cf-yes').onclick = close;
   ov.addEventListener('click', e => { if(e.target === ov) close(); });
@@ -8777,8 +8781,10 @@ function showProofReject(r){
     + '<div class="cf-btns"><button class="cf-yes danger" data-x="1">فهمت</button></div>'
     + '</div>';
   document.body.appendChild(ov);
+  dlgOpen_();
   requestAnimationFrame(()=>ov.classList.add('show'));
-  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
+  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200);
+    dlgClose_(); };
   ov.querySelector('.cf-yes').onclick = close;
   ov.addEventListener('click', e=>{ if(e.target===ov) close(); });
 }
@@ -8799,6 +8805,7 @@ function showPhotoOptions(title, msg){
         '<button class="cf-yes ok" data-x="confirm">اختيار</button>'+
       '</div></div>';
     document.body.appendChild(ov);
+    dlgOpen_();
     requestAnimationFrame(()=>ov.classList.add('show'));
     
     let selected = 'camera';
@@ -8813,7 +8820,8 @@ function showPhotoOptions(title, msg){
     
     function close(val){
       ov.classList.remove('show'); 
-      setTimeout(()=>ov.remove(),220); 
+      setTimeout(()=>ov.remove(),220);
+    dlgClose_(); 
       resolve(val);
     }
     ov.addEventListener('click',e=>{ if(e.target===ov) close(null); });
@@ -9008,10 +9016,12 @@ function pickRejectReason(){
       +   '</div>'
       + '</div>';
     document.body.appendChild(ov);
+    dlgOpen_();
     requestAnimationFrame(()=>ov.classList.add('show'));
 
     let picked = null;
-    const close = (val)=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),220); resolve(val); };
+    const close = (val)=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),220);
+    dlgClose_(); resolve(val); };
 
     ov.querySelectorAll('.rj-opt').forEach(b=>{
       b.onclick = ()=>{
@@ -9158,8 +9168,10 @@ function showConfirm(title, msg, yesLabel, yesClass){
         '<button class="cf-yes '+yesClass+'" data-x="1">'+esc(yesLabel)+'</button>'+
       '</div></div>';
     document.body.appendChild(ov);
+    dlgOpen_();
     requestAnimationFrame(()=>ov.classList.add('show'));
-    function close(val){ ov.classList.remove('show'); setTimeout(()=>ov.remove(),220); resolve(val); }
+    function close(val){ ov.classList.remove('show'); setTimeout(()=>ov.remove(),220);
+    dlgClose_(); resolve(val); }
     ov.addEventListener('click',e=>{ if(e.target===ov) close(false); });
     ov.querySelector('.cf-cancel').onclick=()=>close(false);
     ov.querySelector('.cf-yes').onclick=()=>close(true);
@@ -9804,8 +9816,10 @@ function showActionBox(title, innerHtml, action){
     +   (action ? '<button class="cf-yes '+action.cls+'" data-x="1">'+esc(action.label)+'</button>' : '')
     + '</div></div>';
   document.body.appendChild(ov);
+  dlgOpen_();
   requestAnimationFrame(()=>ov.classList.add('show'));
-  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),220); };
+  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),220);
+    dlgClose_(); };
   ov.addEventListener('click',e=>{ if(e.target===ov) close(); });
   ov.querySelector('.cf-cancel').onclick=close;
   const yes=ov.querySelector('.cf-yes');
@@ -12561,9 +12575,11 @@ function dbCustomRange(){
     +   '<button class="cf-yes ok" id="dbcOk">تطبيق</button>'
     + '</div></div>';
   document.body.appendChild(ov);
+  dlgOpen_();
   requestAnimationFrame(()=>ov.classList.add('show'));
 
-  const close = ()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
+  const close = ()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200);
+    dlgClose_(); };
   ov.querySelector('.cf-cancel').onclick = close;
   ov.addEventListener('click', e=>{ if(e.target===ov) close(); });
 
@@ -12936,10 +12952,12 @@ function tkAskReason(taskId){
     +   '<button class="cf-yes danger" id="tkRsOk">✕ تأكيد إنها متعملتش</button>'
     + '</div></div>';
   document.body.appendChild(ov);
+  dlgOpen_();
   requestAnimationFrame(()=>ov.classList.add('show'));
   setTimeout(()=>{ const i=ov.querySelector('#tkRs'); if(i) i.focus(); }, 90);
 
-  const close = ()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
+  const close = ()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200);
+    dlgClose_(); };
   ov.querySelector('.cf-cancel').onclick = close;
   ov.addEventListener('click', e=>{ if(e.target===ov) close(); });
 
@@ -13363,8 +13381,10 @@ function dbTkCustom(){
     + '<div class="cf-btns"><button class="cf-cancel">إلغاء</button>'
     +   '<button class="cf-yes" id="tkcOk">تطبيق</button></div></div>';
   document.body.appendChild(ov);
+  dlgOpen_();
   requestAnimationFrame(()=>ov.classList.add('show'));
-  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
+  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200);
+    dlgClose_(); };
   ov.querySelector('.cf-cancel').onclick = close;
   ov.addEventListener('click', e=>{ if(e.target===ov) close(); });
   ov.querySelector('#tkcOk').onclick = ()=>{
@@ -15686,8 +15706,14 @@ async function mpSwap(id){
     + '</div></div>';
 
   document.body.appendChild(ov);
+  dlgOpen_();          // 🔝 نخلي النافذة فوق كل حاجة
+
   requestAnimationFrame(()=>ov.classList.add('show'));
-  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
+  const close = () => {
+    ov.classList.remove('show');
+    setTimeout(()=>ov.remove(),200);
+    dlgClose_();
+  };
   ov.querySelector('.sw-x').onclick  = close;
   ov.querySelector('.cf-no').onclick = close;
   ov.addEventListener('click', e => { if(e.target === ov) close(); });
@@ -15839,8 +15865,10 @@ function mpDiag(){
   ov.className = 'dg-ov';
   ov.innerHTML = h;
   document.body.appendChild(ov);
+  dlgOpen_();
   requestAnimationFrame(() => ov.classList.add('show'));
-  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),180); };
+  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),180);
+    dlgClose_(); };
   ov.querySelector('.dg-x').onclick = close;
   ov.onclick = e => { if(e.target === ov) close(); };
 }
@@ -15856,9 +15884,11 @@ function mpZoom(id){
     + '<img src="' + it.preview + '" alt="">';
 
   document.body.appendChild(ov);
+  dlgOpen_();
   requestAnimationFrame(()=>ov.classList.add('show'));
 
-  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),180); };
+  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),180);
+    dlgClose_(); };
   ov.querySelector('.mz-x').onclick = close;
   ov.onclick = e => { if(e.target === ov) close(); };
 }
@@ -16297,6 +16327,42 @@ function qClear_(id){
   }catch(e){}
 }
 
+// 🔝 النوافذ فوق كل حاجة
+//
+// ⚠️ backdrop-filter بيعمل "طبقة تكديس" جديدة — فأي نافذة
+//    تتفتح من جوّه شاشة فيها الفلتر بتتحبس وراها مهما
+//    رفعنا z-index. الحل إننا نطفّي الفلتر وقت النافذة.
+let _dlgN = 0;
+const _dlgSaved = [];
+
+function dlgOpen_(){
+  _dlgN++;
+  if(_dlgN > 1) return;           // نافذة فوق نافذة — اتعمل خلاص
+
+  _dlgSaved.length = 0;
+  document.querySelectorAll(
+    '.mp-ov, .dz-ov, .dg-ov, .mz-ov, .imp-ov'
+  ).forEach(el => {
+    _dlgSaved.push([el, el.style.backdropFilter,
+                    el.style.webkitBackdropFilter, el.style.zIndex]);
+    el.style.backdropFilter = 'none';
+    el.style.webkitBackdropFilter = 'none';
+    el.style.zIndex = '10';
+  });
+}
+
+function dlgClose_(){
+  _dlgN = Math.max(0, _dlgN - 1);
+  if(_dlgN > 0) return;           // لسه فيه نافذة مفتوحة
+
+  _dlgSaved.forEach(([el, f, wf, z]) => {
+    el.style.backdropFilter = f || '';
+    el.style.webkitBackdropFilter = wf || '';
+    el.style.zIndex = z || '';
+  });
+  _dlgSaved.length = 0;
+}
+
 // 🗨️ نافذة الاختيار — نكمّل ولا نسيب ولا نمسح
 function qAskDlg_(n){
   return new Promise(resolve => {
@@ -16314,11 +16380,13 @@ function qAskDlg_(n){
       + '</div></div>';
 
     document.body.appendChild(ov);
+    dlgOpen_();
     requestAnimationFrame(()=>ov.classList.add('show'));
 
     const done = (v) => {
       ov.classList.remove('show');
       setTimeout(()=>ov.remove(), 200);
+      dlgClose_();
       resolve(v);
     };
 
@@ -17111,8 +17179,10 @@ function dbShCopy(btn){
     + '</div>';
 
   document.body.appendChild(ov);
+  dlgOpen_();
   requestAnimationFrame(()=>ov.classList.add('show'));
-  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
+  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200);
+    dlgClose_(); };
   ov.querySelector('.sc-x').onclick = close;
   ov.querySelector('.cf-yes').onclick = close;
   ov.addEventListener('click', e=>{ if(e.target===ov) close(); });
@@ -17152,8 +17222,10 @@ async function dbShMail(btn){
     +   '<button class="cf-yes ok" id="gmOk">حفظ</button></div></div>';
 
   document.body.appendChild(ov);
+  dlgOpen_();
   requestAnimationFrame(()=>ov.classList.add('show'));
-  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
+  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200);
+    dlgClose_(); };
   ov.querySelector('.cf-cancel').onclick = close;
   ov.addEventListener('click', e=>{ if(e.target===ov) close(); });
   setTimeout(()=>{ const i=ov.querySelector('#gmEmail'); if(i) i.focus(); }, 120);
@@ -17251,8 +17323,10 @@ function showNumsHelp(){
   ov.className = 'cf-overlay';
   ov.innerHTML = h;
   document.body.appendChild(ov);
+  dlgOpen_();
   requestAnimationFrame(()=>ov.classList.add('show'));
-  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
+  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200);
+    dlgClose_(); };
   ov.querySelector('.nh-x').onclick = close;
   ov.querySelector('.cf-yes').onclick = close;
   ov.addEventListener('click', e => { if(e.target === ov) close(); });
@@ -17265,9 +17339,11 @@ function dbZoom(url){
   ov.innerHTML = '<button class="dz-x" aria-label="إغلاق">✕</button>'
     + '<img src="' + esc(url) + '" alt="">';
   document.body.appendChild(ov);
+  dlgOpen_();
   requestAnimationFrame(() => ov.classList.add('show'));
 
-  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),180); };
+  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),180);
+    dlgClose_(); };
   ov.querySelector('.dz-x').onclick = close;
   ov.onclick = e => { if(e.target === ov) close(); };
   // Esc تقفل كمان
@@ -17819,8 +17895,10 @@ function dbPnAdd(id, staff, aiName, platform){
     + '</div></div>';
 
   document.body.appendChild(ov);
+  dlgOpen_();
   requestAnimationFrame(()=>ov.classList.add('show'));
-  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
+  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200);
+    dlgClose_(); };
   ov.querySelector('.pn-sx').onclick = close;
   ov.addEventListener('click', e => { if(e.target === ov) close(); });
 
@@ -17939,9 +18017,11 @@ async function dbPnSearch(id, staff){
     + '<div class="pn-sr" id="pnR"><div class="pn-sload">⏳ بنحمّل…</div></div>'
     + '</div>';
   document.body.appendChild(ov);
+  dlgOpen_();
   requestAnimationFrame(()=>ov.classList.add('show'));
 
-  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
+  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200);
+    dlgClose_(); };
   ov.querySelector('.pn-sx').onclick = close;
   ov.addEventListener('click', e => { if(e.target === ov) close(); });
 
@@ -18529,8 +18609,10 @@ function dbTgCustom(){
     + '<div class="cf-btns"><button class="cf-cancel">إلغاء</button>'
     +   '<button class="cf-yes" id="tgcOk">تطبيق</button></div></div>';
   document.body.appendChild(ov);
+  dlgOpen_();
   requestAnimationFrame(()=>ov.classList.add('show'));
-  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
+  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200);
+    dlgClose_(); };
   ov.querySelector('.cf-cancel').onclick = close;
   ov.addEventListener('click', e=>{ if(e.target===ov) close(); });
   ov.querySelector('#tgcOk').onclick = ()=>{
@@ -18571,8 +18653,10 @@ async function dbEditFollowup(){
     +   '<button class="cf-yes ok" id="fuOk">حفظ</button></div></div>';
 
   document.body.appendChild(ov);
+  dlgOpen_();
   requestAnimationFrame(()=>ov.classList.add('show'));
-  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
+  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200);
+    dlgClose_(); };
   ov.querySelector('.cf-cancel').onclick = close;
   ov.addEventListener('click', e=>{ if(e.target===ov) close(); });
 
@@ -18607,8 +18691,10 @@ function dbTgEditTarget(){
     + '<div class="cf-btns"><button class="cf-cancel">إلغاء</button>'
     +   '<button class="cf-yes ok" id="tgOk">حفظ</button></div></div>';
   document.body.appendChild(ov);
+  dlgOpen_();
   requestAnimationFrame(()=>ov.classList.add('show'));
-  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
+  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200);
+    dlgClose_(); };
   ov.querySelector('.cf-cancel').onclick = close;
   ov.addEventListener('click', e=>{ if(e.target===ov) close(); });
   ov.querySelector('#tgOk').onclick = async ()=>{
@@ -18850,8 +18936,10 @@ function showPartnerCard(r, opts){
     + '</div>';
 
   document.body.appendChild(ov);
+  dlgOpen_();
   requestAnimationFrame(()=>ov.classList.add('show'));
-  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
+  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200);
+    dlgClose_(); };
   ov.querySelector('.pt-x').onclick = close;
   ov.querySelector('.cf-yes').onclick = close;
   ov.addEventListener('click', e=>{ if(e.target===ov) close(); });
@@ -19110,10 +19198,12 @@ function openKeyBox(){
     +   '</div>'
     + '</div>';
   document.body.appendChild(ov);
+  dlgOpen_();
   requestAnimationFrame(()=>ov.classList.add('show'));
   setTimeout(()=>{ const i=ov.querySelector('#apiKeyIn'); if(i) i.focus(); }, 100);
 
-  const close = ()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),220); };
+  const close = ()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),220);
+    dlgClose_(); };
   ov.querySelector('.cf-cancel').onclick = close;
   ov.addEventListener('click', e=>{ if(e.target===ov) close(); });
 
@@ -19216,8 +19306,10 @@ function globalSearchDlg(){
     + '</div>';
 
   document.body.appendChild(ov);
+  dlgOpen_();
   requestAnimationFrame(()=>ov.classList.add('show'));
-  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
+  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200);
+    dlgClose_(); };
   ov.querySelector('.gs-x').onclick = close;
   ov.addEventListener('click', e => { if(e.target === ov) close(); });
 
@@ -19391,8 +19483,10 @@ async function fixLinkDlg(uid, handle){
     + '</div></div>';
 
   document.body.appendChild(ov);
+  dlgOpen_();
   requestAnimationFrame(()=>ov.classList.add('show'));
-  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
+  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200);
+    dlgClose_(); };
   ov.querySelector('.fx-x').onclick = close;
   ov.querySelector('.cf-no').onclick = close;
   ov.addEventListener('click', e => { if(e.target === ov) close(); });
