@@ -7140,7 +7140,8 @@ function buildAllPills(){
   //    فمش موجودين في CREATORS — والتابة كانت بتطلع فاضية
   //    والزرار يقول 319.
   let data;
-  if(state.view === 'followups' && Array.isArray(MP.follows)) {
+  if(state.view === 'followups'
+     && Array.isArray(MP.follows) && MP.follows.length) {
     const byUid = new Map(cleanList().map(c => [c.uid, c]));
     data = MP.follows.map(f => {
       const c = byUid.get(f.uid);
@@ -19748,17 +19749,23 @@ async function fixLinkDlg(uid, handle){
 // 🔄 نحمّل المستحقين من السيرفر — أدق من الحساب المحلي
 let _fuLoading = false;
 async function loadFollowsDue(){
-  // ⚠️ الشرط القديم كان بيمنع إعادة التحميل لو القايمة فاضية
-  //    فالزرار يفضل على الرقم المحلي الغلط.
-  if(_fuLoading || Array.isArray(MP.follows)) return;
+  // ⚠️ الشرط كان `Array.isArray(MP.follows)` — ولو الرد رجع
+  //    فاضي مرة، الباب بيتقفل نهائيًا ومش بيحاول تاني.
+  //    دلوقتي بنعيد المحاولة طول ما القايمة فاضية.
+  if(_fuLoading) return;
+  if(Array.isArray(MP.follows) && MP.follows.length) return;
+
   _fuLoading = true;
   try{
     const r = await callApi('verifyProof', {
       token: SESSION.token, action: 'followups',
     });
-    MP.follows = r.items || [];
+    const items = r.items || [];
+    if(items.length) MP.follows = items;
     render();
-  }catch(e){ /* الحساب المحلي احتياطي */ }
+  }catch(e){
+    // 🔇 الحساب المحلي احتياطي — الزرار مش هيبقى صفر
+  }
   _fuLoading = false;
 }
 
@@ -19822,10 +19829,15 @@ function updateViewCounts(){
   //
   //    دلوقتي بنستنى السيرفر (بيقرا من actions_log حسب
   //    الموظفة)، ولحد ما يرد الزرار بيفضل على آخر رقم صح.
-  const due = Array.isArray(MP.follows) ? MP.follows : null;
-  if(due) set('vnFollow', due.length);
+  // ⚠️ السيرفر أدق (بيقرا من actions_log حسب الموظفة)،
+  //    بس لحد ما يرد بنعرض الحساب المحلي عشان الزرار
+  //    مايبقاش صفر ويلخبط الموظفة.
+  const due = (Array.isArray(MP.follows) && MP.follows.length)
+    ? MP.follows
+    : all.filter(fuDue);
+  set('vnFollow', due.length);
   const fb = document.querySelector('.vtab[data-v="followups"]');
-  if(fb && due){
+  if(fb){
     const late = due.filter(c => fuLate(c) >= 1).length;
     fb.classList.toggle('has-late', late > 0);
     fb.title = late ? (late + ' متأخر') : '';
