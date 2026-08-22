@@ -15261,7 +15261,25 @@ function mpCard_(c, mode){
 
 // رفع إثبات لمؤثر واحد
 function mpQuickProof(uid){
-  const c = MP.cands.find(x => x.uid === uid);
+  // ⚠️ المتابعات جاية من السيرفر ومش في MP.cands — كان
+  //    بيقول "المؤثر مش موجود" ويوقف الرفع.
+  let c = (MP.cands || []).find(x => x.uid === uid);
+
+  if(!c && Array.isArray(MP.follows)){
+    const f = MP.follows.find(x => x.uid === uid);
+    if(f){
+      const h = f.handle || String(f.uid || '').split(':')[1] || '';
+      c = {
+        uid: f.uid, handle: h,
+        platform: f.platform || String(f.uid||'').split(':')[0] || '',
+        followers: Number(f.followers) || 0,
+        display_name: f.display || '',
+        action: 'followup',
+        seq: Number(f.seq) || 1,
+      };
+    }
+  }
+
   if(!c){ toastErr('المؤثر مش موجود'); return; }
 
   const inp = document.createElement('input');
@@ -17144,6 +17162,15 @@ async function mpUpload(){
     // 🔔 تنبيه — الموظفة ممكن تكون سايبة الموبايل
     buzzDone_(ok, dupN);
     invalidateCache();
+
+    // 🔄 المتابعات — نعيد تحميلها عشان اللي اترفعله يختفي
+    //
+    // ⚠️ MP.follows كانت بتتحمّل مرة واحدة، فالرقم يفضل 618
+    //    حتى بعد ما ترفع متابعات.
+    MP.follows = null;
+    window._fuAsked = false;
+    loadFollowsDue().catch(() => {});
+
     try{ buildAllPills(); }catch(e){}
     try{ applyFilters(); }catch(e){}
     refreshTargetBar();
