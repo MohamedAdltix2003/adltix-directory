@@ -6359,166 +6359,6 @@
   body.dark .sw-warn{ background:#3d1414; color:#fca5a5 }
   .sw-box .cf-btns{ padding:0 16px 16px }
   .cf-yes.bad{ background:#B91C1C !important }
-
-  /* 🔍 مراجعة المشكوك فيها */
-  .rv-hint{
-    padding:11px 14px; border-radius:11px; margin-bottom:13px;
-    background:#DBEAFE; color:#1E40AF; font-size:12px; line-height:1.8;
-  }
-  body.dark .rv-hint{ background:#1a2f4d; color:#93c5fd }
-  .rv-hint b{ font-weight:800 }
-
-  .rv-grid{ display:grid; gap:11px;
-            grid-template-columns:repeat(auto-fill,minmax(250px,1fr)) }
-  .rv-c{
-    border:1px solid var(--line); border-radius:14px; overflow:hidden;
-    background:var(--surface); display:flex; flex-direction:column;
-    transition:opacity .2s;
-  }
-  .rv-im{
-    width:100%; height:170px; object-fit:cover; cursor:zoom-in;
-    background:var(--line); display:block;
-  }
-  .rv-im.no{ display:flex; align-items:center; justify-content:center;
-             font-size:26px }
-  .rv-d{ padding:10px 12px; display:flex; flex-direction:column; gap:3px }
-  .rv-d b{ font-size:13px; font-weight:800; color:var(--ink);
-           direction:ltr; unicode-bidi:isolate; text-align:start }
-  .rv-d span{ font-size:11px; color:var(--muted) }
-  .rv-b{ align-self:flex-start; font-size:10.5px; font-weight:800;
-         padding:2px 8px; border-radius:6px;
-         background:#FEE2E2; color:#B91C1C !important; margin-top:2px }
-  body.dark .rv-b{ background:#3d1414; color:#fca5a5 !important }
-  .rv-t{ font-size:10.5px; opacity:.75 }
-
-  .rv-a{ display:flex; gap:6px; padding:0 12px 12px }
-  .rv-a button{
-    flex:1; font-family:inherit; font-size:11.5px; font-weight:800;
-    cursor:pointer; padding:9px 6px; border-radius:9px; border:none;
-  }
-  .rv-ok{ background:#15803D; color:#fff }
-  .rv-no{ background:transparent; color:#B91C1C;
-          border:1px solid #FCA5A5 !important }
-  .rv-ok:hover, .rv-no:hover{ filter:brightness(1.08) }
-  body.dark .rv-no{ color:#fca5a5; border-color:#7f1d1d !important }
-
-  /* 🔴 شارة الصور الناقصة */
-  .mp-fab.has-q{
-    background:linear-gradient(135deg,#B91C1C,#DC2626) !important;
-    color:#fff !important; border-color:#B91C1C !important;
-    animation:qpulse 2.2s ease-in-out infinite;
-  }
-  @keyframes qpulse{
-    0%,100%{ box-shadow:0 4px 16px rgba(185,28,28,.35) }
-    50%    { box-shadow:0 4px 26px rgba(185,28,28,.6) }
-  }
-
-  /* 🗨️ نافذة الصور الناقصة */
-  .qa-box{
-    max-width:360px !important; text-align:center !important;
-    padding:26px 22px !important;
-  }
-  .qa-i{ font-size:42px; margin-bottom:10px }
-  .qa-t{ display:block; font-size:17px; font-weight:800; color:var(--ink) }
-  .qa-s{ display:block; font-size:12.5px; color:var(--muted);
-         line-height:1.8; margin:8px 0 18px }
-  .qa-b{ display:flex; flex-direction:column; gap:8px }
-  .qa-b button{
-    font-family:inherit; font-size:13.5px; font-weight:800; cursor:pointer;
-    padding:12px; border-radius:12px; border:none; transition:filter .14s;
-  }
-  .qa-b button:hover{ filter:brightness(1.08) }
-  .qa-go   { background:linear-gradient(135deg,#15803D,#16A34A); color:#fff }
-  .qa-later{ background:transparent; color:var(--muted);
-             border:1px solid var(--line) !important }
-  .qa-drop { background:transparent; color:#B91C1C;
-             border:1px solid #FCA5A5 !important }
-  body.dark .qa-drop{ color:#fca5a5; border-color:#7f1d1d !important }
-
-  /* 🔗 تغيير اللينك */
-  .mp-fix{
-    font-family:inherit; font-size:11.5px; font-weight:800; cursor:pointer;
-    padding:8px 12px; border-radius:9px; border:1px solid #C4B5FD;
-    background:transparent; color:#6B21A8;
-  }
-  .mp-fix:hover{ background:#F3E8FF }
-  body.dark .mp-fix{ color:#d8b4fe; border-color:#6d28d9 }
-  body.dark .mp-fix:hover{ background:#2e1065 }
-
-  .fl-box{ max-width:400px !important; padding:0 !important;
-           text-align:right !important }
-  .fl-h{ display:flex; align-items:center; justify-content:space-between;
-         padding:14px 16px; border-bottom:1px solid var(--line) }
-  .fl-h b{ font-size:15px; color:var(--ink) }
-  .fl-x{ width:28px; height:28px; border-radius:8px; cursor:pointer;
-         border:1px solid var(--line); background:transparent;
-         color:var(--muted) }
-  .fl-im{ width:100%; max-height:190px; object-fit:contain;
-          background:var(--line); display:block }
-  .fl-now{ padding:11px 16px 0; font-size:12.5px; color:var(--muted) }
-  .fl-now b{ color:var(--ink); direction:ltr; unicode-bidi:isolate }
-  .fl-in{
-    width:calc(100% - 32px); margin:9px 16px 0; padding:11px 13px;
-    border:1px solid var(--line); border-radius:11px; font-size:13px;
-    font-family:inherit; background:var(--surface); color:var(--ink);
-    box-sizing:border-box;
-  }
-  .fl-in:focus{ outline:none; border-color:#7C3AED }
-  .fl-hint{ padding:7px 16px 0; font-size:11px; color:var(--muted);
-            line-height:1.7 }
-  .fl-box .cf-btns{ padding:14px 16px 16px }
-
-  /* 🎉 ملاحظة الاشتراك على كارت المتابعة */
-  .mc-sub{
-    margin:8px 0 0; padding:9px 11px; border-radius:10px;
-    background:#DCFCE7; color:#15803D; font-size:11.5px; line-height:1.75;
-  }
-  .mc-sub b{ font-weight:800 }
-  .mc-sub span{ display:block; font-size:10.5px; opacity:.85; margin-top:3px }
-  body.dark .mc-sub{ background:#14321f; color:#86efac }
-
-  .mc-shr{
-    margin:8px 0 0; padding:8px 11px; border-radius:10px;
-    background:#FEF3C7; color:#92400E; font-size:11px;
-  }
-  .mc-shr b{ font-weight:800 }
-  body.dark .mc-shr{ background:#3a2c10; color:#fcd34d }
-
-  /* 📜 سجل الإثباتات على الكارت */
-  .pf-team{
-    margin:7px 0 0; padding:6px 9px; border-radius:8px;
-    background:#EEF2FF; color:#3730A3; font-size:10.5px; font-weight:800;
-  }
-  body.dark .pf-team{ background:#1e1b4b; color:#a5b4fc }
-
-  .pf-log{ display:flex; flex-direction:column; gap:6px; margin-top:8px }
-  .pf-row{
-    display:flex; gap:9px; align-items:center;
-    padding:6px; border-radius:10px;
-    background:color-mix(in srgb, var(--line) 26%, transparent);
-    border-inline-start:3px solid var(--line);
-  }
-  .pf-row.s{ border-inline-start-color:#2563EB }
-  .pf-row.f{ border-inline-start-color:#D97706 }
-  .pf-row.b{ border-inline-start-color:#15803D }
-  .pf-row.n{ border-inline-start-color:#B91C1C }
-
-  .pf-th{
-    width:46px; height:46px; flex-shrink:0; padding:0; cursor:zoom-in;
-    border:1px solid var(--line); border-radius:8px; overflow:hidden;
-    background:var(--line);
-  }
-  .pf-th img{ width:100%; height:100%; object-fit:cover; display:block }
-  .pf-th.broken img{ display:none }
-  .pf-th.no{ display:flex; align-items:center; justify-content:center;
-             font-size:17px; cursor:default }
-
-  .pf-meta{ display:flex; flex-direction:column; gap:1px; min-width:0; flex:1 }
-  .pf-meta b{ font-size:11.5px; font-weight:800; color:var(--ink) }
-  .pf-st{ font-size:10.5px; font-weight:800; color:var(--brand) }
-  .pf-dt{ font-size:10px; color:var(--muted) }
-  .pf-nt{ font-size:10px; color:#B45309; margin-top:1px }
-  body.dark .pf-nt{ color:#fcd34d }
 </style>
 </head>
 <body>
@@ -6981,7 +6821,7 @@ const FN_MAP = {
   approve:        "admin-action",
   unarchive:      "admin-action"
 };
-const ADMIN_ACTIONS = { "delete":"delete", moveToNew:"archive", changeNiche:"changeNiche", approve:"approve", unarchive:"unarchive", resolvePending:"resolvePending", dropPending:"dropPending", addAndResolve:"addAndResolve", rereadPending:"rereadPending", searchLeads:"searchLeads", proofSuggest:"proofSuggest", checkLink:"checkLink", undoResolve:"undoResolve", findVariant:"findVariant", resolveSubscribe:"resolveSubscribe", flaggedAll:"flaggedAll", replaceProof:"replaceProof", reviewProof:"reviewProof", suspectReview:"suspectReview", proofDetails:"proofDetails" };
+const ADMIN_ACTIONS = { "delete":"delete", moveToNew:"archive", changeNiche:"changeNiche", approve:"approve", unarchive:"unarchive", resolvePending:"resolvePending", dropPending:"dropPending", addAndResolve:"addAndResolve", rereadPending:"rereadPending", searchLeads:"searchLeads", proofSuggest:"proofSuggest", checkLink:"checkLink", undoResolve:"undoResolve", findVariant:"findVariant", resolveSubscribe:"resolveSubscribe", flaggedAll:"flaggedAll", replaceProof:"replaceProof" };
 
 // Supabase بيحدّ أي طلب بـ 1000 صف كحد أقصى (إعداد max-rows).
 // كنا بنطلب 2000 فكان بيرجّع 1000 ويرمي الباقي في صمت —
@@ -7109,15 +6949,6 @@ function buildPills(id, items, key){
   });
 }
 function buildAllPills(){
-  // 🔄 المتابعات من السيرفر — مرة واحدة مع أول عرض
-  //
-  // ⚠️ من غير كده الزرار بيفضل على الحساب المحلي (بالملكية)
-  //    لحد ما الموظفة تفتح التابة.
-  if(!window._fuAsked){
-    window._fuAsked = true;
-    loadFollowsDue().catch(() => { window._fuAsked = false; });
-  }
-
   updateViewCounts();
   buildPills("f-niche",[{v:"all",l:"الكل"},{v:"fashion",l:"فاشن"},{v:"luxury",l:"لاكشري"},{v:"moms",l:"عائلة وأمومة"},{v:"sports",l:"رياضة ولياقة"},{v:"food",l:"طعام وطبخ"},{v:"gaming",l:"جيمنج"},{v:"business",l:"أعمال"},{v:"tech",l:"تقنية"},{v:"entertainment",l:"ترفيه"},{v:"other",l:"أخرى"}],"niche");
   buildPills("f-platform",[{v:"all",l:"الكل"},{v:"instagram",l:"انستجرام",dot:PLAT.instagram.c},{v:"tiktok",l:"تيك توك",dot:"#25F4EE"},{v:"youtube",l:"يوتيوب",dot:PLAT.youtube.c},{v:"x",l:"تويتر",dot:"#555"},{v:"snapchat",l:"سناب",dot:PLAT.snapchat.c}],"platform");
@@ -7143,48 +6974,7 @@ function buildAllPills(){
     }
     return true;   // 'all'
   };
-  // 🔄 المتابعات — من السيرفر مباشرةً
-  //
-  // ⚠️ التابة كانت بتفلتر القايمة المحلية وتدوّر فيها على
-  //    المستحقين. والمؤثرين اللي الموظفة بعتتلهم بس (مش
-  //    مملوكين ليها) مش موجودين فيها — فالتابة تطلع فاضية
-  //    والزرار يقول 618.
-  let data;
-  if(state.view === 'followups'
-     && Array.isArray(MP.follows) && MP.follows.length){
-    const byUid = new Map(cleanList().map(c => [c.uid, c]));
-    data = MP.follows.map(f => {
-      const c = byUid.get(f.uid);
-      if(c) return Object.assign({}, c, {
-        _fuSeq:    f.seq,
-        _fuWaited: f.waited,
-        _fuOwner:  f.owner,
-        _fuShared: f.shared,
-        _fuSub:    f.subscribed,
-      });
-      // مش في القايمة؟ نبني كارت من بيانات السيرفر
-      return {
-        uid:            f.uid,
-        handle:         f.handle || String(f.uid||'').split(':')[1] || '',
-        platform:       f.platform || String(f.uid||'').split(':')[0] || '',
-        followers:      Number(f.followers) || 0,
-        display_name:   f.display || '',
-        avatar_url:     f.avatar || '',
-        message_status: 'sent',
-        sent_at:        f.sent_at || f.last_at || null,
-        followup_count: Math.max(0, (Number(f.seq) || 1) - 1),
-        assigned_to:    f.owner || '',
-        signup_status:  f.subscribed ? 'subscribed' : 'pending',
-        outcome_type:   null,
-        archived:       false,
-        _ok: true, _cb: 'all',
-        _fuSeq: f.seq, _fuWaited: f.waited,
-        _fuOwner: f.owner, _fuShared: f.shared, _fuSub: f.subscribed,
-      };
-    });
-  } else {
-    data = cleanList().filter(inView);
-  }
+  const data = cleanList().filter(inView);
   const bc={}; for(const c of data){ bc[c._cb]=(bc[c._cb]||0)+1; }
   const cc=(n)=>bc[n]||0;
   // فلتر الموظفة — للأدمن والمدير بس
@@ -7789,8 +7579,7 @@ const STAGE_AR = {
   sent:'اتبعت', followup:'في المتابعة', subscribed:'اشترك',
   allocated:'تم التخصيص', not_subscribed:'مفيش اشتراك'
 };
-const REASON_AR = { fixed:'طلب سعر ثابت', gifts:'طلب هدايا',
-                    already_sub:'مشترك عندنا', other:'سبب تاني' };
+const REASON_AR = { fixed:'طلب سعر ثابت', gifts:'طلب هدايا', other:'سبب تاني' };
 
 // ===== موعد المتابعة الجاية =====
 // أهم حاجة للموظفة: تعرف تبعت لمين النهاردة من غير ما تفتح كل كارت.
@@ -8520,8 +8309,7 @@ function showInfoBox(title, innerHtml){
     + '<div class="cf-btns"><button class="cf-yes ok" data-x="1">تمام</button></div></div>';
   document.body.appendChild(ov);
   requestAnimationFrame(()=>ov.classList.add('show'));
-  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),220);
-    };
+  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),220); };
   ov.addEventListener('click',e=>{ if(e.target===ov) close(); });
   ov.querySelector('.cf-yes').onclick=close;
 }
@@ -8706,8 +8494,7 @@ function showCoach(c, handle){
 
   document.body.appendChild(ov);
   requestAnimationFrame(()=>ov.classList.add('show'));
-  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200);
-    };
+  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
   ov.querySelector('.ch-x').onclick = close;
   ov.querySelector('.cf-yes').onclick = close;
   ov.addEventListener('click', e => { if(e.target === ov) close(); });
@@ -8916,8 +8703,7 @@ function showProofReject(r){
     + '</div>';
   document.body.appendChild(ov);
   requestAnimationFrame(()=>ov.classList.add('show'));
-  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200);
-    };
+  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
   ov.querySelector('.cf-yes').onclick = close;
   ov.addEventListener('click', e=>{ if(e.target===ov) close(); });
 }
@@ -8952,7 +8738,7 @@ function showPhotoOptions(title, msg){
     
     function close(val){
       ov.classList.remove('show'); 
-      setTimeout(()=>ov.remove(),220);
+      setTimeout(()=>ov.remove(),220); 
       resolve(val);
     }
     ov.addEventListener('click',e=>{ if(e.target===ov) close(null); });
@@ -9133,9 +8919,6 @@ function pickRejectReason(){
       +       '<span><b>طلب سعر ثابت</b><small>عايز فلوس مقابل الإعلان</small></span></button>'
       +     '<button class="rj-opt" data-t="gifts"><span class="rj-i">🎁</span>'
       +       '<span><b>طلب هدايا</b><small>عايز منتجات أو هدايا</small></span></button>'
-      +     '<button class="rj-opt" data-t="already_sub"><span class="rj-i">🎉</span>'
-      +       '<span><b>مشترك عندنا</b>'
-      +       '<small>اشترك مع زميلة تانية</small></span></button>'
       +     '<button class="rj-opt" data-t="other"><span class="rj-i">✍️</span>'
       +       '<span><b>سبب تاني</b><small>هتكتبيه بنفسك</small></span></button>'
       +   '</div>'
@@ -9153,8 +8936,7 @@ function pickRejectReason(){
     requestAnimationFrame(()=>ov.classList.add('show'));
 
     let picked = null;
-    const close = (val)=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),220);
-    resolve(val); };
+    const close = (val)=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),220); resolve(val); };
 
     ov.querySelectorAll('.rj-opt').forEach(b=>{
       b.onclick = ()=>{
@@ -9302,8 +9084,7 @@ function showConfirm(title, msg, yesLabel, yesClass){
       '</div></div>';
     document.body.appendChild(ov);
     requestAnimationFrame(()=>ov.classList.add('show'));
-    function close(val){ ov.classList.remove('show'); setTimeout(()=>ov.remove(),220);
-    resolve(val); }
+    function close(val){ ov.classList.remove('show'); setTimeout(()=>ov.remove(),220); resolve(val); }
     ov.addEventListener('click',e=>{ if(e.target===ov) close(false); });
     ov.querySelector('.cf-cancel').onclick=()=>close(false);
     ov.querySelector('.cf-yes').onclick=()=>close(true);
@@ -9949,8 +9730,7 @@ function showActionBox(title, innerHtml, action){
     + '</div></div>';
   document.body.appendChild(ov);
   requestAnimationFrame(()=>ov.classList.add('show'));
-  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),220);
-    };
+  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),220); };
   ov.addEventListener('click',e=>{ if(e.target===ov) close(); });
   ov.querySelector('.cf-cancel').onclick=close;
   const yes=ov.querySelector('.cf-yes');
@@ -10762,8 +10542,7 @@ function renderStaffReport(r){
     : '';
 
   // أسباب عدم الاشتراك
-  const RS = { fixed:'طلب سعر ثابت', gifts:'طلب هدايا',
-               already_sub:'مشترك عندنا', other:'سبب تاني' };
+  const RS = { fixed:'طلب سعر ثابت', gifts:'طلب هدايا', other:'سبب تاني' };
   const reasons = r.reasons || [];
   const reasonRow = reasons.length
     ? '<div class="rp-sec"><h4>❌ أسباب عدم الاشتراك</h4><div class="rp-chips">'
@@ -11522,7 +11301,6 @@ function renderDashboard(){
     ['sheets',   '📗', 'الشيتات'],
     ['pending',  '📥', 'مستنية ربط'],
     ['flagged',  '🏷️', 'الملاحظات'],
-    ['review',   '🔍', 'مراجعة الشك'],
     ['rejects',  '❌', 'أسباب الرفض'],
     ['deals',    '🎯', 'الصفقات'],
     ['leads',    '📇', 'المؤثرين'],
@@ -11571,7 +11349,6 @@ function dbTabContent(r){
     case 'sheets':   return dbSheets(r);
     case 'pending':  return dbPending(r);
     case 'flagged':  return dbTabFlagged();
-    case 'review':   return dbTabReview();
     case 'rejects':  return dbRejects(r);
     case 'deals':    return dbDeals(r);
     case 'leads':    return dbLeads(r);
@@ -12709,8 +12486,7 @@ function dbCustomRange(){
   document.body.appendChild(ov);
   requestAnimationFrame(()=>ov.classList.add('show'));
 
-  const close = ()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200);
-    };
+  const close = ()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
   ov.querySelector('.cf-cancel').onclick = close;
   ov.addEventListener('click', e=>{ if(e.target===ov) close(); });
 
@@ -13086,8 +12862,7 @@ function tkAskReason(taskId){
   requestAnimationFrame(()=>ov.classList.add('show'));
   setTimeout(()=>{ const i=ov.querySelector('#tkRs'); if(i) i.focus(); }, 90);
 
-  const close = ()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200);
-    };
+  const close = ()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
   ov.querySelector('.cf-cancel').onclick = close;
   ov.addEventListener('click', e=>{ if(e.target===ov) close(); });
 
@@ -13512,8 +13287,7 @@ function dbTkCustom(){
     +   '<button class="cf-yes" id="tkcOk">تطبيق</button></div></div>';
   document.body.appendChild(ov);
   requestAnimationFrame(()=>ov.classList.add('show'));
-  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200);
-    };
+  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
   ov.querySelector('.cf-cancel').onclick = close;
   ov.addEventListener('click', e=>{ if(e.target===ov) close(); });
   ov.querySelector('#tkcOk').onclick = ()=>{
@@ -14017,28 +13791,13 @@ function uidFromLink_(link){
 //
 // ⚠️ بترجّع الـ uid سواء كان موجود أو اتضاف دلوقتي.
 //    الشريك بيترفض، واللي عند موظفة تانية بيتقال عليه.
-async function autoAddByLink(link, opts){
+async function autoAddByLink(link){
   // ⚠️ لينكات المشاركة فيها ?share_id=... و &locale=...
   //    لو بعتناها زي ما هي، الـ uid بيتبني غلط.
   const clean = String(link || '').trim()
     .replace(/[?#].*$/, '')
     .replace(/\/+$/, '');
   if(clean.length < 8) return null;
-
-  // 👀 وضع المعاينة — نبني الـ uid من اللينك من غير إضافة
-  //
-  // ⚠️ الإضافة وقت الفحص كانت بتسيب مؤثرين في القاعدة
-  //    لو الموظفة لغيت الرفعة. الإضافة بقت وقت الرفع بس.
-  if(opts && opts.peek){
-    const uid = uidFromLink_(clean);
-    if(!uid) return null;
-    return {
-      uid,
-      handle: '@' + (uid.split(':')[1] || ''),
-      isNew: true,
-      peek: true,
-    };
-  }
 
   try{
     const r = await callApi('addManualLead', {
@@ -14691,12 +14450,7 @@ async function runOCR_(){
       it.msg = '⏳ بنربط…';
       renderMobileProofs();
 
-      // 🔗 الربط من غير إضافة — الإضافة وقت الرفع بس
-      //
-      // ⚠️ autoAddByLink كانت بتضيف المؤثر في القاعدة وقت
-      //    الفحص، فلو الترتيب طلع غلط والموظفة لغيت،
-      //    المؤثرين يفضلوا مضافين من غير إثبات.
-      const add = await autoAddByLink(link, { peek: true });
+      const add = await autoAddByLink(link);
       const uid = (add && add.uid) || uidFromLink_(link);
 
       // 🔒 نفس المؤثر اتاخد في صورة تانية؟ (لينك مكرر)
@@ -15174,22 +14928,6 @@ function mpCard_(c, mode){
   const label = c.action === 'followup'
     ? 'متابعة ' + (c.seq || 1) : 'إرسال';
 
-  // 🎉 اشترك مع زميلة؟ نعلّم عشان تقفلها بالسبب الصح
-  //
-  // ⚠️ المتابعة بتفضل ظاهرة — الموظفة هي اللي تقفلها
-  //    بـ "مفيش اشتراك · مشترك عندنا".
-  const subNote = c.subscribed
-    ? '<div class="mc-sub">🎉 اشترك معانا'
-      + (c.sub_by ? ' مع <b>' + esc(c.sub_by) + '</b>' : '')
-      + (c.sub_at ? ' يوم ' + fmtShort(c.sub_at) : '')
-      + '<span>اقفليها بـ ❌ مفيش اشتراك · مشترك عندنا</span></div>'
-    : '';
-
-  // 🔁 المؤثر عند زميلة تانية؟ للعلم بس
-  const shareNote = (!c.subscribed && c.shared && c.owner)
-    ? '<div class="mc-shr">🔁 المؤثر ده مع <b>' + esc(c.owner) + '</b> برضه</div>'
-    : '';
-
   return '<div class="mc' + (mode==='follow' && late>0 ? ' late' : '') + '">'
     + '<div class="mc-t">'
     +   '<span class="mc-av i">' + (h[0]||'?').toUpperCase() + '</span>'
@@ -15199,7 +14937,6 @@ function mpCard_(c, mode){
     +   '</div>'
     +   badge
     + '</div>'
-    + subNote + shareNote
     + '<div class="mc-a">'
     +   '<button class="mc-p" onclick="mpQuickProof(' + esc(JSON.stringify(uid)).replace(/"/g,'&quot;') + ')">'
     +     '📷 ' + label + '</button>'
@@ -15702,8 +15439,6 @@ function renderMobileProofs(){
             ? '<span class="mp-warn">⚠️ الصورة دي هتظهر للإدارة كإثبات مشكوك فيه</span>'
             : '')
           + '<div class="mp-btns">'
-          +   '<button class="mp-fix" onclick="mpFixLink(\'' + it.id + '\')">'
-          +     '🔗 غيّري اللينك</button>'
           +   '<button class="mp-del" onclick="mpRemove(\'' + it.id + '\')">🗑️ احذفي</button>'
           + '</div>';
       } else if(it.noUpload && MP.plat !== 'snapchat'){
@@ -15735,8 +15470,6 @@ function renderMobileProofs(){
                   + 'ولو مالقيناهوش هنتواصل معاكي.') + '</span>'
           + '</div>'
           + '<div class="mp-btns">'
-          +   '<button class="mp-fix" onclick="mpFixLink(\'' + it.id + '\')">'
-          +     '🔗 اربطيها بلينك</button>'
           +   '<button class="mp-del" onclick="mpRemove(\'' + it.id + '\')">🗑️ احذفي</button>'
           + '</div>';
       }
@@ -15876,30 +15609,8 @@ async function mpSwap(id){
     + '</div></div>';
 
   document.body.appendChild(ov);
-
-  // 🔝 النافذة فوق شاشة الإثباتات
-  //
-  // ⚠️ backdrop-filter بيعمل طبقة تكديس جديدة، فالنافذة
-  //    كانت بتتحبس ورا الشاشة على اللاب. بنطفّيه مؤقتًا.
-  const _sheet = document.querySelector('.mp-ov');
-  const _keep  = _sheet
-    ? [_sheet.style.backdropFilter, _sheet.style.webkitBackdropFilter]
-    : null;
-  if(_sheet){
-    _sheet.style.backdropFilter = 'none';
-    _sheet.style.webkitBackdropFilter = 'none';
-  }
-  ov.style.zIndex = '10099';
-
   requestAnimationFrame(()=>ov.classList.add('show'));
-  const close = () => {
-    ov.classList.remove('show');
-    setTimeout(()=>ov.remove(),200);
-    if(_sheet && _keep){
-      _sheet.style.backdropFilter = _keep[0] || '';
-      _sheet.style.webkitBackdropFilter = _keep[1] || '';
-    }
-  };
+  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
   ov.querySelector('.sw-x').onclick  = close;
   ov.querySelector('.cf-no').onclick = close;
   ov.addEventListener('click', e => { if(e.target === ov) close(); });
@@ -15957,101 +15668,6 @@ function mpSwapSkip(id){
   it.kindOverride = 'replace';
   it.msg          = '📥 هتترفع للإدارة';
   renderMobileProofs();
-}
-
-// 🔗 تغيير لينك الصورة قبل الرفع
-//
-// ⚠️ الموديل بيغلط أحيانًا ويربط الصورة بمؤثر تاني.
-//    الموظفة تشوف الصورة وتحط اللينك الصح بنفسها،
-//    من غير ما تلغي الرفعة كلها.
-function mpFixLink(id){
-  const it = MP.items.find(x => x.id === id);
-  if(!it) return;
-
-  // 🔗 اللينك الحالي — نظيف من ?share_id عشان يبان واضح
-  const cur = (it.snapLink || '').replace(/[?#].*$/, '')
-    || (it.uid ? (AUTO_PLAT[it.uid.split(':')[0]] || '')
-                 + it.uid.split(':')[1] : '');
-
-  const ov = document.createElement('div');
-  ov.className = 'cf-overlay';
-  ov.innerHTML = '<div class="cf-box fl-box">'
-    + '<div class="fl-h"><b>🔗 غيّري اللينك</b>'
-    +   '<button class="fl-x">✕</button></div>'
-    + '<img class="fl-im" src="' + esc(it.preview) + '">'
-    + '<div class="fl-now">دلوقتي مربوطة بـ '
-    +   '<b>@' + esc(it.handle || '—') + '</b></div>'
-    + '<input class="fl-in" id="flIn" type="text" dir="ltr" '
-    +   'placeholder="الصقي لينك الحساب الصح" value="' + esc(cur) + '">'
-    + '<div class="fl-hint">لينك البروفايل أو الإضافة — '
-    +   'إنستجرام · تيك توك · سناب</div>'
-    + '<div class="cf-btns">'
-    +   '<button class="cf-no">إلغاء</button>'
-    +   '<button class="cf-yes" id="flGo">✅ اربطي</button>'
-    + '</div></div>';
-
-  document.body.appendChild(ov);
-
-  // 🔝 النافذة فوق شاشة الإثباتات
-  const _sh = document.querySelector('.mp-ov');
-  const _kp = _sh ? _sh.style.backdropFilter : '';
-  if(_sh){ _sh.style.backdropFilter = 'none';
-           _sh.style.webkitBackdropFilter = 'none'; }
-  ov.style.zIndex = '10099';
-
-  requestAnimationFrame(()=>ov.classList.add('show'));
-  const close = () => {
-    ov.classList.remove('show');
-    setTimeout(()=>ov.remove(), 200);
-    if(_sh){ _sh.style.backdropFilter = _kp || '';
-             _sh.style.webkitBackdropFilter = _kp || ''; }
-  };
-  ov.querySelector('.fl-x').onclick  = close;
-  ov.querySelector('.cf-no').onclick = close;
-  ov.addEventListener('click', e => { if(e.target === ov) close(); });
-
-  // 📝 نختار النص كله — تقدر تلزق فوقه على طول
-  setTimeout(()=>{
-    const el = document.getElementById('flIn');
-    if(el){ el.focus(); el.select(); }
-  }, 260);
-
-  // ⌨️ Enter بيربط على طول
-  const inEl = ov.querySelector('#flIn');
-  if(inEl) inEl.addEventListener('keydown', e => {
-    if(e.key === 'Enter'){ e.preventDefault();
-      ov.querySelector('#flGo').click(); }
-  });
-
-  ov.querySelector('#flGo').onclick = () => {
-    const v = String(document.getElementById('flIn').value || '').trim();
-    if(v.length < 8){ toastErr('اللينك قصير'); return; }
-
-    const uid = uidFromLink_(v);
-    if(!uid){ toastErr('اللينك مش مفهوم — اتأكدي منه'); return; }
-
-    // 🔒 المؤثر ده مربوط بصورة تانية؟
-    if(MP.items.some(x => x !== it && x.uid === uid)){
-      toastErr('المؤثر ده مربوط بصورة تانية في الرفعة');
-      return;
-    }
-
-    it.uid       = uid;
-    it.snapLink  = v;
-    it.handle    = uid.split(':')[1] || '';
-    it.action    = MP.kind;
-    it.seq       = 1;
-    it.label     = MP.kind === 'followup' ? 'متابعة' : 'إرسال';
-    it.autoAdded = false;
-    it.manualLink = true;      // 🏷️ الموظفة ربطته بنفسها
-    it.msg       = '🔗 اتربط يدوي';
-    it.canSwap   = false;
-    it.state     = 'ready';
-
-    close();
-    renderMobileProofs();
-    toastOk('✅ اتربطت بـ @' + it.handle);
-  };
 }
 
 // 🗑️ مسح كل الصور اللي مش هتترفع
@@ -16147,8 +15763,7 @@ function mpDiag(){
   ov.innerHTML = h;
   document.body.appendChild(ov);
   requestAnimationFrame(() => ov.classList.add('show'));
-  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),180);
-    };
+  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),180); };
   ov.querySelector('.dg-x').onclick = close;
   ov.onclick = e => { if(e.target === ov) close(); };
 }
@@ -16166,8 +15781,7 @@ function mpZoom(id){
   document.body.appendChild(ov);
   requestAnimationFrame(()=>ov.classList.add('show'));
 
-  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),180);
-    };
+  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),180); };
   ov.querySelector('.mz-x').onclick = close;
   ov.onclick = e => { if(e.target === ov) close(); };
 }
@@ -16356,24 +15970,6 @@ async function mpUploadOne(it){
   renderMobileProofs();
 
   try{
-      // 0️⃣ سناب — الإضافة الحقيقية دلوقتي
-      //
-      // ⚠️ الفحص كان بيضيف المؤثرين في القاعدة. لو الموظفة
-      //    شافت الترتيب غلط ولغيت، كانوا بيفضلوا مضافين.
-      //    دلوقتي الإضافة وقت الرفع بس.
-      if(it.snapLink && it.uid){
-        const real = await autoAddByLink(it.snapLink);
-        if(real && real.uid){
-          it.uid    = real.uid;
-          it.handle = String(real.handle || it.handle || '').replace('@','');
-          if(real.partner || real.taken || real.subscribed){
-            it.flag = real.partner ? 'partner'
-                    : real.subscribed ? 'subscribed' : 'taken';
-            it.flagNote = String(real.msg || '').replace(/^[🚫🔁🎉]\s*/, '');
-          }
-        }
-      }
-
       // 1️⃣ البصمة — نفس دالة الموقع
       const hash = await fileHash(it.file);
       it.hash = hash;      // نحتاجها للتوصية
@@ -16540,44 +16136,10 @@ async function mpUploadOne(it){
     //    إن 39 صورة ضاعت والموظفة فاكرة إنها اترفعت.
     //    النجاح الكاذب أسوأ من رسالة الفشل بكتير.
     it.state = 'fail';
-    it.msg   = '⏳ بنحاول تاني — متقفليش الصفحة';
+    it.msg   = '⏳ لسه بتترفع — استني شوية';
     it.canRetry = true;
   }
   renderMobileProofs();
-}
-
-// 🔔 تنبيه لما الرفعة تخلص
-//
-// ⚠️ الموظفة بتفضل قاعدة تبص على الشاشة. الاهتزاز والصوت
-//    بيخلّوها تسيب الموبايل وتشتغل حاجة تانية.
-function buzzDone_(ok, bad){
-  // 📳 اهتزاز — نمط مختلف حسب النتيجة
-  try{
-    if(navigator.vibrate){
-      navigator.vibrate(bad ? [90, 60, 90, 60, 200] : [140, 70, 140]);
-    }
-  }catch(e){}
-
-  // 🔊 نغمة قصيرة
-  try{
-    const AC = window.AudioContext || window.webkitAudioContext;
-    if(!AC) return;
-    const ctx = new AC();
-    const notes = bad ? [440, 330] : [660, 880];
-    notes.forEach((f, i) => {
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.type = 'sine';
-      o.frequency.value = f;
-      g.gain.setValueAtTime(0.0001, ctx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.14, ctx.currentTime + i*0.16 + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + i*0.16 + 0.22);
-      o.connect(g); g.connect(ctx.destination);
-      o.start(ctx.currentTime + i*0.16);
-      o.stop(ctx.currentTime + i*0.16 + 0.24);
-    });
-    setTimeout(()=>{ try{ ctx.close(); }catch(e){} }, 900);
-  }catch(e){}
 }
 
 // 💾 طابور محلي — الصور تفضل محفوظة لو الصفحة اتقفلت
@@ -16585,15 +16147,7 @@ function buzzDone_(ok, bad){
 // ⚠️ إسراء رفعت 23 وخرجت في النص — 9 صور ضاعت لأنها
 //    ماوصلتش السيرفر. دلوقتي بنحفظهم في المتصفح،
 //    ولما ترجع تفتح الموقع بيكمّلوا لوحدهم.
-// 💾 مفتاح الطابور — لكل موظفة مفتاح لوحدها
-//
-// ⚠️ المفتاح المشترك كان بيخلي صور موظفة تترفع
-//    على حساب موظفة تانية لو اتبدّل الحساب.
-function qKey_(){
-  const who = (typeof SESSION !== 'undefined' && SESSION
-    && (SESSION.staffName || SESSION.username)) || 'x';
-  return 'adltix_upload_queue_v2_' + String(who).toLowerCase();
-}
+const QKEY = 'adltix_upload_queue_v1';
 
 async function qSave_(items){
   try{
@@ -16605,65 +16159,29 @@ async function qSave_(items){
         action: it.action || 'sent', seq: it.seq || 1,
         kind: MP.kind, plat: MP.plat,
         b64: await fileToBase64Small(it.file),
-        hash: await fileHash(it.file),   // 🔎 للتأكد قبل الإعادة
         at: Date.now(),
       });
     }
-    if(!box.length){ localStorage.removeItem(qKey_()); return; }
-    localStorage.setItem(qKey_(), JSON.stringify(box));
+    if(!box.length){ localStorage.removeItem(QKEY); return; }
+    localStorage.setItem(QKEY, JSON.stringify(box));
   }catch(e){ /* المساحة خلصت — نتجاهل */ }
 }
 
 function qClear_(id){
   try{
-    const raw = localStorage.getItem(qKey_());
+    const raw = localStorage.getItem(QKEY);
     if(!raw) return;
     const box = JSON.parse(raw).filter(x => x.id !== id);
-    if(box.length) localStorage.setItem(qKey_(), JSON.stringify(box));
-    else localStorage.removeItem(qKey_());
+    if(box.length) localStorage.setItem(QKEY, JSON.stringify(box));
+    else localStorage.removeItem(QKEY);
   }catch(e){}
-}
-
-// 🗨️ نافذة الاختيار — نكمّل ولا نسيب ولا نمسح
-function qAskDlg_(n){
-  return new Promise(resolve => {
-    const ov = document.createElement('div');
-    ov.className = 'cf-overlay';
-    ov.innerHTML = '<div class="cf-box qa-box">'
-      + '<div class="qa-i">📷</div>'
-      + '<b class="qa-t">فيه ' + n + ' صورة ناقصة</b>'
-      + '<span class="qa-s">من آخر مرة رفعتي فيها — الصور محفوظة '
-      +   'ولسه مااترفعتش.</span>'
-      + '<div class="qa-b">'
-      +   '<button class="qa-go">✅ كمّلي رفعهم</button>'
-      +   '<button class="qa-later">⏰ بعدين</button>'
-      +   '<button class="qa-drop">🗑️ امسحيهم</button>'
-      + '</div></div>';
-
-    document.body.appendChild(ov);
-    requestAnimationFrame(()=>ov.classList.add('show'));
-
-    const done = (v) => {
-      ov.classList.remove('show');
-      setTimeout(()=>ov.remove(), 200);
-      resolve(v);
-    };
-
-    ov.querySelector('.qa-go').onclick    = () => done('go');
-    ov.querySelector('.qa-later').onclick = () => done('later');
-    ov.querySelector('.qa-drop').onclick  = () => {
-      if(confirm('هتمسحي ' + n + ' صورة نهائيًا؟\n\n'
-        + 'مش هيترفعوا ومش هيتحسبوا في التارجت.')) done('drop');
-    };
-    ov.addEventListener('click', e => { if(e.target === ov) done('later'); });
-  });
 }
 
 // 🔄 نكمّل اللي فضل من آخر مرة
 async function qResume_(){
   let box;
   try{
-    const raw = localStorage.getItem(qKey_());
+    const raw = localStorage.getItem(QKEY);
     if(!raw) return;
     box = JSON.parse(raw);
   }catch(e){ return; }
@@ -16671,59 +16189,13 @@ async function qResume_(){
 
   // أقدم من يومين؟ منكملش
   const fresh = box.filter(x => Date.now() - (x.at || 0) < 172800000);
-  if(!fresh.length){ localStorage.removeItem(qKey_()); return; }
+  if(!fresh.length){ localStorage.removeItem(QKEY); return; }
 
-  // 🔄 تلات اختيارات — نكمّل · نسيب · نمسح
-  const choice = await qAskDlg_(fresh.length);
-
-  if(choice === 'later'){
-    toastOk('📌 محفوظين — هنسألك تاني لما تفتحي الإثباتات');
-    return;
-  }
-  if(choice === 'drop'){
-    // 🗑️ نمسح من التخزين كمان لو الصورة وصلت
-    //
-    // ⚠️ بعض الصور بتوصل التخزين والتسجيل يفشل —
-    //    فلازم نشيلها من هناك عشان الإنقاذ مايرجّعهاش.
-    let cleaned = 0;
-    for(const q of fresh){
-      if(!q.hash) continue;
-      try{
-        const r = await callApi('verifyProof', {
-          token: SESSION.token, action: 'dropByHash', hash: q.hash,
-        });
-        if(r && r.removed) cleaned++;
-      }catch(_){ /* هادئ */ }
-    }
-    localStorage.removeItem(qKey_());
-    renderMySheet();
-    toastOk('🗑️ اتمسحوا' + (cleaned ? ' · ' + cleaned + ' من التخزين' : ''));
-    return;
-  }
-  if(choice !== 'go') return;
-
-  toastOk('🔄 بنكمّل ' + fresh.length + ' صورة…');
-
-  // 🔒 قفل — الاستكمال مايشتغلش مرتين في نفس الوقت
-  if(window._qBusy) return;
-  window._qBusy = true;
+  toastOk('🔄 بنكمّل ' + fresh.length + ' صورة من آخر مرة…');
 
   let done = 0;
   for(const q of fresh){
     try{
-      // 🔎 اترفعت خلاص؟ نشيلها من الطابور من غير رفع تاني
-      if(q.hash){
-        try{
-          const seen = await callApi('verifyProof', {
-            token: SESSION.token, action: 'findByHash', hash: q.hash,
-          });
-          if(seen && seen.url){
-            qClear_(q.id);
-            continue;
-          }
-        }catch(_){ /* هادئ */ }
-      }
-
       if(q.uid){
         await callApi('logAction', {
           token: SESSION.token, uid: q.uid,
@@ -16742,11 +16214,8 @@ async function qResume_(){
     await new Promise(r => setTimeout(r, 250));
   }
 
-  window._qBusy = false;
-
   if(done){
     toastOk('✅ اتسجّل ' + done + ' صورة كانت ناقصة');
-    buzzDone_(done, fresh.length - done);
     invalidateCache();
     refreshTargetBar();
   }
@@ -16776,34 +16245,10 @@ async function mpUploadPending(list){
       //    وولا واحدة اتسجّلت.
       let url = it.upUrl || '';
       if(!url){
-        // ⚠️ محاولة واحدة بس — retry_ كانت بترفع نسخة
-        //    جديدة في كل مرة. صورة واحدة فشلت 3 مرات
-        //    بقت 3 ملفات في التخزين و3 صفوف في المعلّقة.
-        await waitNet_();
-        let up = null;
-        try{
-          up = await callApi('logAction', {
-            token: SESSION.token, uid: '', actionType: 'pending',
-            imageBase64: b64, mode: 'pending',
-          });
-        }catch(e){
-          // 🔎 الرد ضاع؟ نتأكد الأول قبل ما نعيد
-          try{
-            const seen = await callApi('verifyProof', {
-              token: SESSION.token, action: 'findByHash', hash,
-            });
-            if(seen && seen.url) up = { screenshotUrl: seen.url };
-          }catch(_){ /* هادئ */ }
-
-          // لسه مالقيناش؟ محاولة أخيرة واحدة
-          if(!up){
-            await new Promise(r => setTimeout(r, 900));
-            up = await callApi('logAction', {
-              token: SESSION.token, uid: '', actionType: 'pending',
-              imageBase64: b64, mode: 'pending',
-            });
-          }
-        }
+        const up = await retry_(() => callApi('logAction', {
+          token: SESSION.token, uid: '', actionType: 'pending',
+          imageBase64: b64, mode: 'pending',
+        }), 3);
         url = (up && up.screenshotUrl) || '';
         if(!url) throw new Error('الصورة مترفعتش');
         it.upUrl = url;      // 💾 نحفظها — الإعادة تستخدمها
@@ -16856,29 +16301,12 @@ async function mpUploadPending(list){
           continue;
         }
 
-        // 📤 محاولة واحدة — retry_ كانت بترفع نسخة كل مرة
-        //
-        // ⚠️ 100 صورة بقوا 130 في التخزين بسبب ده.
-        //    بنسأل الأول لو الصورة اترفعت خلاص.
-        let url2 = it.upUrl || '';
-        if(!url2){
-          try{
-            const seen2 = await callApi('verifyProof', {
-              token: SESSION.token, action: 'findByHash', hash: hash2,
-            });
-            url2 = (seen2 && seen2.url) || '';
-          }catch(_){ /* هادئ */ }
-        }
-        if(!url2){
-          const b64_2 = await fileToBase64Small(it.file);
-          await waitNet_();
-          const up2 = await callApi('logAction', {
-            token: SESSION.token, uid: '', actionType: 'pending',
-            imageBase64: b64_2, mode: 'pending',
-          });
-          url2 = (up2 && up2.screenshotUrl) || '';
-          if(url2) it.upUrl = url2;
-        }
+        const b64_2 = await fileToBase64(it.file);
+        const up2 = await retry_(() => callApi('logAction', {
+          token: SESSION.token, uid: '', actionType: 'pending',
+          imageBase64: b64_2, mode: 'pending',
+        }), 3);
+        const url2 = (up2 && up2.screenshotUrl) || '';
         if(url2){
           await retry_(() => callApi('verifyProof', {
             token: SESSION.token, action: 'addPending',
@@ -16892,7 +16320,7 @@ async function mpUploadPending(list){
       }catch(e2){
         // ⏳ فشل فعلي — منعلّمهاش نجاح
         it.state = 'fail';
-        it.msg   = '⏳ بنحاول تاني — متقفليش الصفحة';
+        it.msg   = '⏳ لسه بتترفع — استني شوية';
         it.canRetry = true;
       }
     }
@@ -16989,7 +16417,7 @@ async function mpUpload(){
 
     failed.forEach(x => {
       x.state = 'ready';
-      x.msg = '🔄 محاولة ' + round + ' من 5 — استني';
+      x.msg = '🔄 بنعيد (' + round + '/5)…';
     });
     renderMobileProofs();
 
@@ -17066,20 +16494,6 @@ async function mpUpload(){
     /* اتشال */
   }
 
-  // 🧹 الرفعة خلصت — نفضّي الطابور من اللي نجح
-  //
-  // ⚠️ qClear_ صورة صورة كان بيسيب بقايا لو حصل خطأ،
-  //    والبقايا دي بتترفع في الرفعة الجاية وتضخّم الرقم.
-  try{
-    const left = MP.items.filter(x => x.state !== 'ok' && x.state !== 'dup');
-    if(!left.length){
-      localStorage.removeItem(qKey_());
-    } else {
-      await qSave_(left);
-    }
-    renderMySheet();
-  }catch(e){ /* هادئ */ }
-
   // 📊 التفصيل الكامل — الموظفة لازم تعرف كل صورة راحت فين
   //
   // ⚠️ الرسالة كانت بتقول "اترفع 57" والمسجّل 56، والصورة
@@ -17092,8 +16506,6 @@ async function mpUpload(){
     if(pendN) parts.push('🤖 ' + pendN + ' تحت التحليل');
     if(dupN)  parts.push('🔁 ' + dupN + ' اترفع قبل كده');
     toastOk(parts.join(' · '));
-    // 🔔 تنبيه — الموظفة ممكن تكون سايبة الموبايل
-    buzzDone_(ok, dupN);
     invalidateCache();
     try{ buildAllPills(); }catch(e){}
     try{ applyFilters(); }catch(e){}
@@ -17146,27 +16558,7 @@ async function loadMySheet(){
 function renderMySheet(){
   // 📷 زرار رفع الإثباتات — للموظفات بس
   const fab = document.getElementById('mpFab');
-  if(fab){
-    fab.style.display = isAdminSession() ? 'none' : '';
-
-    // 🔴 فيه صور ناقصة من آخر مرة؟ شارة على الزرار
-    let waiting = 0;
-    try{
-      const raw = localStorage.getItem(qKey_());
-      if(raw){
-        const box = JSON.parse(raw);
-        waiting = Array.isArray(box)
-          ? box.filter(x => Date.now() - (x.at || 0) < 172800000).length
-          : 0;
-      }
-    }catch(e){}
-
-    fab.classList.toggle('has-q', waiting > 0);
-    fab.setAttribute('data-q', waiting || '');
-    fab.textContent = waiting
-      ? '📷 إثباتات · ' + waiting + ' ناقصة'
-      : '📷 إثباتات';
-  }
+  if(fab) fab.style.display = isAdminSession() ? 'none' : '';
   // 🔍 زرار البحث الشامل — للموظفات كمان
   const gsf = document.getElementById('gsFab');
   if(gsf) gsf.style.display = isAdminSession() ? 'none' : '';
@@ -17439,8 +16831,7 @@ function dbShCopy(btn){
 
   document.body.appendChild(ov);
   requestAnimationFrame(()=>ov.classList.add('show'));
-  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200);
-    };
+  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
   ov.querySelector('.sc-x').onclick = close;
   ov.querySelector('.cf-yes').onclick = close;
   ov.addEventListener('click', e=>{ if(e.target===ov) close(); });
@@ -17481,8 +16872,7 @@ async function dbShMail(btn){
 
   document.body.appendChild(ov);
   requestAnimationFrame(()=>ov.classList.add('show'));
-  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200);
-    };
+  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
   ov.querySelector('.cf-cancel').onclick = close;
   ov.addEventListener('click', e=>{ if(e.target===ov) close(); });
   setTimeout(()=>{ const i=ov.querySelector('#gmEmail'); if(i) i.focus(); }, 120);
@@ -17581,8 +16971,7 @@ function showNumsHelp(){
   ov.innerHTML = h;
   document.body.appendChild(ov);
   requestAnimationFrame(()=>ov.classList.add('show'));
-  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200);
-    };
+  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
   ov.querySelector('.nh-x').onclick = close;
   ov.querySelector('.cf-yes').onclick = close;
   ov.addEventListener('click', e => { if(e.target === ov) close(); });
@@ -17597,122 +16986,12 @@ function dbZoom(url){
   document.body.appendChild(ov);
   requestAnimationFrame(() => ov.classList.add('show'));
 
-  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),180);
-    };
+  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),180); };
   ov.querySelector('.dz-x').onclick = close;
   ov.onclick = e => { if(e.target === ov) close(); };
   // Esc تقفل كمان
   const esc_ = e => { if(e.key === 'Escape'){ close(); document.removeEventListener('keydown', esc_); } };
   document.addEventListener('keydown', esc_);
-}
-
-// 🔍 تاب مراجعة الإثباتات المشكوك فيها
-//
-// ⚠️ الـ AI بيغلط ويعلّم محادثات حقيقية كـ "مشكوك فيها".
-//    الإدارة بتراجع وتقرر — واللي يتحوّل لدقة عالية
-//    بيختفي من التقارير.
-let _revStaff = 'all';
-let _revData  = null;
-
-async function dbLoadReview(staff){
-  try{
-    const r = await callApi('adminAction', {
-      token: SESSION.token, action: 'suspectReview',
-      staff: staff === 'all' ? '' : staff,
-    });
-    _revData = r;
-    dbRender();
-  }catch(e){ toastErr(e.message); }
-}
-
-function dbRevStaff(v){ _revStaff = v; dbLoadReview(v); }
-
-async function dbReview(hash, verdict){
-  const txt = verdict === 'high'
-    ? 'هتحوّليها لدقة عالية؟\n\nيعني دي محادثة حقيقية والـ AI غلط.\n'
-      + 'هتختفي من تقرير المشكوك فيها.'
-    : 'هتأكّدي الشك؟\n\nيعني دي فعلًا مش محادثة.\n'
-      + 'هتفضل في التقرير.';
-  if(!confirm(txt)) return;
-
-  try{
-    await callApi('adminAction', {
-      token: SESSION.token, action: 'reviewProof', hash, verdict,
-    });
-    const el = document.getElementById('rv' + hash.slice(0, 12));
-    if(el){
-      el.style.opacity = '0.3';
-      setTimeout(() => el.remove(), 250);
-    }
-    toastOk(verdict === 'high'
-      ? '✅ اتحوّلت لدقة عالية'
-      : '🚩 الشك اتأكّد');
-    _revData = null;
-    setTimeout(() => dbLoadReview(_revStaff), 400);
-  }catch(e){ toastErr(e.message); }
-}
-
-function dbTabReview(){
-  const d = _revData;
-  if(!d){ dbLoadReview(_revStaff); return '<div class="db-ld">⏳ بنحمّل…</div>'; }
-
-  const items = d.items || [];
-  let h = '';
-
-  h += '<div class="db-cards">'
-    + dbCard('🔍', 'مستنية مراجعة', d.total || 0, '',
-             n(d.total) > 30 ? 'bad' : '')
-    + dbCard('✅', 'اتراجعت', d.reviewed || 0, '')
-    + '</div>';
-
-  const staff = d.by_staff || [];
-  if(staff.length > 1){
-    h += '<div class="db-row">'
-      + '<button class="db-rp' + (_revStaff==='all'?' on':'') + '" '
-      +   'onclick="dbRevStaff(\'all\')">الكل (' + (d.total||0) + ')</button>'
-      + staff.map(x =>
-          '<button class="db-rp' + (_revStaff===x.staff?' on':'') + '" '
-          + 'onclick="dbRevStaff(\'' + esc(x.staff) + '\')">'
-          + esc(x.staff) + ' (' + x.count + ')</button>').join('')
-      + '</div>';
-  }
-
-  if(!items.length){
-    return h + '<div class="db-ld">✅ مفيش إثباتات مستنية مراجعة</div>';
-  }
-
-  h += '<div class="rv-hint">'
-    + '💡 شوفي الصورة: لو محادثة حقيقية دوسي <b>✅ دقة عالية</b> '
-    + 'وهتختفي من التقارير. لو فعلًا مش محادثة دوسي <b>🚩 أكّدي الشك</b>.'
-    + '</div>';
-
-  h += '<div class="rv-grid">' + items.map(x => {
-    const C = { low:['🚩','مشكوك'], none:['❔','مفيش فحص'],
-                review:['⚠️','محتاجة مراجعة'] };
-    const [ic, tx] = C[x.conf] || C.none;
-
-    return '<div class="rv-c" id="rv' + esc(String(x.hash).slice(0,12)) + '">'
-      + (x.url
-        ? '<img class="rv-im" src="' + esc(x.url) + '" loading="lazy" '
-          + 'onclick="dbZoom(\'' + esc(x.url) + '\')">'
-        : '<div class="rv-im no">🖼️</div>')
-      + '<div class="rv-d">'
-      +   '<b>@' + esc(x.handle || '—') + '</b>'
-      +   '<span>' + esc(x.staff) + ' · '
-      +     (x.action === 'followup' ? 'متابعة' : 'إرسال') + '</span>'
-      +   '<span class="rv-b">' + ic + ' ' + tx + '</span>'
-      +   '<span class="rv-t">' + fmtShort(x.at) + '</span>'
-      + '</div>'
-      + '<div class="rv-a">'
-      +   '<button class="rv-ok" onclick="dbReview(\'' + esc(x.hash) + '\',\'high\')">'
-      +     '✅ دقة عالية</button>'
-      +   '<button class="rv-no" onclick="dbReview(\'' + esc(x.hash) + '\',\'confirm\')">'
-      +     '🚩 أكّدي الشك</button>'
-      + '</div>'
-      + '</div>';
-  }).join('') + '</div>';
-
-  return h;
 }
 
 // 🏷️ تاب الملاحظات — مشترك / مع موظفة تانية / شريك
@@ -18151,8 +17430,7 @@ function dbPnAdd(id, staff, aiName, platform){
 
   document.body.appendChild(ov);
   requestAnimationFrame(()=>ov.classList.add('show'));
-  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200);
-    };
+  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
   ov.querySelector('.pn-sx').onclick = close;
   ov.addEventListener('click', e => { if(e.target === ov) close(); });
 
@@ -18273,8 +17551,7 @@ async function dbPnSearch(id, staff){
   document.body.appendChild(ov);
   requestAnimationFrame(()=>ov.classList.add('show'));
 
-  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200);
-    };
+  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
   ov.querySelector('.pn-sx').onclick = close;
   ov.addEventListener('click', e => { if(e.target === ov) close(); });
 
@@ -18863,8 +18140,7 @@ function dbTgCustom(){
     +   '<button class="cf-yes" id="tgcOk">تطبيق</button></div></div>';
   document.body.appendChild(ov);
   requestAnimationFrame(()=>ov.classList.add('show'));
-  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200);
-    };
+  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
   ov.querySelector('.cf-cancel').onclick = close;
   ov.addEventListener('click', e=>{ if(e.target===ov) close(); });
   ov.querySelector('#tgcOk').onclick = ()=>{
@@ -18906,8 +18182,7 @@ async function dbEditFollowup(){
 
   document.body.appendChild(ov);
   requestAnimationFrame(()=>ov.classList.add('show'));
-  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200);
-    };
+  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
   ov.querySelector('.cf-cancel').onclick = close;
   ov.addEventListener('click', e=>{ if(e.target===ov) close(); });
 
@@ -18943,8 +18218,7 @@ function dbTgEditTarget(){
     +   '<button class="cf-yes ok" id="tgOk">حفظ</button></div></div>';
   document.body.appendChild(ov);
   requestAnimationFrame(()=>ov.classList.add('show'));
-  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200);
-    };
+  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
   ov.querySelector('.cf-cancel').onclick = close;
   ov.addEventListener('click', e=>{ if(e.target===ov) close(); });
   ov.querySelector('#tgOk').onclick = async ()=>{
@@ -19187,8 +18461,7 @@ function showPartnerCard(r, opts){
 
   document.body.appendChild(ov);
   requestAnimationFrame(()=>ov.classList.add('show'));
-  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200);
-    };
+  const close=()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
   ov.querySelector('.pt-x').onclick = close;
   ov.querySelector('.cf-yes').onclick = close;
   ov.addEventListener('click', e=>{ if(e.target===ov) close(); });
@@ -19450,8 +18723,7 @@ function openKeyBox(){
   requestAnimationFrame(()=>ov.classList.add('show'));
   setTimeout(()=>{ const i=ov.querySelector('#apiKeyIn'); if(i) i.focus(); }, 100);
 
-  const close = ()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),220);
-    };
+  const close = ()=>{ ov.classList.remove('show'); setTimeout(()=>ov.remove(),220); };
   ov.querySelector('.cf-cancel').onclick = close;
   ov.addEventListener('click', e=>{ if(e.target===ov) close(); });
 
@@ -19555,8 +18827,7 @@ function globalSearchDlg(){
 
   document.body.appendChild(ov);
   requestAnimationFrame(()=>ov.classList.add('show'));
-  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200);
-    };
+  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
   ov.querySelector('.gs-x').onclick = close;
   ov.addEventListener('click', e => { if(e.target === ov) close(); });
 
@@ -19731,8 +19002,7 @@ async function fixLinkDlg(uid, handle){
 
   document.body.appendChild(ov);
   requestAnimationFrame(()=>ov.classList.add('show'));
-  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200);
-    };
+  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
   ov.querySelector('.fx-x').onclick = close;
   ov.querySelector('.cf-no').onclick = close;
   ov.addEventListener('click', e => { if(e.target === ov) close(); });
@@ -19771,13 +19041,7 @@ async function loadFollowsDue(){
       token: SESSION.token, action: 'followups',
     });
     MP.follows = r.items || [];
-    // ⚠️ render() بتعيد بناء الأزرار جوّه buildAllPills، فلو
-    //    ندهنا updateViewCounts قبلها بتتلغي. بننده بعدها
-    //    في إطار جديد عشان الترتيب يبقى مضمون.
     render();
-    requestAnimationFrame(() => {
-      try{ updateViewCounts(); }catch(e){}
-    });
   }catch(e){ /* الحساب المحلي احتياطي */ }
   _fuLoading = false;
 }
@@ -19832,12 +19096,6 @@ function updateViewCounts(){
   // 🔄 عدّاد المتابعات — والمتأخرين بيتلوّنوا
   // ⚠️ لو السيرفر رجّع القايمة، نستخدمها — أدق من الحساب المحلي
   //    لأنها بتقرا من actions_log مش من sent_at في الكارت.
-  // ⚠️ الحساب المحلي كان بيعد كل مؤثر عليه sent_at وعدّى
-  //    يومين — من غير ما يشوف مين بعتله. فالزرار كان بيقول
-  //    319 والتابة بتقول 0.
-  //
-  //    دلوقتي بنستنى السيرفر (بيقرا من actions_log حسب
-  //    الموظفة)، ولحد ما يرد الزرار بيفضل على آخر رقم صح.
   const due = (MP.follows && MP.follows.length)
     ? MP.follows
     : all.filter(fuDue);
@@ -20091,9 +19349,7 @@ async function loadProofs(){
     let page = 0;
     const map = {};
     for(;;){
-      // 📜 بنجيب التفاصيل الكاملة — مين رفع إيه وإمتى
-      const r = await callApi('adminAction', {
-        token: SESSION.token, action: 'proofDetails', page });
+      const r = await callApi('getProofs', { token: SESSION.token, page });
       (r.proofs || []).forEach(x => { if(x && x.uid) map[String(x.uid).toLowerCase()] = x; });
       if(!r.hasMore) break;
       page++;
@@ -20160,41 +19416,8 @@ function proofHtml(c){
   const who = pr.last_staff ? '<span class="pf-who">'+esc(pr.last_staff)+'</span>' : '';
   const when = pr.last_action_at ? '<span class="pf-when">'+esc(fmtDT(pr.last_action_at))+'</span>' : '';
 
-  // 📜 كل إثبات بتفاصيله — مين ونوعه وإمتى
-  //
-  // ⚠️ الكارت كان بيعرض صور مرقّمة 1 2 3 من غير سياق،
-  //    فالمدير يشوف صورتين شبه بعض ومايعرفش الفرق.
-  const acts = Array.isArray(pr.actions) ? pr.actions : [];
-
   let thumbs = '';
-  if(acts.length){
-    const AK = {
-      sent:           ['s', '📤', 'إرسال'],
-      followup:       ['f', '🔄', 'متابعة'],
-      subscribed:     ['b', '🎉', 'اشتراك'],
-      not_subscribed: ['n', '❌', 'مفيش اشتراك'],
-    };
-    thumbs = '<div class="pf-log">' + acts.map(a => {
-      const [cl, ic, tx] = AK[a.type] || ['s', '📎', a.type || ''];
-      const lbl = a.type === 'followup'
-        ? tx + ' ' + (a.seq || 1) : tx;
-      return '<div class="pf-row ' + cl + '">'
-        + (a.url
-          ? '<button class="pf-th" onclick="openShot(\'' + esc(a.url) + '\')">'
-            + '<img src="' + esc(a.url) + '" loading="lazy" decoding="async" '
-            + 'onerror="this.parentNode.classList.add(\'broken\')"></button>'
-          : '<div class="pf-th no">🖼️</div>')
-        + '<div class="pf-meta">'
-        +   '<b>' + ic + ' ' + esc(lbl) + '</b>'
-        +   '<span class="pf-st">' + esc(a.staff || '—') + '</span>'
-        +   '<span class="pf-dt">' + esc(a.date || '') + ' · '
-        +     esc(a.time || '') + '</span>'
-        +   (a.note ? '<span class="pf-nt">' + esc(a.note) + '</span>' : '')
-        + '</div></div>';
-    }).join('') + '</div>';
-
-  } else if(shots.length){
-    // احتياطي — لو الداتا القديمة من غير تفاصيل
+  if(shots.length){
     thumbs = '<div class="pf-shots">' + shots.slice(0,3).map((u,i)=>
       '<button class="pf-shot" title="اضغط للتكبير" onclick="openShot(\''+esc(u)+'\')">'
       + '<img src="'+esc(u)+'" loading="lazy" decoding="async" onerror="this.parentNode.classList.add(\'broken\')">'
@@ -20202,16 +19425,8 @@ function proofHtml(c){
     ).join('') + (shots.length>3 ? '<span class="pf-more">+'+(shots.length-3)+'</span>' : '') + '</div>';
   }
 
-  // 👥 أكتر من موظفة شغّالة على المؤثر ده؟
-  const staffSet = [...new Set(acts.map(a => a.staff).filter(Boolean))];
-  const team = staffSet.length > 1
-    ? '<div class="pf-team">👥 ' + staffSet.length + ' موظفات: '
-      + staffSet.map(x => esc(x)).join(' · ') + '</div>'
-    : '';
-
   return '<div class="pf'+(done3?' is-done':'')+(sub?' is-sub':'')+'">'
-       + '<div class="pf-head">'+head+who+when+'</div>'
-       + team + thumbs + '</div>';
+       + '<div class="pf-head">'+head+who+when+'</div>'+thumbs+'</div>';
 }
 
 function openShot(url){
