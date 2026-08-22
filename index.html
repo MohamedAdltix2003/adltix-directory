@@ -7134,7 +7134,41 @@ function buildAllPills(){
     }
     return true;   // 'all'
   };
-  const data = cleanList().filter(inView);
+  // 🔄 المتابعات — مصدرها السيرفر مش القايمة المحلية
+  //
+  // ⚠️ الـ 319 مؤثر اللي منار بعتتلهم مش مملوكين ليها،
+  //    فمش موجودين في CREATORS — والتابة كانت بتطلع فاضية
+  //    والزرار يقول 319.
+  let data;
+  if(state.view === 'followups' && Array.isArray(MP.follows)) {
+    const byUid = new Map(cleanList().map(c => [c.uid, c]));
+    data = MP.follows.map(f => {
+      const c = byUid.get(f.uid);
+      // موجود في القايمة؟ ناخده ونضيف بيانات المتابعة
+      if(c) return { ...c, ...f, _ok: true };
+      // مش موجود؟ نبني كارت من بيانات السيرفر
+      //
+      // ⚠️ الترتيب مهم — بيانات السيرفر الأول، وبعدها
+      //    التسميات اللي الكارت بيقراها.
+      return {
+        ...f,
+        uid:            f.uid,
+        handle:         f.handle || String(f.uid || '').split(':')[1] || '',
+        platform:       f.platform || String(f.uid || '').split(':')[0] || '',
+        followers:      Number(f.followers) || 0,
+        display_name:   f.display || '',
+        avatar_url:     f.avatar || '',
+        message_status: 'sent',
+        sent_at:        f.sent_at || f.last_at || null,
+        followup_count: Math.max(0, (Number(f.seq) || 1) - 1),
+        assigned_to:    f.owner || '',
+        signup_status:  'pending',
+        _ok: true, _cb: 'all',
+      };
+    });
+  } else {
+    data = cleanList().filter(inView);
+  }
   const bc={}; for(const c of data){ bc[c._cb]=(bc[c._cb]||0)+1; }
   const cc=(n)=>bc[n]||0;
   // فلتر الموظفة — للأدمن والمدير بس
