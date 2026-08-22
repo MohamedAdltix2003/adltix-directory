@@ -6434,6 +6434,39 @@
   .qa-drop { background:transparent; color:#B91C1C;
              border:1px solid #FCA5A5 !important }
   body.dark .qa-drop{ color:#fca5a5; border-color:#7f1d1d !important }
+
+  /* 🔗 تغيير اللينك */
+  .mp-fix{
+    font-family:inherit; font-size:11.5px; font-weight:800; cursor:pointer;
+    padding:8px 12px; border-radius:9px; border:1px solid #C4B5FD;
+    background:transparent; color:#6B21A8;
+  }
+  .mp-fix:hover{ background:#F3E8FF }
+  body.dark .mp-fix{ color:#d8b4fe; border-color:#6d28d9 }
+  body.dark .mp-fix:hover{ background:#2e1065 }
+
+  .fl-box{ max-width:400px !important; padding:0 !important;
+           text-align:right !important }
+  .fl-h{ display:flex; align-items:center; justify-content:space-between;
+         padding:14px 16px; border-bottom:1px solid var(--line) }
+  .fl-h b{ font-size:15px; color:var(--ink) }
+  .fl-x{ width:28px; height:28px; border-radius:8px; cursor:pointer;
+         border:1px solid var(--line); background:transparent;
+         color:var(--muted) }
+  .fl-im{ width:100%; max-height:190px; object-fit:contain;
+          background:var(--line); display:block }
+  .fl-now{ padding:11px 16px 0; font-size:12.5px; color:var(--muted) }
+  .fl-now b{ color:var(--ink); direction:ltr; unicode-bidi:isolate }
+  .fl-in{
+    width:calc(100% - 32px); margin:9px 16px 0; padding:11px 13px;
+    border:1px solid var(--line); border-radius:11px; font-size:13px;
+    font-family:inherit; background:var(--surface); color:var(--ink);
+    box-sizing:border-box;
+  }
+  .fl-in:focus{ outline:none; border-color:#7C3AED }
+  .fl-hint{ padding:7px 16px 0; font-size:11px; color:var(--muted);
+            line-height:1.7 }
+  .fl-box .cf-btns{ padding:14px 16px 16px }
 </style>
 </head>
 <body>
@@ -15545,6 +15578,8 @@ function renderMobileProofs(){
             ? '<span class="mp-warn">⚠️ الصورة دي هتظهر للإدارة كإثبات مشكوك فيه</span>'
             : '')
           + '<div class="mp-btns">'
+          +   '<button class="mp-fix" onclick="mpFixLink(\'' + it.id + '\')">'
+          +     '🔗 غيّري اللينك</button>'
           +   '<button class="mp-del" onclick="mpRemove(\'' + it.id + '\')">🗑️ احذفي</button>'
           + '</div>';
       } else if(it.noUpload && MP.plat !== 'snapchat'){
@@ -15576,6 +15611,8 @@ function renderMobileProofs(){
                   + 'ولو مالقيناهوش هنتواصل معاكي.') + '</span>'
           + '</div>'
           + '<div class="mp-btns">'
+          +   '<button class="mp-fix" onclick="mpFixLink(\'' + it.id + '\')">'
+          +     '🔗 اربطيها بلينك</button>'
           +   '<button class="mp-del" onclick="mpRemove(\'' + it.id + '\')">🗑️ احذفي</button>'
           + '</div>';
       }
@@ -15796,6 +15833,90 @@ function mpSwapSkip(id){
   it.kindOverride = 'replace';
   it.msg          = '📥 هتترفع للإدارة';
   renderMobileProofs();
+}
+
+// 🔗 تغيير لينك الصورة قبل الرفع
+//
+// ⚠️ الموديل بيغلط أحيانًا ويربط الصورة بمؤثر تاني.
+//    الموظفة تشوف الصورة وتحط اللينك الصح بنفسها،
+//    من غير ما تلغي الرفعة كلها.
+function mpFixLink(id){
+  const it = MP.items.find(x => x.id === id);
+  if(!it) return;
+
+  const cur = it.snapLink
+    || (it.uid ? (AUTO_PLAT[it.uid.split(':')[0]] || '')
+                 + it.uid.split(':')[1] : '');
+
+  const ov = document.createElement('div');
+  ov.className = 'cf-overlay';
+  ov.innerHTML = '<div class="cf-box fl-box">'
+    + '<div class="fl-h"><b>🔗 غيّري اللينك</b>'
+    +   '<button class="fl-x">✕</button></div>'
+    + '<img class="fl-im" src="' + esc(it.preview) + '">'
+    + '<div class="fl-now">دلوقتي مربوطة بـ '
+    +   '<b>@' + esc(it.handle || '—') + '</b></div>'
+    + '<input class="fl-in" id="flIn" type="text" dir="ltr" '
+    +   'placeholder="الصقي لينك الحساب الصح" value="' + esc(cur) + '">'
+    + '<div class="fl-hint">لينك البروفايل أو الإضافة — '
+    +   'إنستجرام · تيك توك · سناب</div>'
+    + '<div class="cf-btns">'
+    +   '<button class="cf-no">إلغاء</button>'
+    +   '<button class="cf-yes" id="flGo">✅ اربطي</button>'
+    + '</div></div>';
+
+  document.body.appendChild(ov);
+
+  // 🔝 النافذة فوق شاشة الإثباتات
+  const _sh = document.querySelector('.mp-ov');
+  const _kp = _sh ? _sh.style.backdropFilter : '';
+  if(_sh){ _sh.style.backdropFilter = 'none';
+           _sh.style.webkitBackdropFilter = 'none'; }
+  ov.style.zIndex = '10099';
+
+  requestAnimationFrame(()=>ov.classList.add('show'));
+  const close = () => {
+    ov.classList.remove('show');
+    setTimeout(()=>ov.remove(), 200);
+    if(_sh){ _sh.style.backdropFilter = _kp || '';
+             _sh.style.webkitBackdropFilter = _kp || ''; }
+  };
+  ov.querySelector('.fl-x').onclick  = close;
+  ov.querySelector('.cf-no').onclick = close;
+  ov.addEventListener('click', e => { if(e.target === ov) close(); });
+
+  setTimeout(()=>{ const el = document.getElementById('flIn');
+                   if(el) el.focus(); }, 260);
+
+  ov.querySelector('#flGo').onclick = () => {
+    const v = String(document.getElementById('flIn').value || '').trim();
+    if(v.length < 8){ toastErr('اللينك قصير'); return; }
+
+    const uid = uidFromLink_(v);
+    if(!uid){ toastErr('اللينك مش مفهوم — اتأكدي منه'); return; }
+
+    // 🔒 المؤثر ده مربوط بصورة تانية؟
+    if(MP.items.some(x => x !== it && x.uid === uid)){
+      toastErr('المؤثر ده مربوط بصورة تانية في الرفعة');
+      return;
+    }
+
+    it.uid       = uid;
+    it.snapLink  = v;
+    it.handle    = uid.split(':')[1] || '';
+    it.action    = MP.kind;
+    it.seq       = 1;
+    it.label     = MP.kind === 'followup' ? 'متابعة' : 'إرسال';
+    it.autoAdded = false;
+    it.manualLink = true;      // 🏷️ الموظفة ربطته بنفسها
+    it.msg       = '🔗 اتربط يدوي';
+    it.canSwap   = false;
+    it.state     = 'ready';
+
+    close();
+    renderMobileProofs();
+    toastOk('✅ اتربطت بـ @' + it.handle);
+  };
 }
 
 // 🗑️ مسح كل الصور اللي مش هتترفع
