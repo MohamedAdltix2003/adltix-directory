@@ -7332,7 +7332,14 @@ function buildAllPills(){
 }
 
 function applyFilters(){
-  let r = cleanList();
+  // 🔄 المتابعات من السيرفر — نبدأ منها مش من القايمة كاملة
+  //
+  // ⚠️ r كانت بتبدأ من cleanList() دايمًا، فالتخطي كان
+  //    بيسيب 2154 مؤثر يعدّوا بدل 618.
+  const _srvFollows = state.view === 'followups'
+    && Array.isArray(MP.follows) && MP.follows.length;
+
+  let r = _srvFollows ? data : cleanList();
   let copied = false;
   // مرشّح واحد بيمشي مرة واحدة على البيانات بدل 7 مرات منفصلة،
   // وبيستخدم المفاتيح المحسوبة مسبقًا (_cb / _h / _e / _w)
@@ -7353,11 +7360,8 @@ function applyFilters(){
     //
     // ⚠️ الكروت الجاية من السيرفر مالهاش niche ولا _cb ولا
     //    assignedTo — فكانت بتترفض كلها والتابة تطلع فاضية.
-    const _srvFu = state.view === 'followups'
-      && Array.isArray(MP.follows) && MP.follows.length;
-
     r = r.filter(c => {
-      if(_srvFu) return true;      // السيرفر فلتر خلاص
+      if(_srvFollows) return true;      // السيرفر فلتر خلاص
       if(today && c.discoveredAt !== today) return false;
       if(state.niche!=="all"    && c.niche    !== state.niche)    return false;
       if(state.platform!=="all" && c.platform !== state.platform) return false;
