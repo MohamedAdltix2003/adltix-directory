@@ -7109,6 +7109,15 @@ function buildPills(id, items, key){
   });
 }
 function buildAllPills(){
+  // 🔄 المتابعات من السيرفر — مرة واحدة مع أول عرض
+  //
+  // ⚠️ من غير كده الزرار بيفضل على الحساب المحلي (بالملكية)
+  //    لحد ما الموظفة تفتح التابة.
+  if(!window._fuAsked){
+    window._fuAsked = true;
+    loadFollowsDue().catch(() => { window._fuAsked = false; });
+  }
+
   updateViewCounts();
   buildPills("f-niche",[{v:"all",l:"الكل"},{v:"fashion",l:"فاشن"},{v:"luxury",l:"لاكشري"},{v:"moms",l:"عائلة وأمومة"},{v:"sports",l:"رياضة ولياقة"},{v:"food",l:"طعام وطبخ"},{v:"gaming",l:"جيمنج"},{v:"business",l:"أعمال"},{v:"tech",l:"تقنية"},{v:"entertainment",l:"ترفيه"},{v:"other",l:"أخرى"}],"niche");
   buildPills("f-platform",[{v:"all",l:"الكل"},{v:"instagram",l:"انستجرام",dot:PLAT.instagram.c},{v:"tiktok",l:"تيك توك",dot:"#25F4EE"},{v:"youtube",l:"يوتيوب",dot:PLAT.youtube.c},{v:"x",l:"تويتر",dot:"#555"},{v:"snapchat",l:"سناب",dot:PLAT.snapchat.c}],"platform");
@@ -19762,7 +19771,13 @@ async function loadFollowsDue(){
       token: SESSION.token, action: 'followups',
     });
     MP.follows = r.items || [];
+    // ⚠️ render() بتعيد بناء الأزرار جوّه buildAllPills، فلو
+    //    ندهنا updateViewCounts قبلها بتتلغي. بننده بعدها
+    //    في إطار جديد عشان الترتيب يبقى مضمون.
     render();
+    requestAnimationFrame(() => {
+      try{ updateViewCounts(); }catch(e){}
+    });
   }catch(e){ /* الحساب المحلي احتياطي */ }
   _fuLoading = false;
 }
