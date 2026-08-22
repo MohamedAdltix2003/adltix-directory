@@ -7349,7 +7349,15 @@ function applyFilters(){
     const q = state.q ? state.q.toLowerCase() : null;
     const ct = (state.contact && state.contact!=="all") ? state.contact : null;
 
+    // 🔄 المتابعات من السيرفر — الفلاتر دي مش بتنطبق
+    //
+    // ⚠️ الكروت الجاية من السيرفر مالهاش niche ولا _cb ولا
+    //    assignedTo — فكانت بتترفض كلها والتابة تطلع فاضية.
+    const _srvFu = state.view === 'followups'
+      && Array.isArray(MP.follows) && MP.follows.length;
+
     r = r.filter(c => {
+      if(_srvFu) return true;      // السيرفر فلتر خلاص
       if(today && c.discoveredAt !== today) return false;
       if(state.niche!=="all"    && c.niche    !== state.niche)    return false;
       if(state.platform!=="all" && c.platform !== state.platform) return false;
@@ -7385,18 +7393,27 @@ function applyFilters(){
 
       // 🔄 تابة المتابعات — المستحقين بس
       if(state.view === 'followups'){
-        if(!fuDue(c)) return false;
+        // ⚠️ لو القايمة جاية من السيرفر، هي المرجع — fuDue
+        //    بتعيد الفحص محليًا وبترفض الكروت اللي مالهاش
+        //    بيانات كاملة في القايمة المحلية.
+        const fromSrv = Array.isArray(MP.follows) && MP.follows.length;
+        if(!fromSrv && !fuDue(c)) return false;
 
         // فلتر التأخير
         if(state.late && state.late !== 'all'){
-          const L = fuLate(c);
+          const L = (c._fuWaited != null)
+            ? Math.max(0, Number(c._fuWaited) - 2)
+            : fuLate(c);
           if(state.late === 'today' && L !== 0) return false;
           if(state.late === 'late'  && L < 1)   return false;
           if(state.late === 'week'  && L < 7)   return false;
         }
         // فلتر رقم المتابعة الجاية
         if(state.round && state.round !== 'all'){
-          if(String(followupsOf(c) + 1) !== String(state.round)) return false;
+          const nxt = (c._fuSeq != null)
+            ? Number(c._fuSeq)
+            : followupsOf(c) + 1;
+          if(String(nxt) !== String(state.round)) return false;
         }
       }
 
