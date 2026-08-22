@@ -7334,12 +7334,40 @@ function buildAllPills(){
 function applyFilters(){
   // 🔄 المتابعات من السيرفر — نبدأ منها مش من القايمة كاملة
   //
-  // ⚠️ r كانت بتبدأ من cleanList() دايمًا، فالتخطي كان
-  //    بيسيب 2154 مؤثر يعدّوا بدل 618.
+  // ⚠️ data معرّفة في دالة تانية — فبنبني القايمة هنا.
   const _srvFollows = state.view === 'followups'
     && Array.isArray(MP.follows) && MP.follows.length;
 
-  let r = _srvFollows ? data : cleanList();
+  let r;
+  if(_srvFollows){
+    const _byUid = new Map(cleanList().map(c => [c.uid, c]));
+    r = MP.follows.map(f => {
+      const c = _byUid.get(f.uid);
+      if(c) return Object.assign({}, c, {
+        _fuSeq: f.seq, _fuWaited: f.waited,
+        _fuOwner: f.owner, _fuShared: f.shared, _fuSub: f.subscribed,
+      });
+      const h = f.handle || String(f.uid||'').split(':')[1] || '';
+      return {
+        uid: f.uid, handle: h, _h: h.toLowerCase(),
+        platform: f.platform || String(f.uid||'').split(':')[0] || '',
+        followers: Number(f.followers) || 0,
+        display_name: f.display || '',
+        avatar_url: f.avatar || '',
+        message_status: 'sent',
+        sent_at: f.sent_at || f.last_at || null,
+        followup_count: Math.max(0, (Number(f.seq) || 1) - 1),
+        assigned_to: f.owner || '', assignedTo: f.owner || '',
+        signup_status: f.subscribed ? 'subscribed' : 'pending',
+        outcome_type: null, archived: false,
+        niche: 'other', _cb: 'all', _ok: true,
+        _fuSeq: f.seq, _fuWaited: f.waited,
+        _fuOwner: f.owner, _fuShared: f.shared, _fuSub: f.subscribed,
+      };
+    });
+  } else {
+    r = cleanList();
+  }
   let copied = false;
   // مرشّح واحد بيمشي مرة واحدة على البيانات بدل 7 مرات منفصلة،
   // وبيستخدم المفاتيح المحسوبة مسبقًا (_cb / _h / _e / _w)
