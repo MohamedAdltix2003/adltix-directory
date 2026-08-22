@@ -13877,13 +13877,28 @@ function uidFromLink_(link){
 //
 // ⚠️ بترجّع الـ uid سواء كان موجود أو اتضاف دلوقتي.
 //    الشريك بيترفض، واللي عند موظفة تانية بيتقال عليه.
-async function autoAddByLink(link){
+async function autoAddByLink(link, opts){
   // ⚠️ لينكات المشاركة فيها ?share_id=... و &locale=...
   //    لو بعتناها زي ما هي، الـ uid بيتبني غلط.
   const clean = String(link || '').trim()
     .replace(/[?#].*$/, '')
     .replace(/\/+$/, '');
   if(clean.length < 8) return null;
+
+  // 👀 وضع المعاينة — نبني الـ uid من اللينك من غير إضافة
+  //
+  // ⚠️ الإضافة وقت الفحص كانت بتسيب مؤثرين في القاعدة
+  //    لو الموظفة لغيت الرفعة. الإضافة بقت وقت الرفع بس.
+  if(opts && opts.peek){
+    const uid = uidFromLink_(clean);
+    if(!uid) return null;
+    return {
+      uid,
+      handle: '@' + (uid.split(':')[1] || ''),
+      isNew: true,
+      peek: true,
+    };
+  }
 
   try{
     const r = await callApi('addManualLead', {
@@ -14536,7 +14551,12 @@ async function runOCR_(){
       it.msg = '⏳ بنربط…';
       renderMobileProofs();
 
-      const add = await autoAddByLink(link);
+      // 🔗 الربط من غير إضافة — الإضافة وقت الرفع بس
+      //
+      // ⚠️ autoAddByLink كانت بتضيف المؤثر في القاعدة وقت
+      //    الفحص، فلو الترتيب طلع غلط والموظفة لغيت،
+      //    المؤثرين يفضلوا مضافين من غير إثبات.
+      const add = await autoAddByLink(link, { peek: true });
       const uid = (add && add.uid) || uidFromLink_(link);
 
       // 🔒 نفس المؤثر اتاخد في صورة تانية؟ (لينك مكرر)
@@ -16080,6 +16100,24 @@ async function mpUploadOne(it){
   renderMobileProofs();
 
   try{
+      // 0️⃣ سناب — الإضافة الحقيقية دلوقتي
+      //
+      // ⚠️ الفحص كان بيضيف المؤثرين في القاعدة. لو الموظفة
+      //    شافت الترتيب غلط ولغيت، كانوا بيفضلوا مضافين.
+      //    دلوقتي الإضافة وقت الرفع بس.
+      if(it.snapLink && it.uid){
+        const real = await autoAddByLink(it.snapLink);
+        if(real && real.uid){
+          it.uid    = real.uid;
+          it.handle = String(real.handle || it.handle || '').replace('@','');
+          if(real.partner || real.taken || real.subscribed){
+            it.flag = real.partner ? 'partner'
+                    : real.subscribed ? 'subscribed' : 'taken';
+            it.flagNote = String(real.msg || '').replace(/^[🚫🔁🎉]\s*/, '');
+          }
+        }
+      }
+
       // 1️⃣ البصمة — نفس دالة الموقع
       const hash = await fileHash(it.file);
       it.hash = hash;      // نحتاجها للتوصية
