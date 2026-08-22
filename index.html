@@ -7358,7 +7358,8 @@ function applyFilters(){
         _fuSeq: f.seq, _fuWaited: f.waited,
         _fuOwner: f.owner, _fuShared: f.shared, _fuSub: f.subscribed,
         urgency: f.urgency, late_days: f.late_days,
-        subscribed: f.subscribed, shared: f.shared, owner: f.owner,
+        subscribed: f.subscribed, sub_by: f.sub_by,
+        shared: f.shared, owner: f.owner,
         seq: f.seq, action: 'followup',
       });
       const h = f.handle || String(f.uid||'').split(':')[1] || '';
@@ -7378,7 +7379,8 @@ function applyFilters(){
         _fuSeq: f.seq, _fuWaited: f.waited,
         _fuOwner: f.owner, _fuShared: f.shared, _fuSub: f.subscribed,
         urgency: f.urgency, late_days: f.late_days,
-        subscribed: f.subscribed, shared: f.shared, owner: f.owner,
+        subscribed: f.subscribed, sub_by: f.sub_by,
+        shared: f.shared, owner: f.owner,
         seq: f.seq, action: 'followup',
       };
     });
@@ -15261,7 +15263,6 @@ function mpCard_(c, mode){
   const subNote = c.subscribed
     ? '<div class="mc-sub">🎉 اشترك معانا'
       + (c.sub_by ? ' مع <b>' + esc(c.sub_by) + '</b>' : '')
-      + (c.sub_at ? ' يوم ' + fmtShort(c.sub_at) : '')
       + '<span>اقفليها بـ ❌ مفيش اشتراك · مشترك عندنا</span></div>'
     : '';
 
