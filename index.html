@@ -7134,42 +7134,7 @@ function buildAllPills(){
     }
     return true;   // 'all'
   };
-  // 🔄 المتابعات — مصدرها السيرفر مش القايمة المحلية
-  //
-  // ⚠️ الـ 319 مؤثر اللي منار بعتتلهم مش مملوكين ليها،
-  //    فمش موجودين في CREATORS — والتابة كانت بتطلع فاضية
-  //    والزرار يقول 319.
-  let data;
-  if(state.view === 'followups'
-     && Array.isArray(MP.follows) && MP.follows.length) {
-    const byUid = new Map(cleanList().map(c => [c.uid, c]));
-    data = MP.follows.map(f => {
-      const c = byUid.get(f.uid);
-      // موجود في القايمة؟ ناخده ونضيف بيانات المتابعة
-      if(c) return { ...c, ...f, _ok: true };
-      // مش موجود؟ نبني كارت من بيانات السيرفر
-      //
-      // ⚠️ الترتيب مهم — بيانات السيرفر الأول، وبعدها
-      //    التسميات اللي الكارت بيقراها.
-      return {
-        ...f,
-        uid:            f.uid,
-        handle:         f.handle || String(f.uid || '').split(':')[1] || '',
-        platform:       f.platform || String(f.uid || '').split(':')[0] || '',
-        followers:      Number(f.followers) || 0,
-        display_name:   f.display || '',
-        avatar_url:     f.avatar || '',
-        message_status: 'sent',
-        sent_at:        f.sent_at || f.last_at || null,
-        followup_count: Math.max(0, (Number(f.seq) || 1) - 1),
-        assigned_to:    f.owner || '',
-        signup_status:  'pending',
-        _ok: true, _cb: 'all',
-      };
-    });
-  } else {
-    data = cleanList().filter(inView);
-  }
+  const data = cleanList().filter(inView);
   const bc={}; for(const c of data){ bc[c._cb]=(bc[c._cb]||0)+1; }
   const cc=(n)=>bc[n]||0;
   // فلتر الموظفة — للأدمن والمدير بس
@@ -19748,23 +19713,20 @@ async function fixLinkDlg(uid, handle){
 
 // 🔄 نحمّل المستحقين من السيرفر — أدق من الحساب المحلي
 let _fuLoading = false;
-async function loadFollowsDue(){
-  // ⚠️ الشرط كان `Array.isArray(MP.follows)` — ولو الرد رجع
-  //    فاضي مرة، الباب بيتقفل نهائيًا ومش بيحاول تاني.
-  //    دلوقتي بنعيد المحاولة طول ما القايمة فاضية.
-  if(_fuLoading) return;
-  if(Array.isArray(MP.follows) && MP.follows.length) return;
+let _fuAsked = false;
 
+async function loadFollowsDue(){
+  if(_fuLoading || (MP.follows && MP.follows.length)) return;
   _fuLoading = true;
   try{
     const r = await callApi('verifyProof', {
       token: SESSION.token, action: 'followups',
     });
-    const items = r.items || [];
-    if(items.length) MP.follows = items;
+    MP.follows = r.items || [];
     render();
   }catch(e){
-    // 🔇 الحساب المحلي احتياطي — الزرار مش هيبقى صفر
+    // 🔁 فشل؟ نسمح بمحاولة تانية بدل ما نقفل الباب
+    _fuAsked = false;
   }
   _fuLoading = false;
 }
@@ -19787,9 +19749,12 @@ function setView(v){
 }
 
 function updateViewCounts(){
-  // 🔄 نجيب المتابعات من السيرفر أول ما الصفحة تفتح
-  //    عشان الزرار يوري الرقم الصح من غير ما تفتح التابة
-  if(!Array.isArray(MP.follows)) loadFollowsDue().catch(()=>{});
+  // 🔄 المتابعات من السيرفر — مرة واحدة مع أول عرض
+  //
+  // ⚠️ الحساب المحلي بيفلتر بالملكية (assigned_to)، والسيرفر
+  //    بيقرا من actions_log حسب الموظفة اللي بعتت فعلاً.
+  //    من غير النداء ده الرقم بيفضل غلط لحد ما تفتح التابة.
+  if(!_fuAsked){ _fuAsked = true; loadFollowsDue().catch(()=>{}); }
 
   const all = cleanList();
   const myName = (SESSION && (SESSION.staffName || SESSION.username)) || '';
@@ -19829,10 +19794,7 @@ function updateViewCounts(){
   //
   //    دلوقتي بنستنى السيرفر (بيقرا من actions_log حسب
   //    الموظفة)، ولحد ما يرد الزرار بيفضل على آخر رقم صح.
-  // ⚠️ السيرفر أدق (بيقرا من actions_log حسب الموظفة)،
-  //    بس لحد ما يرد بنعرض الحساب المحلي عشان الزرار
-  //    مايبقاش صفر ويلخبط الموظفة.
-  const due = (Array.isArray(MP.follows) && MP.follows.length)
+  const due = (MP.follows && MP.follows.length)
     ? MP.follows
     : all.filter(fuDue);
   set('vnFollow', due.length);
