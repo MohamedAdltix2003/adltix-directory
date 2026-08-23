@@ -18319,7 +18319,7 @@ async function dbLoadLinks(){
       plat:  _lkPlat  === 'all' ? '' : _lkPlat,
     });
     _lkData = r;
-    dbRender();
+    renderDashboard();
   }catch(e){ toastErr(e.message); }
 }
 
@@ -18492,7 +18492,7 @@ async function dbLoadReview(staff){
       staff: staff === 'all' ? '' : staff,
     });
     _revData = r;
-    dbRender();
+    renderDashboard();
   }catch(e){ toastErr(e.message); }
 }
 
@@ -18600,7 +18600,7 @@ async function dbLoadFlagged(staff){
       staff: staff === 'all' ? '' : staff,
     });
     _flagData = r;
-    dbRender();
+    renderDashboard();
   }catch(e){ toastErr(e.message); }
 }
 
