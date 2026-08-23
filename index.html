@@ -6823,6 +6823,27 @@
     }
     .wc-line{ width:150px }
   }
+
+  /* 📥 التابات الفرعية جوّه مستنية الربط */
+  .pn-subs{
+    display:flex; gap:7px; margin-bottom:16px; flex-wrap:wrap;
+    padding-bottom:13px; border-bottom:1px solid var(--line);
+  }
+  .pn-sb{
+    font-family:inherit; font-size:13px; font-weight:800; cursor:pointer;
+    padding:10px 16px; border-radius:11px;
+    border:1px solid var(--line); background:transparent;
+    color:var(--muted); transition:all .16s;
+  }
+  .pn-sb:hover{ color:var(--ink); border-color:var(--brand) }
+  .pn-sb.on{
+    background:linear-gradient(135deg,#C6432D,#E4553F);
+    color:#fff; border-color:transparent;
+    box-shadow:0 3px 12px rgba(198,67,45,.32);
+  }
+  @media (max-width:520px){
+    .pn-sb{ flex:1; padding:10px 8px; font-size:12px; text-align:center }
+  }
 </style>
 </head>
 <body>
@@ -12160,8 +12181,7 @@ function renderDashboard(){
     ['sheets',   '📗', 'الشيتات'],
     ['pending',  '📥', 'مستنية ربط'],
     ['flagged',  '🏷️', 'الملاحظات'],
-    ['review',   '🔍', 'مراجعة الشك'],
-    ['links',    '🔗', 'مراجعة الربط'],
+
     ['rejects',  '❌', 'أسباب الرفض'],
     ['deals',    '🎯', 'الصفقات'],
     ['leads',    '📇', 'المؤثرين'],
@@ -12210,8 +12230,7 @@ function dbTabContent(r){
     case 'sheets':   return dbSheets(r);
     case 'pending':  return dbPending(r);
     case 'flagged':  return dbTabFlagged();
-    case 'review':   return dbTabReview();
-    case 'links':    return dbTabLinks();
+
     case 'rejects':  return dbRejects(r);
     case 'deals':    return dbDeals(r);
     case 'leads':    return dbLeads(r);
@@ -18717,7 +18736,33 @@ async function dbReplace(id){
 // ═══════════════════════════════════════════════════════════
 let _pnStaff = 'all';
 
+// 📥 مستنية الربط — تلات تابات فرعية
+//
+// ⚠️ كانوا تلات تابات منفصلة في الشريط الرئيسي. الإدارة
+//    بتشتغل عليهم مع بعض، فجمعناهم في مكان واحد.
+let _pnSub = 'wait';
+
+function dbPnSub(v){
+  _pnSub = v;
+  renderDashboard();
+}
+
 function dbPending(r){
+  const bar = '<div class="pn-subs">'
+    + '<button class="pn-sb' + (_pnSub==='wait'?' on':'') + '" '
+    +   'onclick="dbPnSub(\'wait\')">📥 مستنية ربط</button>'
+    + '<button class="pn-sb' + (_pnSub==='links'?' on':'') + '" '
+    +   'onclick="dbPnSub(\'links\')">🔗 مراجعة الربط</button>'
+    + '<button class="pn-sb' + (_pnSub==='review'?' on':'') + '" '
+    +   'onclick="dbPnSub(\'review\')">🔍 مراجعة الشك</button>'
+    + '</div>';
+
+  if(_pnSub === 'links')  return bar + dbTabLinks();
+  if(_pnSub === 'review') return bar + dbTabReview();
+  return bar + dbPnWait(r);
+}
+
+function dbPnWait(r){
   const d = r.pending || {};
   const items = d.items || [];
   const n = v => Number(v || 0);
