@@ -6597,6 +6597,222 @@
   .lkf-in:focus{ outline:none; border-color:#7C3AED }
   .lkf-hint{ padding:7px 16px 0; font-size:11px; color:var(--muted) }
   .lkf-box .cf-btns{ padding:14px 16px 16px }
+
+
+  /* ═══════════════════════════════════════════════════
+     👋 شاشة الترحيب
+     ═══════════════════════════════════════════════════ */
+  .wc-ov{
+    position:fixed; inset:0; z-index:2147483000;
+    background:radial-gradient(ellipse at 50% -10%,
+                 #6B2A1C 0%, #4A1F16 42%, #2A1310 100%);
+    display:flex; align-items:center; justify-content:center;
+    padding:24px; overflow:hidden;
+    opacity:0; transition:opacity .42s ease;
+  }
+  .wc-ov.show{ opacity:1 }
+  .wc-ov.out {
+    opacity:0; transform:scale(1.04);
+    transition:opacity .44s ease, transform .44s ease;
+  }
+  /* 👑 الإدارة — درجات أعمق وأفخم */
+  .wc-ov.lead{
+    background:radial-gradient(ellipse at 50% -10%,
+                 #7C3E1F 0%, #3D1C14 45%, #1A0D0A 100%);
+  }
+
+  /* ✨ توهج بيتنفّس ورا الصندوق */
+  .wc-glow{
+    position:absolute; width:520px; height:520px; border-radius:50%;
+    background:radial-gradient(circle,
+      rgba(228,85,63,.30) 0%, rgba(228,85,63,0) 68%);
+    filter:blur(14px); pointer-events:none;
+    animation:wcBreath 5s ease-in-out infinite;
+  }
+  @keyframes wcBreath{
+    0%,100%{ transform:scale(.9);  opacity:.55 }
+    50%    { transform:scale(1.14); opacity:.95 }
+  }
+
+  /* 🌟 أشعة بتلف ببطء */
+  .wc-rays{
+    position:absolute; width:850px; height:850px; pointer-events:none;
+    background:conic-gradient(from 0deg,
+      transparent 0deg, rgba(255,196,140,.07) 18deg, transparent 36deg,
+      transparent 90deg, rgba(255,196,140,.07) 108deg, transparent 126deg,
+      transparent 180deg, rgba(255,196,140,.07) 198deg, transparent 216deg,
+      transparent 270deg, rgba(255,196,140,.07) 288deg, transparent 306deg);
+    animation:wcSpin 34s linear infinite;
+    opacity:0; transition:opacity 1s ease .5s;
+  }
+  .wc-ov.show .wc-rays{ opacity:1 }
+  @keyframes wcSpin{ to{ transform:rotate(360deg) } }
+
+  /* 🎈 جزيئات طايرة */
+  .wc-bg{ position:absolute; inset:0; pointer-events:none; overflow:hidden }
+  .wc-bg i{
+    position:absolute; bottom:-160px; border-radius:50%;
+    background:radial-gradient(circle at 32% 30%,
+      rgba(255,180,140,.45), rgba(228,85,63,.04));
+    animation:wcFloat linear infinite;
+  }
+  .wc-bg i:nth-child(1){ width:14px;  height:14px;  left:8%;
+                         animation-duration:13s; animation-delay:0s }
+  .wc-bg i:nth-child(2){ width:8px;   height:8px;   left:24%;
+                         animation-duration:17s; animation-delay:2.2s }
+  .wc-bg i:nth-child(3){ width:180px; height:180px; left:48%;
+                         animation-duration:21s; animation-delay:.6s }
+  .wc-bg i:nth-child(4){ width:10px;  height:10px;  left:68%;
+                         animation-duration:15s; animation-delay:3.4s }
+  .wc-bg i:nth-child(5){ width:130px; height:130px; left:82%;
+                         animation-duration:19s; animation-delay:1.4s }
+  .wc-bg i:nth-child(6){ width:6px;   height:6px;   left:92%;
+                         animation-duration:12s; animation-delay:4.2s }
+  @keyframes wcFloat{
+    0%   { transform:translateY(0) translateX(0) scale(.7); opacity:0 }
+    10%  { opacity:.85 }
+    50%  { transform:translateY(-55vh) translateX(22px) scale(1) }
+    90%  { opacity:.4 }
+    100% { transform:translateY(-125vh) translateX(-14px) scale(1.2);
+           opacity:0 }
+  }
+
+  /* 📦 الصندوق */
+  .wc-box{
+    position:relative; z-index:3; text-align:center;
+    max-width:430px; width:100%;
+    transform:translateY(30px) scale(.93);
+    transition:transform .62s cubic-bezier(.16,1,.3,1);
+  }
+  .wc-ov.show .wc-box{ transform:translateY(0) scale(1) }
+
+  /* ⚡ الشعار */
+  .wc-top{
+    display:flex; align-items:center; justify-content:center; gap:9px;
+    margin-bottom:22px;
+    opacity:0; animation:wcFade .6s ease .12s forwards;
+  }
+  .wc-logo{
+    font-size:26px; line-height:1;
+    animation:wcSpark 2.8s ease-in-out infinite;
+    filter:drop-shadow(0 0 12px rgba(255,180,120,.55));
+  }
+  @keyframes wcSpark{
+    0%,100%{ transform:scale(1) rotate(0deg) }
+    45%    { transform:scale(1.22) rotate(-9deg) }
+  }
+  .wc-brand{
+    font-size:13px; font-weight:900; letter-spacing:5px;
+    color:rgba(255,255,255,.55);
+  }
+
+  .wc-greet{
+    font-size:13.5px; font-weight:700; letter-spacing:1px;
+    color:rgba(255,190,150,.78); margin-bottom:10px;
+    opacity:0; transform:translateY(10px);
+    animation:wcUp .6s cubic-bezier(.16,1,.3,1) .24s forwards;
+  }
+
+  .wc-ic{
+    font-size:64px; line-height:1; margin:2px 0 16px;
+    opacity:0; transform:translateY(20px) scale(.72);
+    animation:wcPop .72s cubic-bezier(.16,1.4,.3,1) .34s forwards;
+    filter:drop-shadow(0 6px 24px rgba(0,0,0,.42));
+  }
+  @keyframes wcPop{
+    to{ opacity:1; transform:translateY(0) scale(1) }
+  }
+
+  .wc-t{
+    display:block; font-size:29px; font-weight:900; color:#fff;
+    line-height:1.45; margin-bottom:12px; letter-spacing:-.4px;
+    opacity:0; transform:translateY(16px);
+    animation:wcUp .62s cubic-bezier(.16,1,.3,1) .5s forwards;
+    text-shadow:0 3px 28px rgba(0,0,0,.42);
+  }
+  .wc-s{
+    display:block; font-size:15px; color:rgba(255,255,255,.86);
+    line-height:2; max-width:340px; margin:0 auto;
+    opacity:0; transform:translateY(16px);
+    animation:wcUp .62s cubic-bezier(.16,1,.3,1) .64s forwards;
+  }
+  @keyframes wcUp  { to{ opacity:1; transform:translateY(0) } }
+  @keyframes wcFade{ to{ opacity:1 } }
+
+  .wc-line{
+    width:0; height:2px; margin:24px auto 16px; border-radius:2px;
+    background:linear-gradient(90deg,
+      transparent, rgba(255,180,140,.9), transparent);
+    animation:wcLine .85s cubic-bezier(.16,1,.3,1) .84s forwards;
+  }
+  @keyframes wcLine{ to{ width:150px } }
+
+  .wc-q{
+    display:block; font-size:13px; font-style:italic;
+    color:rgba(255,200,170,.62); line-height:1.95;
+    max-width:320px; margin:0 auto 30px;
+    opacity:0; animation:wcFade .7s ease 1s forwards;
+  }
+
+  .wc-go{
+    position:relative; overflow:hidden;
+    font-family:inherit; font-size:15.5px; font-weight:800;
+    cursor:pointer; padding:15px 46px; border-radius:15px; border:none;
+    background:linear-gradient(135deg,#C6432D 0%,#E4553F 55%,#F0704F 100%);
+    color:#fff; letter-spacing:.3px;
+    box-shadow:0 10px 32px rgba(198,67,45,.46),
+               inset 0 1px 0 rgba(255,255,255,.18);
+    opacity:0; transform:translateY(14px);
+    animation:wcUp .58s cubic-bezier(.16,1.3,.3,1) 1.16s forwards;
+    transition:filter .18s, transform .18s, box-shadow .18s;
+  }
+  .wc-go span{ position:relative; z-index:2 }
+  /* ✨ لمعة بتعدي على الزرار */
+  .wc-go::after{
+    content:''; position:absolute; top:0; left:-60%;
+    width:45%; height:100%; z-index:1;
+    background:linear-gradient(100deg,
+      transparent, rgba(255,255,255,.32), transparent);
+    animation:wcShine 3.4s ease-in-out 2s infinite;
+  }
+  @keyframes wcShine{
+    0%     { left:-60% }
+    38%,100%{ left:130% }
+  }
+  .wc-go:hover{
+    filter:brightness(1.1); transform:translateY(-3px);
+    box-shadow:0 14px 38px rgba(198,67,45,.55);
+  }
+  .wc-go:active{ transform:translateY(-1px) }
+
+  .wc-skip{
+    display:block; margin:18px auto 0; padding:7px 16px;
+    font-family:inherit; font-size:12.5px; cursor:pointer;
+    background:none; border:none; color:rgba(255,255,255,.4);
+    opacity:0; animation:wcFade .5s ease 1.42s forwards;
+    transition:color .16s;
+  }
+  .wc-skip:hover{ color:rgba(255,255,255,.78) }
+
+  @media (max-width:430px){
+    .wc-t{ font-size:24px }
+    .wc-ic{ font-size:54px }
+    .wc-s{ font-size:14px }
+    .wc-go{ width:100%; padding:16px }
+    .wc-glow{ width:360px; height:360px }
+    .wc-rays{ width:600px; height:600px }
+  }
+
+  /* ♿ احترام تفضيل تقليل الحركة */
+  @media (prefers-reduced-motion:reduce){
+    .wc-bg, .wc-rays, .wc-glow{ display:none }
+    .wc-top,.wc-greet,.wc-logo,.wc-ic,.wc-t,.wc-s,
+    .wc-line,.wc-q,.wc-go,.wc-skip,.wc-go::after{
+      animation:none !important; opacity:1 !important;
+      transform:none !important;
+    }
+    .wc-line{ width:150px }
+  }
 </style>
 </head>
 <body>
@@ -8313,8 +8529,154 @@ async function doLogin(){
     document.getElementById('loginGate').style.display='none';
     setGate(false);
     startApp();
+    // 👋 ترحيب بعد الدخول — مرة واحدة في اليوم
+    setTimeout(() => { try{ showWelcome(); }catch(e){} }, 260);
   }catch(e){ errEl.textContent=e.message||'بيانات غلط'; }
 }
+// ═══════════════════════════════════════════════════════════
+// 👋 شاشة الترحيب
+//
+// بتظهر بعد الدخول مرة واحدة في اليوم. كل شخص له رسالة
+// مكتوبة ليه — الإدارة رسالة قيادية، والفريق رسالة تحفيزية
+// بتتغيّر كل يوم عشان متبقاش مملة.
+// ═══════════════════════════════════════════════════════════
+
+// 👑 الإدارة — رسالة ثابتة لكل واحد
+const WELCOME_LEAD = {
+  MohamedReda: {
+    ic:'⚡',
+    t:'أهلاً يا محمد',
+    s:'المنصة دي بنيتها من الصفر — وكل رقم فيها شغل إيدك.',
+    q:'الفريق شغّال، والنظام صاحي 24 ساعة.',
+  },
+  AhmedHany: {
+    ic:'🎯',
+    t:'أهلاً يا أحمد',
+    s:'الفريق ماشي بخطة واضحة، والأرقام قدامك لحظة بلحظة.',
+    q:'القرار الصح بيبدأ من رقم صح.',
+  },
+  Hadeer: {
+    ic:'👑',
+    t:'أهلاً بيكي يا هدير',
+    s:'شغل الفريق كله تحت نظرك — والتفاصيل مرتّبة عشانك.',
+    q:'القيادة مش متابعة أرقام… القيادة إنك تشوفي اللي وراها.',
+  },
+  Verina: {
+    ic:'👑',
+    t:'أهلاً بيكي يا فيرينا',
+    s:'متابعة الفريق وأرقامه بين إيديكي، وكل حاجة موثّقة.',
+    q:'الفرق اللي بتكسب، بتتقاد كويس.',
+  },
+};
+
+// 💚 الفريق — رسايل بتتبدّل كل يوم
+const WELCOME_TEAM = [
+  { ic:'🌸', t:'نوّرتي المنصة',
+    s:'إحنا مبسوطين إنك معانا — وشغلك بيفرق فعلاً.',
+    q:'كل رسالة بتبعتيها بتقرّبنا خطوة.' },
+  { ic:'⭐', t:'يومك يبدأ حلو',
+    s:'الفريق كله شغّال، وإنتي جزء أساسي منه.',
+    q:'اللي بتعمليه النهاردة، هيبان بكرة.' },
+  { ic:'🚀', t:'جاهزة نبدأ؟',
+    s:'إحنا فخورين بشغلك، ومستنين منك أكتر.',
+    q:'الشغل الحلو مالوش سقف.' },
+  { ic:'💎', t:'وجودك بيفرق',
+    s:'مش بنشوفك رقم — بنشوفك جزء من اللي بنبنيه.',
+    q:'الفرق الحقيقي في التفاصيل الصغيرة.' },
+  { ic:'🌟', t:'أهلاً بيكي من تاني',
+    s:'كل يوم بتيجي فيه، بنكون أقرب لهدفنا.',
+    q:'الاستمرار أهم من السرعة.' },
+  { ic:'🔥', t:'خليكي على وعدك',
+    s:'شغلك اللي فات كان ممتاز — وإحنا واثقين فيكي.',
+    q:'اللي بيبدأ صح، بيوصل.' },
+  { ic:'🌷', t:'صباح الشغل الحلو',
+    s:'إحنا سعداء إنك في الفريق ده.',
+    q:'الفريق بيكبر بيكي إنتي.' },
+];
+
+function welcomeKey_(){
+  const who = (SESSION && (SESSION.staffName || SESSION.username)) || 'x';
+  const d = new Date(Date.now() + 3 * 3600000).toISOString().slice(0, 10);
+  return 'adltix_welcome_' + String(who).toLowerCase() + '_' + d;
+}
+
+// 🎲 رقم ثابت لكل شخص في كل يوم — نفس الرسالة طول اليوم
+function dayIndex_(name, len){
+  const d = new Date(Date.now() + 3 * 3600000).toISOString().slice(0, 10);
+  let h = 0;
+  const k = String(name) + d;
+  for(let i = 0; i < k.length; i++){
+    h = ((h << 5) - h + k.charCodeAt(i)) | 0;
+  }
+  return Math.abs(h) % len;
+}
+
+function showWelcome(force){
+  try{
+    if(!force && localStorage.getItem(welcomeKey_())) return;
+  }catch(e){}
+
+  const raw  = (SESSION && (SESSION.staffName || SESSION.username)) || '';
+  const name = String(raw).split('@')[0];
+  const lead = WELCOME_LEAD[name];
+
+  const hr = Number(new Date(Date.now() + 3 * 3600000)
+               .toISOString().slice(11, 13));
+  const greet = hr < 12 ? 'صباح الخير' : hr < 17 ? 'نهارك سعيد' : 'مساء الخير';
+
+  const m = lead || (() => {
+    const w = WELCOME_TEAM[dayIndex_(name, WELCOME_TEAM.length)];
+    return { ic:w.ic, t:w.t + ' يا ' + name, s:w.s, q:w.q };
+  })();
+
+  const ov = document.createElement('div');
+  ov.className = 'wc-ov' + (lead ? ' lead' : '');
+  ov.innerHTML =
+      '<div class="wc-glow"></div>'
+    + '<div class="wc-bg">'
+    +   '<i></i><i></i><i></i><i></i><i></i><i></i>'
+    + '</div>'
+    + '<div class="wc-rays"></div>'
+    + '<div class="wc-box">'
+    +   '<div class="wc-top">'
+    +     '<span class="wc-logo">⚡</span>'
+    +     '<span class="wc-brand">أدلتكس</span>'
+    +   '</div>'
+    +   '<div class="wc-greet">' + greet + '</div>'
+    +   '<div class="wc-ic">' + m.ic + '</div>'
+    +   '<b class="wc-t">' + esc(m.t) + '</b>'
+    +   '<span class="wc-s">' + esc(m.s) + '</span>'
+    +   '<div class="wc-line"></div>'
+    +   '<span class="wc-q">' + esc(m.q) + '</span>'
+    +   '<button class="wc-go"><span>يلا نبدأ</span> ←</button>'
+    +   '<button class="wc-skip">تخطي</button>'
+    + '</div>';
+
+  document.body.appendChild(ov);
+  requestAnimationFrame(() => ov.classList.add('show'));
+
+  let done = false;
+  const close = () => {
+    if(done) return;
+    done = true;
+    ov.classList.add('out');
+    setTimeout(() => ov.remove(), 460);
+    try{ localStorage.setItem(welcomeKey_(), '1'); }catch(e){}
+  };
+
+  ov.querySelector('.wc-go').onclick   = close;
+  ov.querySelector('.wc-skip').onclick = close;
+
+  // ⏱️ بتقفل لوحدها بعد 7 ثواني
+  setTimeout(close, 7000);
+
+  // ⌨️ Escape أو Enter بيقفلوا
+  const onKey = (e) => {
+    if(e.key === 'Escape' || e.key === 'Enter'){ close(); }
+  };
+  document.addEventListener('keydown', onKey, { once: true });
+}
+
 // بتتنده مرة واحدة بس مهما كان عدد الطلبات اللي فشلت مع بعض
 let _sessionExpiredShown = false;
 function handleSessionExpired(){
@@ -20899,6 +21261,7 @@ function setGate(open){
     document.getElementById('loginGate').style.display='none';
     setGate(false);
     startApp();
+    setTimeout(() => { try{ showWelcome(); }catch(e){} }, 400);
   }
 })();
 
