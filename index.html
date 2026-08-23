@@ -8663,11 +8663,45 @@ async function removeStaff(btn, name){
 // ===== CRM Actions مع خيارين للصورة =====
 let _crmPending=null;
 
+// 💾 كاش للصور المقروءة
+//
+// ⚠️ FileReader بيفشل على الموبايل لو الملف اتقرا قبل كده
+//    والمرجع اتحرّر (بيحصل بعد ما المستخدم يسيب الصفحة أو
+//    الاستوديو يقفل). النتيجة: ProgressEvent error والصورة
+//    تفشل مع إن الملف "موجود".
+const _b64Cache = new WeakMap();
+
 function fileToBase64(file){
-  return new Promise((resolve,reject)=>{
-    const r=new FileReader();
-    r.onload=()=>resolve(r.result);
-    r.onerror=reject;
+  // اتقرت قبل كده؟ نرجّعها من الكاش
+  const hit = _b64Cache.get(file);
+  if(hit) return Promise.resolve(hit);
+
+  return new Promise((resolve, reject)=>{
+    const r = new FileReader();
+    r.onload = () => {
+      try{ _b64Cache.set(file, r.result); }catch(e){}
+      resolve(r.result);
+    };
+    r.onerror = () => {
+      // 🔁 محاولة تانية بـ Blob — بتنجح لما FileReader يفشل
+      try{
+        file.arrayBuffer().then(buf => {
+          let bin = '';
+          const bytes = new Uint8Array(buf);
+          const CH = 0x8000;
+          for(let i = 0; i < bytes.length; i += CH){
+            bin += String.fromCharCode.apply(
+              null, bytes.subarray(i, i + CH));
+          }
+          const out = 'data:' + (file.type || 'image/jpeg')
+                    + ';base64,' + btoa(bin);
+          try{ _b64Cache.set(file, out); }catch(e){}
+          resolve(out);
+        }).catch(() => reject(new Error('مالقدرناش نقرا الصورة')));
+      }catch(e){
+        reject(new Error('مالقدرناش نقرا الصورة'));
+      }
+    };
     r.readAsDataURL(file);
   });
 }
@@ -14745,6 +14779,15 @@ async function mpFiles(files){
   }));
   MP.done = 0;
   renderMobileProofs();
+
+  // 💾 نقرا الصور دلوقتي ونحفظها في الكاش
+  //
+  // ⚠️ FileReader بيفشل بعد شوية على الموبايل لما مرجع
+  //    الملف يتحرّر — فالصور بتفشل مع إن الملف "موجود".
+  //    القراءة المبكرة بتضمن إنها متضيعش.
+  for(const it of MP.items){
+    try{ await fileToBase64(it.file); }catch(e){}
+  }
 
   await runOCR_();
 }
