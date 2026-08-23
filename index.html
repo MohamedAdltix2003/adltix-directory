@@ -16624,6 +16624,19 @@ async function mpUploadOne(it){
       it.msg = '🛟 بننقذها للمراجعة…';
       renderMobileProofs();
 
+      // ⚠️ الصورة اترفعت خلاص في المحاولة الأولى — بنمرّر
+      //    رابطها عشان mpUploadPending تستخدمه بدل ما ترفع
+      //    نسخة تانية. 29 صورة بقت 92 ملف بسبب ده.
+      if(!it.upUrl){
+        try{
+          const seen = await callApi('verifyProof', {
+            token: SESSION.token, action: 'findByHash',
+            hash: it.hash || await fileHash(it.file),
+          });
+          if(seen && seen.url) it.upUrl = seen.url;
+        }catch(_){ /* هادئ */ }
+      }
+
       const saved = await mpUploadPending([it]);
       if(saved){
         it.state = 'ok';
