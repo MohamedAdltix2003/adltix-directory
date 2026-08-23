@@ -6530,6 +6530,73 @@
     0%,100%{ box-shadow:0 0 0 0 rgba(185,28,28,.4) }
     50%    { box-shadow:0 0 0 4px rgba(185,28,28,0) }
   }
+
+  /* 🔗 مراجعة الربط */
+  .lk-hint{
+    padding:11px 14px; border-radius:11px; margin-bottom:13px;
+    background:#F3E8FF; color:#6B21A8; font-size:12px; line-height:1.8;
+  }
+  body.dark .lk-hint{ background:#2e1065; color:#d8b4fe }
+  .lk-hint b{ font-weight:800 }
+
+  .lk-grid{ display:grid; gap:11px;
+            grid-template-columns:repeat(auto-fill,minmax(240px,1fr)) }
+  .lk-c{
+    border:1px solid var(--line); border-radius:14px; overflow:hidden;
+    background:var(--surface); display:flex; flex-direction:column;
+    transition:opacity .2s;
+  }
+  .lk-im{
+    width:100%; height:180px; object-fit:cover; cursor:zoom-in;
+    background:var(--line); display:block;
+  }
+  .lk-im.no{ display:flex; align-items:center; justify-content:center;
+             font-size:26px }
+  .lk-d{ padding:10px 12px; display:flex; flex-direction:column; gap:3px }
+  .lk-d b{ font-size:13px; font-weight:800; color:var(--ink);
+           direction:ltr; unicode-bidi:isolate; text-align:start }
+  .lk-d u{ text-decoration:none; font-size:11.5px; color:var(--muted) }
+  .lk-d span{ font-size:11px; color:var(--muted) }
+  .lk-t{ font-size:10.5px; opacity:.75 }
+  .lk-p{
+    font-size:11px; font-weight:800; color:var(--brand);
+    text-decoration:none; margin-top:3px;
+  }
+  .lk-p:hover{ text-decoration:underline }
+
+  .lk-a{ display:flex; gap:6px; padding:0 12px 12px }
+  .lk-a button{
+    flex:1; font-family:inherit; font-size:12px; font-weight:800;
+    cursor:pointer; padding:9px 6px; border-radius:9px; border:none;
+  }
+  .lk-ok{ background:#15803D; color:#fff }
+  .lk-fx{ background:transparent; color:#6B21A8;
+          border:1px solid #C4B5FD !important }
+  .lk-ok:hover, .lk-fx:hover{ filter:brightness(1.08) }
+  body.dark .lk-fx{ color:#d8b4fe; border-color:#6d28d9 !important }
+
+  /* 🔗 نافذة تغيير اللينك */
+  .lkf-box{ max-width:400px !important; padding:0 !important;
+            text-align:right !important }
+  .lkf-h{ display:flex; align-items:center; justify-content:space-between;
+          padding:14px 16px; border-bottom:1px solid var(--line) }
+  .lkf-h b{ font-size:15px; color:var(--ink) }
+  .lkf-x{ width:28px; height:28px; border-radius:8px; cursor:pointer;
+          border:1px solid var(--line); background:transparent;
+          color:var(--muted) }
+  .lkf-im{ width:100%; max-height:200px; object-fit:contain;
+           background:var(--line); display:block }
+  .lkf-now{ padding:11px 16px 0; font-size:12.5px; color:var(--muted) }
+  .lkf-now b{ color:var(--ink); direction:ltr; unicode-bidi:isolate }
+  .lkf-in{
+    width:calc(100% - 32px); margin:9px 16px 0; padding:11px 13px;
+    border:1px solid var(--line); border-radius:11px; font-size:13px;
+    font-family:inherit; background:var(--surface); color:var(--ink);
+    box-sizing:border-box;
+  }
+  .lkf-in:focus{ outline:none; border-color:#7C3AED }
+  .lkf-hint{ padding:7px 16px 0; font-size:11px; color:var(--muted) }
+  .lkf-box .cf-btns{ padding:14px 16px 16px }
 </style>
 </head>
 <body>
@@ -6992,7 +7059,7 @@ const FN_MAP = {
   approve:        "admin-action",
   unarchive:      "admin-action"
 };
-const ADMIN_ACTIONS = { "delete":"delete", moveToNew:"archive", changeNiche:"changeNiche", approve:"approve", unarchive:"unarchive", resolvePending:"resolvePending", dropPending:"dropPending", addAndResolve:"addAndResolve", rereadPending:"rereadPending", searchLeads:"searchLeads", proofSuggest:"proofSuggest", checkLink:"checkLink", undoResolve:"undoResolve", findVariant:"findVariant", resolveSubscribe:"resolveSubscribe", flaggedAll:"flaggedAll", replaceProof:"replaceProof", reviewProof:"reviewProof", suspectReview:"suspectReview", proofDetails:"proofDetails" };
+const ADMIN_ACTIONS = { "delete":"delete", moveToNew:"archive", changeNiche:"changeNiche", approve:"approve", unarchive:"unarchive", resolvePending:"resolvePending", dropPending:"dropPending", addAndResolve:"addAndResolve", rereadPending:"rereadPending", searchLeads:"searchLeads", proofSuggest:"proofSuggest", checkLink:"checkLink", undoResolve:"undoResolve", findVariant:"findVariant", resolveSubscribe:"resolveSubscribe", flaggedAll:"flaggedAll", replaceProof:"replaceProof", reviewProof:"reviewProof", suspectReview:"suspectReview", proofDetails:"proofDetails" , linkReview:"linkReview", confirmLink:"confirmLink", relinkProof:"relinkProof" };
 
 // Supabase بيحدّ أي طلب بـ 1000 صف كحد أقصى (إعداد max-rows).
 // كنا بنطلب 2000 فكان بيرجّع 1000 ويرمي الباقي في صمت —
@@ -11631,6 +11698,7 @@ function renderDashboard(){
     ['pending',  '📥', 'مستنية ربط'],
     ['flagged',  '🏷️', 'الملاحظات'],
     ['review',   '🔍', 'مراجعة الشك'],
+    ['links',    '🔗', 'مراجعة الربط'],
     ['rejects',  '❌', 'أسباب الرفض'],
     ['deals',    '🎯', 'الصفقات'],
     ['leads',    '📇', 'المؤثرين'],
@@ -11680,6 +11748,7 @@ function dbTabContent(r){
     case 'pending':  return dbPending(r);
     case 'flagged':  return dbTabFlagged();
     case 'review':   return dbTabReview();
+    case 'links':    return dbTabLinks();
     case 'rejects':  return dbRejects(r);
     case 'deals':    return dbDeals(r);
     case 'leads':    return dbLeads(r);
@@ -17768,6 +17837,181 @@ function dbZoom(url){
   // Esc تقفل كمان
   const esc_ = e => { if(e.key === 'Escape'){ close(); document.removeEventListener('keydown', esc_); } };
   document.addEventListener('keydown', esc_);
+}
+
+// 🔗 تاب مراجعة الربط — إنستجرام وتيك توك
+//
+// ⚠️ الموديل بيقرا اسم الحساب من الصورة وبيغلط أحيانًا.
+//    الإدارة بتشوف الصورة والمؤثر المربوط وتقرر:
+//    ✅ صح  ·  🔗 غيّري اللينك
+let _lkStaff = 'all';
+let _lkPlat  = 'all';
+let _lkData  = null;
+
+async function dbLoadLinks(){
+  try{
+    const r = await callApi('adminAction', {
+      token: SESSION.token, action: 'linkReview',
+      staff: _lkStaff === 'all' ? '' : _lkStaff,
+      plat:  _lkPlat  === 'all' ? '' : _lkPlat,
+    });
+    _lkData = r;
+    dbRender();
+  }catch(e){ toastErr(e.message); }
+}
+
+function dbLkStaff(v){ _lkStaff = v; _lkData = null; dbLoadLinks(); }
+function dbLkPlat(v){  _lkPlat  = v; _lkData = null; dbLoadLinks(); }
+
+// ✅ الربط صح
+async function dbLinkOk(id){
+  try{
+    await callApi('adminAction', {
+      token: SESSION.token, action: 'confirmLink', id,
+    });
+    const el = document.getElementById('lk' + id);
+    if(el){ el.style.opacity = '0.25'; setTimeout(()=>el.remove(), 220); }
+    toastOk('✅ اتأكّد');
+    _lkData = null;
+    setTimeout(() => dbLoadLinks(), 350);
+  }catch(e){ toastErr(e.message); }
+}
+
+// 🔗 تغيير اللينك
+function dbLinkFix(id, cur, handle, img){
+  const ov = document.createElement('div');
+  ov.className = 'cf-overlay';
+  ov.innerHTML = '<div class="cf-box lkf-box">'
+    + '<div class="lkf-h"><b>🔗 غيّري اللينك</b>'
+    +   '<button class="lkf-x">✕</button></div>'
+    + '<img class="lkf-im" src="' + esc(img) + '" loading="lazy">'
+    + '<div class="lkf-now">دلوقتي مربوطة بـ '
+    +   '<b>@' + esc(handle || '—') + '</b></div>'
+    + '<input class="lkf-in" id="lkfIn" type="text" dir="ltr" '
+    +   'placeholder="الصقي لينك الحساب الصح" value="' + esc(cur) + '">'
+    + '<div class="lkf-hint">لينك البروفايل — إنستجرام · تيك توك</div>'
+    + '<div class="cf-btns">'
+    +   '<button class="cf-no">إلغاء</button>'
+    +   '<button class="cf-yes" id="lkfGo">✅ اربطي</button>'
+    + '</div></div>';
+
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>ov.classList.add('show'));
+  const close = () => {
+    ov.classList.remove('show');
+    setTimeout(()=>ov.remove(), 200);
+  };
+  ov.querySelector('.lkf-x').onclick  = close;
+  ov.querySelector('.cf-no').onclick = close;
+  ov.addEventListener('click', e => { if(e.target === ov) close(); });
+
+  setTimeout(()=>{ const el = document.getElementById('lkfIn');
+                   if(el){ el.focus(); el.select(); } }, 260);
+
+  const go = ov.querySelector('#lkfGo');
+  const submit = async () => {
+    const v = String(document.getElementById('lkfIn').value || '').trim();
+    const uid = uidFromLink_(v);
+    if(!uid){ toastErr('اللينك مش مفهوم'); return; }
+
+    go.disabled = true; go.textContent = '⏳ بنربط…';
+    try{
+      const r = await callApi('adminAction', {
+        token: SESSION.token, action: 'relinkProof', id, uid,
+      });
+      close();
+      const el = document.getElementById('lk' + id);
+      if(el){ el.style.opacity = '0.25'; setTimeout(()=>el.remove(), 220); }
+      toastOk('✅ اتربطت بـ @' + String(r.to || uid).split(':')[1]);
+      _lkData = null;
+      setTimeout(() => dbLoadLinks(), 350);
+    }catch(e){
+      go.disabled = false; go.textContent = '✅ اربطي';
+      toastErr(e.message);
+    }
+  };
+  go.onclick = submit;
+  const inEl = ov.querySelector('#lkfIn');
+  if(inEl) inEl.addEventListener('keydown', e => {
+    if(e.key === 'Enter'){ e.preventDefault(); submit(); }
+  });
+}
+
+function dbTabLinks(){
+  const d = _lkData;
+  if(!d){ dbLoadLinks(); return '<div class="db-ld">⏳ بنحمّل…</div>'; }
+
+  const items = d.items || [];
+  const P = d.by_plat || {};
+  let h = '';
+
+  h += '<div class="db-cards">'
+    + dbCard('🔗', 'مستنية مراجعة', d.total || 0, '',
+             n(d.total) > 100 ? 'bad' : '')
+    + dbCard('✅', 'اتراجعت', d.done || 0, '')
+    + dbCard('📷', 'إنستجرام', P.instagram || 0, '')
+    + dbCard('🎵', 'تيك توك', P.tiktok || 0, '')
+    + '</div>';
+
+  h += '<div class="db-row">'
+    + '<button class="db-rp' + (_lkPlat==='all'?' on':'') + '" '
+    +   'onclick="dbLkPlat(\'all\')">الكل</button>'
+    + '<button class="db-rp' + (_lkPlat==='instagram'?' on':'') + '" '
+    +   'onclick="dbLkPlat(\'instagram\')">📷 إنستجرام</button>'
+    + '<button class="db-rp' + (_lkPlat==='tiktok'?' on':'') + '" '
+    +   'onclick="dbLkPlat(\'tiktok\')">🎵 تيك توك</button>'
+    + '</div>';
+
+  const staff = d.by_staff || [];
+  if(staff.length > 1){
+    h += '<div class="db-row">'
+      + '<button class="db-rp' + (_lkStaff==='all'?' on':'') + '" '
+      +   'onclick="dbLkStaff(\'all\')">كل الموظفات</button>'
+      + staff.map(x =>
+          '<button class="db-rp' + (_lkStaff===x.staff?' on':'') + '" '
+          + 'onclick="dbLkStaff(\'' + esc(x.staff) + '\')">'
+          + esc(x.staff) + ' (' + x.count + ')</button>').join('')
+      + '</div>';
+  }
+
+  if(!items.length){
+    return h + '<div class="db-ld">✅ مفيش إثباتات مستنية مراجعة</div>';
+  }
+
+  h += '<div class="lk-hint">'
+    + '💡 شوفي الصورة والاسم: لو الربط صح دوسي <b>✅ صح</b>. '
+    + 'لو غلط دوسي <b>🔗 غيّري</b> والصقي لينك الحساب الصحيح.'
+    + '</div>';
+
+  h += '<div class="lk-grid">' + items.map(x => {
+    const ic = x.platform === 'tiktok' ? '🎵' : '📷';
+    const hn = esc(x.handle || '—');
+    return '<div class="lk-c" id="lk' + x.id + '">'
+      + (x.url
+        ? '<img class="lk-im" src="' + esc(x.url) + '" loading="lazy" '
+          + 'onclick="dbZoom(\'' + esc(x.url) + '\')">'
+        : '<div class="lk-im no">🖼️</div>')
+      + '<div class="lk-d">'
+      +   '<b>' + ic + ' @' + hn + '</b>'
+      +   (x.display ? '<u>' + esc(x.display) + '</u>' : '')
+      +   '<span>' + esc(x.staff) + ' · '
+      +     (x.action === 'followup' ? 'متابعة ' + x.seq : 'إرسال') + '</span>'
+      +   '<span class="lk-t">' + esc(x.date) + ' · ' + esc(x.time) + '</span>'
+      +   (x.profile
+          ? '<a class="lk-p" href="' + esc(x.profile) + '" target="_blank" '
+            + 'rel="noopener">🔗 افتحي الحساب</a>' : '')
+      + '</div>'
+      + '<div class="lk-a">'
+      +   '<button class="lk-ok" onclick="dbLinkOk(' + x.id + ')">'
+      +     '✅ صح</button>'
+      +   '<button class="lk-fx" onclick="dbLinkFix(' + x.id + ',\''
+      +     esc(x.profile) + '\',\'' + hn + '\',\'' + esc(x.url) + '\')">'
+      +     '🔗 غيّري</button>'
+      + '</div>'
+      + '</div>';
+  }).join('') + '</div>';
+
+  return h;
 }
 
 // 🔍 تاب مراجعة الإثباتات المشكوك فيها
