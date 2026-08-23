@@ -6604,8 +6604,8 @@
      ═══════════════════════════════════════════════════ */
   .wc-ov{
     position:fixed; inset:0; z-index:2147483000;
-    background:radial-gradient(ellipse at 50% -10%,
-                 #6B2A1C 0%, #4A1F16 42%, #2A1310 100%);
+    background:radial-gradient(ellipse at 50% -5%,
+                 #8A3421 0%, #5A2419 40%, #2A1310 100%);
     display:flex; align-items:center; justify-content:center;
     padding:24px; overflow:hidden;
     opacity:0; transition:opacity .42s ease;
@@ -6617,15 +6617,15 @@
   }
   /* 👑 الإدارة — درجات أعمق وأفخم */
   .wc-ov.lead{
-    background:radial-gradient(ellipse at 50% -10%,
-                 #7C3E1F 0%, #3D1C14 45%, #1A0D0A 100%);
+    background:radial-gradient(ellipse at 50% -5%,
+                 #A04A28 0%, #5A2A18 40%, #1F0F0B 100%);
   }
 
   /* ✨ توهج بيتنفّس ورا الصندوق */
   .wc-glow{
     position:absolute; width:520px; height:520px; border-radius:50%;
     background:radial-gradient(circle,
-      rgba(228,85,63,.30) 0%, rgba(228,85,63,0) 68%);
+      rgba(240,112,79,.42) 0%, rgba(228,85,63,0) 70%);
     filter:blur(14px); pointer-events:none;
     animation:wcBreath 5s ease-in-out infinite;
   }
@@ -6638,10 +6638,10 @@
   .wc-rays{
     position:absolute; width:850px; height:850px; pointer-events:none;
     background:conic-gradient(from 0deg,
-      transparent 0deg, rgba(255,196,140,.07) 18deg, transparent 36deg,
-      transparent 90deg, rgba(255,196,140,.07) 108deg, transparent 126deg,
-      transparent 180deg, rgba(255,196,140,.07) 198deg, transparent 216deg,
-      transparent 270deg, rgba(255,196,140,.07) 288deg, transparent 306deg);
+      transparent 0deg, rgba(255,180,120,.11) 18deg, transparent 36deg,
+      transparent 90deg, rgba(255,180,120,.11) 108deg, transparent 126deg,
+      transparent 180deg, rgba(255,180,120,.11) 198deg, transparent 216deg,
+      transparent 270deg, rgba(255,180,120,.11) 288deg, transparent 306deg);
     animation:wcSpin 34s linear infinite;
     opacity:0; transition:opacity 1s ease .5s;
   }
@@ -6710,12 +6710,13 @@
   }
   .wc-brand{
     font-size:13px; font-weight:900; letter-spacing:5px;
-    color:rgba(255,255,255,.55);
+    color:rgba(255,255,255,.75);
   }
 
   .wc-greet{
     font-size:13.5px; font-weight:700; letter-spacing:1px;
-    color:rgba(255,190,150,.78); margin-bottom:10px;
+    color:#FFB088; margin-bottom:11px;
+    text-shadow:0 1px 12px rgba(240,112,79,.4);
     opacity:0; transform:translateY(10px);
     animation:wcUp .6s cubic-bezier(.16,1,.3,1) .24s forwards;
   }
@@ -6731,15 +6732,16 @@
   }
 
   .wc-t{
-    display:block; font-size:29px; font-weight:900; color:#fff;
-    line-height:1.45; margin-bottom:12px; letter-spacing:-.4px;
+    display:block; font-size:30px; font-weight:900; color:#fff;
+    line-height:1.45; margin-bottom:14px; letter-spacing:-.3px;
     opacity:0; transform:translateY(16px);
     animation:wcUp .62s cubic-bezier(.16,1,.3,1) .5s forwards;
     text-shadow:0 3px 28px rgba(0,0,0,.42);
   }
   .wc-s{
-    display:block; font-size:14.5px; color:rgba(255,255,255,.84);
-    line-height:2.05; max-width:380px; margin:0 auto;
+    display:block; font-size:15px; color:rgba(255,255,255,.93);
+    line-height:2.1; max-width:380px; margin:0 auto;
+    text-shadow:0 1px 10px rgba(0,0,0,.35);
     opacity:0; transform:translateY(16px);
     animation:wcUp .62s cubic-bezier(.16,1,.3,1) .64s forwards;
   }
@@ -6749,15 +6751,16 @@
   .wc-line{
     width:0; height:2px; margin:24px auto 16px; border-radius:2px;
     background:linear-gradient(90deg,
-      transparent, rgba(255,180,140,.9), transparent);
+      transparent, #F0704F, transparent);
     animation:wcLine .85s cubic-bezier(.16,1,.3,1) .84s forwards;
   }
   @keyframes wcLine{ to{ width:150px } }
 
   .wc-q{
-    display:block; font-size:13px; font-style:italic;
-    color:rgba(255,200,170,.62); line-height:1.95;
-    max-width:320px; margin:0 auto 30px;
+    display:block; font-size:13.5px; font-style:italic;
+    color:#FFC9A8; line-height:2; font-weight:600;
+    max-width:330px; margin:0 auto 30px;
+    text-shadow:0 1px 10px rgba(0,0,0,.3);
     opacity:0; animation:wcFade .7s ease 1s forwards;
   }
 
@@ -6795,7 +6798,7 @@
   .wc-skip{
     display:block; margin:18px auto 0; padding:7px 16px;
     font-family:inherit; font-size:12.5px; cursor:pointer;
-    background:none; border:none; color:rgba(255,255,255,.4);
+    background:none; border:none; color:rgba(255,255,255,.62);
     opacity:0; animation:wcFade .5s ease 1.42s forwards;
     transition:color .16s;
   }
@@ -8704,7 +8707,7 @@ function showWelcome(force){
       vx: (Math.random() - .5) * .32,
       vy: (Math.random() - .5) * .32,
       r: Math.random() * 1.9 + .7,
-      a: Math.random() * .45 + .25,
+      a: Math.random() * .5 + .35,
     }));
 
     const LINK = W < 500 ? 96 : 132;
@@ -8719,8 +8722,8 @@ function showWelcome(force){
           const dy = dots[i].y - dots[j].y;
           const d  = Math.hypot(dx, dy);
           if(d < LINK){
-            ctx.strokeStyle = 'rgba(255,170,130,' +
-              (0.13 * (1 - d / LINK)).toFixed(3) + ')';
+            ctx.strokeStyle = 'rgba(240,112,79,' +
+              (0.22 * (1 - d / LINK)).toFixed(3) + ')';
             ctx.lineWidth = 1;
             ctx.beginPath();
             ctx.moveTo(dots[i].x, dots[i].y);
@@ -8736,7 +8739,7 @@ function showWelcome(force){
         if(p.x < 0 || p.x > W) p.vx *= -1;
         if(p.y < 0 || p.y > H) p.vy *= -1;
 
-        ctx.fillStyle = 'rgba(255,190,150,' + p.a.toFixed(2) + ')';
+        ctx.fillStyle = 'rgba(255,176,136,' + p.a.toFixed(2) + ')';
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
         ctx.fill();
