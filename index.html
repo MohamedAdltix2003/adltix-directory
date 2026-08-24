@@ -9263,10 +9263,15 @@ function fileToBase64(file){
 //    40 صورة = 150 ميجا في الطلبات — والشبكة بتقع.
 //    الضغط بيوصلها 200-400 كيلو من غير ما يضر القراءة.
 async function fileToBase64Small(file, maxW){
-  const MAX = maxW || 1280;
+  // 🗜️ ضغط أقوى — المساحة بتخلص في 10 أيام
+  //
+  // ⚠️ متوسط الصورة كان 302 كيلو والاستهلاك 104 ميجا/يوم.
+  //    إثبات المحادثة محتاج يبقى مقروء بس — 900 بكسل
+  //    وجودة 0.62 بتوصله 80-100 كيلو من غير ما النص يضيع.
+  const MAX = maxW || 900;
   try{
     // صغيرة خلاص؟ نبعتها زي ما هي
-    if(file.size <= 350 * 1024) return await fileToBase64(file);
+    if(file.size <= 110 * 1024) return await fileToBase64(file);
 
     const url = URL.createObjectURL(file);
     const img = await new Promise((res, rej) => {
@@ -9284,7 +9289,17 @@ async function fileToBase64Small(file, maxW){
     cv.getContext('2d').drawImage(img, 0, 0, w, h);
     URL.revokeObjectURL(url);
 
-    const out = cv.toDataURL('image/jpeg', 0.82);
+    // 📉 جودة متدرّجة — نجرّب الأقل الأول
+    //
+    // ⚠️ 0.82 كانت بتطلّع 300 كيلو. 0.62 بتوصل 90 كيلو
+    //    والنص لسه مقروء تمامًا.
+    let out = cv.toDataURL('image/jpeg', 0.62);
+
+    // لسه كبيرة؟ ننزل تاني
+    if(out.length > 190 * 1024){
+      out = cv.toDataURL('image/jpeg', 0.5);
+    }
+
     // الضغط زوّد الحجم؟ نرجّع الأصل
     return out.length < file.size * 1.33 ? out : await fileToBase64(file);
   }catch(e){
@@ -14499,12 +14514,14 @@ const CHAT_WORDS = [
 
 // 💬 كلمات المحادثة — مش موجودة في البروفايل
 const CONV_WORDS = [
-  'message','رسالة','رساله','reply','رد','replied','typing','بيكتب',
-  'seen','مشاهدة','شوهد','delivered','تم التسليم','sent','تم الإرسال',
-  'ارسال','إرسال','active','نشط','نشطة','online','متصل','متصله',
-  'last seen','آخر ظهور','اخر ظهور','اكتب','type a message',
-  'say something','chat','دردشة','محادثة','snap','streak',
-  'yesterday','امبارح','النهاردة','today','منذ',
+  'message','رسالة','رساله','reply','رد','typing','بيكتب',
+  'seen','مشاهدة','delivered','sent','إرسال','ارسال',
+  'active','نشط','online','متصل','last seen','آخر ظهور',
+  'اكتب','type a message','chat','دردشة','محادثة',
+  'snap','streak','يكتب','شوهد','اكتب رسالة','send message',
+  'اونلاين','أونلاين','الآن','امبارح','yesterday',
+  'مساء','صباح','اهلا','أهلا','السلام','شكرا','شكرًا',
+  'حضرتك','ممكن','عايزة','عايز','تمام','ok','okay',
 ];
 
 // 👤 كلمات البروفايل — مش دليل محادثة
@@ -14512,6 +14529,59 @@ const PROF_WORDS = [
   'followers','following','posts','متابع','يتابع','منشور',
   'مشاركة','profile','الملف الشخصي',
 ];
+
+// 👁️ فحص المحادثة على السيرفر
+//
+// ⚠️ السيرفر بيحلل الصورة نفسها (CLIP + فقاعات) — أدق بكتير
+//    من النص لوحده. لو واقف، بنرجع للفحص المحلي تلقائي.
+let _visOff = 0;
+
+async function visionCheck_(file, uid){
+  // السيرفر واقف؟ منجربش تاني قبل 5 دقايق
+  if(_visOff && Date.now() < _visOff) return null;
+
+  try{
+    // ⚠️ verify-vision بياخد FormData مش JSON — الملف نفسه
+    //    مش base64، عشان الصورة توصل بحجمها الأصلي للتحليل.
+    const fd = new FormData();
+    fd.append('token', SESSION.token);
+    fd.append('uid', uid || '');
+    fd.append('file', file, 'shot.jpg');
+
+    const res = await Promise.race([
+      fetch(FN_BASE + '/verify-vision', { method: 'POST', body: fd }),
+      new Promise((_, rej) =>
+        setTimeout(() => rej(new Error('timeout')), 9000)),
+    ]);
+
+    if(!res || !res.ok) throw new Error('vision down');
+    const j = await res.json();
+    const r = (j && j.result) || j;
+
+    if(r && r.confidence){
+      return {
+        conf:    r.confidence,
+        score:   Number(r.score) || 0,
+        label:   r.label || '',
+        matched: !!r.matched,
+        reasons: r.reasons || [],
+        src:     'server',
+      };
+    }
+    return null;
+  }catch(e){
+    // 🔌 السيرفر واقف — نسكت 5 دقايق ونكمّل محلي
+    _visOff = Date.now() + 300000;
+    return null;
+  }
+}
+
+// 🔍 الفحص — السيرفر أولاً، والمحلي احتياطي
+async function checkShot_(file, text, uid){
+  const srv = await visionCheck_(file, uid);
+  if(srv) return srv;
+  return Object.assign(scoreShot_(text, uid), { src: 'local' });
+}
 
 function scoreShot_(text, uid){
   const t = String(text || '');
@@ -14541,29 +14611,64 @@ function scoreShot_(text, uid){
   if(phone)        sig.phone = 1;
   if(bubbles)      sig.times = bubbles;
 
-  // 🔑 البوابة: لازم دليل محادثة حقيقي
-  const isChat = conv.length > 0 || phone || bubbles >= 2;
-  if(!isChat){
+  // 📏 حجم النص — دليل مهم لوحده
+  const arWords = (t.match(/[\u0600-\u06FF]{3,}/g) || []).length;
+  const enWords = (low.match(/\b[a-z]{3,}\b/g) || []).length;
+
+  // 📢 رسالة التواصل بتاعتنا — دليل قاطع
+  const outreach = /(معاك|معك|انا|أنا)\s+\S+\s+من|adltix|ادلتكس|أدلتكس/i
+    .test(t);
+  if(outreach) sig.outreach = 1;
+  if(arWords)  sig.ar = arWords;
+
+  // 🔑 الأدلة القاطعة — أي واحد لوحده يكفي
+  //
+  // ⚠️ البوابة القديمة كانت: كلمة محادثة أو رقم أو وقتين.
+  //    فصورة فيها كلام طويل من غير الحاجات دي كانت بتترفض،
+  //    مع إن النص الطويل نفسه دليل محادثة.
+  const proofs = [];
+  if(conv.length >= 2)                 proofs.push('conv2');
+  if(conv.length >= 1 && arWords >= 4) proofs.push('convAr');
+  if(conv.length >= 1 && enWords >= 8) proofs.push('convEn');
+  if(arWords >= 12)                    proofs.push('longAr');
+  if(enWords >= 20)                    proofs.push('longEn');
+  if(phone && bubbles >= 1)            proofs.push('phoneTime');
+  if(bubbles >= 3)                     proofs.push('times3');
+  if(outreach)                         proofs.push('outreach');
+  if(matched && conv.length >= 1)      proofs.push('handleConv');
+
+  // ⚠️ صفحة حساب صريحة ومفيش أي دليل — نرفض
+  if(prof.length >= 2 && !proofs.length){
+    return { conf: 'none', score: 0, matched: matched, signals: sig };
+  }
+
+  // 🚫 مفيش أي دليل خالص
+  if(!proofs.length && conv.length === 0 && !phone && bubbles === 0
+     && arWords < 5 && enWords < 8){
     return { conf: 'low', score: 0, matched: matched, signals: sig };
   }
 
   let sc = 0;
-  if(matched)  sc += 4;
+  if(matched)   sc += 4;
+  if(outreach)  sc += 4;
   sc += Math.min(conv.length * 2, 5);
-  if(phone)    sc += 2;
+  if(phone)     sc += 2;
   if(bubbles >= 2) sc += 2; else if(bubbles >= 1) sc += 1;
-  if(/[\u0600-\u06FF]{3,}/.test(t)) sc += 1;
 
-  const w = t.trim().split(/\s+/).filter(x => x.length > 1);
-  if(w.length >= 8) sc += 1;
+  if(arWords >= 12)      sc += 3;
+  else if(arWords >= 5)  sc += 2;
+  else if(enWords >= 20) sc += 3;
+  else if(enWords >= 10) sc += 2;
 
   // ⚠️ بروفايل من غير محادثة كافية — خصم
-  if(prof.length >= 2 && conv.length <= 1) sc -= 3;
+  if(prof.length >= 2 && conv.length <= 1 && !outreach) sc -= 3;
 
-  return {
-    conf: sc >= 6 ? 'high' : (sc >= 4 ? 'medium' : 'low'),
-    score: sc, matched: matched, signals: sig,
-  };
+  // 🏁 دليلين قاطعين = مؤكدة مهما كانت النقاط
+  const conf = (proofs.length >= 2 || sc >= 7) ? 'high'
+             : (proofs.length >= 1 || sc >= 4) ? 'medium'
+             : 'low';
+
+  return { conf: conf, score: sc, matched: matched, signals: sig };
 }
 
 function scanSignals_(text){
@@ -15706,7 +15811,7 @@ async function runOCR_(){
 
       // 🔒 المؤثر مختار بنفسها — نفحص الصورة بس
       if(it.locked){
-        const r0 = scoreShot_(text, it.uid);
+        const r0 = await checkShot_(it.file, text, it.uid);
         it.conf    = r0.conf;
         it.score   = r0.score;
         it.matched = r0.matched;
@@ -15744,12 +15849,12 @@ async function runOCR_(){
 
         // 🎯 درجة الثقة
         // نفحص الصورة كمان — المطابقة لوحدها مش كفاية
-        const r0 = scoreShot_(text, m.cand.uid);
+        const r0 = await checkShot_(it.file, text, m.cand.uid);
         it.conf    = r0.conf;
         it.signals = r0.signals;
         it.msg = it.conf === 'low' ? 'مش واضح إنها محادثة' : '';
       } else {
-        const r0 = scoreShot_(text, '');
+        const r0 = await checkShot_(it.file, text, '');
         it.conf    = r0.conf;
         it.signals = r0.signals;
         // ⚠️ الاسم اتقرا بس مش في قايمتها — ده مختلف تمامًا
