@@ -14518,10 +14518,7 @@ const CONV_WORDS = [
   'seen','مشاهدة','delivered','sent','إرسال','ارسال',
   'active','نشط','online','متصل','last seen','آخر ظهور',
   'اكتب','type a message','chat','دردشة','محادثة',
-  'snap','streak','يكتب','شوهد','اكتب رسالة','send message',
-  'اونلاين','أونلاين','الآن','امبارح','yesterday',
-  'مساء','صباح','اهلا','أهلا','السلام','شكرا','شكرًا',
-  'حضرتك','ممكن','عايزة','عايز','تمام','ok','okay',
+  'snap','streak','يكتب','شوهد',
 ];
 
 // 👤 كلمات البروفايل — مش دليل محادثة
@@ -14536,7 +14533,15 @@ const PROF_WORDS = [
 //    من النص لوحده. لو واقف، بنرجع للفحص المحلي تلقائي.
 let _visOff = 0;
 
+// 🔌 مفتاح فحص المحادثة على السيرفر
+//
+// ⚠️ لو السيرفر وقف، غيّره لـ false — الفحص يبقى محلي
+//    من النص، والرفع مايبطّأش 9 ثواني لكل صورة.
+const VISION_ON = true;
+
 async function visionCheck_(file, uid){
+  if(!VISION_ON) return null;
+
   // السيرفر واقف؟ منجربش تاني قبل 5 دقايق
   if(_visOff && Date.now() < _visOff) return null;
 
@@ -14611,64 +14616,32 @@ function scoreShot_(text, uid){
   if(phone)        sig.phone = 1;
   if(bubbles)      sig.times = bubbles;
 
-  // 📏 حجم النص — دليل مهم لوحده
-  const arWords = (t.match(/[\u0600-\u06FF]{3,}/g) || []).length;
-  const enWords = (low.match(/\b[a-z]{3,}\b/g) || []).length;
-
-  // 📢 رسالة التواصل بتاعتنا — دليل قاطع
-  const outreach = /(معاك|معك|انا|أنا)\s+\S+\s+من|adltix|ادلتكس|أدلتكس/i
-    .test(t);
-  if(outreach) sig.outreach = 1;
-  if(arWords)  sig.ar = arWords;
-
-  // 🔑 الأدلة القاطعة — أي واحد لوحده يكفي
+  // 🔑 البوابة: لازم دليل محادثة حقيقي
   //
-  // ⚠️ البوابة القديمة كانت: كلمة محادثة أو رقم أو وقتين.
-  //    فصورة فيها كلام طويل من غير الحاجات دي كانت بتترفض،
-  //    مع إن النص الطويل نفسه دليل محادثة.
-  const proofs = [];
-  if(conv.length >= 2)                 proofs.push('conv2');
-  if(conv.length >= 1 && arWords >= 4) proofs.push('convAr');
-  if(conv.length >= 1 && enWords >= 8) proofs.push('convEn');
-  if(arWords >= 12)                    proofs.push('longAr');
-  if(enWords >= 20)                    proofs.push('longEn');
-  if(phone && bubbles >= 1)            proofs.push('phoneTime');
-  if(bubbles >= 3)                     proofs.push('times3');
-  if(outreach)                         proofs.push('outreach');
-  if(matched && conv.length >= 1)      proofs.push('handleConv');
-
-  // ⚠️ صفحة حساب صريحة ومفيش أي دليل — نرفض
-  if(prof.length >= 2 && !proofs.length){
-    return { conf: 'none', score: 0, matched: matched, signals: sig };
-  }
-
-  // 🚫 مفيش أي دليل خالص
-  if(!proofs.length && conv.length === 0 && !phone && bubbles === 0
-     && arWords < 5 && enWords < 8){
+  // ⚠️ دي احتياطي بس — السيرفر هو اللي بيفحص فعليًا،
+  //    وبيحلل الصورة نفسها مش النص.
+  const isChat = conv.length > 0 || phone || bubbles >= 2;
+  if(!isChat){
     return { conf: 'low', score: 0, matched: matched, signals: sig };
   }
 
   let sc = 0;
-  if(matched)   sc += 4;
-  if(outreach)  sc += 4;
+  if(matched)  sc += 4;
   sc += Math.min(conv.length * 2, 5);
-  if(phone)     sc += 2;
+  if(phone)    sc += 2;
   if(bubbles >= 2) sc += 2; else if(bubbles >= 1) sc += 1;
+  if(/[\u0600-\u06FF]{3,}/.test(t)) sc += 1;
 
-  if(arWords >= 12)      sc += 3;
-  else if(arWords >= 5)  sc += 2;
-  else if(enWords >= 20) sc += 3;
-  else if(enWords >= 10) sc += 2;
+  const w = t.trim().split(/\s+/).filter(x => x.length > 1);
+  if(w.length >= 8) sc += 1;
 
   // ⚠️ بروفايل من غير محادثة كافية — خصم
-  if(prof.length >= 2 && conv.length <= 1 && !outreach) sc -= 3;
+  if(prof.length >= 2 && conv.length <= 1) sc -= 3;
 
-  // 🏁 دليلين قاطعين = مؤكدة مهما كانت النقاط
-  const conf = (proofs.length >= 2 || sc >= 7) ? 'high'
-             : (proofs.length >= 1 || sc >= 4) ? 'medium'
-             : 'low';
-
-  return { conf: conf, score: sc, matched: matched, signals: sig };
+  return {
+    conf: sc >= 6 ? 'high' : (sc >= 4 ? 'medium' : 'low'),
+    score: sc, matched: matched, signals: sig,
+  };
 }
 
 function scanSignals_(text){
