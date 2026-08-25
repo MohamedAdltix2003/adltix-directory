@@ -14394,9 +14394,49 @@ const MP = {
 };
 
 // ===== فتح الصفحة =====
+// 📱 الصفحة راحت للخلفية؟ نحفظ فورًا
+//
+// ⚠️ المتصفح على الموبايل بيوقف الصفحة لما تطلعي منها،
+//    فلازم نحفظ قبل ما يحصل ده.
+document.addEventListener('visibilitychange', () => {
+  if(document.hidden && MP.open && MP.items.length && !MP.uploading){
+    sessSave_(true);
+  }
+});
+
 async function openMobileProofs(){
   // 🔄 فيه صور ناقصة من آخر مرة؟ نكمّلها
   qResume_().catch(()=>{});
+
+  // 💾 فيه جلسة فحص محفوظة؟ نرجّعها
+  //
+  // ⚠️ من غير كده الموظفة بتضطر تختار الصور من الأول
+  //    وتستنى الفحص تاني لو طلعت من الصفحة.
+  try{
+    const box = await sessLoad_();
+    if(box && box.items && box.items.length){
+      MP.open = true;
+      MP.loaded = true;
+      sessRestore_(box);
+      renderMobileProofs();
+
+      const left = MP.items.filter(x => x.state === 'scan').length;
+      const done = MP.items.length - left;
+
+      if(left){
+        toastOk('💾 رجّعنا ' + MP.items.length + ' صورة · '
+              + done + ' اتربطوا — بنكمّل الباقي');
+      } else {
+        toastOk('✅ ' + MP.items.length + ' صورة جاهزة للرفع');
+      }
+
+      await mpLoadLists();
+
+      // 🔄 فيه صور لسه مااتفحصتش؟ نكمّل من مكان الوقوف
+      if(left) runOCR_().catch(()=>{});
+      return;
+    }
+  }catch(e){ /* نكمّل عادي */ }
 
   MP.open = true;
   MP.tab = 'leads';
@@ -15316,6 +15356,7 @@ function mpReset(){
   if(MP.items.length && !confirm('هترجع؟ الصور المختارة هتتمسح')) return;
   MP.plat = ''; MP.items = []; MP.done = 0;
   MP.snapLinks = []; MP.snapStep = 'links';
+  sessClear_();          // 💾 نمسح الجلسة المحفوظة كمان
   renderMobileProofs();
 }
 
@@ -15484,6 +15525,13 @@ async function runOCR_(){
   let aiFails = 0;
   for(const it of MP.items){
     if(!aiWorks) break;
+
+    // ⏭️ اتفحصت قبل كده؟ نتخطّاها
+    //
+    // ⚠️ الموظفة ممكن تكون طلعت من الصفحة والفحص وقف.
+    //    لما ترجع، بنكمّل من مكان الوقوف مش من الأول.
+    if(it.state !== 'scan'){ continue; }
+
     try{
       let ai = await verifyShotAI(it.file, it.uid || '');
 
@@ -15848,10 +15896,12 @@ async function runOCR_(){
     }
     MP.done++;
     renderMobileProofs();
+    sessSave_();          // 💾 نحفظ التقدّم أول بأول
   }
 
   MP.loading = false;
   renderMobileProofs();
+  sessSave_(true);        // 💾 الفحص خلص — نحفظ فورًا
 }
 
 // ═══════════════════════════════════════════
@@ -17380,6 +17430,142 @@ function qKey_(){
   return 'adltix_upload_queue_v2_' + String(who).toLowerCase();
 }
 
+// ═══════════════════════════════════════════════════════════
+// 💾 حفظ جلسة الفحص — الموظفة تطلع وترجع تلاقيها زي ما هي
+//
+// ⚠️ المشكلة: تختار 80 صورة، يبدأ الفحص، تطلع تعمل حاجة
+//    تانية، ترجع تلاقي كل حاجة راحت وتضطر تعيد من الأول.
+//
+// ✅ الحل: الصور بتتحفظ في IndexedDB مع نتايج الفحص.
+//    ترجع تلاقي كل حاجة جاهزة وتدوس "ارفعي" على طول.
+//
+//    (IndexedDB مش localStorage — بتشيل ميجابايتات وبتقبل
+//     الملفات نفسها من غير تحويل)
+// ═══════════════════════════════════════════════════════════
+
+const SESS_DB = 'adltix_scan';
+const SESS_ST = 'session';
+
+function sessOpen_(){
+  return new Promise((res, rej) => {
+    const rq = indexedDB.open(SESS_DB, 1);
+    rq.onupgradeneeded = () => {
+      const db = rq.result;
+      if(!db.objectStoreNames.contains(SESS_ST)){
+        db.createObjectStore(SESS_ST);
+      }
+    };
+    rq.onsuccess = () => res(rq.result);
+    rq.onerror   = () => rej(rq.error);
+  });
+}
+
+function sessKey_(){
+  const who = (SESSION && (SESSION.staffName || SESSION.username)) || 'x';
+  return 'scan_' + String(who).toLowerCase();
+}
+
+// 💾 نحفظ الجلسة — الملفات + نتايج الفحص
+let _sessTimer = 0;
+function sessSave_(now){
+  // ⏱️ بنأجّل شوية عشان مانكتبش مع كل صورة
+  clearTimeout(_sessTimer);
+  const run = async () => {
+    try{
+      if(!MP.items.length || MP.uploading) return;
+
+      const box = {
+        at:    Date.now(),
+        kind:  MP.kind,
+        plat:  MP.plat,
+        links: MP.snapLinks || [],
+        items: MP.items
+          .filter(x => x.state !== 'ok' && x.state !== 'dup')
+          .map(x => ({
+            id: x.id, file: x.file,
+            uid: x.uid || '', handle: x.handle || '',
+            action: x.action || '', seq: x.seq || 1,
+            label: x.label || '', conf: x.conf || '',
+            ocr: x.ocr || '', score: x.score || 0,
+            msg: x.msg || '', state: x.state,
+            snapLink: x.snapLink || '',
+            visionRead: x.visionRead || '',
+            hash: x.hash || '', upUrl: x.upUrl || '',
+            locked: !!x.locked, autoAdded: !!x.autoAdded,
+            manualLink: !!x.manualLink, canSwap: !!x.canSwap,
+            swapUid: x.swapUid || '', noUpload: !!x.noUpload,
+            blocked: x.blocked || '', dupTarget: !!x.dupTarget,
+            flag: x.flag || '', flagNote: x.flagNote || '',
+          })),
+      };
+      if(!box.items.length){ await sessClear_(); return; }
+
+      const db = await sessOpen_();
+      await new Promise((res, rej) => {
+        const tx = db.transaction(SESS_ST, 'readwrite');
+        tx.objectStore(SESS_ST).put(box, sessKey_());
+        tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+      });
+      db.close();
+    }catch(e){ /* الحفظ ثانوي — الرفع شغّال من غيره */ }
+  };
+  if(now) return run();
+  _sessTimer = setTimeout(run, 800);
+}
+
+async function sessLoad_(){
+  try{
+    const db = await sessOpen_();
+    const box = await new Promise((res, rej) => {
+      const tx = db.transaction(SESS_ST, 'readonly');
+      const rq = tx.objectStore(SESS_ST).get(sessKey_());
+      rq.onsuccess = () => res(rq.result || null);
+      rq.onerror   = () => rej(rq.error);
+    });
+    db.close();
+
+    // ⏳ أقدم من يومين؟ منرجّعهاش
+    if(box && Date.now() - (box.at || 0) > 172800000){
+      await sessClear_();
+      return null;
+    }
+    return box;
+  }catch(e){ return null; }
+}
+
+async function sessClear_(){
+  try{
+    const db = await sessOpen_();
+    await new Promise((res) => {
+      const tx = db.transaction(SESS_ST, 'readwrite');
+      tx.objectStore(SESS_ST).delete(sessKey_());
+      tx.oncomplete = res; tx.onerror = res;
+    });
+    db.close();
+  }catch(e){ /* هادئ */ }
+}
+
+// 🔄 نرجّع الجلسة للشاشة
+function sessRestore_(box){
+  MP.kind      = box.kind || 'sent';
+  MP.plat      = box.plat || '';
+  MP.snapLinks = box.links || [];
+  MP.snapStep  = 'shots';
+  MP.tab       = 'proofs';
+
+  MP.items = box.items.map(x => Object.assign({}, x, {
+    preview: URL.createObjectURL(x.file),
+    signals: {},
+    // ⚠️ اللي كان بيترفع نرجّعه جاهز.
+    //    واللي لسه مااتفحصش يفضل scan عشان الفحص يكمّله.
+    state: x.state === 'uploading' ? 'ready' : x.state,
+  }));
+
+  // 📊 كام واحدة اتفحصت فعلاً
+  MP.done = MP.items.filter(x => x.state !== 'scan').length;
+  MP.loading = false;
+}
+
 async function qSave_(items){
   try{
     const box = [];
@@ -17880,6 +18066,15 @@ async function mpUpload(){
     // 🔔 تنبيه — الموظفة ممكن تكون سايبة الموبايل
     buzzDone_(ok, dupN);
     invalidateCache();
+
+    // 💾 الرفع خلص — نمسح الجلسة المحفوظة
+    //
+    // ⚠️ لو فضل صور فاشلة، بنحفظهم بس عشان تكمّلي عليهم.
+    try{
+      const left = MP.items.filter(
+        x => x.state !== 'ok' && x.state !== 'dup');
+      if(left.length) sessSave_(true); else sessClear_();
+    }catch(e){ /* هادئ */ }
 
     // 🔄 المتابعات — نعيد تحميلها عشان اللي اترفعله يختفي
     //
