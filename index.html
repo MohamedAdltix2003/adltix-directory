@@ -6507,6 +6507,19 @@
   body.dark .mc-spf{ color:#fca5a5; border-color:#7f1d1d }
   body.dark .mc-spf:hover{ background:#450a0a }
 
+  /* 📱 زرار فتح المحادثة — اللينك المحفوظ */
+  .mc-op{
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    margin:9px 0 0; padding:10px; border-radius:11px;
+    font-family:inherit; font-size:12.5px; font-weight:800;
+    text-decoration:none; text-align:center;
+    background:linear-gradient(135deg,#1D4ED8,#2563EB); color:#fff;
+    box-shadow:0 3px 10px rgba(37,99,235,.28);
+    transition:filter .16s, transform .16s;
+  }
+  .mc-op:hover{ filter:brightness(1.08); transform:translateY(-1px) }
+  .mc-op:active{ transform:translateY(0) }
+
   /* 📜 سجل الإثباتات على الكارت */
   .pf-team{
     margin:7px 0 0; padding:6px 9px; border-radius:8px;
@@ -7530,6 +7543,7 @@ function buildAllPills(){
         _fuOwner: f.owner, _fuShared: f.shared, _fuSub: f.subscribed,
         // 📷 صورة الإرسال — تظهر على كارت المتابعة
         sent_url: f.sent_url || '', sent_id: f.sent_id || 0,
+        profile: f.profile || '',
       };
     });
   } else {
@@ -7701,6 +7715,7 @@ function applyFilters(){
         shared: f.shared, owner: f.owner,
         seq: f.seq, action: 'followup',
         sent_url: f.sent_url || '', sent_id: f.sent_id || 0,
+        profile: f.profile || '',
       });
       const h = f.handle || String(f.uid||'').split(':')[1] || '';
       return {
@@ -7723,6 +7738,7 @@ function applyFilters(){
         shared: f.shared, owner: f.owner,
         seq: f.seq, action: 'followup',
         sent_url: f.sent_url || '', sent_id: f.sent_id || 0,
+        profile: f.profile || '',
       };
     });
   } else {
@@ -16036,6 +16052,15 @@ function mpCard_(c, mode){
       + '</div>'
     : '';
 
+  // 📱 فتح المحادثة — اللينك المحفوظ من وقت الإرسال الأول
+  //
+  // ⚠️ الموظفة مش محتاجة تدوّر على المؤثر تاني — اللينك ده
+  //    مبني من الـ handle الحقيقي اللي اتقرأ وقت الإرسال.
+  const openBtn = (mode === 'follow' && c.profile)
+    ? '<a class="mc-op" href="' + esc(c.profile) + '" target="_blank" '
+      + 'rel="noopener">📱 افتحي ' + (P[c.platform]||'') + '</a>'
+    : '';
+
   return '<div class="mc' + (mode==='follow' && late>0 ? ' late' : '') + '">'
     + '<div class="mc-t">'
     +   '<span class="mc-av i">' + (h[0]||'?').toUpperCase() + '</span>'
@@ -16045,7 +16070,7 @@ function mpCard_(c, mode){
     +   '</div>'
     +   badge
     + '</div>'
-    + subNote + shareNote + sentProof
+    + subNote + shareNote + sentProof + openBtn
     + '<div class="mc-a">'
     +   '<button class="mc-p" onclick="mpQuickProof(' + esc(JSON.stringify(uid)).replace(/"/g,'&quot;') + ')">'
     +     '📷 ' + label + '</button>'
@@ -16441,7 +16466,7 @@ function renderMobileProofs(){
         +   (ready ? '<div class="mp-r2c ok"><b>' + ready + '</b>'
                    + '<span>✅ جاهزة</span></div>' : '')
         +   (pend  ? '<div class="mp-r2c wait"><b>' + pend + '</b>'
-                   + '<span>🤖 تحت التحليل</span></div>' : '')
+                   + '<span>📥 مستنية ربط</span></div>' : '')
         +   (taken ? '<div class="mp-r2c bad"><b>' + taken + '</b>'
                    + '<span>🔁 مع موظفة تانية</span></div>' : '')
         +   (subs  ? '<div class="mp-r2c bad"><b>' + subs + '</b>'
@@ -16607,7 +16632,7 @@ function renderMobileProofs(){
           + '<div class="mp-note">'
           +   '<b>' + (MP.plat === 'snapchat'
                 ? '🔗 هتتربط باللينك'
-                : '🤖 الـ AI مشافش اسم الحساب في الصورة') + '</b>'
+                : '📥 مستنية ربط') + '</b>'
           +   '<span>' + (MP.plat === 'snapchat'
                 ? 'الترتيب اللي حطيتيه هو اللي هيتربط.'
                 : 'اتحسبت في التارجت بتاعك وتحت التحليل — '
@@ -17424,7 +17449,7 @@ async function mpUploadOne(it){
       const saved = await mpUploadPending([it]);
       if(saved){
         it.state = 'ok';
-        it.msg   = '🤖 اترفعت للمراجعة — الإدارة هتربطها';
+        it.msg   = '📥 اترفعت — هتتربط قريب';
         renderMobileProofs();
         return;
       }
@@ -17863,7 +17888,7 @@ async function mpUploadPending(list){
         it.msg = 'الصورة دي مرفوعة قبل كده';
       } else {
         it.state = 'ok';
-        it.msg   = '🤖 الـ AI بيحللها — هتظهر خلال دقايق';
+        it.msg   = '📥 اترفعت — هتتربط قريب';
         done++;
       }
     }catch(e){
@@ -17882,7 +17907,7 @@ async function mpUploadPending(list){
         if(chk2 && chk2.accepted === false){
           // اترفعت خلاص — نعلّمها ناجحة
           it.state = 'ok';
-          it.msg   = '🤖 الـ AI بيحللها — هتظهر خلال دقايق';
+          it.msg   = '📥 اترفعت — هتتربط قريب';
           done++;
           renderMobileProofs();
           continue;
@@ -17918,7 +17943,7 @@ async function mpUploadPending(list){
             platform: it.visPlatform || '', ocr: it.ocr || '', type: 'sent',
           }), 3);
           it.state = 'ok';
-          it.msg   = '🤖 الـ AI بيحللها — هتظهر خلال دقايق';
+          it.msg   = '📥 اترفعت — هتتربط قريب';
           done++;
         } else { throw new Error('فشل'); }
       }catch(e2){
@@ -18121,7 +18146,7 @@ async function mpUpload(){
   if(ok || dupN){
     const parts = [];
     if(ok)    parts.push('✅ ' + ok + ' اتسجّل');
-    if(pendN) parts.push('🤖 ' + pendN + ' تحت التحليل');
+    if(pendN) parts.push('📥 ' + pendN + ' مستنية ربط');
     if(dupN)  parts.push('🔁 ' + dupN + ' اترفع قبل كده');
     toastOk(parts.join(' · '));
     // 🔔 تنبيه — الموظفة ممكن تكون سايبة الموبايل
@@ -18312,7 +18337,7 @@ function renderTargetBar(){
     +   '<div class="tg-an">'
     +     '<span class="o">📤 ' + dbF(tOwn.sent) + ' رفعتيهم</span>'
     +     '<span class="s">🌐 ' + dbF(tSite.sent) + ' من الموقع</span>'
-    +     (dPend ? '<span class="p">🤖 ' + dbF(dPend) + ' تحت التحليل</span>' : '')
+    +     (dPend ? '<span class="p">📥 ' + dbF(dPend) + ' مستنية ربط</span>' : '')
     +     (tProof ? '<span>📸 ' + dbF(tProof) + ' إثبات</span>' : '')
     +     '<span class="m">🗓️ ' + dbF(mAll) + ' الشهر</span>'
     +   '</div>'
