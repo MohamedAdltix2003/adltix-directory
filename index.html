@@ -4654,10 +4654,7 @@
     background:linear-gradient(135deg,#2A1310,#4A1F16);
     box-shadow:0 4px 16px rgba(42,19,16,.24);
   }
-  .tg-al{
-    display:flex; align-items:baseline; gap:9px; margin-bottom:9px;
-    flex-wrap:wrap; row-gap:6px;
-  }
+  .tg-al{ display:flex; align-items:baseline; gap:9px; margin-bottom:9px }
   .tg-al span{ font-size:12.5px; font-weight:800; color:rgba(255,255,255,.68) }
   .tg-al b{
     font-size:26px; font-weight:900; color:#fff;
@@ -4665,21 +4662,6 @@
     direction:ltr; unicode-bidi:isolate;
   }
   .tg-al i{ font-style:normal; font-size:11.5px; color:rgba(255,255,255,.5) }
-
-  /* 🔄 شارة المتابعات — بارزة جنب الرقم الرئيسي */
-  .tg-fu{
-    margin-inline-start:auto;
-    display:inline-flex; align-items:center; gap:5px;
-    padding:6px 13px; border-radius:99px;
-    font-size:12.5px !important; font-weight:800;
-    background:linear-gradient(135deg,#0EA5E9,#38BDF8);
-    color:#fff !important; box-shadow:0 3px 10px rgba(14,165,233,.35);
-    animation:tgFuPulse 2.6s ease-in-out infinite;
-  }
-  @keyframes tgFuPulse{
-    0%,100%{ box-shadow:0 3px 10px rgba(14,165,233,.35) }
-    50%    { box-shadow:0 3px 16px rgba(14,165,233,.6) }
-  }
 
   .tg-ab{
     display:flex; height:8px; border-radius:99px; overflow:hidden;
@@ -18346,8 +18328,6 @@ function renderTargetBar(){
   const mAll  = dbN(mOwn.sent) + dbN(mSite.sent);
   const tProof = dbN(tOwn.proofs) + dbN(tSite.proofs) + dPend;
 
-  const fuToday = dbN(EX.followups_today);
-
   box.style.display = '';
   box.innerHTML =
       // ═══ 📊 إجمالي اليوم — الصورة الكاملة ═══
@@ -18356,10 +18336,6 @@ function renderTargetBar(){
     +     '<span>📊 إجمالي النهاردة</span>'
     +     '<b>' + dbF(tAll) + '</b>'
     +     '<i>رسالة</i>'
-    // 🔄 المتابعات — بارزة جنب الرقم الرئيسي على طول
-    +     (fuToday
-        ? '<span class="tg-fu">🔄 ' + dbF(fuToday) + ' متابعة اليوم</span>'
-        : '')
     +   '</div>'
     +   '<div class="tg-ab">'
     +     (tAll
@@ -18374,9 +18350,11 @@ function renderTargetBar(){
     +     (tProof ? '<span>📸 ' + dbF(tProof) + ' إثبات</span>' : '')
     +     '<span class="m">🗓️ ' + dbF(mAll) + ' الشهر</span>'
     +   '</div>'
-    // 🎉 الاشتراكات والمستحق — لسه تحت زي ما كانوا
-    +   ((dbN(EX.subs_today) || dbN(EX.due_now))
+    // 🔄 المتابعات والاشتراكات — عدّادات منفصلة عن التارجت
+    +   ((dbN(EX.followups_today) || dbN(EX.subs_today) || dbN(EX.due_now))
       ? '<div class="tg-ex">'
+        + (dbN(EX.followups_today)
+          ? '<span>🔄 ' + dbF(EX.followups_today) + ' متابعة</span>' : '')
         + (dbN(EX.subs_today)
           ? '<span class="s">🎉 ' + dbF(EX.subs_today) + ' اشتراك</span>' : '')
         + (dbN(EX.due_now)
