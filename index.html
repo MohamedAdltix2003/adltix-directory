@@ -21546,23 +21546,25 @@ function yieldToMain(){ return new Promise(r=>setTimeout(r,0)); }
 let PROOFS = {};
 
 async function loadProofs(){
-  // 🔒 التفاصيل دي للأدمن والمدير بس
-  //
-  // ⚠️ كانت بتتنده عند الموظفة كمان، فالسيرفر يرجّع 403 —
-  //    نداء ضايع وخطأ في الكونسول كل مرة تفتح الصفحة.
-  if(!isAdminSession()) return;
-
   try{
-    let page = 0;
     const map = {};
-    for(;;){
-      // 📜 بنجيب التفاصيل الكاملة — مين رفع إيه وإمتى
-      const r = await callApi('adminAction', {
-        token: SESSION.token, action: 'proofDetails', page });
+    if(isAdminSession()){
+      // 👑 الأدمن/المدير — بيانات كل الموظفات، صفحة صفحة
+      let page = 0;
+      for(;;){
+        const r = await callApi('adminAction', {
+          token: SESSION.token, action: 'proofDetails', page });
+        (r.proofs || []).forEach(x => { if(x && x.uid) map[String(x.uid).toLowerCase()] = x; });
+        if(!r.hasMore) break;
+        page++;
+        if(page > 50) break;            // شبكة أمان
+      }
+    } else {
+      // 👤 الموظفة العادية — صور وتواريخ إثباتاتها هي بس،
+      //    عشان تظهر على كروتها زي ما كانت من الأول.
+      const r = await callApi('verifyProof', {
+        token: SESSION.token, action: 'myProofDetails' });
       (r.proofs || []).forEach(x => { if(x && x.uid) map[String(x.uid).toLowerCase()] = x; });
-      if(!r.hasMore) break;
-      page++;
-      if(page > 50) break;            // شبكة أمان
     }
     PROOFS = map;
     // نبني خريطة التواريخ: sent · followup_1..5 · subscribed
