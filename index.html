@@ -5699,6 +5699,15 @@
   .pn-a:hover{ filter:brightness(.96) }
   body.dark .pn-a{ background:#14432a; color:#86efac; border-color:#166534 }
 
+  /* 🔗 اربطي دايمًا — بيقبل موجود عند موظفة تانية/شريك */
+  .pn-any{
+    font-family:inherit; font-size:11px; font-weight:700; cursor:pointer;
+    padding:5px 11px; border-radius:8px; border:1px solid #93C5FD;
+    background:#DBEAFE; color:#1D4ED8;
+  }
+  .pn-any:hover{ filter:brightness(.96) }
+  body.dark .pn-any{ background:#1e293b; color:#93c5fd; border-color:#1D4ED8 }
+
   /* ⚠️ سبب فشل الربط */
   .pn-why{
     font-size:11px; padding:4px 9px; border-radius:7px;
@@ -19272,6 +19281,10 @@ function dbPnWait(r){
       +     '<button class="pn-a" onclick="dbPnAdd(' + it.id + ',\''
       +       esc(it.staff) + '\',\'' + esc(it.ai_name || '') + '\',\''
       +       esc(it.platform || '') + '\')">➕ ضيفه</button>'
+      // 🔗 اربطي دايمًا — حتى لو المؤثر عند موظفة تانية أو شريك
+      +     '<button class="pn-any" onclick="dbPnAddAny(' + it.id + ',\''
+      +       esc(it.staff) + '\',\'' + esc(it.ai_name || '') + '\',\''
+      +       esc(it.platform || '') + '\')">🔗 اربطي دايمًا</button>'
       +     '<button class="pn-x" onclick="dbPnDrop(' + it.id + ')">🗑️</button>'
       +   '</div>'
       + '</div></div>';
@@ -19423,6 +19436,96 @@ async function dbPnLink(id, uid, handle, kind){
     if(card) card.style.opacity = '1';
     toastErr(e.message);
   }
+}
+
+// ➕ إضافة مؤثر جديد أو موجود، وربط الصورة بيه — دايمًا
+//
+// ⚠️ مسار خاص بمستنية الربط بس. لو المؤثر عند موظفة تانية أو
+//    شريك متعاقد، الصورة هتترفع وتتحسب في التارجت برضه —
+//    مش زي إضافة المؤثر الجديد العادية اللي بترفض في الحالتين.
+function dbPnAddAny(id, staff, aiName, platform){
+  const guess = pnGuessLink_(aiName, platform);
+
+  const ov = document.createElement('div');
+  ov.className = 'cf-overlay';
+  ov.innerHTML = '<div class="cf-box pn-abox">'
+    + '<div class="pn-shd"><b>🔗 اربطي الصورة دي</b>'
+    +   '<button class="pn-sx">✕</button></div>'
+    + (aiName
+      ? '<div class="pn-ai2">🤖 الموديل قرا: <b>' + esc(aiName) + '</b></div>'
+      : '')
+    + '<input class="pn-sq" id="pnLinkA" placeholder="لينك الحساب…" '
+    +   'value="' + esc(guess) + '" autocomplete="off">'
+    + '<div id="pnChkA" class="pn-chk"></div>'
+    + '<div class="cf-btns">'
+    +   '<button class="cf-no">إلغاء</button>'
+    +   '<button class="cf-yes ok" id="pnGoA" disabled>✅ اربطي وارفعي</button>'
+    + '</div></div>';
+
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>ov.classList.add('show'));
+  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
+  ov.querySelector('.pn-sx').onclick = close;
+  ov.addEventListener('click', e => { if(e.target === ov) close(); });
+
+  const inp = ov.querySelector('#pnLinkA');
+  const go  = ov.querySelector('#pnGoA');
+  const chk = ov.querySelector('#pnChkA');
+  let timer = null, lastOk = false;
+
+  // 🔎 فحص اللينك — بيقبل موجود عند موظفة تانية أو شريك،
+  //    بس يوضّح الحالة قبل ما تأكّدي
+  const check = async (link) => {
+    if(link.length < 8){ chk.innerHTML = ''; go.disabled = true; return; }
+    chk.innerHTML = '<div class="pn-cw">⏳ بنفحص…</div>';
+    go.disabled = true;
+    try{
+      const r = await callApi('adminAction', {
+        token: SESSION.token, action: 'checkLinkPending', link,
+      });
+      lastOk = r.valid === true;
+      go.disabled = !lastOk;
+      chk.innerHTML = '<div class="pn-cr ' + (lastOk ? 'ok' : 'bad') + '">'
+        + '<b>' + esc(r.message || '') + '</b>'
+        + (r.handle ? '<span>@' + esc(r.handle)
+            + (r.display ? ' · ' + esc(r.display) : '') + '</span>' : '')
+        + '</div>';
+    }catch(e){
+      chk.innerHTML = '<div class="pn-cr bad"><b>❌ ' + esc(e.message) + '</b></div>';
+      go.disabled = true;
+    }
+  };
+
+  inp.oninput = () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => check(inp.value.trim()), 400);
+  };
+
+  go.onclick = async () => {
+    if(!lastOk) return;
+    const link = inp.value.trim();
+    go.disabled = true; go.textContent = '⏳ بنربط…';
+    try{
+      const r = await callApi('adminAction', {
+        token: SESSION.token, action: 'resolvePendingNewLead', id, link,
+      });
+      close();
+      const card = document.getElementById('pn' + id);
+      if(card){
+        card.style.transition = 'all .3s';
+        card.style.transform = 'scale(.9)';
+        card.style.opacity = '0';
+        setTimeout(() => card.remove(), 300);
+      }
+      toastOk('✅ اترفعت واتحسبت — @' + String(r.uid || '').split(':')[1]
+        + (r.is_partner ? ' 🤝 شريك' : ''));
+    }catch(e){
+      go.disabled = false; go.textContent = '✅ اربطي وارفعي';
+      toastErr(e.message);
+    }
+  };
+
+  setTimeout(()=>{ if(guess) check(guess); }, 100);
 }
 
 // ➕ إضافة مؤثر جديد وربط الصورة بيه
