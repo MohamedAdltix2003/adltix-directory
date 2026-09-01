@@ -6484,6 +6484,29 @@
   .mc-shr b{ font-weight:800 }
   body.dark .mc-shr{ background:#3a2c10; color:#fcd34d }
 
+  /* 📷 صورة الإرسال على كارت المتابعة */
+  .mc-sp{
+    margin:9px 0 0; border:1px solid var(--line); border-radius:11px;
+    overflow:hidden; background:var(--surface);
+  }
+  .mc-spi{
+    width:100%; height:120px; object-fit:cover; display:block;
+    cursor:zoom-in; background:var(--line);
+  }
+  .mc-spd{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:7px 10px; gap:8px;
+  }
+  .mc-spd span{ font-size:10.5px; color:var(--muted); font-weight:700 }
+  .mc-spf{
+    font-family:inherit; font-size:10.5px; font-weight:800; cursor:pointer;
+    padding:5px 10px; border-radius:8px;
+    background:transparent; color:#B91C1C; border:1px solid #FCA5A5;
+  }
+  .mc-spf:hover{ background:#FEF2F2 }
+  body.dark .mc-spf{ color:#fca5a5; border-color:#7f1d1d }
+  body.dark .mc-spf:hover{ background:#450a0a }
+
   /* 📜 سجل الإثباتات على الكارت */
   .pf-team{
     margin:7px 0 0; padding:6px 9px; border-radius:8px;
@@ -7505,6 +7528,8 @@ function buildAllPills(){
         _ok: true, _cb: 'all',
         _fuSeq: f.seq, _fuWaited: f.waited,
         _fuOwner: f.owner, _fuShared: f.shared, _fuSub: f.subscribed,
+        // 📷 صورة الإرسال — تظهر على كارت المتابعة
+        sent_url: f.sent_url || '', sent_id: f.sent_id || 0,
       };
     });
   } else {
@@ -7675,6 +7700,7 @@ function applyFilters(){
         subscribed: f.subscribed, sub_by: f.sub_by,
         shared: f.shared, owner: f.owner,
         seq: f.seq, action: 'followup',
+        sent_url: f.sent_url || '', sent_id: f.sent_id || 0,
       });
       const h = f.handle || String(f.uid||'').split(':')[1] || '';
       return {
@@ -7696,6 +7722,7 @@ function applyFilters(){
         subscribed: f.subscribed, sub_by: f.sub_by,
         shared: f.shared, owner: f.owner,
         seq: f.seq, action: 'followup',
+        sent_url: f.sent_url || '', sent_id: f.sent_id || 0,
       };
     });
   } else {
@@ -15994,6 +16021,21 @@ function mpCard_(c, mode){
     ? '<div class="mc-shr">🔁 المؤثر ده مع <b>' + esc(c.owner) + '</b> برضه</div>'
     : '';
 
+  // 📷 صورة الإرسال — تتأكدي إنها للشخص الصح قبل ما تتابعي
+  //
+  // ⚠️ لو الربط غلط، بتبلّغي بس — الأدمن هو اللي يصحّح.
+  const sentProof = (mode === 'follow' && c.sent_url)
+    ? '<div class="mc-sp">'
+      +   '<img class="mc-spi" src="' + esc(c.sent_url) + '" loading="lazy" '
+      +     'onclick="dbZoom(\'' + esc(c.sent_url) + '\')">'
+      +   '<div class="mc-spd">'
+      +     '<span>📷 صورة الإرسال</span>'
+      +     '<button class="mc-spf" onclick="mpFlagLink(' + Number(c.sent_id||0)
+      +       ',\'' + esc(uid) + '\')">🚩 اللينك غلط</button>'
+      +   '</div>'
+      + '</div>'
+    : '';
+
   return '<div class="mc' + (mode==='follow' && late>0 ? ' late' : '') + '">'
     + '<div class="mc-t">'
     +   '<span class="mc-av i">' + (h[0]||'?').toUpperCase() + '</span>'
@@ -16003,7 +16045,7 @@ function mpCard_(c, mode){
     +   '</div>'
     +   badge
     + '</div>'
-    + subNote + shareNote
+    + subNote + shareNote + sentProof
     + '<div class="mc-a">'
     +   '<button class="mc-p" onclick="mpQuickProof(' + esc(JSON.stringify(uid)).replace(/"/g,'&quot;') + ')">'
     +     '📷 ' + label + '</button>'
@@ -16012,6 +16054,21 @@ function mpCard_(c, mode){
           + 'rel="noopener">🔗</a>' : '')
     + '</div>'
     + '</div>';
+}
+
+// 🚩 إبلاغ عن ربط غلط — من كارت المتابعة
+//
+// ⚠️ بس علم — التصحيح الفعلي عند الأدمن في تابة مراجعة الربط.
+async function mpFlagLink(id, uid){
+  if(!id){ toastErr('مش لاقيين الإثبات'); return; }
+  if(!confirm('هتبلّغي إن اللينك ده غلط؟\n\nالأدمن هيراجعها ويصحّحها.'))
+    return;
+  try{
+    await callApi('verifyProof', {
+      token: SESSION.token, action: 'flagWrongLink', id,
+    });
+    toastOk('🚩 اتبلّغ — الأدمن هيصحّحها قريب');
+  }catch(e){ toastErr(e.message); }
 }
 
 // رفع إثبات لمؤثر واحد
@@ -17210,7 +17267,11 @@ async function mpUploadOne(it){
       try{
         chk = await callApi('verifyProof', {
           token: SESSION.token, action: 'check', hash, uid: it.uid,
-          actionType: MP.kind,
+          // ⚠️ كانت بتبعت MP.kind (النوع العام من آخر جلسة) —
+          //    فلو الموظفة رفعت متابعة من زرار الكارت السريع،
+          //    الفحص كان بيتم على أساس "إرسال" ويرفض بالغلط
+          //    "اترفعله إثبات إرسال خلاص" حتى لو كانت متابعة فعلاً.
+          actionType: it.action || MP.kind,
         }) || {};
       }catch(e){ chk = {}; }
         // ⚠️ التصحيح التلقائي اتشال — كان بيغيّر "إرسال" لـ
