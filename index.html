@@ -14628,9 +14628,11 @@ let _visOff = 0;
 
 // 🔌 مفتاح فحص المحادثة على السيرفر
 //
-// ⚠️ لو السيرفر وقف، غيّره لـ false — الفحص يبقى محلي
-//    من النص، والرفع مايبطّأش 9 ثواني لكل صورة.
-const VISION_ON = true;
+// ⚠️ متقفول دلوقتي — كل صورة كانت بتستنى لحد 9 ثواني
+//    نداء للسيرفر، وده كان بيبطّئ الرفع بشكل واضح خصوصًا
+//    مع دفعات المتابعات. الفحص المحلي (من النص) بديل أسرع
+//    وكافي. لو حبيتي ترجّعيه، غيّريها لـ true.
+const VISION_ON = false;
 
 async function visionCheck_(file, uid){
   if(!VISION_ON) return null;
@@ -19206,6 +19208,11 @@ function dbPending(r){
   const bar = '<div class="pn-subs">'
     + '<button class="pn-sb' + (_pnSub==='wait'?' on':'') + '" '
     +   'onclick="dbPnSub(\'wait\')">📥 مستنية ربط</button>'
+    // 🔄 متابعات إنستجرام/تيك توك مستنية — تابة منفصلة عن
+    //    الإرسال العادي، عشان لو اترربطت غلط الإدارة تراجعها
+    //    بسهولة من غير ما تتلخبط وسط صور الإرسال.
+    + '<button class="pn-sb' + (_pnSub==='followWait'?' on':'') + '" '
+    +   'onclick="dbPnSub(\'followWait\')">🔄 متابعات مستنية</button>'
     // 👻 متابعات سناب — تابة منفصلة تمامًا، مش مخلوطة بالإرسال
     //    لأن اسم الحساب مبيبانش في صورة سناب، فالربط بيتم يدوي
     //    من هنا بس، بعيد عن باقي الإرسال العادي.
@@ -19219,31 +19226,36 @@ function dbPending(r){
 
   if(_pnSub === 'links')      return bar + dbTabLinks();
   if(_pnSub === 'review')     return bar + dbTabReview();
-  if(_pnSub === 'snapfollow') return bar + dbPnWait(r, true);
-  return bar + dbPnWait(r, false);
+  if(_pnSub === 'snapfollow') return bar + dbPnWait(r, 'snap');
+  if(_pnSub === 'followWait') return bar + dbPnWait(r, 'follow');
+  return bar + dbPnWait(r, 'sent');
 }
 
-function dbPnWait(r, snapOnly){
+function dbPnWait(r, mode){
   const d = r.pending || {};
   const n = v => Number(v || 0);
+  const snapOnly = mode === 'snap';
 
-  // 👻 متابعات سناب مستنية — تابة منفصلة
-  //
-  // ⚠️ الفصل بيتم هنا محليًا (مش بنداء تاني للسيرفر) عشان
+  // 🔄👻 الفصل بيتم هنا محليًا (مش بنداء تاني للسيرفر) عشان
   //    نفس البيانات بتتقسم بين التابتين من غير تعقيد زيادة.
   const isSnapFollow = x =>
     String(x.platform || '').toLowerCase() === 'snapchat'
     && String(x.kind || '') === 'followup';
+  const isFollow = x => String(x.kind || '') === 'followup';
 
-  const items = (d.items || []).filter(x =>
-    snapOnly ? isSnapFollow(x) : !isSnapFollow(x));
+  const items = (d.items || []).filter(x => {
+    if(mode === 'snap')   return isSnapFollow(x);
+    if(mode === 'follow') return isFollow(x) && !isSnapFollow(x);
+    return !isFollow(x);   // 'sent' — إرسال واشتراك بس
+  });
 
   if(!items.length){
-    return '<div class="db-empty">'
-      + (snapOnly
-        ? '✅ مفيش متابعات سناب مستنية — كله متربط'
-        : '✅ مفيش إثباتات مستنية — كله متربط')
-      + '</div>';
+    const emptyMsg = mode === 'snap'
+      ? '✅ مفيش متابعات سناب مستنية — كله متربط'
+      : mode === 'follow'
+      ? '✅ مفيش متابعات مستنية — كله متربط'
+      : '✅ مفيش إثباتات مستنية — كله متربط';
+    return '<div class="db-empty">' + emptyMsg + '</div>';
   }
 
   let h = '';
@@ -19258,9 +19270,11 @@ function dbPnWait(r, snapOnly){
   // ═══ الملخّص ═══
   const noName = items.filter(x => !x.ai_name).length;
 
+  const kpiLabel = mode === 'snap'   ? 'متابعات سناب مستنية'
+                  : mode === 'follow' ? 'متابعات مستنية'
+                  : 'مستنية ربط';
   h += '<div class="db-kpis">'
-    +   dbCard('📥', snapOnly ? 'متابعات سناب مستنية' : 'مستنية ربط',
-               total, '', total > 50 ? 'bad' : '')
+    +   dbCard('📥', kpiLabel, total, '', total > 50 ? 'bad' : '')
     +   (noName ? dbCard('🤖', 'مالهاش أسماء', noName, 'محتاجة قراءة') : '')
     + '</div>';
 
