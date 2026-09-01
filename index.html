@@ -4678,6 +4678,32 @@
   }
   .tg-an .o{ background:rgba(228,85,63,.26); color:#fff }
   .tg-an .s{ background:rgba(96,165,250,.26); color:#fff }
+
+  /* 🔄 عدّاد المتابعات — بلوك مستقل بنفس فخامة بلوك التارجت،
+     بس بلون مميز عشان يتفرّق بصريًا حتى لو الرقم صفر. */
+  .tg-fu-box{
+    padding:13px 16px; border-radius:16px; margin-bottom:11px;
+    background:linear-gradient(135deg,#0C4A6E,#0369A1);
+    box-shadow:0 4px 16px rgba(3,105,161,.24);
+    display:flex; align-items:center; justify-content:space-between;
+    gap:10px; flex-wrap:wrap;
+  }
+  .tg-fu-l{ display:flex; align-items:baseline; gap:9px }
+  .tg-fu-l span{ font-size:12.5px; font-weight:800; color:rgba(255,255,255,.75) }
+  .tg-fu-l b{
+    font-size:26px; font-weight:900; color:#fff;
+    font-family:'Space Grotesk','Tajawal',sans-serif; line-height:1;
+    direction:ltr; unicode-bidi:isolate;
+  }
+  .tg-fu-l i{ font-style:normal; font-size:11.5px; color:rgba(255,255,255,.55) }
+  .tg-fu-m{
+    font-size:11px; font-weight:700; color:rgba(255,255,255,.8);
+    background:rgba(255,255,255,.12); padding:5px 11px; border-radius:9px;
+  }
+  @media (max-width:420px){
+    .tg-fu-box{ padding:11px 13px }
+    .tg-fu-l b{ font-size:22px }
+  }
   .tg-an .m{ margin-inline-start:auto; background:rgba(255,255,255,.14) }
 
   @media (max-width:640px){
@@ -18454,17 +18480,25 @@ function renderTargetBar(){
     +     (tProof ? '<span>📸 ' + dbF(tProof) + ' إثبات</span>' : '')
     +     '<span class="m">🗓️ ' + dbF(mAll) + ' الشهر</span>'
     +   '</div>'
-    // 🔄 المتابعات والاشتراكات — عدّادات منفصلة عن التارجت
-    +   ((dbN(EX.followups_today) || dbN(EX.subs_today) || dbN(EX.due_now))
+    // 🎉 الاشتراكات والمستحق — عدّادات ثانوية، بتظهر لما فيها رقم بس
+    +   ((dbN(EX.subs_today) || dbN(EX.due_now))
       ? '<div class="tg-ex">'
-        + (dbN(EX.followups_today)
-          ? '<span>🔄 ' + dbF(EX.followups_today) + ' متابعة</span>' : '')
         + (dbN(EX.subs_today)
           ? '<span class="s">🎉 ' + dbF(EX.subs_today) + ' اشتراك</span>' : '')
         + (dbN(EX.due_now)
           ? '<span class="d">⏳ ' + dbF(EX.due_now) + ' مستحق متابعة</span>' : '')
         + '</div>'
       : '')
+    // ═══ 🔄 عدّاد المتابعات — بلوك مستقل، ظاهر دايمًا حتى
+    //     لو صفر، بنفس مستوى بلوك التارجت بالظبط ═══
+    +   '<div class="tg-fu-box">'
+    +     '<div class="tg-fu-l">'
+    +       '<span>🔄 متابعات النهاردة</span>'
+    +       '<b>' + dbF(EX.followups_today) + '</b>'
+    +       '<i>متابعة</i>'
+    +     '</div>'
+    +     '<div class="tg-fu-m">🗓️ الشهر ده: ' + dbF(EX.followups_month) + '</div>'
+    +   '</div>'
     // 💡 شرح مختصر — الموظفات مش فاهمين الفرق بين الأرقام
     +   '<button class="tg-help" onclick="showNumsHelp()">'
     +     '❓ يعني إيه الأرقام دي؟</button>'
