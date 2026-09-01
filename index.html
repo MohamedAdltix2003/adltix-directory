@@ -16126,11 +16126,15 @@ async function mpFlagLink(id, uid){
 
 // رفع إثبات لمؤثر واحد
 function mpQuickProof(uid){
-  // ⚠️ المتابعات جاية من السيرفر ومش في MP.cands — كان
-  //    بيقول "المؤثر مش موجود" ويوقف الرفع.
-  let c = (MP.cands || []).find(x => x.uid === uid);
-
-  if(!c && Array.isArray(MP.follows)){
+  // 🔄 لازم ندوّر في المتابعات الأول — مش المؤثرين العاديين.
+  //
+  // ⚠️ نفس المؤثر ممكن يكون موجود في القايمتين (اتبعتله قبل
+  //    كده فهو "لييد" عادي، وكمان محتاج متابعة دلوقتي). لو
+  //    دورنا في MP.cands الأول ولقيناه، بنوقف هناك ومنوصلش
+  //    لـ MP.follows خالص — فالصورة بتترفع "إرسال" بدل
+  //    "متابعة" رغم إنها اتضغطت من كارت متابعة بالظبط.
+  let c = null;
+  if(Array.isArray(MP.follows)){
     const f = MP.follows.find(x => x.uid === uid);
     if(f){
       const h = f.handle || String(f.uid || '').split(':')[1] || '';
@@ -16144,6 +16148,10 @@ function mpQuickProof(uid){
       };
     }
   }
+
+  // مش لقيناه في المتابعات؟ يبقى غالبًا رفع إرسال عادي —
+  // ندوّر في مؤثريها المعتادين.
+  if(!c) c = (MP.cands || []).find(x => x.uid === uid);
 
   if(!c){ toastErr('المؤثر مش موجود'); return; }
 
