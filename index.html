@@ -15243,13 +15243,27 @@ function nameScore_(a, b){
 //    "dantilna" اتربط بـ "al.marri"
 //    أي حاجة أقل من تطابق كامل بتروح للإدارة بمقترح.
 function matchCandidate_(handles){
-  if(!handles || !handles.length || !MP.cands.length) return null;
+  // 🔄 لو الموظفة بترفع "متابعة"، لازم ندوّر في قايمة
+  //    المتابعات (MP.follows) مش بس مؤثريها العاديين —
+  //    عشان مؤثر عند زميلة تانية بس محتاج متابعة منها
+  //    كان بيفوّت الربط ويروح لمستنية الربط بالغلط.
+  const pool = (MP.kind === 'followup' && Array.isArray(MP.follows) && MP.follows.length)
+    ? MP.follows.map(f => ({
+        uid: f.uid, handle: f.handle,
+        platform: f.platform, action: 'followup',
+        seq: Number(f.seq) || 1,
+        display_name: f.display || '',
+        followers: Number(f.followers) || 0,
+      }))
+    : MP.cands;
+
+  if(!handles || !handles.length || !pool.length) return null;
 
   // ✅ تطابق كامل للهاندل — ده الوحيد الموثوق
   for(const h of handles){
     const q = String(h || '').replace(/^@/, '').trim().toLowerCase();
     if(q.length < 3) continue;
-    const hit = MP.cands.find(c =>
+    const hit = pool.find(c =>
       String(c.handle || '').replace(/^@/, '').trim().toLowerCase() === q);
     if(hit) return { cand: hit, score: 100 };
   }
@@ -15260,8 +15274,8 @@ function matchCandidate_(handles){
 
   // 🕐 اللي اتضافوا النهاردة أولوية — الموظفة بترفع اللينك
   //    وبعدها الصورة على طول، فده الأرجح.
-  const today = MP.cands.filter(c => c.added_today);
-  const rest  = MP.cands.filter(c => !c.added_today);
+  const today = pool.filter(c => c.added_today);
+  const rest  = pool.filter(c => !c.added_today);
 
   // ⚠️ لو فيه أكتر من مؤثر بنفس الدرجة تقريبًا، الربط تخمين.
   //    أحسن تروح للمعلّقة وتتراجع من الداشبورد.
@@ -16133,7 +16147,16 @@ function mpQuickProof(uid){
   inp.onchange = async e => {
     const f = e.target.files[0];
     if(!f) return;
-    MP.tab = 'proofs';
+
+    // ⚠️ لازم نفتح الشاشة ونحدّد المنصة والنوع — من غيرهم
+    //    renderMobileProofs بتلاقي MP.plat فاضية وتعرض شاشة
+    //    اختيار المنصة من الأول (زي ما لو كنا بادئين رفعة
+    //    جديدة كاملة)، حتى لو الصورة والمؤثر جاهزين فعلاً.
+    MP.open = true;
+    MP.tab  = 'proofs';
+    MP.plat = c.platform || '';
+    MP.kind = c.action   || 'sent';
+
     // ⚠️ المؤثر متأكد منه (اختارته بنفسها)، بس الصورة لازم تتفحص:
     //    الفحص مش عن الربط بس — ده عن إن الصورة محادثة أصلاً.
     MP.items = [{
