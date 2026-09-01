@@ -17446,6 +17446,42 @@ async function mpUploadOne(it){
           if(it.action === 'sent')     card.messageStatus = 'sent';
           if(it.action === 'followup') card.followupCount = (card.followupCount||0) + 1;
         }
+
+        // 📸 نحدّث PROOFS كمان — ده المصدر اللي بلوك الصور على
+        //    الكارت بيقرا منه (proofHtml). من غيره الصورة
+        //    والعدّاد بيفضلوا زي ما كانوا قبل الرفع لحد ما
+        //    الصفحة تتعمللها Refresh كامل.
+        const key = String(it.uid || '').toLowerCase();
+        const pr = PROOFS[key] || {
+          uid: it.uid, sent_count:0, followup_count:0, subscribed_count:0,
+          shots_count:0, shots:[], actions:[],
+        };
+        if(it.action === 'sent')       pr.sent_count       = (pr.sent_count||0)+1;
+        if(it.action === 'followup')   pr.followup_count   = (pr.followup_count||0)+1;
+        if(it.action === 'subscribed') pr.subscribed_count = (pr.subscribed_count||0)+1;
+
+        const nowIso = new Date().toISOString();
+        if(url){
+          pr.shots = (pr.shots||[]).concat([url]);
+          pr.shots_count = (pr.shots_count||0)+1;
+        }
+        pr.actions = Array.isArray(pr.actions) ? pr.actions : [];
+        pr.actions.push({
+          type: it.action, seq: it.seq || 1, url: url || '',
+          staff: (SESSION && SESSION.staffName) || '',
+          date: new Intl.DateTimeFormat('ar-EG', { timeZone:'Africa/Cairo',
+                 day:'2-digit', month:'2-digit' }).format(new Date()),
+          time: new Intl.DateTimeFormat('ar-EG', { timeZone:'Africa/Cairo',
+                 hour:'2-digit', minute:'2-digit' }).format(new Date()),
+          note: '',
+        });
+        pr.last_staff = (SESSION && SESSION.staffName) || pr.last_staff || '';
+        pr.last_action_at = nowIso;
+        if(it.action === 'sent')       pr.sent_at = nowIso;
+        if(it.action === 'subscribed') pr.subscribed_at = nowIso;
+        if(it.action === 'followup' && it.seq) pr['followup_'+it.seq] = nowIso;
+        PROOFS[key] = pr;
+
         // ⚠️ الكاش لازم يتبطّل — وإلا العدّادات تفضل قديمة
         invalidateCache();
       }catch(e){ /* تجاهل */ }
