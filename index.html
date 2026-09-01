@@ -6677,6 +6677,25 @@
   .lkf-hint{ padding:7px 16px 0; font-size:11px; color:var(--muted) }
   .lkf-box .cf-btns{ padding:14px 16px 16px }
 
+  /* ⚠️ نافذة تعارض الربط — مقارنة صورتين */
+  .cfl-box{ max-width:440px !important; padding:0 !important;
+            text-align:right !important }
+  .cfl-h{ display:flex; align-items:center; justify-content:space-between;
+          padding:14px 16px; border-bottom:1px solid var(--line) }
+  .cfl-h b{ font-size:14px; color:var(--ink); line-height:1.6 }
+  .cfl-x{ width:28px; height:28px; border-radius:8px; cursor:pointer;
+          border:1px solid var(--line); background:transparent;
+          color:var(--muted); flex-shrink:0 }
+  .cfl-cmp{ display:flex; gap:10px; padding:14px 16px }
+  .cfl-c{ flex:1; display:flex; flex-direction:column; gap:6px }
+  .cfl-c span{ font-size:11.5px; font-weight:800; color:var(--muted) }
+  .cfl-c img{
+    width:100%; height:150px; object-fit:cover; border-radius:10px;
+    background:var(--line);
+  }
+  .cfl-c i{ font-style:normal; font-size:10.5px; color:var(--muted) }
+  .cfl-box .cf-btns{ padding:0 16px 16px }
+
 
   /* ═══════════════════════════════════════════════════
      👋 شاشة الترحيب
@@ -19686,12 +19705,28 @@ async function dbPnLink(id, uid, handle, kind){
   const card = document.getElementById('pn' + id);
   if(card) card.style.opacity = '.5';
   try{
-    // 🎉 الاشتراك ليه دالة خاصة — بتتحقق إنه اتبعتله الأول
-    const r = await callApi('adminAction', {
-      token: SESSION.token,
-      action: kind === 'subscribed' ? 'resolveSubscribe' : 'resolvePending',
-      id, uid,
+    // ⚠️ نداء مباشر مش callApi — عشان لو فيه تعارض (نفس
+    //    المؤثر عنده نفس النوع خلاص) نحتاج تفاصيل الصورة
+    //    القديمة، وcallApi بترمي رسالة نص بس وبتفقدهم.
+    const res = await fetch(FN_BASE + '/admin-action', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        token: SESSION.token,
+        action: kind === 'subscribed' ? 'resolveSubscribe' : 'resolvePending',
+        id, uid,
+      }),
     });
+    const r = await res.json();
+
+    // ⚠️ تعارض — المؤثر عنده نفس النوع مسجّل خلاص
+    if(!r.ok && r.result?.conflict){
+      if(card) card.style.opacity = '1';
+      dbShowConflict_(id, r.result);
+      return;
+    }
+    if(!r.ok) throw new Error(r.error || 'حصل خطأ');
+
+    const result = r.result || r;
     if(card){
       card.style.transition = 'all .3s';
       card.style.transform = 'scale(.9)';
@@ -19699,12 +19734,57 @@ async function dbPnLink(id, uid, handle, kind){
       setTimeout(() => card.remove(), 300);
     }
     // ↩️ زرار تراجع — 15 ثانية
-    _lastLink = { id, uid, handle: r.handle };
-    toastUndo('✅ اتربط بـ @' + String(r.handle || '').replace('@',''), id);
+    _lastLink = { id, uid, handle: result.handle };
+    toastUndo('✅ اتربط بـ @' + String(result.handle || '').replace('@',''), id);
   }catch(e){
     if(card) card.style.opacity = '1';
     toastErr(e.message);
   }
+}
+
+// ⚠️ نافذة التعارض — صورتين لنفس النوع، أدمن يقرر أنهي واحدة تفضل
+function dbShowConflict_(pendingId, info){
+  const old = info.existing || {};
+  const ov = document.createElement('div');
+  ov.className = 'cf-overlay';
+  ov.innerHTML = '<div class="cf-box cfl-box">'
+    + '<div class="cfl-h"><b>⚠️ ' + esc(info.error || 'تعارض') + '</b>'
+    +   '<button class="cfl-x">✕</button></div>'
+    + '<div class="cfl-cmp">'
+    +   '<div class="cfl-c">'
+    +     '<span>القديمة — ' + esc(old.staff || '') + '</span>'
+    +     (old.url ? '<img src="' + esc(old.url) + '" loading="lazy">' : '')
+    +     '<i>' + esc(old.date || '') + ' · ' + esc(old.time || '') + '</i>'
+    +   '</div>'
+    +   '<div class="cfl-c">'
+    +     '<span>الجديدة</span>'
+    +     (info.new_url ? '<img src="' + esc(info.new_url) + '" loading="lazy">' : '')
+    +   '</div>'
+    + '</div>'
+    + '<div class="cf-btns">'
+    +   '<button class="cf-no" id="cflKeep">سيبي القديمة</button>'
+    +   '<button class="cf-yes" id="cflSwap">🔁 استبدلي بالجديدة</button>'
+    + '</div></div>';
+
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>ov.classList.add('show'));
+  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
+  ov.querySelector('.cfl-x').onclick = close;
+  ov.querySelector('#cflKeep').onclick = close;
+  ov.addEventListener('click', e => { if(e.target === ov) close(); });
+
+  ov.querySelector('#cflSwap').onclick = async () => {
+    try{
+      await callApi('adminAction', {
+        token: SESSION.token, action: 'swapPendingConflict',
+        conflictId: old.id, pendingId,
+      });
+      close();
+      const card = document.getElementById('pn' + pendingId);
+      if(card) card.remove();
+      toastOk('✅ اتستبدلت');
+    }catch(e){ toastErr(e.message); }
+  };
 }
 
 // ➕ إضافة مؤثر جديد أو موجود، وربط الصورة بيه — دايمًا
