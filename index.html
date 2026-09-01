@@ -15735,9 +15735,11 @@ async function runOCR_(){
             if(!m){
               it.uid    = add.uid;
               it.handle = String(add.handle || uname).replace('@','');
-              it.action = 'sent';
-              it.seq    = 1;
-              it.label  = 'إرسال';
+              // 🔄 كان مقفول على "إرسال" دايمًا حتى لو اخترتي
+              //    "متابعة" — ده تعارض مع نظام المتابعات
+              it.action = MP.kind || 'sent';
+              it.seq    = MP.kind === 'followup' ? 1 : 1;
+              it.label  = MP.kind === 'followup' ? 'متابعة' : 'إرسال';
             }
             it.autoAdded = true;
           } else if(add && (add.partner || add.taken || add.subscribed)){
@@ -15765,12 +15767,13 @@ async function runOCR_(){
         if(m){
           it.uid    = m.cand.uid;
           it.handle = m.cand.handle;
-          // ⚠️ الفريق بيبعت إرسال بس — مفيش متابعات.
-          //    الصورة كانت بتتسجّل "متابعة" لو المؤثر اتبعتله قبل
-          //    كده، وده كان بيلخبط الأرقام.
-          it.action = 'sent';
-          it.seq    = 1;
-          it.label  = 'إرسال';
+          // 🔄 كانت مقفولة على "إرسال" دايمًا — ده كان بيمنع
+          //    رفعات المتابعات الجماعية من إثباتات إنها
+          //    تتسجّل صح حتى لو اخترتي "متابعة" من القايمة.
+          it.action = MP.kind || 'sent';
+          it.seq    = MP.kind === 'followup' ? (m.cand.seq || 1) : 1;
+          it.label  = MP.kind === 'followup'
+            ? ('متابعة ' + it.seq) : 'إرسال';
 
           // 💾 نخزّن الاسم المعروض — عشان الصور الجاية تتربط أسرع
           if(vis && vis.display && !m.cand.display){
@@ -15929,10 +15932,12 @@ async function runOCR_(){
       if(m){
         it.uid    = m.cand.uid;
         it.handle = m.cand.handle;
-        // ⚠️ الفريق بيبعت إرسال بس — مفيش متابعات
-        it.action = 'sent';
-        it.seq    = 1;
-        it.label  = 'إرسال';
+        // 🔄 كانت مقفولة على "إرسال" — بتعارض مع اختيار
+        //    "متابعة" من القايمة قبل الرفع.
+        it.action = MP.kind || 'sent';
+        it.seq    = MP.kind === 'followup' ? (m.cand.seq || 1) : 1;
+        it.label  = MP.kind === 'followup'
+          ? ('متابعة ' + it.seq) : 'إرسال';
         it.score  = m.score;
 
         // 🎯 درجة الثقة
@@ -17973,6 +17978,10 @@ async function mpUploadPending(list){
             token: SESSION.token, action: 'addPending',
             url: url2, hash: hash2, aiName: it.visionRead || '',
             platform: it.visPlatform || '', ocr: it.ocr || '', type: 'sent',
+            // ⚠️ مسار إعادة المحاولة عند انقطاع النت — كان
+            //    مانساش يبعت النوع، فصورة متابعة اترفعت من
+            //    غيره كانت هتتحط "sent" في مستنية الربط.
+            kind: it.kindOverride || MP.kind,
           }), 3);
           it.state = 'ok';
           it.msg   = '📥 اترفعت — هتتربط قريب';
@@ -19136,45 +19145,84 @@ let _pnSub = 'wait';
 
 function dbPnSub(v){
   _pnSub = v;
-  renderDashboard();
+  // ⚠️ لو كانت فيه فلاتر شغّالة (نوع/موظفة) من التابة اللي
+  //    كنا فيها، وبنروح لـ "متابعات سناب" أو نرجع للعادية،
+  //    لازم نصفّرهم ونجيب بيانات كاملة — وإلا التابة الجديدة
+  //    تفضل فاضية لأن السيرفر كان فلترها من قبل.
+  const needsFresh = (_pnKind || (_pnStaff && _pnStaff !== 'all'));
+  _pnKind = ''; _pnStaff = 'all';
+  if(needsFresh || v === 'snapfollow'){
+    loadDashboard(true, '', '');
+  } else {
+    renderDashboard();
+  }
 }
 
 function dbPending(r){
   const bar = '<div class="pn-subs">'
     + '<button class="pn-sb' + (_pnSub==='wait'?' on':'') + '" '
     +   'onclick="dbPnSub(\'wait\')">📥 مستنية ربط</button>'
+    // 👻 متابعات سناب — تابة منفصلة تمامًا، مش مخلوطة بالإرسال
+    //    لأن اسم الحساب مبيبانش في صورة سناب، فالربط بيتم يدوي
+    //    من هنا بس، بعيد عن باقي الإرسال العادي.
+    + '<button class="pn-sb' + (_pnSub==='snapfollow'?' on':'') + '" '
+    +   'onclick="dbPnSub(\'snapfollow\')">👻 متابعات سناب مستنية</button>'
     + '<button class="pn-sb' + (_pnSub==='links'?' on':'') + '" '
     +   'onclick="dbPnSub(\'links\')">🔗 مراجعة الربط</button>'
     + '<button class="pn-sb' + (_pnSub==='review'?' on':'') + '" '
     +   'onclick="dbPnSub(\'review\')">🔍 مراجعة الشك</button>'
     + '</div>';
 
-  if(_pnSub === 'links')  return bar + dbTabLinks();
-  if(_pnSub === 'review') return bar + dbTabReview();
-  return bar + dbPnWait(r);
+  if(_pnSub === 'links')      return bar + dbTabLinks();
+  if(_pnSub === 'review')     return bar + dbTabReview();
+  if(_pnSub === 'snapfollow') return bar + dbPnWait(r, true);
+  return bar + dbPnWait(r, false);
 }
 
-function dbPnWait(r){
+function dbPnWait(r, snapOnly){
   const d = r.pending || {};
-  const items = d.items || [];
   const n = v => Number(v || 0);
 
-  if(!n(d.total)){
-    return '<div class="db-empty">✅ مفيش إثباتات مستنية — كله متربط</div>';
+  // 👻 متابعات سناب مستنية — تابة منفصلة
+  //
+  // ⚠️ الفصل بيتم هنا محليًا (مش بنداء تاني للسيرفر) عشان
+  //    نفس البيانات بتتقسم بين التابتين من غير تعقيد زيادة.
+  const isSnapFollow = x =>
+    String(x.platform || '').toLowerCase() === 'snapchat'
+    && String(x.kind || '') === 'followup';
+
+  const items = (d.items || []).filter(x =>
+    snapOnly ? isSnapFollow(x) : !isSnapFollow(x));
+
+  if(!items.length){
+    return '<div class="db-empty">'
+      + (snapOnly
+        ? '✅ مفيش متابعات سناب مستنية — كله متربط'
+        : '✅ مفيش إثباتات مستنية — كله متربط')
+      + '</div>';
   }
 
   let h = '';
+
+  // ⚠️ d.total / d.by_kind / d.by_staff بيجوا من السيرفر محسوبين
+  //    على كل الصور مع بعض — دلوقتي عندنا items مقسّمة (سناب
+  //    متابعة لوحدها، والباقي لوحده)، فلازم نحسب العدادات دي
+  //    محليًا من نفس الـ items اللي فعلاً هتتعرض هنا، وإلا
+  //    الأرقام تبقى غلط (بتقول 50 وتعرض 12 مثلاً).
+  const total = items.length;
 
   // ═══ الملخّص ═══
   const noName = items.filter(x => !x.ai_name).length;
 
   h += '<div class="db-kpis">'
-    +   dbCard('📥', 'مستنية ربط', d.total, '', n(d.total) > 50 ? 'bad' : '')
+    +   dbCard('📥', snapOnly ? 'متابعات سناب مستنية' : 'مستنية ربط',
+               total, '', total > 50 ? 'bad' : '')
     +   (noName ? dbCard('🤖', 'مالهاش أسماء', noName, 'محتاجة قراءة') : '')
     + '</div>';
 
-  // 🤖 القراءة والربط التلقائي
-  if(n(d.total)){
+  // 🤖 القراءة والربط التلقائي — مش مفيدة لسناب أصلاً (مفيش اسم
+  //    يتقرا من الصورة)، فبنسيبها للتابة العادية بس.
+  if(!snapOnly && total){
     h += '<div class="pn-rr">'
       + '<span>الذكاء الاصطناعي هيقرا الأسماء ويربط اللي واضح تلقائي — '
       +   'واللي مش واضح هيفضل بمقترحات.</span>'
@@ -19182,15 +19230,19 @@ function dbPnWait(r){
       + '</div>';
   }
 
-  // 🎉 فلتر النوع — إرسال / اشتراك
-  const K = d.by_kind || {};
+  // 🎉 فلتر النوع — إرسال / اشتراك / متابعة
+  //
+  // ⚠️ في تابة متابعات سناب، كل الصور بالتعريف "متابعة" —
+  //    فالفلتر ده مالوش لازمة هنا وبنخفيه.
+  const K = {};
+  items.forEach(x => { const k = String(x.kind || 'sent'); K[k] = (K[k]||0)+1; });
   const kSent = Number(K.sent || 0);
   const kSub  = Number(K.subscribed || 0);
   const kFol  = Number(K.followup || 0);
-  if(kSub || kFol || Number(K.replace || 0)){
+  if(!snapOnly && (kSub || kFol || Number(K.replace || 0))){
     h += '<div class="db-row">'
       + '<button class="db-rp' + (!_pnKind ? ' on' : '') + '" '
-      +   'onclick="dbPnKind(\'all\')">الكل (' + d.total + ')</button>'
+      +   'onclick="dbPnKind(\'all\')">الكل (' + total + ')</button>'
       + (kSent ? '<button class="db-rp' + (_pnKind==='sent'?' on':'') + '" '
         + 'onclick="dbPnKind(\'sent\')">📤 إرسال (' + kSent + ')</button>' : '')
       + (kSub ? '<button class="db-rp' + (_pnKind==='subscribed'?' on':'') + '" '
@@ -19206,12 +19258,17 @@ function dbPnWait(r){
       + '</div>';
   }
 
-  // فلتر الموظفات
-  const staff = d.by_staff || [];
+  // فلتر الموظفات — محسوب محليًا برضه بنفس السبب
+  const staffCounts = {};
+  items.forEach(x => {
+    const s = String(x.staff || '');
+    if(s) staffCounts[s] = (staffCounts[s]||0) + 1;
+  });
+  const staff = Object.keys(staffCounts).map(s => ({ staff: s, count: staffCounts[s] }));
   if(staff.length > 1){
     h += '<div class="db-row">'
       + '<button class="db-rp' + (_pnStaff==='all'?' on':'') + '" '
-      +   'onclick="dbPnStaff(\'all\')">الكل (' + d.total + ')</button>'
+      +   'onclick="dbPnStaff(\'all\')">الكل (' + total + ')</button>'
       + staff.map(x =>
           '<button class="db-rp' + (_pnStaff===x.staff?' on':'') + '" '
           + 'onclick="dbPnStaff(\'' + esc(x.staff) + '\')">'
