@@ -6577,6 +6577,11 @@
   }
 
   /* 🔗 مراجعة الربط */
+  .lk-sec-h{
+    font-size:13px; font-weight:800; color:var(--ink);
+    margin:4px 0 10px; padding-bottom:6px;
+    border-bottom:2px solid var(--line);
+  }
   .lk-hint{
     padding:11px 14px; border-radius:11px; margin-bottom:13px;
     background:#F3E8FF; color:#6B21A8; font-size:12px; line-height:1.8;
@@ -18792,6 +18797,24 @@ async function dbLoadLinks(){
 function dbLkStaff(v){ _lkStaff = v; _lkData = null; dbLoadLinks(); }
 function dbLkPlat(v){  _lkPlat  = v; _lkData = null; dbLoadLinks(); }
 
+// 🔄 نفس آلية مراجعة الربط، بس مفلترة على المتابعات بس —
+//    عشان تابة "تأكيد المتابعات" توري اللي اترربط أوتوماتيك
+//    ومحتاج مراجعة، فوق اللي لسه مستني ربط يدوي.
+//
+// ⚠️ حالة منفصلة (_flkData مش _lkData) عشان متتلخبطش مع
+//    تابة "مراجعة الربط" العادية لو الاتنين مفتوحين.
+let _flkData = null;
+
+async function dbLoadFollowLinks(){
+  try{
+    const r = await callApi('adminAction', {
+      token: SESSION.token, action: 'linkReview', kind: 'followup',
+    });
+    _flkData = r;
+    renderDashboard();
+  }catch(e){ toastErr(e.message); }
+}
+
 // ✅ الربط صح
 async function dbLinkOk(id){
   try{
@@ -19227,8 +19250,56 @@ function dbPending(r){
   if(_pnSub === 'links')      return bar + dbTabLinks();
   if(_pnSub === 'review')     return bar + dbTabReview();
   if(_pnSub === 'snapfollow') return bar + dbPnWait(r, 'snap');
-  if(_pnSub === 'followWait') return bar + dbPnWait(r, 'follow');
+  // 🔄 تأكيد المتابعات — قسمين مع بعض: اللي اترربطت خلاص
+  //    ومحتاجة مراجعة، واللي لسه مستنية ربط يدوي.
+  if(_pnSub === 'followWait') return bar + dbFollowLinked_() + dbPnWait(r, 'follow');
   return bar + dbPnWait(r, 'sent');
+}
+
+// ✅ القسم العلوي — المتابعات اللي اترربطت أوتوماتيك ومحتاجة
+//    تأكيد أو تصحيح لينك.
+function dbFollowLinked_(){
+  const d = _flkData;
+  if(!d){ dbLoadFollowLinks(); return '<div class="db-ld">⏳ بنحمّل…</div>'; }
+
+  const items = d.items || [];
+  if(!items.length) return '';
+
+  let h = '<div class="lk-sec-h">✅ اترربطت — راجعيها وأكّدي</div>';
+  h += '<div class="lk-hint">'
+    + '💡 شوفي الصورة والاسم: لو الربط صح دوسي <b>✅ صح</b>. '
+    + 'لو غلط دوسي <b>🔗 غيّري</b> والصقي لينك الحساب الصحيح.'
+    + '</div>';
+
+  h += '<div class="lk-grid">' + items.map(x => {
+    const ic = x.platform === 'tiktok' ? '🎵' : '📷';
+    const hn = esc(x.handle || '—');
+    return '<div class="lk-c" id="lk' + x.id + '">'
+      + (x.url
+        ? '<img class="lk-im" src="' + esc(x.url) + '" loading="lazy" '
+          + 'onclick="dbZoom(\'' + esc(x.url) + '\')">'
+        : '<div class="lk-im no">🖼️</div>')
+      + '<div class="lk-d">'
+      +   '<b>' + ic + ' @' + hn + '</b>'
+      +   (x.display ? '<u>' + esc(x.display) + '</u>' : '')
+      +   '<span>' + esc(x.staff) + ' · متابعة ' + x.seq + '</span>'
+      +   '<span class="lk-t">' + esc(x.date) + ' · ' + esc(x.time) + '</span>'
+      +   (x.profile
+          ? '<a class="lk-p" href="' + esc(x.profile) + '" target="_blank" '
+            + 'rel="noopener">🔗 افتحي الحساب</a>' : '')
+      + '</div>'
+      + '<div class="lk-a">'
+      +   '<button class="lk-ok" onclick="dbLinkOk(' + x.id + ')">'
+      +     '✅ صح</button>'
+      +   '<button class="lk-fx" onclick="dbLinkFix(' + x.id + ',\''
+      +     esc(x.profile) + '\',\'' + hn + '\',\'' + esc(x.url) + '\')">'
+      +     '🔗 غيّري</button>'
+      + '</div>'
+      + '</div>';
+  }).join('') + '</div>'
+  + '<div class="lk-sec-h" style="margin-top:14px">⏳ لسه مستنية ربط</div>';
+
+  return h;
 }
 
 function dbPnWait(r, mode){
