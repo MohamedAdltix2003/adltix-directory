@@ -19208,11 +19208,11 @@ function dbPending(r){
   const bar = '<div class="pn-subs">'
     + '<button class="pn-sb' + (_pnSub==='wait'?' on':'') + '" '
     +   'onclick="dbPnSub(\'wait\')">📥 مستنية ربط</button>'
-    // 🔄 متابعات إنستجرام/تيك توك مستنية — تابة منفصلة عن
-    //    الإرسال العادي، عشان لو اترربطت غلط الإدارة تراجعها
-    //    بسهولة من غير ما تتلخبط وسط صور الإرسال.
+    // 🔄 تأكيد المتابعات — تابة منفصلة عن الإرسال العادي،
+    //    عشان الإدارة تراجع كل متابعة وتتأكد إنها اترربطت
+    //    صح قبل ما تسجّل نهائي.
     + '<button class="pn-sb' + (_pnSub==='followWait'?' on':'') + '" '
-    +   'onclick="dbPnSub(\'followWait\')">🔄 متابعات مستنية</button>'
+    +   'onclick="dbPnSub(\'followWait\')">🔄 تأكيد المتابعات</button>'
     // 👻 متابعات سناب — تابة منفصلة تمامًا، مش مخلوطة بالإرسال
     //    لأن اسم الحساب مبيبانش في صورة سناب، فالربط بيتم يدوي
     //    من هنا بس، بعيد عن باقي الإرسال العادي.
@@ -19253,7 +19253,7 @@ function dbPnWait(r, mode){
     const emptyMsg = mode === 'snap'
       ? '✅ مفيش متابعات سناب مستنية — كله متربط'
       : mode === 'follow'
-      ? '✅ مفيش متابعات مستنية — كله متربط'
+      ? '✅ مفيش متابعات محتاجة تأكيد — كله متربط'
       : '✅ مفيش إثباتات مستنية — كله متربط';
     return '<div class="db-empty">' + emptyMsg + '</div>';
   }
@@ -19271,7 +19271,7 @@ function dbPnWait(r, mode){
   const noName = items.filter(x => !x.ai_name).length;
 
   const kpiLabel = mode === 'snap'   ? 'متابعات سناب مستنية'
-                  : mode === 'follow' ? 'متابعات مستنية'
+                  : mode === 'follow' ? 'تأكيد المتابعات'
                   : 'مستنية ربط';
   h += '<div class="db-kpis">'
     +   dbCard('📥', kpiLabel, total, '', total > 50 ? 'bad' : '')
