@@ -14891,10 +14891,18 @@ const AUTO_PLAT = {
 
 // 🔗 نستخرج الـ uid من اللينك — للربط حتى لو الإضافة رفضت
 function uidFromLink_(link){
-  const m = String(link || '').toLowerCase()
+  const clean = String(link || '').toLowerCase()
     .replace(/^https?:\/\//, '').replace(/^www\./, '')
-    .replace(/[?#].*$/, '').replace(/\/+$/, '')
-    .match(/(instagram|tiktok|snapchat|youtube)\.com\/(?:add\/|@)?([\w.\-]+)/);
+    .replace(/[?#].*$/, '').replace(/\/+$/, '');
+
+  // 🚫 لينكات سناب المختصرة (snapchat.com/t/CODE) — الاسم
+  //    مش موجود في اللينك خالص، لازم تتفتح فعليًا عشان
+  //    تعرفي مين. كانت بترجع uid غلط ("snapchat:t") بدل ما
+  //    ترفض بوضوح وتسيب المكان للربط اليدوي.
+  if(/snapchat\.com\/t\//.test(clean)) return '';
+
+  const m = clean.match(
+    /(instagram|tiktok|snapchat|youtube)\.com\/(?:add\/|@)?([\w.\-]+)/);
   return m ? m[1] + ':' + m[2] : '';
 }
 
@@ -15517,6 +15525,16 @@ function mpSnapNext(){
     });
 
   if(!links.length){ toastErr('الصق اللينكات الأول'); return; }
+
+  // ⚠️ لينكات المشاركة المختصرة (snapchat.com/t/CODE) مفيهاش
+  //    اسم المستخدم خالص — لازم تتفتح فعليًا عشان تعرفي مين.
+  //    كانت بتترربط غلط بصمت، دلوقتي بنوقف ونوضّح للموظفة.
+  const shortLinks = links.filter(x => /snapchat\.com\/t\//i.test(x));
+  if(shortLinks.length){
+    toastErr('⚠️ ' + shortLinks.length + ' لينك مختصر (snapchat.com/t/...) '
+      + '— افتحيه وانسخي لينك البروفايل الحقيقي (snapchat.com/add/الاسم)');
+    return;
+  }
 
   MP.snapLinks = links;
   MP.snapStep = 'shots';
