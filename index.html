@@ -15541,7 +15541,8 @@ async function mpFiles(files){
   //
   // ⚠️ لو ناقص صورة في النص، كل اللي بعدها هتتزحلق وتتربط
   //    بمؤثر غلط. فبنوقف بدل ما نغلط.
-  if(MP.plat === 'snapchat'){
+  // 🔄 متابعة سناب صور بس — من غير لينكات، فمفيش عدد نقارنه
+  if(MP.plat === 'snapchat' && MP.kind !== 'followup'){
     const need = MP.snapLinks.length;
     if(list.length !== need){
       alert('⚠️ العدد مش متساوي\n\n'
@@ -15567,7 +15568,8 @@ async function mpFiles(files){
     //
     // ⚠️ indexOf أثناء الفحص بيبوظ لو الترتيب اتغيّر،
     //    فبنربط اللينك بالصورة وقت الاختيار.
-    snapLink: MP.plat === 'snapchat' ? (MP.snapLinks[i] || '') : '',
+    snapLink: (MP.plat === 'snapchat' && MP.kind !== 'followup')
+      ? (MP.snapLinks[i] || '') : '',
   }));
   MP.done = 0;
   renderMobileProofs();
@@ -15592,7 +15594,9 @@ async function runOCR_(){
   //
   // ⚠️ الفحص ممكن يفشل أو الموديل يقف — والربط لازم يتم
   //    برضه، لأن اللينك هو المصدر الوحيد هنا.
-  if(MP.plat === 'snapchat'){
+  // 🔄 متابعة سناب مالهاش لينكات — بتدخل مسار المطابقة
+  //    بالاسم زي إنستجرام وتيك توك بالظبط (تحت في الدالة).
+  if(MP.plat === 'snapchat' && MP.kind !== 'followup'){
     for(const it of MP.items){
       const link = it.snapLink || '';
       if(!link || it.uid) continue;
@@ -16524,8 +16528,13 @@ function renderMobileProofs(){
     return;
   }
 
-  // ═══ ② سناب — اللينكات الأول ═══
-  if(MP.plat === 'snapchat' && MP.snapStep === 'links'){
+  // ═══ ② سناب — اللينكات الأول (إرسال/اشتراك بس)
+  //
+  // ⚠️ متابعة سناب مفيهاش خطوة لينكات — الموقع عارف مين
+  //    المؤثر أصلاً من قايمة المتابعات، فبترفع صور بس زي
+  //    إنستجرام وتيك توك بالظبط.
+  if(MP.plat === 'snapchat' && MP.snapStep === 'links'
+     && MP.kind !== 'followup'){
     ov.innerHTML = mpShell_(crumbs + mpSnapLinks_());
     mpBind_();
     return;
