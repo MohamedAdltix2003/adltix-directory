@@ -15297,19 +15297,36 @@ function nameScore_(a, b){
 //    "ameeramalallah" اتربط بـ "amera8__"
 //    "dantilna" اتربط بـ "al.marri"
 //    أي حاجة أقل من تطابق كامل بتروح للإدارة بمقترح.
+// 🔄 قايمة المتابعات جاهزة للمطابقة — بتتبني مرة واحدة بس
+//    قبل حلقة الفحص، مش مع كل صورة (كانت بتترجم من الأول
+//    لكل صورة في الدفعة، وده كان بيبطّئ الرفع بشكل واضح
+//    لما تكون المتابعات كتير).
+let _mpFollowPool = null;
+
+function mpFollowPool_(){
+  if(_mpFollowPool) return _mpFollowPool;
+  _mpFollowPool = (Array.isArray(MP.follows) ? MP.follows : []).map(f => ({
+    uid: f.uid, handle: f.handle,
+    platform: f.platform, action: 'followup',
+    seq: Number(f.seq) || 1,
+    // ⚠️ الاسم الصح للحقل اللي دالة المطابقة بتقراه —
+    //    كان مكتوب display_name فمكانتش بتتقرا خالص،
+    //    فقناة كاملة من المطابقة (بالاسم العربي) كانت
+    //    معطّلة تمامًا للمتابعات.
+    display: f.display || '',
+    followers: Number(f.followers) || 0,
+    // ✅ المتابعات كلها "معروفة" — مفيش تمييز يومي زي
+    //    المؤثرين الجداد، فبنديها حد المطابقة المتساهل
+    //    (65%) بدل الصارم (78%) اللي كان بيرفض حاجات
+    //    كتير كانت واضحة فعلاً.
+    added_today: true,
+  }));
+  return _mpFollowPool;
+}
+
 function matchCandidate_(handles){
-  // 🔄 لو الموظفة بترفع "متابعة"، لازم ندوّر في قايمة
-  //    المتابعات (MP.follows) مش بس مؤثريها العاديين —
-  //    عشان مؤثر عند زميلة تانية بس محتاج متابعة منها
-  //    كان بيفوّت الربط ويروح لمستنية الربط بالغلط.
-  const pool = (MP.kind === 'followup' && Array.isArray(MP.follows) && MP.follows.length)
-    ? MP.follows.map(f => ({
-        uid: f.uid, handle: f.handle,
-        platform: f.platform, action: 'followup',
-        seq: Number(f.seq) || 1,
-        display_name: f.display || '',
-        followers: Number(f.followers) || 0,
-      }))
+  const pool = (MP.kind === 'followup')
+    ? mpFollowPool_()
     : MP.cands;
 
   if(!handles || !handles.length || !pool.length) return null;
@@ -15418,7 +15435,8 @@ function mpChooser_(){
   const P = [
     ['instagram', '📸', 'إنستجرام', 'ارفعي الصور بس'],
     ['tiktok',    '🎵', 'تيك توك',  'ارفعي الصور بس'],
-    ['snapchat',  '👻', 'سناب شات', 'لينكات + صور بالترتيب'],
+    ['snapchat',  '👻', 'سناب شات',
+      MP.kind === 'followup' ? 'ارفعي الصور بس' : 'لينكات + صور بالترتيب'],
   ];
 
   return '<div class="mp-choose">'
@@ -16061,7 +16079,7 @@ async function mpLoadLists(){
     MP.leads   = all.filter(x => x.action === 'sent');
     // ⚠️ الدالة بترجّع المستحقين فعلًا (عدّى يومين).
     //    الاحتياطي القديم كان بيعد كل اللي اتبعتلهم — رقم أكبر.
-    MP.follows = f.items || [];
+    MP.follows = f.items || [];  _mpFollowPool = null;  // 🔄 القايمة اتحدّثت — نمسح الكاش
     MP.loadErr = '';
   }catch(e){
     // ⚠️ الفشل هنا كان بيتبلع — فالصور بتتفحص ومفيش
@@ -16542,17 +16560,26 @@ function renderMobileProofs(){
 
   // ═══ ③ مفيش صور لسه ═══
   if(!n){
-    const isSnap = MP.plat === 'snapchat';
+    // ⚠️ متابعة سناب صور بس زي إنستجرام — مالهاش لينكات ولا
+    //    عدد محدد، فالرسالة القديمة (بتتكلم عن لينكات وعدد
+    //    ثابت) بقت مش منطقية هنا.
+    const isSnapLinked = MP.plat === 'snapchat' && MP.kind !== 'followup';
     body = crumbs
       + '<div class="mp-empty">'
       + '<div class="mp-ei">' + (MP.kind==='followup' ? '🔄' : '📸') + '</div>'
-      + '<b>' + (isSnap
+      + '<b>' + (isSnapLinked
           ? 'دلوقتي الصور — ' + MP.snapLinks.length + ' صورة'
-          : 'اختاري صور الإثبات') + '</b>'
+          : 'اختاري صور المتابعات') + '</b>'
       + '<span>'
-      +   (isSnap
+      +   (isSnapLinked
           ? 'ارفعي الصور <b>بنفس ترتيب اللينكات</b> — أول صورة لأول لينك.'
             + '<br>لازم يكونوا <b>' + MP.snapLinks.length + '</b> صورة بالظبط.'
+          : MP.kind === 'followup'
+          // 🔄 المتابعة صور بس — إنستجرام وتيك توك وسناب سوا.
+          //    مفيش لينكات ومفيش ترتيب معيّن، كل صورة بتتربط
+          //    بمؤثرها لوحدها.
+          ? '📷 <b>صور بس، من غير لينكات</b> — كل صورة هتتربط '
+            + 'بالمؤثر بتاعها لوحدها، مفيش ترتيب معيّن.'
           : 'لحد 100 صورة مرة واحدة. النظام هيقرا اسم الحساب من كل صورة، '
             + 'يجيب اللينك، ويضيفه ليكي تلقائي.')
       +   (MP.kind==='followup'
@@ -18333,7 +18360,7 @@ async function mpUpload(){
     //
     // ⚠️ MP.follows كانت بتتحمّل مرة واحدة، فالرقم يفضل 618
     //    حتى بعد ما ترفع متابعات.
-    MP.follows = null;
+    MP.follows = null;  _mpFollowPool = null;  // 🔄 القايمة اتحدّثت — نمسح الكاش
     window._fuAsked = false;
     loadFollowsDue().catch(() => {});
 
@@ -21529,7 +21556,7 @@ async function loadFollowsDue(){
     const r = await callApi('verifyProof', {
       token: SESSION.token, action: 'followups',
     });
-    MP.follows = r.items || [];
+    MP.follows = r.items || [];  _mpFollowPool = null;  // 🔄 القايمة اتحدّثت — نمسح الكاش
     // ⚠️ render() بتعيد بناء الأزرار جوّه buildAllPills، فلو
     //    ندهنا updateViewCounts قبلها بتتلغي. بننده بعدها
     //    في إطار جديد عشان الترتيب يبقى مضمون.
