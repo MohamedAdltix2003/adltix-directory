@@ -19661,18 +19661,27 @@ async function dbSnapSentLink_(id){
   if(!link){ toastErr('اكتبي اللينك أو اليوزرنيم الأول'); return; }
 
   try{
-    const r = await callApi('adminAction', {
-      token: SESSION.token, action: 'linkSnapSentPhoto', id, link,
+    // ⚠️ نداء مباشر مش callApi — عشان لو فيه تعارض نحتاج
+    //    تفاصيل الصورة القديمة (staff/date/url)، وcallApi
+    //    بترمي رسالة نص بس وبتفقدهم لو ok:false.
+    const res = await fetch(FN_BASE + '/admin-action', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        token: SESSION.token, action: 'linkSnapSentPhoto', id, link,
+      }),
     });
+    const r = await res.json();
 
-    if(r && r.conflict){
-      dbSnapSentConflict_(id, r);
+    if(!r.ok && r.result && r.result.conflict){
+      dbSnapSentConflict_(id, r.result);
       return;
     }
+    if(!r.ok){ toastErr(r.error || 'حصل خطأ'); return; }
 
+    const result = r.result || r;
     const el = document.getElementById('sns' + id);
     if(el){ el.style.opacity = '0.25'; setTimeout(()=>el.remove(), 220); }
-    toastOk('✅ اترربطت — @' + String(r.uid || '').split(':')[1]);
+    toastOk('✅ اترربطت — @' + String(result.uid || '').split(':')[1]);
     _snsData = null;
     setTimeout(() => dbLoadSnapSent_(), 350);
   }catch(e){ toastErr(e.message); }
