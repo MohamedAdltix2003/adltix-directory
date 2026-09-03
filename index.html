@@ -4988,6 +4988,38 @@
   .mp-body{ flex:1; overflow-y:auto; padding:14px 16px; overscroll-behavior:contain }
 
   /* فاضي */
+  /* 📸 اختيار طريقة إرسال سناب */
+  .snsc-opts{ display:flex; flex-direction:column; gap:10px; margin-top:6px }
+  .snsc-o{
+    text-align:right; font-family:inherit; cursor:pointer;
+    padding:14px 16px; border-radius:14px; border:1.5px solid var(--line);
+    background:var(--surface); display:flex; flex-direction:column; gap:3px;
+  }
+  .snsc-o i{ font-size:20px; margin-bottom:2px }
+  .snsc-o b{ font-size:13.5px; font-weight:800; color:var(--ink) }
+  .snsc-o span{ font-size:11.5px; color:var(--muted); line-height:1.7 }
+  .snsc-o.hi{ border-color:#0EA5E9; background:rgba(14,165,233,.06) }
+  .snsc-o:active{ transform:scale(.98) }
+
+  /* 📸 شاشة رفع صور سناب بس */
+  .sns-prog{
+    text-align:center; padding:10px; margin:8px 0; font-size:13px;
+    color:var(--muted);
+  }
+  .sns-prog b{ color:var(--ink) }
+  .sns-prog .bad{ color:#B91C1C }
+  .sns-grid{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:7px;
+    padding:0 4px;
+  }
+  .sns-c{ position:relative; border-radius:10px; overflow:hidden; aspect-ratio:1 }
+  .sns-c img{ width:100%; height:100%; object-fit:cover }
+  .sns-c span{
+    position:absolute; bottom:3px; left:3px; font-size:13px;
+    background:rgba(0,0,0,.55); border-radius:6px; padding:1px 5px;
+  }
+  .sns-c.ok img{ opacity:.55 }
+
   .mp-empty{ text-align:center; padding:26px 12px }
   .mp-ei{ font-size:44px; margin-bottom:12px }
   .mp-empty b{ display:block; font-size:15.5px; font-weight:900;
@@ -15495,7 +15527,128 @@ function mpSnapLinks_(){
 function mpPlat(v){
   MP.plat = v;
   MP.snapStep = v === 'snapchat' ? 'links' : 'shots';
+  MP.snapSentMode = null;  // 📸 نرجّع الاختيار فاضي كل مرة
   renderMobileProofs();
+}
+
+// 📸 الموظفة اختارت طريقة إرسال سناب — لينكات أو صور بس
+function mpSnapSentPick_(mode){
+  MP.snapSentMode = mode;
+  if(mode === 'photos'){ MP.items = []; MP.done = 0; }
+  renderMobileProofs();
+}
+
+// 📸 شاشة "صور بس" — رفع واختفاء فوري، من غير لينكات
+function mpSnapSentPhotosScreen_(){
+  const n = MP.items.length;
+  const done = MP.items.filter(x => x.state === 'ok').length;
+  const failed = MP.items.filter(x => x.state === 'fail').length;
+
+  let body = '<div class="mp-empty">'
+    + '<div class="mp-ei">⚡</div>'
+    + '<b>صور بس — من غير لينكات</b>'
+    + '<span>اختاري أي عدد صور، بأي ترتيب. كل صورة هتتحسب '
+    + 'في التارجت فورًا، وتتربط بعدين من الداشبورد.</span>'
+    + '<input type="file" id="snsFile" accept="image/*" multiple '
+    +   'style="display:none" onchange="mpSnapSentFiles_(this.files)">'
+    + '<button class="mp-pick" onclick="document.getElementById(\'snsFile\').click()">'
+    +   '📷 اختاري الصور</button>'
+    + '</div>';
+
+  if(n){
+    body += '<div class="sns-prog">'
+      + '<b>' + done + ' / ' + n + '</b> اترفعت'
+      + (failed ? '<span class="bad"> · ' + failed + ' فشلوا</span>' : '')
+      + '</div>';
+    body += '<div class="sns-grid">' + MP.items.map(it =>
+      '<div class="sns-c ' + it.state + '">'
+      + '<img src="' + esc(it.preview) + '" loading="lazy">'
+      + '<span>' + (it.state === 'ok' ? '✅'
+                  : it.state === 'fail' ? '❌'
+                  : it.state === 'up' ? '⏳' : '·') + '</span>'
+      + '</div>').join('') + '</div>';
+  }
+
+  return body;
+}
+
+async function mpSnapSentFiles_(files){
+  const list = Array.from(files || []).slice(0, 100);
+  if(!list.length) return;
+
+  const start = MP.items.length;
+  MP.items = MP.items.concat(list.map((f, i) => ({
+    id: 'sns' + Date.now() + '_' + i,
+    file: f, preview: URL.createObjectURL(f), state: 'wait',
+  })));
+  renderMobileProofs();
+
+  for(let i = start; i < MP.items.length; i++){
+    const it = MP.items[i];
+    it.state = 'up';
+    renderMobileProofs();
+    try{
+      const hash = await fileHash(it.file);
+      const b64  = await fileToBase64Small(it.file);
+
+      // 1️⃣ نرفع الصورة للتخزين — نفس القناة المُختبرة اللي
+      //    الموقع بيستخدمها للصور اللي مالهاش مؤثر معروف لسه
+      //    (mpUploadPending)، مش قناة جديدة مخترعة.
+      let url = '';
+      try{
+        const up = await callApi('logAction', {
+          token: SESSION.token, uid: '', actionType: 'pending',
+          imageBase64: b64, mode: 'pending',
+        });
+        url = (up && up.screenshotUrl) || '';
+      }catch(e){
+        // 🔎 الرد ضاع؟ نتأكد قبل ما نعتبرها فشلت
+        try{
+          const seen = await callApi('verifyProof', {
+            token: SESSION.token, action: 'findByHash', hash,
+          });
+          url = (seen && seen.url) || '';
+        }catch(_){ /* هادئ */ }
+      }
+      if(!url) throw new Error('فشل الرفع');
+
+      // 2️⃣ نسجّلها فورًا في actions_log — تتحسب في التارجت
+      //    على طول (مش زي addPending العادية اللي بتروح
+      //    pending_proofs ومتتحسبش لحد الربط).
+      const r = await callApi('verifyProof', {
+        token: SESSION.token, action: 'addSnapSentPhoto', url, hash,
+      });
+
+      it.state = r && r.id ? 'ok' : 'fail';
+    }catch(e){
+      it.state = 'fail';
+    }
+    renderMobileProofs();
+  }
+
+  toastOk('✅ خلصت الدفعة — هتلاقيهم في "إثبات إرسال سناب شات"');
+  invalidateCache();
+  refreshTargetBar();
+}
+
+// 📸 شاشة الاختيار — طريقتين
+function mpSnapSentChoice_(){
+  return '<div class="mp-empty snsc">'
+    + '<div class="mp-ei">📸</div>'
+    + '<b>إزاي عايزة ترفعي؟</b>'
+    + '<span>اختاري الطريقة اللي أسهل عليكي</span>'
+    + '<div class="snsc-opts">'
+    +   '<button class="snsc-o" onclick="mpSnapSentPick_(\'links\')">'
+    +     '<i>🔗</i><b>لينكات + صور بالترتيب</b>'
+    +     '<span>زي المعتاد — بتترربط أوتوماتيك على طول</span>'
+    +   '</button>'
+    +   '<button class="snsc-o hi" onclick="mpSnapSentPick_(\'photos\')">'
+    +     '<i>⚡</i><b>صور بس — أسرع</b>'
+    +     '<span>من غير لينكات خالص. تتحسب في التارجت فورًا، '
+    +     'وتتربط بعدين من الداشبورد.</span>'
+    +   '</button>'
+    + '</div>'
+    + '</div>';
 }
 
 // ↩️ رجوع للاختيار
@@ -16568,6 +16721,26 @@ function renderMobileProofs(){
   // ═══ ① لسه ماختارتش المنصة ═══
   if(!MP.plat){
     ov.innerHTML = mpShell_(mpChooser_());
+    mpBind_();
+    return;
+  }
+
+  // ═══ ①.٥ سناب + إرسال — طريقتين، الموظفة تختار
+  //
+  // ⚠️ ده اختيار جديد قبل شاشة اللينكات — بيظهر لـ "إرسال"
+  //    بس (مش متابعة ولا اشتراك). لو اختارت "لينكات"، بتكمّل
+  //    نفس المسار القديم بالظبط زي ما هو. لو اختارت "صور بس"،
+  //    بتاخد مسار جديد تمامًا (mpSnapSentPhotos_).
+  if(MP.plat === 'snapchat' && MP.kind === 'sent' && !MP.snapSentMode){
+    ov.innerHTML = mpShell_(crumbs + mpSnapSentChoice_());
+    mpBind_();
+    return;
+  }
+
+  // ═══ ②.أ سناب + إرسال + "صور بس" — مسار جديد كامل
+  if(MP.plat === 'snapchat' && MP.kind === 'sent'
+     && MP.snapSentMode === 'photos'){
+    ov.innerHTML = mpShell_(crumbs + mpSnapSentPhotosScreen_());
     mpBind_();
     return;
   }
@@ -19381,7 +19554,7 @@ function dbPnSub(v){
   //    تفضل فاضية لأن السيرفر كان فلترها من قبل.
   const needsFresh = (_pnKind || (_pnStaff && _pnStaff !== 'all'));
   _pnKind = ''; _pnStaff = 'all';
-  if(needsFresh || v === 'snapfollow'){
+  if(needsFresh || v === 'snapfollow' || v === 'snapSent'){
     loadDashboard(true, '', '');
   } else {
     renderDashboard();
@@ -19402,6 +19575,11 @@ function dbPending(r){
     //    من هنا بس، بعيد عن باقي الإرسال العادي.
     + '<button class="pn-sb' + (_pnSub==='snapfollow'?' on':'') + '" '
     +   'onclick="dbPnSub(\'snapfollow\')">👻 متابعات سناب مستنية</button>'
+    // 📸 إثبات إرسال سناب شات — صور "إرسال" اترفعت من غير
+    //    لينك، مستنية ربط. منفصلة عن المتابعات ومنفصلة عن
+    //    مستنية الربط العادية (إنستجرام/تيك توك).
+    + '<button class="pn-sb' + (_pnSub==='snapSent'?' on':'') + '" '
+    +   'onclick="dbPnSub(\'snapSent\')">📸 إثبات إرسال سناب شات</button>'
     + '<button class="pn-sb' + (_pnSub==='links'?' on':'') + '" '
     +   'onclick="dbPnSub(\'links\')">🔗 مراجعة الربط</button>'
     + '<button class="pn-sb' + (_pnSub==='review'?' on':'') + '" '
@@ -19411,10 +19589,151 @@ function dbPending(r){
   if(_pnSub === 'links')      return bar + dbTabLinks();
   if(_pnSub === 'review')     return bar + dbTabReview();
   if(_pnSub === 'snapfollow') return bar + dbPnWait(r, 'snap');
+  if(_pnSub === 'snapSent')   return bar + dbSnapSentTab_();
   // 🔄 تأكيد المتابعات — قسمين مع بعض: اللي اترربطت خلاص
   //    ومحتاجة مراجعة، واللي لسه مستنية ربط يدوي.
   if(_pnSub === 'followWait') return bar + dbFollowLinked_() + dbPnWait(r, 'follow');
   return bar + dbPnWait(r, 'sent');
+}
+
+// 📸 تابة إثبات إرسال سناب شات — منفصلة تمامًا
+let _snsData = null;
+
+async function dbLoadSnapSent_(){
+  try{
+    const r = await callApi('adminAction', {
+      token: SESSION.token, action: 'snapSentPendingList',
+    });
+    _snsData = r;
+    renderDashboard();
+  }catch(e){ toastErr(e.message); }
+}
+
+function dbSnapSentTab_(){
+  const d = _snsData;
+  if(!d){ dbLoadSnapSent_(); return '<div class="db-ld">⏳ بنحمّل…</div>'; }
+
+  const items = d.items || [];
+  let h = '<div class="db-kpis">'
+    + dbCard('📸', 'إثبات إرسال سناب مستنية', d.total || 0, '',
+             (d.total||0) > 50 ? 'bad' : '')
+    + '</div>';
+
+  if(!items.length){
+    return h + '<div class="db-empty">✅ مفيش صور مستنية — كله متربط</div>';
+  }
+
+  h += '<div class="lk-hint">'
+    + '💡 الصقي لينك سناب أو اليوزرنيم بس، ودوسي Enter — '
+    + 'هتتربط بنفس تاريخ ووقت الرفع.'
+    + '</div>';
+
+  h += '<div class="lk-grid">' + items.map(x =>
+    '<div class="lk-c" id="sns' + x.id + '">'
+    + (x.url
+      ? '<img class="lk-im" src="' + esc(x.url) + '" loading="lazy" '
+        + 'onclick="dbZoom(\'' + esc(x.url) + '\')">'
+      : '<div class="lk-im no">🖼️</div>')
+    + '<div class="lk-d">'
+    +   '<b>' + esc(x.staff) + '</b>'
+    +   '<span class="lk-t">' + esc(x.date) + ' · ' + esc(x.time) + '</span>'
+    +   '<input class="lkf-in sns-in" id="snsIn' + x.id + '" type="text" '
+    +     'dir="ltr" placeholder="لينك سناب أو يوزرنيم…" '
+    +     'onkeydown="if(event.key===\'Enter\')dbSnapSentLink_(' + x.id + ')">'
+    + '</div>'
+    + '<div class="lk-a">'
+    +   '<button class="lk-ok" onclick="dbSnapSentLink_(' + x.id + ')">'
+    +     '✅ اربطي</button>'
+    +   '<button class="lk-del" onclick="dbSnapSentDel_(' + x.id + ')">'
+    +     '🗑️</button>'
+    + '</div>'
+    + '</div>'
+  ).join('') + '</div>';
+
+  return h;
+}
+
+async function dbSnapSentLink_(id){
+  const inp = document.getElementById('snsIn' + id);
+  const link = inp ? inp.value.trim() : '';
+  if(!link){ toastErr('اكتبي اللينك أو اليوزرنيم الأول'); return; }
+
+  try{
+    const r = await callApi('adminAction', {
+      token: SESSION.token, action: 'linkSnapSentPhoto', id, link,
+    });
+
+    if(r && r.conflict){
+      dbSnapSentConflict_(id, r);
+      return;
+    }
+
+    const el = document.getElementById('sns' + id);
+    if(el){ el.style.opacity = '0.25'; setTimeout(()=>el.remove(), 220); }
+    toastOk('✅ اترربطت — @' + String(r.uid || '').split(':')[1]);
+    _snsData = null;
+    setTimeout(() => dbLoadSnapSent_(), 350);
+  }catch(e){ toastErr(e.message); }
+}
+
+// ⚠️ نافذة تعارض مخصوصة لإثبات إرسال سناب — منفصلة تمامًا
+//    عن dbShowConflict_ الأصلية عشان متتلمسش خالص.
+function dbSnapSentConflict_(pendingId, info){
+  const old = info.existing || {};
+  const ov = document.createElement('div');
+  ov.className = 'cf-overlay';
+  ov.innerHTML = '<div class="cf-box cfl-box">'
+    + '<div class="cfl-h"><b>⚠️ ' + esc(info.error || 'تعارض') + '</b>'
+    +   '<button class="cfl-x">✕</button></div>'
+    + '<div class="cfl-cmp">'
+    +   '<div class="cfl-c">'
+    +     '<span>القديمة — ' + esc(old.staff || '') + '</span>'
+    +     (old.url ? '<img src="' + esc(old.url) + '" loading="lazy">' : '')
+    +     '<i>' + esc(old.date || '') + ' · ' + esc(old.time || '') + '</i>'
+    +   '</div>'
+    +   '<div class="cfl-c">'
+    +     '<span>الجديدة</span>'
+    +     (info.new_url ? '<img src="' + esc(info.new_url) + '" loading="lazy">' : '')
+    +   '</div>'
+    + '</div>'
+    + '<div class="cf-btns">'
+    +   '<button class="cf-no" id="snsKeep">سيبي القديمة</button>'
+    +   '<button class="cf-yes" id="snsSwap">🔁 استبدلي بالجديدة</button>'
+    + '</div></div>';
+
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>ov.classList.add('show'));
+  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
+  ov.querySelector('.cfl-x').onclick = close;
+  ov.querySelector('#snsKeep').onclick = close;
+  ov.addEventListener('click', e => { if(e.target === ov) close(); });
+
+  ov.querySelector('#snsSwap').onclick = async () => {
+    try{
+      await callApi('adminAction', {
+        token: SESSION.token, action: 'swapSnapSentConflict',
+        conflictId: old.id, pendingId,
+      });
+      close();
+      const card = document.getElementById('sns' + pendingId);
+      if(card) card.remove();
+      toastOk('✅ اتستبدلت');
+    }catch(e){ toastErr(e.message); }
+  };
+}
+
+async function dbSnapSentDel_(id){
+  if(!confirm('هتمسحي الصورة دي نهائي؟\n\nهتتشال من التارجت.')) return;
+  try{
+    await callApi('adminAction', {
+      token: SESSION.token, action: 'deleteSnapSentPhoto', id,
+    });
+    const el = document.getElementById('sns' + id);
+    if(el){ el.style.opacity = '0.25'; setTimeout(()=>el.remove(), 220); }
+    toastOk('🗑️ اتمسحت');
+    _snsData = null;
+    setTimeout(() => dbLoadSnapSent_(), 350);
+  }catch(e){ toastErr(e.message); }
 }
 
 // ✅ القسم العلوي — المتابعات اللي اترربطت أوتوماتيك ومحتاجة
