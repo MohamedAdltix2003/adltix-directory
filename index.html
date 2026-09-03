@@ -20275,9 +20275,25 @@ function dbPnAddAny(id, staff, aiName, platform){
     const link = inp.value.trim();
     go.disabled = true; go.textContent = '⏳ بنربط…';
     try{
-      const r = await callApi('adminAction', {
-        token: SESSION.token, action: 'resolvePendingNewLead', id, link,
+      // ⚠️ نداء مباشر مش callApi — عشان لو فيه تعارض (نفس
+      //    الموظفة كررت نفس المؤثر في نفس اليوم) نحتاج تفاصيل
+      //    الصورة القديمة، وcallApi بترمي رسالة نص بس.
+      const res = await fetch(FN_BASE + '/admin-action', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          token: SESSION.token, action: 'resolvePendingNewLead', id, link,
+        }),
       });
+      const r = await res.json();
+
+      if(!r.ok && r.result && r.result.conflict){
+        close();
+        dbShowConflict_(id, r.result);
+        return;
+      }
+      if(!r.ok){ throw new Error(r.error || 'حصل خطأ'); }
+
+      const result = r.result || r;
       close();
       const card = document.getElementById('pn' + id);
       if(card){
@@ -20286,8 +20302,8 @@ function dbPnAddAny(id, staff, aiName, platform){
         card.style.opacity = '0';
         setTimeout(() => card.remove(), 300);
       }
-      toastOk('✅ اترفعت واتحسبت — @' + String(r.uid || '').split(':')[1]
-        + (r.is_partner ? ' 🤝 شريك' : ''));
+      toastOk('✅ اترفعت واتحسبت — @' + String(result.uid || '').split(':')[1]
+        + (result.is_partner ? ' 🤝 شريك' : ''));
     }catch(e){
       go.disabled = false; go.textContent = '✅ اربطي وارفعي';
       toastErr(e.message);
