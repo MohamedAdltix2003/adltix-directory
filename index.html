@@ -15593,18 +15593,23 @@ async function mpSnapSentFiles_(files){
       const hash = await fileHash(it.file);
       const b64  = await fileToBase64Small(it.file);
 
-      // 1️⃣ نرفع الصورة للتخزين — نفس القناة المُختبرة اللي
-      //    الموقع بيستخدمها للصور اللي مالهاش مؤثر معروف لسه
-      //    (mpUploadPending)، مش قناة جديدة مخترعة.
+      // 1️⃣ نرفع الصورة للتخزين بس — من غير أي أثر جانبي في
+      //    القاعدة خالص (مش pending_proofs ولا حاجة تانية).
+      //
+      // ⚠️ logAction mode:'pending' كانت بتسجّل صف في
+      //    pending_proofs بتوقيت مش متزامن مع الرد، فكانت
+      //    بتفضل موجودة زيادة حتى بعد محاولة التنظيف — وده
+      //    كان بيخلّي كل صورة تتحسب مرتين في التارجت.
       let url = '';
       try{
-        const up = await callApi('logAction', {
-          token: SESSION.token, uid: '', actionType: 'pending',
-          imageBase64: b64, mode: 'pending',
+        const up = await callApi('verifyProof', {
+          token: SESSION.token, action: 'uploadPhotoOnly',
+          imageBase64: b64,
         });
-        url = (up && up.screenshotUrl) || '';
-      }catch(e){
-        // 🔎 الرد ضاع؟ نتأكد قبل ما نعتبرها فشلت
+        url = (up && up.url) || '';
+      }catch(e){ /* هنتأكد تاني من findByHash تحت */ }
+
+      if(!url){
         try{
           const seen = await callApi('verifyProof', {
             token: SESSION.token, action: 'findByHash', hash,
@@ -19834,11 +19839,16 @@ function dbPnWait(r, mode){
     String(x.platform || '').toLowerCase() === 'snapchat'
     && String(x.kind || '') === 'followup';
   const isFollow = x => String(x.kind || '') === 'followup';
+  // 👻 أي إرسال/اشتراك سناب — له تابة خاصة (إثبات إرسال سناب
+  //    شات)، مش المفروض يظهر في مستنية ربط العادية خالص.
+  const isSnapSent = x =>
+    String(x.platform || '').toLowerCase() === 'snapchat'
+    && String(x.kind || '') !== 'followup';
 
   const items = (d.items || []).filter(x => {
     if(mode === 'snap')   return isSnapFollow(x);
     if(mode === 'follow') return isFollow(x) && !isSnapFollow(x);
-    return !isFollow(x);   // 'sent' — إرسال واشتراك بس
+    return !isFollow(x) && !isSnapSent(x);   // 'sent' — إنستجرام/تيك توك بس
   });
 
   if(!items.length){
