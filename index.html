@@ -19841,14 +19841,27 @@ function dbPnWait(r, mode){
   const isFollow = x => String(x.kind || '') === 'followup';
   // 👻 أي إرسال/اشتراك سناب — له تابة خاصة (إثبات إرسال سناب
   //    شات)، مش المفروض يظهر في مستنية ربط العادية خالص.
+  //
+  // ⚠️ platform مش دايمًا متسجّلة صح على صفوف قديمة، فبنتأكد
+  //    كمان من نمط اسم الملف بتاع رفعات "صور بس" القديمة.
   const isSnapSent = x =>
-    String(x.platform || '').toLowerCase() === 'snapchat'
-    && String(x.kind || '') !== 'followup';
+    (String(x.platform || '').toLowerCase() === 'snapchat'
+      && String(x.kind || '') !== 'followup')
+    || (String(x.kind || '') === 'sent'
+        && /\/pending_[\w]+_\d+_[\w]+\.(png|jpe?g)/i.test(String(x.url || '')));
 
+  // 🖼️ نفس الرابط بالظبط ظاهر أكتر من مرة؟ (بقايا تضاعف
+  //    قديمة) — نوري أول ظهور بس.
+  const seenUrls = new Set();
   const items = (d.items || []).filter(x => {
     if(mode === 'snap')   return isSnapFollow(x);
     if(mode === 'follow') return isFollow(x) && !isSnapFollow(x);
     return !isFollow(x) && !isSnapSent(x);   // 'sent' — إنستجرام/تيك توك بس
+  }).filter(x => {
+    const u = String(x.url || '');
+    if(u && seenUrls.has(u)) return false;
+    if(u) seenUrls.add(u);
+    return true;
   });
 
   if(!items.length){
