@@ -19620,10 +19620,19 @@ function dbSnapSentTab_(){
   const d = _snsData;
   if(!d){ dbLoadSnapSent_(); return '<div class="db-ld">⏳ بنحمّل…</div>'; }
 
-  const items = d.items || [];
+  // 🖼️ نفس الرابط بالظبط ظاهر أكتر من مرة (رفع مكرر غلط)؟
+  //    نوري أول ظهور بس — عشان "استبدلي" ماتضيّعش وقت على
+  //    حاجة أصلاً نفس الصورة.
+  const seenUrls = new Set();
+  const items = (d.items || []).filter(x => {
+    const u = String(x.url || '');
+    if(u && seenUrls.has(u)) return false;
+    if(u) seenUrls.add(u);
+    return true;
+  });
   let h = '<div class="db-kpis">'
-    + dbCard('📸', 'إثبات إرسال سناب مستنية', d.total || 0, '',
-             (d.total||0) > 50 ? 'bad' : '')
+    + dbCard('📸', 'إثبات إرسال سناب مستنية', items.length || 0, '',
+             (items.length||0) > 50 ? 'bad' : '')
     + '</div>';
 
   if(!items.length){
