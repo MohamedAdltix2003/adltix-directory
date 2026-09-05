@@ -19687,7 +19687,7 @@ async function dbSnapSentLink_(id){
     const el = document.getElementById('sns' + id);
     if(el){ el.style.opacity = '0.25'; setTimeout(()=>el.remove(), 220); }
     toastOk('✅ اترربطت — @' + String(result.uid || '').split(':')[1]);
-    _snsData = null;
+    _snsData = null; _lkData = null; _flkData = null;
     setTimeout(() => dbLoadSnapSent_(), 350);
   }catch(e){ toastErr(e.message); }
 }
@@ -19775,7 +19775,7 @@ async function dbSnapSentDel_(id){
     const el = document.getElementById('sns' + id);
     if(el){ el.style.opacity = '0.25'; setTimeout(()=>el.remove(), 220); }
     toastOk('🗑️ اتمسحت');
-    _snsData = null;
+    _snsData = null; _lkData = null; _flkData = null;
     setTimeout(() => dbLoadSnapSent_(), 350);
   }catch(e){ toastErr(e.message); }
 }
@@ -20172,6 +20172,11 @@ async function dbPnLink(id, uid, handle, kind){
       card.style.opacity = '0';
       setTimeout(() => card.remove(), 300);
     }
+    // 🔄 لازم ننضّف كاش كل التابات مع بعض — مش تابتنا بس.
+    //    من غيره، لو نفس الصورة (لأي سبب) موجودة في كاش تابة
+    //    تانية، هتفضل ظاهرة هناك لحد Refresh يدوي.
+    _lkData = null; _flkData = null; _snsData = null;
+
     // ↩️ زرار تراجع — 15 ثانية
     _lastLink = { id, uid, handle: result.handle };
     toastUndo('✅ اتربط بـ @' + String(result.handle || '').replace('@',''), id);
@@ -20321,6 +20326,8 @@ function dbPnAddAny(id, staff, aiName, platform){
         card.style.opacity = '0';
         setTimeout(() => card.remove(), 300);
       }
+      // 🔄 نفس التنضيف — كل الكاش مع بعض
+      _lkData = null; _flkData = null; _snsData = null;
       toastOk('✅ اترفعت واتحسبت — @' + String(result.uid || '').split(':')[1]
         + (result.is_partner ? ' 🤝 شريك' : ''));
     }catch(e){
