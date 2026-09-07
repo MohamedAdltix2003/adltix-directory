@@ -19386,7 +19386,7 @@ function dbLinkFix(id, cur, handle, img){
       const res = await fetch(FN_BASE + '/admin-action', {
         method: 'POST', headers: {'Content-Type':'application/json'},
         body: JSON.stringify({
-          token: SESSION.token, action: 'relinkProof', id, uid,
+          token: SESSION.token, action: 'relinkProof', id, uid, link: v,
         }),
       });
       const r = await res.json();
