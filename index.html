@@ -17738,7 +17738,28 @@ async function mpUploadOne(it){
           flag: it.flag || undefined,
           flagNote: it.flagNote || undefined,
         });
-      }, 4);
+      }, 4).catch(async (e) => {
+        // 🆘 سباق بين صورتين مختلفتين اترربطوا (صح أو غلط)
+        //    بنفس المؤثر في نفس اللحظة — بدل ما الصورة ترفض
+        //    خالص من غير ما تتحسب، نسجّلها بـ uid مؤقت وتفضل
+        //    تتحسب في التارجت، وتتحط للمراجعة بعدين.
+        const msg = String(e && e.message || '');
+        if(!/idx_one_action_per_seq|duplicate key/i.test(msg)) throw e;
+
+        const up = await callApi('verifyProof', {
+          token: SESSION.token, action: 'uploadPhotoOnly', imageBase64: b64,
+        });
+        const rawUrl = (up && up.url) || '';
+        if(!rawUrl) throw e;
+
+        await callApi('verifyProof', {
+          token: SESSION.token, action: 'addConflictPhoto',
+          url: rawUrl, hash, actionType: it.action || MP.kind,
+        });
+        it.msg = '⚠️ نفس المؤثر اترربط بصورة تانية في نفس اللحظة — '
+                 + 'سجّلت واتحسبت، هتتراجع في مراجعة الربط';
+        return { screenshotUrl: rawUrl, conflictSaved: true };
+      });
 
       it.logged = true;    // 🔒 من هنا الأكشن مسجّل
       it.upUrl  = (res && res.screenshotUrl) || '';   // للإنقاذ لو لزم
