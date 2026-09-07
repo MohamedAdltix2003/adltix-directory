@@ -17702,12 +17702,20 @@ async function mpUploadOne(it){
       // ⚠️ قبل كل إعادة بنتأكد إن الأكشن مااتسجّلش خلاص —
       //    عشان مانرفعش نسخة زيادة لو الرد ضاع بس.
       let tries = 0;
+      const attemptStart = Date.now();
       const res = await retry_(async () => {
         if(tries++ > 0){
           const seen = await callApi('verifyProof', {
             token: SESSION.token, action: 'lastProof', uid: it.uid,
           }).catch(() => null);
-          if(seen && seen.url){
+          // ⚠️ lastProof بترجّع آخر أكشن لنفس المؤثر — حتى لو
+          //    كان من أيام فاتت. من غير فحص الوقت، صف قديم
+          //    خالص كان بيتفهم غلط إنه "المحاولة دي نجحت"،
+          //    فالصورة الحالية كانت بتتعلّم "اترفعت" من غير
+          //    ما تترسجّل خالص — وده كان بيضيّع صور فعلية.
+          const seenTs = seen && seen.ts ? new Date(seen.ts).getTime() : 0;
+          const isRecent = seenTs && (Date.now() - seenTs) < 2 * 60 * 1000;
+          if(seen && seen.url && isRecent){
             return { screenshotUrl: seen.url, already: true };
           }
         }
