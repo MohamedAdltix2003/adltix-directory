@@ -16376,8 +16376,59 @@ function mpCard_(c, mode){
     +   (c.link || c.profile_url
         ? '<a class="mc-l" href="' + esc(c.link || c.profile_url) + '" target="_blank" '
           + 'rel="noopener">🔗</a>' : '')
+    // ✏️ تعديل اللينك — ميزة جديدة، الموظفة تقدر تصحّح لينك
+    //    غلط بنفسها من غير ما تحتاج تروح للداشبورد.
+    +   '<button class="mc-l" onclick="mpEditLink_(' + esc(JSON.stringify(uid)).replace(/"/g,'&quot;') + ')">'
+    +     '✏️</button>'
     + '</div>'
     + '</div>';
+}
+
+// ✏️ نافذة تعديل لينك مؤثر — من كارت الموبايل مباشرة
+function mpEditLink_(uid){
+  const ov = document.createElement('div');
+  ov.className = 'cf-overlay';
+  ov.innerHTML = '<div class="cf-box lkf-box">'
+    + '<div class="lkf-h"><b>✏️ عدّلي لينك المؤثر</b>'
+    +   '<button class="lkf-x">✕</button></div>'
+    + '<div class="lkf-now">دلوقتي مربوط بـ '
+    +   '<b>@' + esc(String(uid).split(':')[1] || '') + '</b></div>'
+    + '<input class="lkf-in" id="mpEditIn" type="text" dir="ltr" '
+    +   'placeholder="الصقي لينك الحساب الصح">'
+    + '<div class="lkf-hint">لينك البروفايل — إنستجرام · تيك توك</div>'
+    + '<div class="cf-btns">'
+    +   '<button class="cf-no">إلغاء</button>'
+    +   '<button class="cf-yes" id="mpEditGo">✅ اربطي</button>'
+    + '</div></div>';
+
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>ov.classList.add('show'));
+  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
+  ov.querySelector('.lkf-x').onclick = close;
+  ov.querySelector('.cf-no').onclick = close;
+  ov.addEventListener('click', e => { if(e.target === ov) close(); });
+  setTimeout(()=>{ const el = document.getElementById('mpEditIn');
+                   if(el) el.focus(); }, 260);
+
+  const go = ov.querySelector('#mpEditGo');
+  go.onclick = async () => {
+    const v = String(document.getElementById('mpEditIn').value || '').trim();
+    const newUid = uidFromLink_(v);
+    if(!newUid){ toastErr('اللينك مش مفهوم'); return; }
+
+    go.disabled = true; go.textContent = '⏳ بنعدّل…';
+    try{
+      const r = await callApi('verifyProof', {
+        token: SESSION.token, action: 'fixLink', uid, link: v,
+      });
+      close();
+      toastOk('✅ اللينك اتعدّل');
+      invalidateCache();
+    }catch(e){
+      go.disabled = false; go.textContent = '✅ اربطي';
+      toastErr(e.message);
+    }
+  };
 }
 
 // 🚩 إبلاغ عن ربط غلط — من كارت المتابعة
