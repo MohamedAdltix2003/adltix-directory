@@ -22006,6 +22006,12 @@ function globalSearchDlg(){
         + '</div>'
         + '<button class="gs-cp" onclick="copyTxt(\'@'
         +   esc(c.handle) + '\',this)" title="نسخ">⧉</button>'
+        // ✏️ نفس زرار تعديل اللينك اللي على الكارت العادي —
+        //    مكانش موجود هنا لأن كارت السيرش (gs-) دالة رسم
+        //    منفصلة تمامًا عن كارت المتابعات (mc-) اللي
+        //    ضفناله الزرار قبل كده.
+        + '<button class="gs-cp" onclick="mpEditLink_(\''
+        +   esc(c.uid) + '\')" title="عدّلي اللينك">✏️</button>'
         + '</div>';
     }).join('');
   };
