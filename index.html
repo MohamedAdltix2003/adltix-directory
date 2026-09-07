@@ -17702,20 +17702,19 @@ async function mpUploadOne(it){
       // ⚠️ قبل كل إعادة بنتأكد إن الأكشن مااتسجّلش خلاص —
       //    عشان مانرفعش نسخة زيادة لو الرد ضاع بس.
       let tries = 0;
-      const attemptStart = Date.now();
       const res = await retry_(async () => {
-        if(tries++ > 0){
+        if(tries++ > 0 && hash){
+          // ⚠️ لازم نتأكد من "الصورة دي بالذات" — مش "فيه حاجة
+          //    حديثة لنفس المؤثر". lastProof كانت بتتأكد من
+          //    المؤثر بس، فلو صورتين مختلفتين اترفعوا لنفس
+          //    المؤثر قريب من بعض، الفحص كان بيفتكر إن التانية
+          //    نجحت لمجرد إن الأولى نجحت — رغم إنها صورة تانية
+          //    خالص معملتش خطوة التسجيل. findByHash بيتأكد من
+          //    بصمة الصورة نفسها — تطابق دقيق ١٠٠٪.
           const seen = await callApi('verifyProof', {
-            token: SESSION.token, action: 'lastProof', uid: it.uid,
+            token: SESSION.token, action: 'findByHash', hash,
           }).catch(() => null);
-          // ⚠️ lastProof بترجّع آخر أكشن لنفس المؤثر — حتى لو
-          //    كان من أيام فاتت. من غير فحص الوقت، صف قديم
-          //    خالص كان بيتفهم غلط إنه "المحاولة دي نجحت"،
-          //    فالصورة الحالية كانت بتتعلّم "اترفعت" من غير
-          //    ما تترسجّل خالص — وده كان بيضيّع صور فعلية.
-          const seenTs = seen && seen.ts ? new Date(seen.ts).getTime() : 0;
-          const isRecent = seenTs && (Date.now() - seenTs) < 2 * 60 * 1000;
-          if(seen && seen.url && isRecent){
+          if(seen && seen.url){
             return { screenshotUrl: seen.url, already: true };
           }
         }
