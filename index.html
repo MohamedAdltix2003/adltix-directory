@@ -14544,8 +14544,11 @@ document.addEventListener('visibilitychange', () => {
 });
 
 async function openMobileProofs(){
-  // 🔄 فيه صور ناقصة من آخر مرة؟ نكمّلها
-  qResume_().catch(()=>{});
+  // 🗑️ مفيش "استكمال بعد كذا يوم" خالص — لو صورة فشلت،
+  //    تتمسح وخلاص، مش تتخبّى تحاول ترفع لوحدها بعدين من
+  //    غير ما الموظفة تعمل رفع فعلي دلوقتي. التارجت لازم
+  //    يزيد بس لما فيه رفع نشط بيحصل الآن، مش أوتوماتيك.
+  try{ localStorage.removeItem(qKey_()); }catch(e){}
 
   // 💾 فيه جلسة فحص محفوظة؟ نرجّعها
   //
@@ -15545,7 +15548,7 @@ function mpSnapSentPick_(mode){
 function mpSubscribedPhotosScreen_(){
   const n = MP.items.length;
   const done = MP.items.filter(x => x.state === 'ok').length;
-  const failed = MP.items.filter(x => x.state === 'fail').length;
+  const failed = MP.items.filter(x => x.state === 'retry').length;
 
   let body = '<div class="mp-empty">'
     + '<div class="mp-ei">🎉</div>'
@@ -15565,12 +15568,21 @@ function mpSubscribedPhotosScreen_(){
       + (failed ? '<span class="bad"> · ' + failed + ' فشلوا</span>' : '')
       + '</div>';
     body += '<div class="sns-grid">' + MP.items.map(it =>
-      '<div class="sns-c ' + it.state + '">'
+      '<div class="sns-c ' + it.state + '"'
+      + (it.state === 'retry'
+        ? ' onclick="toastOk(' + esc(JSON.stringify(
+            it.msg || 'محتاجة نت أحسن')).replace(/"/g,'&quot;')
+          + ')"' : '')
+      + '>'
       + '<img src="' + esc(it.preview) + '" loading="lazy">'
       + '<span>' + (it.state === 'ok' ? '✅'
-                  : it.state === 'fail' ? '❌'
+                  : it.state === 'retry' ? '⏳'
                   : it.state === 'up' ? '⏳' : '·') + '</span>'
       + '</div>').join('') + '</div>';
+    if(failed){
+      body += '<div class="lk-hint">⏳ دوسي على أي صورة عليها ⏳ '
+        + 'عشان تشوفي التفاصيل — الصورة محفوظة عندك، مش ضايعة.</div>';
+    }
   }
 
   return body;
@@ -15595,40 +15607,46 @@ async function mpSubscribedFiles_(files){
       const hash = await fileHash(it.file);
       const b64  = await fileToBase64Small(it.file);
 
-      // 1️⃣ رفع نضيف — مفيش أثر جانبي خالص (نفس مسار سناب
-      //    المُختبر — لا pending_proofs ولا تضاعف)
-      let url = '';
-      try{
+      // 1️⃣ رفع — بمحاولات إعادة تلقائية، عشان مشاكل النت
+      //    العابرة متبقاش "فشل" نهائي من غير داعي.
+      let url = await retryPatient_(async () => {
         const up = await callApi('verifyProof', {
           token: SESSION.token, action: 'uploadPhotoOnly',
           imageBase64: b64,
         });
-        url = (up && up.url) || '';
-      }catch(e){ /* هنتأكد تاني من findByHash تحت */ }
-
-      if(!url){
+        const u = (up && up.url) || '';
+        if(!u) throw new Error('فشل الرفع للتخزين');
+        return u;
+      }).catch(async () => {
         try{
           const seen = await callApi('verifyProof', {
             token: SESSION.token, action: 'findByHash', hash,
           });
-          url = (seen && seen.url) || '';
-        }catch(_){ /* هادئ */ }
-      }
-      if(!url) throw new Error('فشل الرفع');
+          return (seen && seen.url) || '';
+        }catch(_){ return ''; }
+      });
+      if(!url) throw new Error('فشل رفع الصورة للتخزين — تأكدي من النت وجرّبي تاني');
 
-      // 2️⃣ تسجيل فوري — يتحسب في عدّاد الاشتراك على طول
-      const r = await callApi('verifyProof', {
-        token: SESSION.token, action: 'addSubscribedPhoto', url, hash,
+      // 2️⃣ تسجيل فوري — بمحاولات إعادة، يتحسب في عدّاد
+      //    الاشتراك على طول.
+      const r = await retryPatient_(async () => {
+        return await callApi('verifyProof', {
+          token: SESSION.token, action: 'addSubscribedPhoto', url, hash,
+        });
       });
 
       it.state = r && r.id ? 'ok' : 'fail';
+      if(!(r && r.id)) it.msg = r?.error || 'حصل خطأ غير معروف وقت التسجيل';
     }catch(e){
-      it.state = 'fail';
+      it.state = 'retry';
+      it.msg = 'مفيش نت كفاية — جربي تاني لما النت يرجع (الصورة محفوظة عندك)';
     }
     renderMobileProofs();
   }
 
-  toastOk('✅ خلصت الدفعة — هتلاقيهم في "إثبات اشتراك مستنية"');
+  const failedCountSub = MP.items.slice(start).filter(x => x.state === 'retry').length;
+  toastOk('✅ خلصت الدفعة — هتلاقيهم في "إثبات اشتراك مستنية"'
+    + (failedCountSub ? ' · ⏳ ' + failedCountSub + ' محتاجين نت أحسن، جربي تاني' : ''));
   invalidateCache();
   refreshTargetBar();
 }
@@ -15636,7 +15654,7 @@ async function mpSubscribedFiles_(files){
 function mpSnapSentPhotosScreen_(){
   const n = MP.items.length;
   const done = MP.items.filter(x => x.state === 'ok').length;
-  const failed = MP.items.filter(x => x.state === 'fail').length;
+  const failed = MP.items.filter(x => x.state === 'retry').length;
 
   let body = '<div class="mp-empty">'
     + '<div class="mp-ei">⚡</div>'
@@ -15655,12 +15673,21 @@ function mpSnapSentPhotosScreen_(){
       + (failed ? '<span class="bad"> · ' + failed + ' فشلوا</span>' : '')
       + '</div>';
     body += '<div class="sns-grid">' + MP.items.map(it =>
-      '<div class="sns-c ' + it.state + '">'
+      '<div class="sns-c ' + it.state + '"'
+      + (it.state === 'retry'
+        ? ' onclick="toastOk(' + esc(JSON.stringify(
+            it.msg || 'محتاجة نت أحسن')).replace(/"/g,'&quot;')
+          + ')"' : '')
+      + '>'
       + '<img src="' + esc(it.preview) + '" loading="lazy">'
       + '<span>' + (it.state === 'ok' ? '✅'
-                  : it.state === 'fail' ? '❌'
+                  : it.state === 'retry' ? '⏳'
                   : it.state === 'up' ? '⏳' : '·') + '</span>'
       + '</div>').join('') + '</div>';
+    if(failed){
+      body += '<div class="lk-hint">⏳ دوسي على أي صورة عليها ⏳ '
+        + 'عشان تشوفي التفاصيل — الصورة محفوظة عندك، مش ضايعة.</div>';
+    }
   }
 
   return body;
@@ -15685,47 +15712,53 @@ async function mpSnapSentFiles_(files){
       const hash = await fileHash(it.file);
       const b64  = await fileToBase64Small(it.file);
 
-      // 1️⃣ نرفع الصورة للتخزين بس — من غير أي أثر جانبي في
-      //    القاعدة خالص (مش pending_proofs ولا حاجة تانية).
-      //
-      // ⚠️ logAction mode:'pending' كانت بتسجّل صف في
-      //    pending_proofs بتوقيت مش متزامن مع الرد، فكانت
-      //    بتفضل موجودة زيادة حتى بعد محاولة التنظيف — وده
-      //    كان بيخلّي كل صورة تتحسب مرتين في التارجت.
+      // 1️⃣ نرفع الصورة للتخزين — بمحاولات إعادة تلقائية
+      //    (retry_)، عشان مشاكل النت العابرة متبقاش "فشل"
+      //    نهائي من غير داعي.
       let url = '';
-      try{
+      url = await retryPatient_(async () => {
         const up = await callApi('verifyProof', {
           token: SESSION.token, action: 'uploadPhotoOnly',
           imageBase64: b64,
         });
-        url = (up && up.url) || '';
-      }catch(e){ /* هنتأكد تاني من findByHash تحت */ }
-
-      if(!url){
+        const u = (up && up.url) || '';
+        if(!u) throw new Error('فشل الرفع للتخزين');
+        return u;
+      }).catch(async () => {
+        // 🔎 آخر محاولة — نتأكد لو وصلت فعلاً رغم الخطأ
         try{
           const seen = await callApi('verifyProof', {
             token: SESSION.token, action: 'findByHash', hash,
           });
-          url = (seen && seen.url) || '';
-        }catch(_){ /* هادئ */ }
-      }
-      if(!url) throw new Error('فشل الرفع');
+          return (seen && seen.url) || '';
+        }catch(_){ return ''; }
+      });
+      if(!url) throw new Error('فشل رفع الصورة للتخزين — تأكدي من النت وجرّبي تاني');
 
-      // 2️⃣ نسجّلها فورًا في actions_log — تتحسب في التارجت
-      //    على طول (مش زي addPending العادية اللي بتروح
-      //    pending_proofs ومتتحسبش لحد الربط).
-      const r = await callApi('verifyProof', {
-        token: SESSION.token, action: 'addSnapSentPhoto', url, hash,
+      // 2️⃣ نسجّلها فورًا في actions_log — بمحاولات إعادة
+      //    كمان، بتحسب في التارجت على طول.
+      const r = await retryPatient_(async () => {
+        return await callApi('verifyProof', {
+          token: SESSION.token, action: 'addSnapSentPhoto', url, hash,
+        });
       });
 
       it.state = r && r.id ? 'ok' : 'fail';
+      if(!(r && r.id)) it.msg = r?.error || 'حصل خطأ غير معروف وقت التسجيل';
     }catch(e){
-      it.state = 'fail';
+      // ⚠️ حاولنا 10 مرات على مدار دقيقة ونص — لو لسه مش
+      //    راضية، غالبًا مفيش نت خالص على الجهاز (حد فيزيائي).
+      //    مفيش "فشل" حمرا مقلقة — بس رسالة هادية، والصورة
+      //    محفوظة في الجهاز وتقدري تجربي تاني وقت ما النت يرجع.
+      it.state = 'retry';
+      it.msg = 'مفيش نت كفاية — جربي تاني لما النت يرجع (الصورة محفوظة عندك)';
     }
     renderMobileProofs();
   }
 
-  toastOk('✅ خلصت الدفعة — هتلاقيهم في "إثبات إرسال سناب شات"');
+  const failedCount = MP.items.slice(start).filter(x => x.state === 'retry').length;
+  toastOk('✅ خلصت الدفعة — هتلاقيهم في "إثبات إرسال سناب شات"'
+    + (failedCount ? ' · ⏳ ' + failedCount + ' محتاجين نت أحسن، جربي تاني' : ''));
   invalidateCache();
   refreshTargetBar();
 }
@@ -17771,6 +17804,28 @@ async function retry_(fn, tries){
   throw last;
 }
 
+// 🛟 نسخة صبورة جدًا — للحالات اللي عايزين فيها "متفشلش
+//    خالص قدام الموظفة" (صور سناب/اشتراك). بتحاول لمدة
+//    طويلة (~1.5 دقيقة، 10 محاولات)، مش بترمي غير لو فعلاً
+//    مفيش نت خالص على الجهاز — ده حد فيزيائي مش بق.
+async function retryPatient_(fn){
+  const N = 10;
+  let last;
+  for(let i = 0; i < N; i++){
+    try{
+      await waitNet_(15000);
+      return await fn();
+    }catch(e){
+      last = e;
+      if(NO_RETRY.test(String(e && e.message || ''))) throw e;
+      if(i < N - 1){
+        await new Promise(r => setTimeout(r, 1500 + i * 1200));
+      }
+    }
+  }
+  throw last;
+}
+
 // ⚡ رفع صورة واحدة — بتتنده متوازية
 async function mpUploadOne(it){
   it.state = 'uploading';
@@ -18012,7 +18067,14 @@ async function mpUploadOne(it){
       }catch(e){ /* تجاهل */ }
 
       it.state = 'ok';
-      qClear_(it.id);          // 💾 اتسجّلت — نشيلها من الطابور
+      // ⚠️ قبل كده كل صورة كانت بتمسح نفسها من الطابور
+      // المحفوظ لوحدها (qClear_) — وده كان خطر لما كذا صورة
+      // بتخلص في نفس اللحظة بالظبط (رفع متوازي)، لأن كل واحدة
+      // بتقرا القايمة وتكتبها من جديد، فواحدة كانت بتمسح أثر
+      // التانية بالغلط، والصورة اللي فعلاً نجحت كانت بتفضل
+      // "شكلها معلّقة" وتترفع تاني من الصفر. دلوقتي المسح
+      // بيحصل مرة واحدة بس، آمنة، بعد ما الدفعة كلها تخلص
+      // (في نهاية mpUpload).
   }catch(e){
     // ✅ الأكشن اتسجّل خلاص — الفشل في خطوة ثانوية
     if(it.logged){
@@ -18771,6 +18833,12 @@ async function mpUpload(){
         x => x.state !== 'ok' && x.state !== 'dup');
       if(left.length) sessSave_(true); else sessClear_();
     }catch(e){ /* هادئ */ }
+
+    // 🗑️ الصور اللي فشلت تتمسح خالص، مش تتحفظ تحاول تترفع
+    //    لوحدها بعدين. التارجت لازم يزيد بس لما فيه رفع نشط
+    //    الموظفة بتعمله دلوقتي — لو فشلت، تشوف السبب وترفعها
+    //    تاني بنفسها لما تحب.
+    try{ localStorage.removeItem(qKey_()); }catch(e){ /* هادئ */ }
 
     // 🔄 المتابعات — نعيد تحميلها عشان اللي اترفعله يختفي
     //
