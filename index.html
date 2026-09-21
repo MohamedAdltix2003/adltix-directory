@@ -5020,6 +5020,34 @@
   }
   .sns-c.ok img{ opacity:.55 }
 
+  /* 📋 قايمة إثبات الاشتراك — بلينك تحت كل صورة */
+  .sub-list{ display:flex; flex-direction:column; gap:8px; padding:0 4px }
+  .sub-item{
+    display:flex; gap:10px; align-items:center;
+    background:var(--surface); border:1px solid var(--line);
+    border-radius:12px; padding:8px;
+  }
+  .sub-item.dup{ opacity:.6 }
+  .sub-thumb{
+    width:56px; height:56px; border-radius:9px; object-fit:cover;
+    flex-shrink:0;
+  }
+  .sub-info{ flex:1; min-width:0; display:flex; flex-direction:column; gap:5px }
+  .sub-status{ font-size:12px; color:var(--muted); font-weight:700 }
+  .sub-item.ok .sub-status{ color:#16A34A }
+  .sub-lk-in{
+    font-family:inherit; font-size:13px; padding:7px 10px;
+    border-radius:9px; border:1px solid var(--line); width:100%;
+  }
+  .sub-lk-go{
+    font-family:inherit; font-size:12.5px; font-weight:800; cursor:pointer;
+    padding:6px 14px; border-radius:9px; border:none;
+    background:var(--brand); color:#fff; align-self:flex-start;
+  }
+  .sub-lk-done{
+    font-size:12.5px; font-weight:700; color:#0EA5E9;
+  }
+
   .mp-empty{ text-align:center; padding:26px 12px }
   .mp-ei{ font-size:44px; margin-bottom:12px }
   .mp-empty b{ display:block; font-size:15.5px; font-weight:900;
@@ -15548,7 +15576,7 @@ function mpSnapSentPick_(mode){
 function mpSubscribedPhotosScreen_(){
   const n = MP.items.length;
   const done = MP.items.filter(x => x.state === 'ok').length;
-  const failed = MP.items.filter(x => x.state === 'retry').length;
+  const failed = MP.items.filter(x => x.state === 'retry' || x.state === 'dup').length;
 
   let body = '<div class="mp-empty">'
     + '<div class="mp-ei">🎉</div>'
@@ -15567,25 +15595,68 @@ function mpSubscribedPhotosScreen_(){
       + '<b>' + done + ' / ' + n + '</b> اترفعت'
       + (failed ? '<span class="bad"> · ' + failed + ' فشلوا</span>' : '')
       + '</div>';
-    body += '<div class="sns-grid">' + MP.items.map(it =>
-      '<div class="sns-c ' + it.state + '"'
-      + (it.state === 'retry'
-        ? ' onclick="toastOk(' + esc(JSON.stringify(
-            it.msg || 'محتاجة نت أحسن')).replace(/"/g,'&quot;')
-          + ')"' : '')
-      + '>'
-      + '<img src="' + esc(it.preview) + '" loading="lazy">'
-      + '<span>' + (it.state === 'ok' ? '✅'
-                  : it.state === 'retry' ? '⏳'
-                  : it.state === 'up' ? '⏳' : '·') + '</span>'
-      + '</div>').join('') + '</div>';
+
+    // 📋 عدد الاشتراك عادةً صغير — قايمة، مش شبكة صور صغيرة،
+    //    عشان يبقى فيه مكان للينك تحت كل صورة، احترافي وواضح.
+    body += '<div class="sub-list">' + MP.items.map(it => {
+      const statusIcon = it.state === 'ok'
+        ? (it.linked ? '✅ اترربطت' : '📸 اترفعت')
+        : it.state === 'dup' ? '🚫 مكررة'
+        : it.state === 'retry' ? '⏳ محتاجة نت أحسن'
+        : it.state === 'up' ? '⏳ بترفع…' : '';
+
+      let linkArea = '';
+      if(it.state === 'ok' && !it.linked){
+        linkArea = '<input class="sub-lk-in" id="subLkIn' + it.id + '" '
+          + 'type="text" dir="ltr" placeholder="لينك المؤثر — اختياري" '
+          + 'onkeydown="if(event.key===\'Enter\')mpSubLinkNow_(\''
+          + it.id + '\')">'
+          + '<button class="sub-lk-go" onclick="mpSubLinkNow_(\''
+          + it.id + '\')">🔗 اربطي</button>';
+      } else if(it.linked){
+        linkArea = '<div class="sub-lk-done">🔗 @' + esc(it.linkedHandle || '') + '</div>';
+      }
+
+      return '<div class="sub-item ' + it.state + '" id="subRow' + it.id + '">'
+        + '<img class="sub-thumb" src="' + esc(it.preview) + '" loading="lazy" '
+        + ((it.state === 'retry' || it.state === 'dup')
+          ? 'onclick="toastOk(' + esc(JSON.stringify(
+              it.msg || 'محتاجة نت أحسن')).replace(/"/g,'&quot;') + ')"'
+          : '') + '>'
+        + '<div class="sub-info">'
+        +   '<span class="sub-status">' + statusIcon + '</span>'
+        +   linkArea
+        + '</div>'
+      + '</div>';
+    }).join('') + '</div>';
+
     if(failed){
-      body += '<div class="lk-hint">⏳ دوسي على أي صورة عليها ⏳ '
+      body += '<div class="lk-hint">💡 دوسي على أي صورة عليها ⏳ أو 🚫 '
         + 'عشان تشوفي التفاصيل — الصورة محفوظة عندك، مش ضايعة.</div>';
     }
   }
 
   return body;
+}
+
+// 🔗 ربط فوري من نفس شاشة الرفع — الموظفة تربط صورتها بنفسها
+async function mpSubLinkNow_(itId){
+  const it = MP.items.find(x => x.id === itId);
+  if(!it) return;
+  const inp = document.getElementById('subLkIn' + itId);
+  const link = inp ? inp.value.trim() : '';
+  if(!link){ toastErr('اكتبي اللينك الأول'); return; }
+
+  try{
+    const r = await callApi('verifyProof', {
+      token: SESSION.token, action: 'linkSubscribedPhotoSelf',
+      id: it.dbId, link,
+    });
+    it.linked = true;
+    it.linkedHandle = String(r?.uid || '').split(':')[1] || '';
+    renderMobileProofs();
+    toastOk('✅ اترربطت على طول — مش هتيجي في مستنية الربط خالص');
+  }catch(e){ toastErr(e.message); }
 }
 
 async function mpSubscribedFiles_(files){
@@ -15627,26 +15698,44 @@ async function mpSubscribedFiles_(files){
       });
       if(!url) throw new Error('فشل رفع الصورة للتخزين — تأكدي من النت وجرّبي تاني');
 
+      // 🤖 نحاول نقرا اسم من الصورة — عشان لو المؤثر اترربط
+      //    بعدين من مكان تاني، زرار "إعادة الفحص" يقدر يلاقيه.
+      //    مش حرج لو فشلت — الصورة بترفع برضه عادي.
+      let aiName = '';
+      try{
+        const vis = await readHandleAI(it.file);
+        aiName = (vis && (vis.names?.[0] || vis.display)) || '';
+      }catch(_){ /* هادئ — مش لازمة أصلية للرفع */ }
+
       // 2️⃣ تسجيل فوري — بمحاولات إعادة، يتحسب في عدّاد
       //    الاشتراك على طول.
       const r = await retryPatient_(async () => {
         return await callApi('verifyProof', {
-          token: SESSION.token, action: 'addSubscribedPhoto', url, hash,
+          token: SESSION.token, action: 'addSubscribedPhoto', url, hash, aiName,
         });
       });
 
       it.state = r && r.id ? 'ok' : 'fail';
+      it.dbId  = r && r.id;   // 🔗 محتاجينه لو الموظفة ربطت فورًا
       if(!(r && r.id)) it.msg = r?.error || 'حصل خطأ غير معروف وقت التسجيل';
     }catch(e){
-      it.state = 'retry';
-      it.msg = 'مفيش نت كفاية — جربي تاني لما النت يرجع (الصورة محفوظة عندك)';
+      const m = String(e && e.message || '');
+      if(NO_RETRY.test(m)){
+        it.state = 'dup';
+        it.msg = m || '🚫 الصورة دي اترفعت قبل كده';
+      } else {
+        it.state = 'retry';
+        it.msg = 'مفيش نت كفاية — جربي تاني لما النت يرجع (الصورة محفوظة عندك)';
+      }
     }
     renderMobileProofs();
   }
 
   const failedCountSub = MP.items.slice(start).filter(x => x.state === 'retry').length;
+  const dupCountSub = MP.items.slice(start).filter(x => x.state === 'dup').length;
   toastOk('✅ خلصت الدفعة — هتلاقيهم في "إثبات اشتراك مستنية"'
-    + (failedCountSub ? ' · ⏳ ' + failedCountSub + ' محتاجين نت أحسن، جربي تاني' : ''));
+    + (failedCountSub ? ' · ⏳ ' + failedCountSub + ' محتاجين نت أحسن، جربي تاني' : '')
+    + (dupCountSub ? ' · 🚫 ' + dupCountSub + ' مكررة، اترفعوا قبل كده' : ''));
   invalidateCache();
   refreshTargetBar();
 }
@@ -15654,7 +15743,7 @@ async function mpSubscribedFiles_(files){
 function mpSnapSentPhotosScreen_(){
   const n = MP.items.length;
   const done = MP.items.filter(x => x.state === 'ok').length;
-  const failed = MP.items.filter(x => x.state === 'retry').length;
+  const failed = MP.items.filter(x => x.state === 'retry' || x.state === 'dup').length;
 
   let body = '<div class="mp-empty">'
     + '<div class="mp-ei">⚡</div>'
@@ -15674,18 +15763,19 @@ function mpSnapSentPhotosScreen_(){
       + '</div>';
     body += '<div class="sns-grid">' + MP.items.map(it =>
       '<div class="sns-c ' + it.state + '"'
-      + (it.state === 'retry'
+      + ((it.state === 'retry' || it.state === 'dup')
         ? ' onclick="toastOk(' + esc(JSON.stringify(
             it.msg || 'محتاجة نت أحسن')).replace(/"/g,'&quot;')
           + ')"' : '')
       + '>'
       + '<img src="' + esc(it.preview) + '" loading="lazy">'
       + '<span>' + (it.state === 'ok' ? '✅'
+                  : it.state === 'dup' ? '🚫'
                   : it.state === 'retry' ? '⏳'
                   : it.state === 'up' ? '⏳' : '·') + '</span>'
       + '</div>').join('') + '</div>';
     if(failed){
-      body += '<div class="lk-hint">⏳ دوسي على أي صورة عليها ⏳ '
+      body += '<div class="lk-hint">💡 دوسي على أي صورة عليها ⏳ أو 🚫 '
         + 'عشان تشوفي التفاصيل — الصورة محفوظة عندك، مش ضايعة.</div>';
     }
   }
@@ -15746,19 +15836,29 @@ async function mpSnapSentFiles_(files){
       it.state = r && r.id ? 'ok' : 'fail';
       if(!(r && r.id)) it.msg = r?.error || 'حصل خطأ غير معروف وقت التسجيل';
     }catch(e){
-      // ⚠️ حاولنا 10 مرات على مدار دقيقة ونص — لو لسه مش
-      //    راضية، غالبًا مفيش نت خالص على الجهاز (حد فيزيائي).
-      //    مفيش "فشل" حمرا مقلقة — بس رسالة هادية، والصورة
-      //    محفوظة في الجهاز وتقدري تجربي تاني وقت ما النت يرجع.
-      it.state = 'retry';
-      it.msg = 'مفيش نت كفاية — جربي تاني لما النت يرجع (الصورة محفوظة عندك)';
+      const m = String(e && e.message || '');
+      // 🚫 نفس الصورة اترفعت قبل كده بالظبط (بصمة مطابقة) —
+      //    ده رفض حقيقي، مش مشكلة نت. توضيح واضح بدل الرسالة
+      //    الهادية العامة.
+      if(NO_RETRY.test(m)){
+        it.state = 'dup';
+        it.msg = m || '🚫 الصورة دي اترفعت قبل كده';
+      } else {
+        // ⚠️ حاولنا 10 مرات على مدار دقيقة ونص — لو لسه مش
+        //    راضية، غالبًا مفيش نت خالص (حد فيزيائي). رسالة
+        //    هادية، والصورة محفوظة في الجهاز.
+        it.state = 'retry';
+        it.msg = 'مفيش نت كفاية — جربي تاني لما النت يرجع (الصورة محفوظة عندك)';
+      }
     }
     renderMobileProofs();
   }
 
   const failedCount = MP.items.slice(start).filter(x => x.state === 'retry').length;
+  const dupCount = MP.items.slice(start).filter(x => x.state === 'dup').length;
   toastOk('✅ خلصت الدفعة — هتلاقيهم في "إثبات إرسال سناب شات"'
-    + (failedCount ? ' · ⏳ ' + failedCount + ' محتاجين نت أحسن، جربي تاني' : ''));
+    + (failedCount ? ' · ⏳ ' + failedCount + ' محتاجين نت أحسن، جربي تاني' : '')
+    + (dupCount ? ' · 🚫 ' + dupCount + ' مكررة، اترفعوا قبل كده' : ''));
   invalidateCache();
   refreshTargetBar();
 }
@@ -15977,6 +16077,23 @@ async function runOCR_(){
     // ⚠️ الموظفة ممكن تكون طلعت من الصفحة والفحص وقف.
     //    لما ترجع، بنكمّل من مكان الوقوف مش من الأول.
     if(it.state !== 'scan'){ continue; }
+
+    // 👻 متابعة سناب — مفيش اسم يتقرا من الصورة خالص، فاستدعاء
+    //    الموديل (نداء شبكة بطيء) كان بيتنفّذ من غير فايدة على
+    //    كل صورة قبل ما يوصل لنفس النتيجة اللي كانت هتحصل من
+    //    غيره أصلاً. دلوقتي بتروح "مستنية ربط" على طول، زي
+    //    إثبات إرسال سناب شات بالظبط — أسرع بكتير.
+    if(MP.plat === 'snapchat' && MP.kind === 'followup' && !it.uid){
+      it.msg = '';
+      it.state = 'ready';
+      // 🏷️ لازم نحفظ اسم المنصة يدوي — عادةً بييجي من رد
+      //    الموديل اللي دلوقتي بنتخطّاه، فمن غيره الصورة
+      //    كانت هتترسجّل بمنصة فاضية ومتظهرش في تابتها الصح.
+      it.visPlatform = 'snapchat';
+      MP.done++;
+      renderMobileProofs();
+      continue;
+    }
 
     try{
       let ai = await verifyShotAI(it.file, it.uid || '');
@@ -19578,6 +19695,11 @@ function dbLinkFix(id, cur, handle, img){
       _lkData = null;
       _flkData = null;
       setTimeout(() => { dbLoadLinks(); dbLoadFollowLinks(); }, 350);
+
+      if(result.sub_warning){
+        setTimeout(() => dbSubWarning_(result.sub_warning,
+          String(result.to || uid).split(':')[1] || ''), 400);
+      }
     }catch(e){
       go.disabled = false; go.textContent = '✅ اربطي';
       toastErr(e.message);
@@ -19594,7 +19716,15 @@ function dbTabLinks(){
   const d = _lkData;
   if(!d){ dbLoadLinks(); return '<div class="db-ld">⏳ بنحمّل…</div>'; }
 
-  const items = d.items || [];
+  // 🖼️ نفس حماية منع تكرار العرض الموجودة في باقي تابات
+  //    مستنية الربط — دفاع إضافي حتى لو نادر يحصل هنا.
+  const seenUrls = new Set();
+  const items = (d.items || []).filter(x => {
+    const u = String(x.url || '');
+    if(u && seenUrls.has(u)) return false;
+    if(u) seenUrls.add(u);
+    return true;
+  });
   const P = d.by_plat || {};
   let h = '';
 
@@ -19719,7 +19849,15 @@ function dbTabReview(){
   const d = _revData;
   if(!d){ dbLoadReview(_revStaff); return '<div class="db-ld">⏳ بنحمّل…</div>'; }
 
-  const items = d.items || [];
+  // 🖼️ نفس حماية منع تكرار العرض — دفاع إضافي متسق مع باقي
+  //    تابات مستنية الربط.
+  const seenUrls = new Set();
+  const items = (d.items || []).filter(x => {
+    const u = String(x.url || '');
+    if(u && seenUrls.has(u)) return false;
+    if(u) seenUrls.add(u);
+    return true;
+  });
   let h = '';
 
   h += '<div class="db-cards">'
@@ -20003,6 +20141,18 @@ function dbSubscribedTab_(){
     return h + '<div class="db-empty">✅ مفيش صور مستنية — كله متربط</div>';
   }
 
+  // 🔄 إعادة فحص — بس لو فيه صور ليها اسم محفوظ وقت الرفع.
+  //    تطابق دقيق بس، مش تخمين — آمنة تمامًا.
+  const hasNames = items.some(x => x.ai_name);
+  if(hasNames){
+    h += '<div class="pn-rr">'
+      + '<span>بتدوّر على تطابق دقيق للاسم اللي اتقرا وقت الرفع، '
+      +   'ضد المؤثرين الموجودين دلوقتي — مفيدة لو ربطتي حد '
+      +   'جديد بعد ما الصورة اترفعت.</span>'
+      + '<button class="pn-rrb" onclick="dbSubRecheck_()">🔄 إعادة فحص</button>'
+      + '</div>';
+  }
+
   h += '<div class="lk-hint">'
     + '💡 الصقي لينك المؤثر (إنستجرام/تيك توك/سناب) أو '
     + 'اليوزرنيم بس، ودوسي Enter — هتتربط بنفس تاريخ ووقت الرفع.'
@@ -20024,13 +20174,36 @@ function dbSubscribedTab_(){
     + '<div class="lk-a">'
     +   '<button class="lk-ok" onclick="dbSubscribedLink_(' + x.id + ')">'
     +     '✅ اربطي</button>'
+    +   '<button class="pn-s" onclick="dbSubscribedSearch_(' + x.id + ',\''
+    +     esc(x.staff) + '\')">🔍 دوّري</button>'
     +   '<button class="lk-del" onclick="dbSubscribedDel_(' + x.id + ')">'
     +     '🗑️</button>'
     + '</div>'
+    + (x.ai_name
+      ? '<div class="pn-ai">🤖 قرا: <b>' + esc(x.ai_name) + '</b></div>'
+      : '')
     + '</div>'
   ).join('') + '</div>';
 
   return h;
+}
+
+// 🔄 إعادة فحص جماعية — تطابق دقيق بس، آمنة
+async function dbSubRecheck_(){
+  const btn = document.querySelector('.pn-rrb');
+  if(btn){ btn.disabled = true; btn.textContent = '⏳ بنفحص…'; }
+  try{
+    const r = await callApi('adminAction', {
+      token: SESSION.token, action: 'recheckSubscribedMatches',
+    });
+    toastOk('✅ اترربط ' + (r.linked||0) + ' من أصل ' + (r.checked||0)
+      + ' لهم اسم محفوظ');
+    _subData = null;
+    setTimeout(() => dbLoadSubscribed_(), 400);
+  }catch(e){
+    toastErr(e.message);
+    if(btn){ btn.disabled = false; btn.textContent = '🔄 إعادة فحص'; }
+  }
 }
 
 async function dbSubscribedLink_(id){
@@ -20149,10 +20322,14 @@ async function dbSubscribedDel_(id){
 
 let _snsData = null;
 
+let _snsStaff = 'all';
+function dbSnapSentStaff(v){ _snsStaff = v; _snsData = null; dbLoadSnapSent_(); }
+
 async function dbLoadSnapSent_(){
   try{
     const r = await callApi('adminAction', {
       token: SESSION.token, action: 'snapSentPendingList',
+      staff: _snsStaff === 'all' ? '' : _snsStaff,
     });
     _snsData = r;
     renderDashboard();
@@ -20162,6 +20339,21 @@ async function dbLoadSnapSent_(){
 function dbSnapSentTab_(){
   const d = _snsData;
   if(!d){ dbLoadSnapSent_(); return '<div class="db-ld">⏳ بنحمّل…</div>'; }
+
+  // 🔎 فلتر بالاسم — نفس نمط "مراجعة الربط"، بيوفّر وقتك
+  //    وانت بتراجع كل موظفة لوحدها.
+  const staffList = d.by_staff || [];
+  let staffBar = '';
+  if(staffList.length > 1){
+    staffBar = '<div class="db-row">'
+      + '<button class="db-rp' + (_snsStaff==='all'?' on':'') + '" '
+      +   'onclick="dbSnapSentStaff(\'all\')">كل الموظفات</button>'
+      + staffList.map(x =>
+          '<button class="db-rp' + (_snsStaff===x.staff?' on':'') + '" '
+          + 'onclick="dbSnapSentStaff(\'' + esc(x.staff) + '\')">'
+          + esc(x.staff) + ' (' + x.count + ')</button>').join('')
+      + '</div>';
+  }
 
   // 🖼️ نفس الرابط بالظبط ظاهر أكتر من مرة (رفع مكرر غلط)؟
   //    نوري أول ظهور بس — عشان "استبدلي" ماتضيّعش وقت على
@@ -20173,7 +20365,7 @@ function dbSnapSentTab_(){
     if(u) seenUrls.add(u);
     return true;
   });
-  let h = '<div class="db-kpis">'
+  let h = staffBar + '<div class="db-kpis">'
     + dbCard('📸', 'إثبات إرسال سناب مستنية', items.length || 0, '',
              (items.length||0) > 50 ? 'bad' : '')
     + '</div>';
@@ -20688,6 +20880,51 @@ async function dbPnUndo(id){
   }catch(e){ toastErr(e.message); }
 }
 
+// 💡 تنبيه — نفس الموظفة عندها اشتراك سابق لنفس المؤثر
+//    اللي دلوقتي اترربطله متابعة. تنظيف اختياري بس.
+function dbSubWarning_(warn, handle){
+  const ov = document.createElement('div');
+  ov.className = 'cf-overlay';
+  ov.innerHTML = '<div class="cf-box cfl-box">'
+    + '<div class="cfl-h"><b>💡 لاحظنا حاجة</b>'
+    +   '<button class="cfl-x">✕</button></div>'
+    + '<div class="lk-hint" style="margin:0 16px 10px">'
+    +   'نفس الموظفة عندها صورة "اشتراك" قديمة لـ @' + esc(handle)
+    +   ' — دلوقتي اترربطله متابعة. لو ده تكرار/خطأ، تقدري '
+    +   'تمسحي صورة الاشتراك القديمة.'
+    + '</div>'
+    + (warn.url ? '<div style="padding:0 16px 12px">'
+      + '<img src="' + esc(warn.url) + '" loading="lazy" '
+      +   'style="width:100%;border-radius:10px" '
+      +   'onclick="dbZoom(\'' + esc(warn.url) + '\')">'
+      + '<i style="display:block;text-align:center;font-size:11.5px;'
+      +   'color:var(--muted);margin-top:4px">'
+      +   esc(warn.date || '') + ' · ' + esc(warn.time || '') + '</i>'
+      + '</div>' : '')
+    + '<div class="cf-btns">'
+    +   '<button class="cf-no" id="subWKeep">سيبها زي ما هي</button>'
+    +   '<button class="cf-yes" id="subWDel">🗑️ امسحي الاشتراك القديم</button>'
+    + '</div></div>';
+
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>ov.classList.add('show'));
+  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
+  ov.querySelector('.cfl-x').onclick = close;
+  ov.querySelector('#subWKeep').onclick = close;
+  ov.addEventListener('click', e => { if(e.target === ov) close(); });
+
+  ov.querySelector('#subWDel').onclick = async () => {
+    try{
+      await callApi('adminAction', {
+        token: SESSION.token, action: 'deleteSubscribedAction', id: warn.id,
+      });
+      close();
+      toastOk('🗑️ اتمسحت صورة الاشتراك القديمة');
+      _subData = null;
+    }catch(e){ toastErr(e.message); }
+  };
+}
+
 async function dbPnLink(id, uid, handle, kind){
   // ⚠️ الربط بيسجّل أكشن حقيقي — تأكيد قبل التنفيذ
   const h = handle || String(uid).split(':')[1] || uid;
@@ -20732,6 +20969,12 @@ async function dbPnLink(id, uid, handle, kind){
     // ↩️ زرار تراجع — 15 ثانية
     _lastLink = { id, uid, handle: result.handle };
     toastUndo('✅ اتربط بـ @' + String(result.handle || '').replace('@',''), id);
+
+    // 💡 نفس الموظفة عندها صورة اشتراك سابقة لنفس المؤثر ده؟
+    //    تنبيه اختياري للتنظيف — الربط نفسه نجح خلاص.
+    if(result.sub_warning){
+      setTimeout(() => dbSubWarning_(result.sub_warning, h), 400);
+    }
   }catch(e){
     if(card) card.style.opacity = '1';
     toastErr(e.message);
@@ -20882,6 +21125,11 @@ function dbPnAddAny(id, staff, aiName, platform){
       _lkData = null; _flkData = null; _snsData = null; _subData = null;
       toastOk('✅ اترفعت واتحسبت — @' + String(result.uid || '').split(':')[1]
         + (result.is_partner ? ' 🤝 شريك' : ''));
+
+      if(result.sub_warning){
+        setTimeout(() => dbSubWarning_(result.sub_warning,
+          String(result.uid || '').split(':')[1] || ''), 400);
+      }
     }catch(e){
       go.disabled = false; go.textContent = '✅ اربطي وارفعي';
       toastErr(e.message);
@@ -21095,6 +21343,86 @@ async function dbPnSearch(id, staff){
     if(m) t = m[1];
     t = t.replace(/^@/, '');
 
+    clearTimeout(timer);
+    timer = setTimeout(() => run(t), 280);
+  };
+
+  run('');
+  setTimeout(()=>q.focus(), 200);
+}
+
+// 🔍 نفس نافذة البحث بالظبط — بس بتربط صورة اشتراك معلّقة
+//    (actions_log بـ uid مؤقت)، مش pending_proofs زي الأصلية.
+async function dbSubscribedSearch_(id, staff){
+  const ov = document.createElement('div');
+  ov.className = 'cf-overlay';
+  ov.innerHTML = '<div class="cf-box pn-sbox">'
+    + '<div class="pn-shd"><b>🔍 دوّري على المؤثر</b>'
+    +   '<span>' + esc(staff) + '</span>'
+    +   '<button class="pn-sx">✕</button></div>'
+    + '<input class="pn-sq" id="subSQ" placeholder="اسم الحساب أو اللينك…" autocomplete="off">'
+    + '<div class="pn-sr" id="subSR"><div class="pn-sload">⏳ بنحمّل…</div></div>'
+    + '</div>';
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>ov.classList.add('show'));
+
+  const close = () => { ov.classList.remove('show'); setTimeout(()=>ov.remove(),200); };
+  ov.querySelector('.pn-sx').onclick = close;
+  ov.addEventListener('click', e => { if(e.target === ov) close(); });
+
+  const q   = ov.querySelector('#subSQ');
+  const res = ov.querySelector('#subSR');
+
+  const draw = (arr) => {
+    if(!arr || !arr.length){
+      res.innerHTML = '<div class="pn-sempty">مفيش نتايج</div>';
+      return;
+    }
+    res.innerHTML = arr.map(c => {
+      const d = String(c.display || '');
+      const f = Number(c.followers || 0);
+      return '<button class="pn-si" data-h="' + esc(c.handle) + '">'
+        + '<div class="pn-sn">@' + esc(c.handle) + '</div>'
+        + '<div class="pn-sm">'
+        +   (d ? '<span>' + esc(d) + '</span>' : '')
+        +   (f ? '<i>' + f.toLocaleString('en') + '</i>' : '')
+        + '</div></button>';
+    }).join('');
+
+    res.querySelectorAll('.pn-si').forEach(b => {
+      // ✅ بنستخدم نفس دالة ربط الاشتراك الموجودة — بس بلينك
+      //    جاهز من نتيجة البحث بدل ما تكتبيه يدوي.
+      b.onclick = () => {
+        close();
+        const inp = document.getElementById('subIn' + id);
+        if(inp) inp.value = b.dataset.h;
+        dbSubscribedLink_(id);
+      };
+    });
+  };
+
+  let timer = null;
+  const run = async (term) => {
+    res.innerHTML = '<div class="pn-sload">⏳ بندوّر…</div>';
+    try{
+      const r = await callApi('adminAction', {
+        token: SESSION.token, action: 'searchLeads',
+        staff, q: term || '',
+      });
+      draw(r.items || []);
+    }catch(e){
+      res.innerHTML = '<div class="pn-sempty">❌ ' + esc(e.message) + '</div>';
+    }
+  };
+
+  q.oninput = () => {
+    let t = q.value.trim()
+      .replace(/^https?:\/\//, '').replace(/^www\./, '')
+      .replace(/\?.*$/, '').replace(/\/+$/, '');
+    const m = t.match(
+      /(?:instagram|tiktok|snapchat|youtube)\.com\/(?:add\/|@)?([\w.\-]+)/i);
+    if(m) t = m[1];
+    t = t.replace(/^@/, '');
     clearTimeout(timer);
     timer = setTimeout(() => run(t), 280);
   };
