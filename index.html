@@ -2747,6 +2747,40 @@
   body.dark .db-i.warn{ background:#4a3510; color:#fcd34d }
   body.dark .db-i.bad { background:#4a1414; color:#fca5a5 }
 
+  /* 🔄 جدول تقرير المتابعات */
+  .fu-table{ border:1px solid var(--line); border-radius:14px; overflow:hidden }
+  .fu-hd{
+    display:grid; grid-template-columns:1.6fr 1fr 1fr auto;
+    padding:10px 12px; background:var(--surface2,var(--surface));
+    font-size:11.5px; font-weight:800; color:var(--muted);
+  }
+  .fu-row{
+    display:grid; grid-template-columns:1.6fr 1fr 1fr auto;
+    align-items:center; padding:11px 12px;
+    border-top:1px solid var(--line);
+  }
+  .fu-cell{ font-size:13.5px }
+  .fu-name{ font-weight:800; color:var(--ink) }
+  .fu-num{ font-weight:900; font-size:16px; text-align:center;
+           font-family:'Space Grotesk','Tajawal',sans-serif }
+  .fu-exp{
+    font-family:inherit; font-size:11.5px; font-weight:700; cursor:pointer;
+    padding:6px 10px; border-radius:8px; border:1px solid var(--line);
+    background:var(--surface); color:var(--brand);
+  }
+  .fu-daily{
+    display:flex; flex-wrap:wrap; gap:6px; padding:10px 12px;
+    background:var(--surface2,var(--surface)); border-top:1px solid var(--line);
+  }
+  .fu-day{
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+    padding:6px 9px; border-radius:9px; background:var(--surface);
+    border:1px solid var(--line); min-width:44px;
+  }
+  .fu-day.has{ border-color:#86EFAC; background:rgba(34,197,94,.08) }
+  .fu-day i{ font-size:9.5px; color:var(--muted); font-style:normal }
+  .fu-day b{ font-size:14px; font-family:'Space Grotesk','Tajawal',sans-serif }
+
   /* المؤشرات */
   .db-kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
             gap:10px; margin-bottom:20px }
@@ -12360,6 +12394,7 @@ function renderDashboard(){
     ['dates',    '📆', 'التواريخ'],
     ['tasks',    '📋', 'المهام'],
     ['targets',  '🎯', 'التارجت'],
+    ['followups','🔄', 'المتابعات'],
     ['sheets',   '📗', 'الشيتات'],
     ['pending',  '📥', 'مستنية ربط'],
     ['flagged',  '🏷️', 'الملاحظات'],
@@ -12409,6 +12444,7 @@ function dbTabContent(r){
     case 'dates':    return dbDates(r);
     case 'tasks':    return dbTasks(r);
     case 'targets':  return dbTargets(r);
+    case 'followups':return dbFollowupsReport();
     case 'sheets':   return dbSheets(r);
     case 'pending':  return dbPending(r);
     case 'flagged':  return dbTabFlagged();
@@ -15660,8 +15696,22 @@ async function mpSubLinkNow_(itId){
 }
 
 async function mpSubscribedFiles_(files){
-  const list = Array.from(files || []).slice(0, 100);
+  let list = Array.from(files || []).slice(0, 100);
   if(!list.length) return;
+
+  // 🔁 نشيل أي صورة مكررة داخل نفس الاختيار — قبل الرفع خالص
+  const seenHash1 = new Set();
+  const clean1 = [];
+  for(const f of list){
+    const h = await fileHash(f);
+    if(h && seenHash1.has(h)) continue;
+    if(h) seenHash1.add(h);
+    clean1.push(f);
+  }
+  const dropped1 = list.length - clean1.length;
+  list = clean1;
+  if(!list.length) return;
+  if(dropped1) toastOk('🔁 شيلنا ' + dropped1 + ' صورة مكررة قبل الرفع');
 
   const start = MP.items.length;
   MP.items = MP.items.concat(list.map((f, i) => ({
@@ -15784,8 +15834,22 @@ function mpSnapSentPhotosScreen_(){
 }
 
 async function mpSnapSentFiles_(files){
-  const list = Array.from(files || []).slice(0, 100);
+  let list = Array.from(files || []).slice(0, 100);
   if(!list.length) return;
+
+  // 🔁 نشيل أي صورة مكررة داخل نفس الاختيار — قبل الرفع خالص
+  const seenHash2 = new Set();
+  const clean2 = [];
+  for(const f of list){
+    const h = await fileHash(f);
+    if(h && seenHash2.has(h)) continue;
+    if(h) seenHash2.add(h);
+    clean2.push(f);
+  }
+  const dropped2 = list.length - clean2.length;
+  list = clean2;
+  if(!list.length) return;
+  if(dropped2) toastOk('🔁 شيلنا ' + dropped2 + ' صورة مكررة قبل الرفع');
 
   const start = MP.items.length;
   MP.items = MP.items.concat(list.map((f, i) => ({
@@ -18657,6 +18721,11 @@ async function mpUploadPending(list){
         token: SESSION.token, action: 'addPending',
         url, hash, aiName: it.visionRead || '',
         platform: it.visPlatform || '',
+        // ⚠️ السيرفر بيستخدم type لتحديد نوع التسجيل الأول —
+        //    كان النداء ده مبيبعتش type خالص، فكان بيترجع
+        //    "sent" افتراضيًا حتى للمتابعات، ويعتمد على تصحيح
+        //    لاحق مش مضمون دايمًا. دلوقتي بيتبعت صح من الأول.
+        type: it.kindOverride || MP.kind,
         kind: it.kindOverride || MP.kind,
         ocr: (it.replaceUid ? '[↔ ' + it.replaceUid + '] ' : '')
            + (it.nearMiss ? '[≈ قريب من @' + it.nearMiss + '] ' : '')
@@ -18725,10 +18794,13 @@ async function mpUploadPending(list){
           await retry_(() => callApi('verifyProof', {
             token: SESSION.token, action: 'addPending',
             url: url2, hash: hash2, aiName: it.visionRead || '',
-            platform: it.visPlatform || '', ocr: it.ocr || '', type: 'sent',
-            // ⚠️ مسار إعادة المحاولة عند انقطاع النت — كان
-            //    مانساش يبعت النوع، فصورة متابعة اترفعت من
-            //    غيره كانت هتتحط "sent" في مستنية الربط.
+            platform: it.visPlatform || '', ocr: it.ocr || '',
+            // ⚠️ السيرفر بيستخدم type (مش kind) في أول تسجيل
+            //    للصورة — كان مثبّت 'sent' هنا حتى لو الصورة
+            //    كانت متابعة فعلًا، فكانت بتتسجّل وتتحسب في
+            //    التارجت بدل عدّاد المتابعات. دلوقتي النوعين
+            //    (type وkind) بياخدوا نفس القيمة الصح من الأول.
+            type: it.kindOverride || MP.kind,
             kind: it.kindOverride || MP.kind,
           }), 3);
           it.state = 'ok';
@@ -21916,6 +21988,104 @@ function dbTgFilters(){
     + (_dbTg.from && _dbTg.to
         ? '<div class="db-tkfd">📅 '+esc(_dbTg.from)+' ← '+esc(_dbTg.to)+'</div>' : '')
     + '</div>';
+}
+
+// ═══════════════════════════════════════════════════════════
+// 🔄 تقرير المتابعات — يومي/أسبوعي/شهري لكل موظفة
+// ═══════════════════════════════════════════════════════════
+let _fuRep = { data: null, loading: false, from: null, to: null,
+               preset: 'month', expand: {} };
+
+async function dbFuLoad(){
+  _fuRep.loading = true;
+  renderDashboard();
+  try{
+    const body = { token: SESSION.token, action: 'followupsReport' };
+    if(_fuRep.from && _fuRep.to){ body.from = _fuRep.from; body.to = _fuRep.to; }
+    const r = await callApi('adminAction', body);
+    _fuRep.data = r || {};
+  }catch(e){ _fuRep.data = { _error: e.message }; }
+  _fuRep.loading = false;
+  renderDashboard();
+}
+
+function dbFuPreset(k){
+  _fuRep.preset = k;
+  const to = new Date();
+  if(k === 'month'){
+    _fuRep.from = cairoDate(new Date(to.getFullYear(), to.getMonth(), 1));
+  } else if(k === 'week'){
+    const day = to.getDay(); // 0=أحد
+    const f = new Date(to); f.setDate(to.getDate() - day);
+    _fuRep.from = cairoDate(f);
+  } else {
+    const f = new Date(); f.setDate(to.getDate() - (Number(k)-1));
+    _fuRep.from = cairoDate(f);
+  }
+  _fuRep.to = cairoDate(to);
+  _fuRep.data = null;
+  dbFuLoad();
+}
+
+function dbFuToggle(name){
+  _fuRep.expand[name] = !_fuRep.expand[name];
+  renderDashboard();
+}
+
+function dbFollowupsReport(){
+  if(!_fuRep.data && !_fuRep.loading){ dbFuPreset('month'); }
+  const d = _fuRep.data;
+
+  let out = '<div class="db-tgf">'
+    + ['week','month','30','90'].map(k =>
+        '<button class="db-r' + (_fuRep.preset===k?' on':'') + '" '
+        + 'onclick="dbFuPreset(\'' + k + '\')">'
+        + (k==='week' ? 'الأسبوع ده' : k==='month' ? 'الشهر ده' : k + ' يوم')
+        + '</button>').join('')
+    + '</div>';
+
+  if(_fuRep.loading || !d){
+    return out + '<div class="db-ld">⏳ بنحمّل…</div>';
+  }
+  if(d._error){
+    return out + '<div class="db-empty">❌ ' + esc(d._error) + '</div>';
+  }
+
+  const staffArr = d.staff || [];
+  const days = (staffArr[0]?.daily || []).map(x => x.day);
+
+  out += '<div class="db-kpis">'
+    + dbCard('🔄', 'إجمالي المتابعات — الفريق', d.team_total || 0, '')
+    + '</div>';
+
+  // 📊 جدول ملخّص — كل موظفة، إجمالي الفترة + آخر أسبوع
+  out += '<div class="fu-table">'
+    + '<div class="fu-hd">'
+    +   '<span>الموظفة</span><span>إجمالي الفترة</span>'
+    +   '<span>آخر أسبوع</span><span></span>'
+    + '</div>'
+    + staffArr.map(st => {
+        const lastWeek = (st.weekly || [])[st.weekly.length - 1];
+        const opened = !!_fuRep.expand[st.name];
+        return '<div class="fu-row">'
+          + '<div class="fu-cell fu-name">' + (st.emoji||'') + ' ' + esc(st.name) + '</div>'
+          + '<div class="fu-cell fu-num">' + (st.total||0) + '</div>'
+          + '<div class="fu-cell fu-num">' + (lastWeek?.count||0) + '</div>'
+          + '<button class="fu-exp" onclick="dbFuToggle(\'' + esc(st.name) + '\')">'
+          +   (opened ? '▲ اقفلي' : '▼ يوم بيوم') + '</button>'
+          + '</div>'
+          + (opened
+            ? '<div class="fu-daily">' + (st.daily || []).map(x =>
+                '<div class="fu-day' + (x.count ? ' has' : '') + '">'
+                + '<i>' + dbDate(x.day).replace(/\/\d{4}$/, '') + '</i>'
+                + '<b>' + x.count + '</b>'
+                + '</div>').join('') + '</div>'
+            : '')
+      + '</div>';
+      }).join('')
+    + '</div>';
+
+  return out;
 }
 
 async function dbTgLoad(){
