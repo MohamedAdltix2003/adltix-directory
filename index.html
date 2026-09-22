@@ -2747,26 +2747,60 @@
   body.dark .db-i.warn{ background:#4a3510; color:#fcd34d }
   body.dark .db-i.bad { background:#4a1414; color:#fca5a5 }
 
+  /* 🔄 رأس تقرير المتابعات — تنقّل شهري */
+  .fu-head{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:10px; margin-bottom:16px; flex-wrap:wrap;
+  }
+  .fu-nav{
+    font-family:inherit; font-size:12.5px; font-weight:800; cursor:pointer;
+    padding:9px 16px; border-radius:11px; border:1px solid var(--line);
+    background:var(--surface); color:var(--ink); white-space:nowrap;
+    transition:opacity .15s;
+  }
+  .fu-nav:disabled{ opacity:.35; cursor:not-allowed }
+  .fu-nav:not(:disabled):active{ transform:scale(.97) }
+  .fu-cur{ text-align:center; flex:1 }
+  .fu-cur b{
+    display:block; font-size:17px; font-weight:900; color:var(--ink);
+    font-family:'Space Grotesk','Tajawal',sans-serif;
+  }
+  .fu-cur span{
+    display:block; font-size:10.5px; color:var(--brand); font-weight:700;
+    margin-top:2px;
+  }
+
   /* 🔄 جدول تقرير المتابعات */
   .fu-table{ border:1px solid var(--line); border-radius:14px; overflow:hidden }
   .fu-hd{
-    display:grid; grid-template-columns:1.6fr 1fr 1fr auto;
+    display:grid; grid-template-columns:1.4fr 1.6fr .8fr auto;
     padding:10px 12px; background:var(--surface2,var(--surface));
-    font-size:11.5px; font-weight:800; color:var(--muted);
+    font-size:11px; font-weight:800; color:var(--muted);
   }
   .fu-row{
-    display:grid; grid-template-columns:1.6fr 1fr 1fr auto;
-    align-items:center; padding:11px 12px;
+    display:grid; grid-template-columns:1.4fr 1.6fr .8fr auto;
+    align-items:center; padding:11px 12px; gap:8px;
     border-top:1px solid var(--line);
   }
   .fu-cell{ font-size:13.5px }
   .fu-name{ font-weight:800; color:var(--ink) }
-  .fu-num{ font-weight:900; font-size:16px; text-align:center;
+  .fu-barcell{ display:flex; align-items:center; gap:8px }
+  .fu-bar{
+    flex:1; height:7px; border-radius:99px; background:var(--surface2,var(--surface));
+    overflow:hidden;
+  }
+  .fu-bar i{
+    display:block; height:100%; border-radius:99px;
+    background:linear-gradient(90deg,var(--brand),#818CF8);
+  }
+  .fu-num{ font-weight:900; font-size:15px; min-width:26px; text-align:left;
            font-family:'Space Grotesk','Tajawal',sans-serif }
+  .fu-num2{ font-weight:900; font-size:15px; text-align:center;
+           font-family:'Space Grotesk','Tajawal',sans-serif; color:var(--muted) }
   .fu-exp{
     font-family:inherit; font-size:11.5px; font-weight:700; cursor:pointer;
     padding:6px 10px; border-radius:8px; border:1px solid var(--line);
-    background:var(--surface); color:var(--brand);
+    background:var(--surface); color:var(--brand); white-space:nowrap;
   }
   .fu-daily{
     display:flex; flex-wrap:wrap; gap:6px; padding:10px 12px;
@@ -2775,7 +2809,7 @@
   .fu-day{
     display:flex; flex-direction:column; align-items:center; gap:2px;
     padding:6px 9px; border-radius:9px; background:var(--surface);
-    border:1px solid var(--line); min-width:44px;
+    border:1px solid var(--line); min-width:36px;
   }
   .fu-day.has{ border-color:#86EFAC; background:rgba(34,197,94,.08) }
   .fu-day i{ font-size:9.5px; color:var(--muted); font-style:normal }
@@ -21993,37 +22027,40 @@ function dbTgFilters(){
 // ═══════════════════════════════════════════════════════════
 // 🔄 تقرير المتابعات — يومي/أسبوعي/شهري لكل موظفة
 // ═══════════════════════════════════════════════════════════
-let _fuRep = { data: null, loading: false, from: null, to: null,
-               preset: 'month', expand: {} };
+let _fuRep = { data: null, loading: false, monthOffset: 0, expand: {} };
+
+const FU_MONTHS = ["يناير","فبراير","مارس","إبريل","مايو","يونيو",
+                    "يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
+
+function dbFuRange_(){
+  const base = new Date();
+  const y = base.getFullYear(), m = base.getMonth() + _fuRep.monthOffset;
+  const from = new Date(y, m, 1);
+  let to = new Date(y, m + 1, 0);
+  const today = new Date();
+  if(to > today) to = today;
+  return { from: cairoDate(from), to: cairoDate(to),
+           label: FU_MONTHS[((m % 12) + 12) % 12] + ' ' + new Date(y, m, 1).getFullYear() };
+}
 
 async function dbFuLoad(){
   _fuRep.loading = true;
   renderDashboard();
+  const { from, to } = dbFuRange_();
   try{
-    const body = { token: SESSION.token, action: 'followupsReport' };
-    if(_fuRep.from && _fuRep.to){ body.from = _fuRep.from; body.to = _fuRep.to; }
-    const r = await callApi('adminAction', body);
+    const r = await callApi('adminAction', {
+      token: SESSION.token, action: 'followupsReport', from, to,
+    });
     _fuRep.data = r || {};
   }catch(e){ _fuRep.data = { _error: e.message }; }
   _fuRep.loading = false;
   renderDashboard();
 }
 
-function dbFuPreset(k){
-  _fuRep.preset = k;
-  const to = new Date();
-  if(k === 'month'){
-    _fuRep.from = cairoDate(new Date(to.getFullYear(), to.getMonth(), 1));
-  } else if(k === 'week'){
-    const day = to.getDay(); // 0=أحد
-    const f = new Date(to); f.setDate(to.getDate() - day);
-    _fuRep.from = cairoDate(f);
-  } else {
-    const f = new Date(); f.setDate(to.getDate() - (Number(k)-1));
-    _fuRep.from = cairoDate(f);
-  }
-  _fuRep.to = cairoDate(to);
+function dbFuMonth(delta){
+  _fuRep.monthOffset += delta;
   _fuRep.data = null;
+  _fuRep.expand = {};
   dbFuLoad();
 }
 
@@ -22033,15 +22070,18 @@ function dbFuToggle(name){
 }
 
 function dbFollowupsReport(){
-  if(!_fuRep.data && !_fuRep.loading){ dbFuPreset('month'); }
+  if(!_fuRep.data && !_fuRep.loading){ dbFuLoad(); }
   const d = _fuRep.data;
+  const range = dbFuRange_();
+  const isCurrentMonth = _fuRep.monthOffset === 0;
 
-  let out = '<div class="db-tgf">'
-    + ['week','month','30','90'].map(k =>
-        '<button class="db-r' + (_fuRep.preset===k?' on':'') + '" '
-        + 'onclick="dbFuPreset(\'' + k + '\')">'
-        + (k==='week' ? 'الأسبوع ده' : k==='month' ? 'الشهر ده' : k + ' يوم')
-        + '</button>').join('')
+  // 🗓️ رأس احترافي — تنقّل شهري زي تقرير الموظفة بالظبط
+  let out = '<div class="fu-head">'
+    + '<button class="fu-nav" onclick="dbFuMonth(-1)">◀ الشهر اللي فات</button>'
+    + '<div class="fu-cur"><b>📅 ' + esc(range.label) + '</b>'
+    +   (isCurrentMonth ? '<span>الشهر الحالي</span>' : '') + '</div>'
+    + '<button class="fu-nav"' + (isCurrentMonth ? ' disabled' : '') + ' '
+    +   'onclick="dbFuMonth(1)">الشهر الجاي ▶</button>'
     + '</div>';
 
   if(_fuRep.loading || !d){
@@ -22051,35 +22091,52 @@ function dbFollowupsReport(){
     return out + '<div class="db-empty">❌ ' + esc(d._error) + '</div>';
   }
 
-  const staffArr = d.staff || [];
-  const days = (staffArr[0]?.daily || []).map(x => x.day);
+  const staffArr = (d.staff || []).slice().sort((a,b) => (b.total||0) - (a.total||0));
+  const top = staffArr[0];
 
+  // 📊 ملخّص الفريق
   out += '<div class="db-kpis">'
-    + dbCard('🔄', 'إجمالي المتابعات — الفريق', d.team_total || 0, '')
+    + dbCard('🔄', 'إجمالي متابعات الفريق', d.team_total || 0, '')
+    + dbCard('👥', 'عدد الموظفات النشطات', staffArr.filter(s=>s.total>0).length, '')
+    + (top && top.total
+      ? dbCard('🏆', 'الأعلى — ' + top.name, top.total, '', 'good')
+      : dbCard('🏆', 'الأعلى', 0, ''))
     + '</div>';
 
-  // 📊 جدول ملخّص — كل موظفة، إجمالي الفترة + آخر أسبوع
+  if(!staffArr.length){
+    return out + '<div class="db-empty">مفيش بيانات للفترة دي</div>';
+  }
+
+  const maxTotal = Math.max(1, ...staffArr.map(s => s.total||0));
+
   out += '<div class="fu-table">'
     + '<div class="fu-hd">'
-    +   '<span>الموظفة</span><span>إجمالي الفترة</span>'
+    +   '<span>الموظفة</span><span>إجمالي الشهر</span>'
     +   '<span>آخر أسبوع</span><span></span>'
     + '</div>'
     + staffArr.map(st => {
         const lastWeek = (st.weekly || [])[st.weekly.length - 1];
         const opened = !!_fuRep.expand[st.name];
+        const pct = Math.round((st.total||0) / maxTotal * 100);
         return '<div class="fu-row">'
-          + '<div class="fu-cell fu-name">' + (st.emoji||'') + ' ' + esc(st.name) + '</div>'
-          + '<div class="fu-cell fu-num">' + (st.total||0) + '</div>'
-          + '<div class="fu-cell fu-num">' + (lastWeek?.count||0) + '</div>'
+          + '<div class="fu-cell fu-name">' + (st.emoji||'👤') + ' ' + esc(st.name) + '</div>'
+          + '<div class="fu-cell fu-barcell">'
+          +   '<div class="fu-bar"><i style="width:' + pct + '%"></i></div>'
+          +   '<b class="fu-num">' + (st.total||0) + '</b>'
+          + '</div>'
+          + '<div class="fu-cell fu-num2">' + (lastWeek?.count||0) + '</div>'
           + '<button class="fu-exp" onclick="dbFuToggle(\'' + esc(st.name) + '\')">'
-          +   (opened ? '▲ اقفلي' : '▼ يوم بيوم') + '</button>'
+          +   (opened ? '▲' : '▼ يوم بيوم') + '</button>'
           + '</div>'
           + (opened
-            ? '<div class="fu-daily">' + (st.daily || []).map(x =>
-                '<div class="fu-day' + (x.count ? ' has' : '') + '">'
-                + '<i>' + dbDate(x.day).replace(/\/\d{4}$/, '') + '</i>'
-                + '<b>' + x.count + '</b>'
-                + '</div>').join('') + '</div>'
+            ? '<div class="fu-daily">' + (st.daily || []).map(x => {
+                const dt = new Date(x.day);
+                const dayNum = dt.getDate();
+                return '<div class="fu-day' + (x.count ? ' has' : '') + '">'
+                  + '<i>' + dayNum + '</i>'
+                  + '<b>' + x.count + '</b>'
+                  + '</div>';
+              }).join('') + '</div>'
             : '')
       + '</div>';
       }).join('')
