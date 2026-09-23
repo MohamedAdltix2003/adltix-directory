@@ -18768,12 +18768,19 @@ async function mpUploadPending(list){
            + (it.blocked && !it.snapNote ? '[' + it.blocked + '] ' : '')
            + (it.snapLink ? it.snapLink + ' ' : '')
            + (it.ocr || ''),
+
         type: 'sent',
       }), 4);
 
-      if(r && r.duplicate){
+      if(r && r.existed){
+        // ⚠️ كان بيفحص r.duplicate — السيرفر بيرجّع existed،
+        // مش duplicate. الفحص القديم مكانش بيشتغل خالص، فأي
+        // صورة "بنفس البصمة موجودة أصلًا" كانت بتتحسب "✅
+        // اترفعت" زي أي صورة جديدة، من غير ما حد يعرف إنها
+        // اترمجّت مع صف قديم بدل ما تتسجّل جديدة — وده اللي
+        // كان بيخلّي "48 اترفعت" يبقوا فعليًا أقل بكتير.
         it.state = 'dup';
-        it.msg = 'الصورة دي مرفوعة قبل كده';
+        it.msg = '🔁 نفس الصورة دي كانت موجودة أصلًا (مستنية ربط)';
       } else {
         it.state = 'ok';
         it.msg   = '📥 اترفعت — هتتربط قريب';
@@ -18825,7 +18832,7 @@ async function mpUploadPending(list){
           if(url2) it.upUrl = url2;
         }
         if(url2){
-          await retry_(() => callApi('verifyProof', {
+          const r2 = await retry_(() => callApi('verifyProof', {
             token: SESSION.token, action: 'addPending',
             url: url2, hash: hash2, aiName: it.visionRead || '',
             platform: it.visPlatform || '', ocr: it.ocr || '',
@@ -18837,9 +18844,16 @@ async function mpUploadPending(list){
             type: it.kindOverride || MP.kind,
             kind: it.kindOverride || MP.kind,
           }), 3);
-          it.state = 'ok';
-          it.msg   = '📥 اترفعت — هتتربط قريب';
-          done++;
+          // ⚠️ نفس فحص existed — عشان صورة مكررة من غير نت
+          // ما تتحسبش "جديدة" هنا كمان.
+          if(r2 && r2.existed){
+            it.state = 'dup';
+            it.msg = '🔁 نفس الصورة دي كانت موجودة أصلًا (مستنية ربط)';
+          } else {
+            it.state = 'ok';
+            it.msg   = '📥 اترفعت — هتتربط قريب';
+            done++;
+          }
         } else { throw new Error('فشل'); }
       }catch(e2){
         // ⏳ فشل فعلي — منعلّمهاش نجاح
@@ -19217,7 +19231,10 @@ function renderTargetBar(){
   // 📊 الإجمالي: اللي رفعتهم + الموقع
   // ⚠️ لازم يشمل المعلّقة — كان بيقول 26 والتارجت 48
   const tAll  = dbN(tOwn.sent) + dbN(tSite.sent) + dPend;
-  const mAll  = dbN(mOwn.sent) + dbN(mSite.sent);
+  // ⚠️ زي بالظبط اليومي فوق — كان ناقص المعلّقة، فالرقم
+  //    الشهري كان بيوري الإرسال المسجّل نهائي بس، مش شامل
+  //    اللي لسه معلّق. دلوقتي زي بعض بالظبط.
+  const mAll  = dbN(mOwn.sent) + dbN(mSite.sent) + mPend;
   const tProof = dbN(tOwn.proofs) + dbN(tSite.proofs) + dPend;
 
   box.style.display = '';
