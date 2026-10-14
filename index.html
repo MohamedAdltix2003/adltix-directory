@@ -9801,7 +9801,11 @@ async function checkProofBeforeUpload(file, uid){
       token: SESSION.token, action:'check', hash, uid
     }) || {};
 
-    if(r.accepted === false){
+    // ⚠️ الفحص ده عمره ما اشتغل (الرد كان بيرجع فاضي). دلوقتي
+    //    بيشتغل — بس بيوقف الرفع على حاجة واحدة بس: نفس الصورة
+    //    بالظبط اترفعت قبل كده من نفس الموظفة. باقي القواعد
+    //    مبتوقفش حاجة، عشان "اللي يترفع يتحسب".
+    if(r.accepted === false && r.reason === 'duplicate'){
       showProofReject(r);
       return { ok:false, hash };
     }
@@ -9917,6 +9921,7 @@ document.getElementById('crmFileInput').addEventListener('change', async (e)=>{
     if(!chk.ok) return;
 
     const base64=await fileToBase64(file);
+    pend.hash = chk.hash || undefined;
     const res = await sendCrmAction(pend.btn,pend.uid,pend.actionType,base64,pend.mode,pend);
 
     // نسجّل البصمة بعد الرفع الناجح
@@ -9958,6 +9963,7 @@ document.getElementById('crmFileInputGallery').addEventListener('change', async 
     if(!chk.ok) return;
 
     const base64=await fileToBase64(file);
+    pend.hash = chk.hash || undefined;
     const res = await sendCrmAction(pend.btn,pend.uid,pend.actionType,base64,pend.mode,pend);
 
     // نسجّل البصمة بعد الرفع الناجح
@@ -10116,6 +10122,8 @@ async function sendCrmAction(btn,uid,actionType,imageBase64,mode,extra){
   try{
     const res=await callApi('logAction',{
       token:SESSION.token, uid, actionType, imageBase64, mode:mode||'new',
+      // 🔒 البصمة مع التسجيل — السيرفر بيرفض نفس الصورة مرتين
+      hash:       (extra && extra.hash) || undefined,
       seq:        (extra && extra.seq) || undefined,
       reasonType: (extra && extra.reasonType) || undefined,
       reasonNote: (extra && extra.reasonNote) || undefined
@@ -16078,6 +16086,10 @@ async function mpFiles(files){
   MP.items = list.map((f, i) => ({
     id: 'i' + Date.now() + '_' + i,
     file: f,
+    // 🔒 النوع بيتثبّت على الصورة لحظة اختيارها — لو اتغيّر زرار
+    //    النوع بعد كده (بالغلط أو لرفعة تانية)، الصور اللي اتختارت
+    //    تفضل في عدّادها الصح. ده كان بيخلّي متابعات تتحسب تارجت.
+    kind: MP.kind || 'sent',
     preview: URL.createObjectURL(f),
     state: 'scan',        // scan / ready / uploading / ok / dup / fail
     uid: '', handle: '', action: '', seq: 1, label: '',
@@ -16142,9 +16154,9 @@ async function runOCR_(){
         it.uid    = uid;
         it.handle = String((add && add.handle) || '').replace('@','')
                  || (uid.split(':')[1] || '');
-        it.action = MP.kind;
+        it.action = it.kind || MP.kind;
         it.seq    = 1;
-        it.label  = MP.kind === 'followup' ? 'متابعة' : 'إرسال';
+        it.label  = (it.kind || MP.kind) === 'followup' ? 'متابعة' : 'إرسال';
         it.autoAdded = !!(add && add.isNew);
         // 🏷️ نفس معالجة إنستجرام — الملاحظة بتتسجّل مع الأكشن
         //    عشان تظهر في تابة الملاحظات
@@ -16351,9 +16363,9 @@ async function runOCR_(){
           if(add && (add.taken || add.subscribed || add.partner)){
             it.uid    = add.uid || '';
             it.handle = String(add.handle || uname).replace('@','');
-            it.action = MP.kind;
+            it.action = it.kind || MP.kind;
             it.seq    = 1;
-            it.label  = MP.kind === 'followup' ? 'متابعة' : 'إرسال';
+            it.label  = (it.kind || MP.kind) === 'followup' ? 'متابعة' : 'إرسال';
             it.flag   = add.partner ? 'partner'
                       : add.subscribed ? 'subscribed' : 'taken';
             it.flagNote = String(add.msg || '').replace(/^[🚫🔁🎉]\s*/, '');
@@ -16364,18 +16376,18 @@ async function runOCR_(){
               it.handle = String(add.handle || uname).replace('@','');
               // 🔄 كان مقفول على "إرسال" دايمًا حتى لو اخترتي
               //    "متابعة" — ده تعارض مع نظام المتابعات
-              it.action = MP.kind || 'sent';
-              it.seq    = MP.kind === 'followup' ? 1 : 1;
-              it.label  = MP.kind === 'followup' ? 'متابعة' : 'إرسال';
+              it.action = it.kind || MP.kind || 'sent';
+              it.seq    = (it.kind || MP.kind) === 'followup' ? 1 : 1;
+              it.label  = (it.kind || MP.kind) === 'followup' ? 'متابعة' : 'إرسال';
             }
             it.autoAdded = true;
           } else if(add && (add.partner || add.taken || add.subscribed)){
             // 🏷️ كله بيترفع ويتحسب — الملاحظة بتتسجّل معاه
             it.uid    = add.uid || '';
             it.handle = String(add.handle || uname).replace('@','');
-            it.action = MP.kind;
+            it.action = it.kind || MP.kind;
             it.seq    = 1;
-            it.label  = MP.kind === 'followup' ? 'متابعة' : 'إرسال';
+            it.label  = (it.kind || MP.kind) === 'followup' ? 'متابعة' : 'إرسال';
             it.flag   = add.partner ? 'partner'
                       : add.subscribed ? 'subscribed' : 'taken';
             it.flagNote = String(add.msg || '').replace(/^[🚫🔁🎉]\s*/, '');
@@ -16397,9 +16409,9 @@ async function runOCR_(){
           // 🔄 كانت مقفولة على "إرسال" دايمًا — ده كان بيمنع
           //    رفعات المتابعات الجماعية من إثباتات إنها
           //    تتسجّل صح حتى لو اخترتي "متابعة" من القايمة.
-          it.action = MP.kind || 'sent';
-          it.seq    = MP.kind === 'followup' ? (m.cand.seq || 1) : 1;
-          it.label  = MP.kind === 'followup'
+          it.action = it.kind || MP.kind || 'sent';
+          it.seq    = (it.kind || MP.kind) === 'followup' ? (m.cand.seq || 1) : 1;
+          it.label  = (it.kind || MP.kind) === 'followup'
             ? ('متابعة ' + it.seq) : 'إرسال';
 
           // 💾 نخزّن الاسم المعروض — عشان الصور الجاية تتربط أسرع
@@ -16580,9 +16592,9 @@ async function runOCR_(){
         it.handle = m.cand.handle;
         // 🔄 كانت مقفولة على "إرسال" — بتعارض مع اختيار
         //    "متابعة" من القايمة قبل الرفع.
-        it.action = MP.kind || 'sent';
-        it.seq    = MP.kind === 'followup' ? (m.cand.seq || 1) : 1;
-        it.label  = MP.kind === 'followup'
+        it.action = it.kind || MP.kind || 'sent';
+        it.seq    = (it.kind || MP.kind) === 'followup' ? (m.cand.seq || 1) : 1;
+        it.label  = (it.kind || MP.kind) === 'followup'
           ? ('متابعة ' + it.seq) : 'إرسال';
         it.score  = m.score;
 
@@ -16872,7 +16884,7 @@ function mpQuickProof(uid){
     MP.items = [{
       id: 'q' + Date.now(), file: f, preview: URL.createObjectURL(f),
       state: 'scan', uid: c.uid, handle: c.handle,
-      action: c.action, seq: c.seq,
+      action: c.action, kind: c.action || 'sent', seq: c.seq,
       label: c.action === 'followup' ? ('متابعة ' + c.seq) : 'إرسال',
       conf: '', ocr: '', signals: {}, score: 0, msg: '',
       locked: true,          // المؤثر متأكد منه — الفحص للصورة بس
@@ -17743,9 +17755,9 @@ function mpFixLink(id){
     it.uid       = uid;
     it.snapLink  = v;
     it.handle    = uid.split(':')[1] || '';
-    it.action    = MP.kind;
+    it.action    = it.kind || MP.kind;
     it.seq       = 1;
-    it.label     = MP.kind === 'followup' ? 'متابعة' : 'إرسال';
+    it.label     = (it.kind || MP.kind) === 'followup' ? 'متابعة' : 'إرسال';
     it.autoAdded = false;
     it.manualLink = true;      // 🏷️ الموظفة ربطته بنفسها
     it.msg       = '🔗 اتربط يدوي';
@@ -17785,7 +17797,7 @@ async function mpRetry(id){
     const hash = await fileHash(it.file);
     const chk = await callApi('verifyProof', {
       token: SESSION.token, action: 'check',
-      hash, uid: it.uid || '', actionType: it.action || MP.kind,
+      hash, uid: it.uid || '', actionType: it.action || it.kind || MP.kind,
     }).catch(() => null);
 
     // اترفعت خلاص؟ نعلّمها ناجحة
@@ -18118,7 +18130,7 @@ async function mpUploadOne(it){
           //    فلو الموظفة رفعت متابعة من زرار الكارت السريع،
           //    الفحص كان بيتم على أساس "إرسال" ويرفض بالغلط
           //    "اترفعله إثبات إرسال خلاص" حتى لو كانت متابعة فعلاً.
-          actionType: it.action || MP.kind,
+          actionType: it.action || it.kind || MP.kind,
         }) || {};
       }catch(e){ chk = {}; }
         // ⚠️ التصحيح التلقائي اتشال — كان بيغيّر "إرسال" لـ
@@ -18160,8 +18172,16 @@ async function mpUploadOne(it){
           // 🚫 دي الصورة نفسها بالظبط (نفس البصمة) اترفعت
           //    قبل كده — ده تكرار حقيقي للملف ذاته، لازم
           //    يفضل مرفوض عشان مانحسبش نفس الصورة مرتين.
-          it.state = 'dup';
-          it.msg = chk.message || 'الصورة دي مرفوعة قبل كده';
+          //
+          //    ✅ لو اترفعت من دقايق (إعادة محاولة لرد ضاع) — دي
+          //    محسوبة فعلًا، فنوريها ✅ مش 🚫 عشان الموظفة ماتقلقش.
+          if(chk.recent){
+            it.state = 'ok';
+            it.msg   = '✅ اتسجّلت';
+          } else {
+            it.state = 'dup';
+            it.msg = chk.message || 'الصورة دي مرفوعة قبل كده';
+          }
           renderMobileProofs();
           return;      // ⚠️ دالة مش لوب — return مش continue
 
@@ -18207,7 +18227,10 @@ async function mpUploadOne(it){
         }
         return await callApi('logAction', {
           token: SESSION.token, uid: it.uid,
-          actionType: it.action || MP.kind, imageBase64: b64,
+          actionType: it.action || it.kind || MP.kind, imageBase64: b64,
+          // 🔒 البصمة مع التسجيل — لو الرد ضاع والموقع حاول تاني،
+          //    السيرفر بيقول "اتسجّلت خلاص" بدل ما يسجّلها مرتين
+          hash: hash || undefined,
           mode: 'new', seq: it.seq || undefined,
           flag: it.flag || undefined,
           flagNote: it.flagNote || undefined,
@@ -18226,12 +18249,16 @@ async function mpUploadOne(it){
         const rawUrl = (up && up.url) || '';
         if(!rawUrl) throw e;
 
-        await callApi('verifyProof', {
+        const cf = await callApi('verifyProof', {
           token: SESSION.token, action: 'addConflictPhoto',
-          url: rawUrl, hash, actionType: it.action || MP.kind,
+          url: rawUrl, hash, actionType: it.action || it.kind || MP.kind,
+          targetUid: it.uid || '',
         });
-        it.msg = '⚠️ نفس المؤثر اترربط بصورة تانية في نفس اللحظة — '
-                 + 'سجّلت واتحسبت، هتتراجع في مراجعة الربط';
+        if(cf && cf.already){
+          return { screenshotUrl: cf.url || rawUrl, already: true };
+        }
+        it.msg = '⚠️ @' + (it.handle || '') + ' عنده نفس النوع منك قبل كده — '
+                 + 'سجّلت واتحسبت، هتظهر للإدارة في "صور مكررة لنفس المؤثر"';
         return { screenshotUrl: rawUrl, conflictSaved: true };
       });
 
@@ -18794,8 +18821,8 @@ async function mpUploadPending(list){
         //    كان النداء ده مبيبعتش type خالص، فكان بيترجع
         //    "sent" افتراضيًا حتى للمتابعات، ويعتمد على تصحيح
         //    لاحق مش مضمون دايمًا. دلوقتي بيتبعت صح من الأول.
-        type: it.kindOverride || MP.kind,
-        kind: it.kindOverride || MP.kind,
+        type: it.kindOverride || it.kind || MP.kind,
+        kind: it.kindOverride || it.kind || MP.kind,
         ocr: (it.replaceUid ? '[↔ ' + it.replaceUid + '] ' : '')
            + (it.nearMiss ? '[≈ قريب من @' + it.nearMiss + '] ' : '')
            + (it.reviewNote ? '[🔍 ' + it.reviewNote + '] ' : '')
@@ -18807,7 +18834,13 @@ async function mpUploadPending(list){
         type: 'sent',
       }), 4);
 
-      if(r && r.existed){
+      if(r && r.alreadyLogged){
+        // ✅ الصورة دي اتسجّلت فعلًا قبل كده (الرد بس هو اللي ضاع) —
+        //    محسوبة مرة واحدة، مش هتتحسب تاني في المعلّقة.
+        it.state = 'ok';
+        it.msg   = '✅ اتسجّلت';
+        done++;
+      } else if(r && r.existed){
         // ⚠️ كان بيفحص r.duplicate — السيرفر بيرجّع existed،
         // مش duplicate. الفحص القديم مكانش بيشتغل خالص، فأي
         // صورة "بنفس البصمة موجودة أصلًا" كانت بتتحسب "✅
@@ -18876,12 +18909,16 @@ async function mpUploadPending(list){
             //    كانت متابعة فعلًا، فكانت بتتسجّل وتتحسب في
             //    التارجت بدل عدّاد المتابعات. دلوقتي النوعين
             //    (type وkind) بياخدوا نفس القيمة الصح من الأول.
-            type: it.kindOverride || MP.kind,
-            kind: it.kindOverride || MP.kind,
+            type: it.kindOverride || it.kind || MP.kind,
+            kind: it.kindOverride || it.kind || MP.kind,
           }), 3);
           // ⚠️ نفس فحص existed — عشان صورة مكررة من غير نت
           // ما تتحسبش "جديدة" هنا كمان.
-          if(r2 && r2.existed){
+          if(r2 && r2.alreadyLogged){
+            it.state = 'ok';
+            it.msg   = '✅ اتسجّلت';
+            done++;
+          } else if(r2 && r2.existed){
             it.state = 'dup';
             it.msg = '🔁 نفس الصورة دي كانت موجودة أصلًا (مستنية ربط)';
           } else {
@@ -19657,6 +19694,10 @@ async function dbLoadLinks(){
       token: SESSION.token, action: 'linkReview',
       staff: _lkStaff === 'all' ? '' : _lkStaff,
       plat:  _lkPlat  === 'all' ? '' : _lkPlat,
+      // 🔒 "مراجعة الربط" لإثبات الإرسال بس — المتابعات ليها
+      //    تابتها المستقلة "تأكيد المتابعات". من غير الفلتر
+      //    ده، الدالة كانت بترجّع كل الأنواع مخلوطين مع بعض.
+      kind: 'sent',
     });
     _lkData = r;
     renderDashboard();
@@ -20248,6 +20289,10 @@ function dbPending(r){
     // 🎉 إثبات اشتراك — صور بس، أي منصة، منفصلة عن كل حاجة
     + '<button class="pn-sb' + (_pnSub==='subscribed'?' on':'') + '" '
     +   'onclick="dbPnSub(\'subscribed\')">🎉 إثبات اشتراك مستنية</button>'
+    // 🔁 صورة جديدة لمؤثر عنده نفس النوع من نفس الموظفة — محسوبة،
+    //    بس محتاجة قرار (تفضل ولا تتمسح)
+    + '<button class="pn-sb' + (_pnSub==='conflicts'?' on':'') + '" '
+    +   'onclick="dbPnSub(\'conflicts\')">🔁 صور مكررة لنفس المؤثر</button>'
     + '<button class="pn-sb' + (_pnSub==='links'?' on':'') + '" '
     +   'onclick="dbPnSub(\'links\')">🔗 مراجعة الربط</button>'
     + '<button class="pn-sb' + (_pnSub==='review'?' on':'') + '" '
@@ -20259,6 +20304,7 @@ function dbPending(r){
   if(_pnSub === 'snapfollow') return bar + dbPnWait(r, 'snap');
   if(_pnSub === 'snapSent')   return bar + dbSnapSentTab_();
   if(_pnSub === 'subscribed') return bar + dbSubscribedTab_();
+  if(_pnSub === 'conflicts')  return bar + dbConflictTab_();
   // 🔄 تأكيد المتابعات — قسمين مع بعض: اللي اترربطت خلاص
   //    ومحتاجة مراجعة، واللي لسه مستنية ربط يدوي.
   if(_pnSub === 'followWait') return bar + dbFollowLinked_() + dbPnWait(r, 'follow');
@@ -20266,6 +20312,69 @@ function dbPending(r){
 }
 
 // 📸 تابة إثبات إرسال سناب شات — منفصلة تمامًا
+// 🔁 صور مكررة لنفس المؤثر — محسوبة، والإدارة تقرر
+let _cfData = null, _cfStaff = 'all';
+function dbCfStaff(v){ _cfStaff = v; _cfData = null; dbLoadConflicts_(); }
+async function dbLoadConflicts_(){
+  try{
+    _cfData = await callApi('adminAction', {
+      token: SESSION.token, action: 'conflictList',
+      staff: _cfStaff === 'all' ? '' : _cfStaff,
+    }) || { items: [] };
+    renderDashboard();
+  }catch(e){ toastErr(e.message); }
+}
+function dbConflictTab_(){
+  const d = _cfData;
+  if(!d){ dbLoadConflicts_(); return '<div class="db-ld">⏳ بنحمّل…</div>'; }
+  const items = d.items || [];
+  const T = { sent:'إرسال', followup:'متابعة', subscribed:'اشتراك' };
+  let h = '';
+  const st = d.by_staff || [];
+  if(st.length > 1){
+    h += '<div class="db-row">'
+      + '<button class="db-rp' + (_cfStaff==='all'?' on':'') + '" onclick="dbCfStaff(\'all\')">كل الموظفات</button>'
+      + st.map(x => '<button class="db-rp' + (_cfStaff===x.staff?' on':'') + '" '
+          + 'onclick="dbCfStaff(\'' + esc(x.staff) + '\')">' + esc(x.staff) + ' (' + x.count + ')</button>').join('')
+      + '</div>';
+  }
+  h += '<div class="db-kpis">' + dbCard('🔁', 'صور مكررة لنفس المؤثر', items.length, '') + '</div>';
+  if(!items.length) return h + '<div class="db-empty">✅ مفيش صور محتاجة قرار</div>';
+  h += '<div class="lk-hint">💡 الموظفة رفعت صورة جديدة لمؤثر عنده نفس النوع منها قبل كده. '
+    + 'الصورة <b>محسوبة</b> في عدّادها. لو هي نفس الشخص فعلًا (تكرار) امسحيها وهتنقص من عدّادها، '
+    + 'لو شخص تاني اترربط غلط سيبيها.</div>';
+  h += '<div class="lk-grid">' + items.map(x =>
+    '<div class="lk-c" id="cf' + x.id + '">'
+    + '<div class="cfl-cmp" style="padding:0">'
+    +   '<div class="cfl-c"><span>القديمة</span>'
+    +     (x.old_url ? '<img src="' + esc(x.old_url) + '" loading="lazy" onclick="dbZoom(\'' + esc(x.old_url) + '\')">' : '<i>—</i>')
+    +   '</div>'
+    +   '<div class="cfl-c"><span>الجديدة</span>'
+    +     '<img src="' + esc(x.url) + '" loading="lazy" onclick="dbZoom(\'' + esc(x.url) + '\')">'
+    +   '</div>'
+    + '</div>'
+    + '<div class="lk-d"><b>' + esc(x.staff) + '</b>'
+    +   '<span class="lk-t">' + esc(T[x.action_type] || x.action_type) + ' · '
+    +     esc(x.target_handle || 'مؤثر مش معروف') + ' · ' + esc(x.date) + ' ' + esc(x.time) + '</span></div>'
+    + '<div class="lk-a">'
+    +   '<button class="lk-ok" onclick="dbCfAct_(' + x.id + ',\'keep\')">✅ سيبيها</button>'
+    +   '<button class="lk-del" onclick="dbCfAct_(' + x.id + ',\'del\')">🗑️ امسحي</button>'
+    + '</div></div>'
+  ).join('') + '</div>';
+  return h;
+}
+async function dbCfAct_(id, what){
+  if(what === 'del' && !confirm('هتمسحي الصورة دي؟ هتنقص 1 من عدّاد الموظفة.')) return;
+  try{
+    await callApi('adminAction', {
+      token: SESSION.token, action: what === 'del' ? 'conflictDelete' : 'conflictKeep', id,
+    });
+    const el = document.getElementById('cf' + id);
+    if(el){ el.style.opacity = '.25'; setTimeout(() => el.remove(), 220); }
+    toastOk(what === 'del' ? '🗑️ اتمسحت — نقصت من عدّادها' : '✅ اتسابت محسوبة');
+  }catch(e){ toastErr(e.message); }
+}
+
 // 🎉 تابة إثبات اشتراك — منفصلة تمامًا
 let _subData = null;
 
@@ -20754,7 +20863,12 @@ function dbPnWait(r, mode){
   const items = (d.items || []).filter(x => {
     if(mode === 'snap')   return isSnapFollow(x);
     if(mode === 'follow') return isFollow(x) && !isSnapFollow(x);
-    return !isFollow(x) && !isSnapSent(x);   // 'sent' — إنستجرام/تيك توك بس
+    // ⚠️ كان بيستبعد أي صورة "إرسال" معلّقة منصتها سناب — بحجة إن
+    //    ليها تابة "إثبات إرسال سناب"، بس التابة دي بتعرض صور "صور
+    //    بس" (من actions_log) مش المعلّقة. فالصورة كانت محسوبة في
+    //    التارجت ومش ظاهرة في أي تابة خالص. دلوقتي أي إرسال معلّق
+    //    (أي منصة) بيظهر هنا.
+    return !isFollow(x);
   }).filter(x => {
     const u = String(x.url || '');
     if(u && seenUrls.has(u)) return false;
