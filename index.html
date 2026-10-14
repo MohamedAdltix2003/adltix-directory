@@ -18848,7 +18848,7 @@ async function mpUploadPending(list){
         // اترمجّت مع صف قديم بدل ما تتسجّل جديدة — وده اللي
         // كان بيخلّي "48 اترفعت" يبقوا فعليًا أقل بكتير.
         it.state = 'dup';
-        it.msg = '🔁 نفس الصورة دي كانت موجودة أصلًا (مستنية ربط)';
+        it.msg = (r && r.message) || '🔁 نفس الصورة دي كانت موجودة أصلًا (مستنية ربط)';
       } else {
         it.state = 'ok';
         it.msg   = '📥 اترفعت — هتتربط قريب';
@@ -18920,7 +18920,7 @@ async function mpUploadPending(list){
             done++;
           } else if(r2 && r2.existed){
             it.state = 'dup';
-            it.msg = '🔁 نفس الصورة دي كانت موجودة أصلًا (مستنية ربط)';
+            it.msg = (r2 && r2.message) || '🔁 نفس الصورة دي كانت موجودة أصلًا (مستنية ربط)';
           } else {
             it.state = 'ok';
             it.msg   = '📥 اترفعت — هتتربط قريب';
