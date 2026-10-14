@@ -6166,6 +6166,254 @@
   .mp-ch-g.p .mp-ch-b b{ flex-shrink:0 }
   .mp-ch-g.p .mp-ch-b u{ margin-inline-start:auto; text-align:end }
 
+  /* ═══════ 🎨 لوجوهات المنصات ═══════ */
+  .pl-logo{
+    width:40px; height:40px; border-radius:12px; flex-shrink:0;
+    display:inline-grid; place-items:center; vertical-align:middle;
+  }
+  .pl-logo svg{ width:58%; height:58%; fill:#fff; display:block }
+  .pl-logo.sm{ width:20px; height:20px; border-radius:6px }
+  .pl-logo.xs{ width:18px; height:18px; border-radius:5px }
+  .pl-logo.lg{ width:50px; height:50px; border-radius:15px }
+  .pl-instagram{
+    background:radial-gradient(circle at 30% 107%,
+      #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%);
+  }
+  .pl-tiktok{ background:#000 }
+  .pl-tiktok svg{ filter:drop-shadow(-1.2px -1px 0 #25F4EE) drop-shadow(1.2px 1px 0 #FE2C55) }
+  .pl-tiktok.sm svg, .pl-tiktok.xs svg{
+    filter:drop-shadow(-.6px -.5px 0 #25F4EE) drop-shadow(.6px .5px 0 #FE2C55);
+  }
+  .pl-snapchat{ background:#FFFC00 }
+  .pl-snapchat svg{ width:64%; height:64%; stroke:#000; stroke-width:1.4; overflow:visible }
+  .pl-facebook svg{ width:100%; height:100%; fill:#0866FF }
+
+  /* ═══════ 📱 اختيار النوع والمنصة ═══════ */
+  .mp-step{
+    display:flex; align-items:center; gap:8px; margin:18px 2px 10px;
+    font-size:13px; font-weight:800; color:var(--ink);
+  }
+  .mp-choose > .mp-step:first-child{ margin-top:2px }
+  .mp-step i{
+    font-style:normal; width:22px; height:22px; border-radius:50%;
+    display:grid; place-items:center; font-size:11.5px; font-weight:900;
+    background:var(--ink); color:var(--surface);
+  }
+  .mp-step em{
+    font-style:normal; margin-inline-start:auto; font-size:11px; font-weight:700;
+    color:var(--muted); background:var(--line); padding:3px 9px; border-radius:20px;
+  }
+
+  .mp-kinds{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px }
+  .mp-kd{
+    --c:#E4553F; --cs:rgba(228,85,63,.10);
+    position:relative; display:flex; flex-direction:column; align-items:center; gap:5px;
+    padding:14px 6px 12px; border-radius:16px; cursor:pointer;
+    border:1.5px solid var(--line); background:var(--surface);
+    font-family:inherit; text-align:center; -webkit-tap-highlight-color:transparent;
+    transition:border-color .15s, background-color .15s, transform .12s;
+  }
+  .mp-kd.k-followup  { --c:#0FA3A3; --cs:rgba(15,163,163,.10) }
+  .mp-kd.k-subscribed{ --c:#C9A24B; --cs:rgba(201,162,75,.14) }
+  .mp-kd:active{ transform:scale(.96) }
+  .mp-kd .ki{
+    width:40px; height:40px; border-radius:12px; display:grid; place-items:center;
+    font-size:20px; background:var(--cs);
+  }
+  .mp-kd b{ font-size:13px; font-weight:800; color:var(--ink) }
+  .mp-kd u{ text-decoration:none; font-size:10.5px; color:var(--muted); line-height:1.4 }
+  .mp-kd.on{ border-color:var(--c); background:var(--cs) }
+  .mp-kd.on .ki{ background:var(--c) }
+  .mp-kd.on::after{
+    content:'✓'; position:absolute; top:7px; inset-inline-end:7px;
+    width:18px; height:18px; border-radius:50%; background:var(--c); color:#fff;
+    font-size:11px; font-weight:900; display:grid; place-items:center;
+  }
+
+  .mp-plats{ display:grid; grid-template-columns:1fr 1fr; gap:10px }
+  .mp-pl{
+    --pc:#0866FF;
+    position:relative; overflow:hidden; cursor:pointer;
+    display:flex; flex-direction:column; align-items:flex-start; gap:11px;
+    padding:15px 14px 13px; border-radius:18px;
+    border:1.5px solid var(--line); background:var(--surface);
+    font-family:inherit; text-align:start; -webkit-tap-highlight-color:transparent;
+    transition:border-color .15s, transform .12s, box-shadow .15s;
+  }
+  .mp-pl::before{
+    content:''; position:absolute; inset:0 0 auto 0; height:3px; background:var(--pc);
+  }
+  .mp-pl.p-instagram{ --pc:#E1306C }
+  .mp-pl.p-instagram::before{ background:linear-gradient(90deg,#FEDA75,#FA7E1E,#D62976,#962FBF,#4F5BD5) }
+  .mp-pl.p-tiktok{ --pc:#FE2C55 }
+  .mp-pl.p-tiktok::before{ background:linear-gradient(90deg,#25F4EE,#FE2C55) }
+  .mp-pl.p-snapchat{ --pc:#E8D500 }
+  .mp-pl.p-snapchat::before{ background:#FFFC00 }
+  .mp-pl:active{ transform:scale(.97) }
+  @media (hover:hover){
+    .mp-pl:hover{ border-color:var(--pc); box-shadow:0 8px 20px rgba(20,20,40,.07) }
+  }
+  .mp-pl .tx{ display:block }
+  .mp-pl b{ display:block; font-size:15px; font-weight:800; color:var(--ink) }
+  .mp-pl u{
+    display:block; text-decoration:none; font-size:11px; color:var(--muted);
+    line-height:1.5; margin-top:2px;
+  }
+  .mp-pl .go{
+    position:absolute; top:16px; inset-inline-end:14px;
+    font-size:20px; line-height:1; color:var(--muted); opacity:.55;
+  }
+  .mp-pl .nw{
+    position:absolute; top:14px; inset-inline-end:12px;
+    background:#0866FF; color:#fff; font-size:10px; font-weight:800;
+    padding:3px 8px; border-radius:20px;
+  }
+  .mp-crumb span{ display:inline-flex; align-items:center; gap:5px }
+
+  /* ═══════ 📘 فيسبوك — صورة + لينك ═══════ */
+  .fb-hero{
+    display:flex; align-items:center; gap:12px; padding:14px;
+    border-radius:18px; margin-bottom:12px;
+    background:linear-gradient(135deg, rgba(8,102,255,.12), rgba(8,102,255,.03));
+    border:1px solid rgba(8,102,255,.20);
+  }
+  .fb-hero b{ display:block; font-size:15.5px; font-weight:800; color:var(--ink) }
+  .fb-hero span{ display:block; font-size:11.5px; color:var(--muted); line-height:1.6; margin-top:2px }
+  .fb-hero em{ font-style:normal; font-weight:800; color:#0866FF }
+
+  .fb-steps{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin:2px 0 12px }
+  .fb-steps div{
+    text-align:center; padding:11px 4px; border-radius:13px; line-height:1.45;
+    background:var(--surface); border:1px solid var(--line);
+    font-size:11px; font-weight:700; color:var(--muted);
+  }
+  .fb-steps i{ display:block; font-style:normal; font-size:19px; margin-bottom:3px }
+  .fb-drop{
+    width:100%; display:flex; flex-direction:column; align-items:center; gap:4px;
+    padding:24px 12px; border-radius:18px; cursor:pointer;
+    border:2px dashed rgba(8,102,255,.40); background:rgba(8,102,255,.03);
+    color:#0866FF; font-family:inherit; font-weight:800; font-size:15px;
+    -webkit-tap-highlight-color:transparent; transition:transform .12s;
+  }
+  .fb-drop:active{ transform:scale(.98) }
+  .fb-drop-i{ font-size:28px; line-height:1.2 }
+  .fb-drop small{ font-weight:600; font-size:11px; color:var(--muted) }
+  .fb-tip{ font-size:11px; color:var(--muted); text-align:center; margin:12px 6px 2px; line-height:1.7 }
+
+  .fb-sum{
+    display:flex; align-items:center; gap:10px; margin:0 2px 10px;
+    font-size:12px; color:var(--muted); white-space:nowrap;
+  }
+  .fb-sum b{ color:var(--ink); font-size:13px }
+  .fb-sum i{ font-style:normal }
+  .fb-sum .b{ color:#D64545; font-weight:700 }
+  .fb-bar{ flex:1; height:6px; border-radius:6px; background:var(--line); overflow:hidden }
+  .fb-bar span{ display:block; height:100%; border-radius:6px; background:#0866FF; transition:width .3s }
+
+  .fb-list{ display:flex; flex-direction:column; gap:8px }
+  .fb-row{
+    display:flex; gap:10px; align-items:center; padding:8px;
+    border-radius:16px; background:var(--surface); border:1.5px solid var(--line);
+    transition:border-color .15s, background-color .15s;
+  }
+  .fb-row.s-good{ border-color:rgba(8,102,255,.45) }
+  .fb-row.s-need, .fb-row.s-fail{ border-color:#F0A020; background:rgba(240,160,32,.05) }
+  .fb-row.s-ok { border-color:rgba(21,160,90,.45); background:rgba(21,160,90,.05) }
+  .fb-row.s-dup{ border-color:rgba(214,69,69,.45); background:rgba(214,69,69,.04) }
+  .fb-th{
+    position:relative; width:62px; height:62px; flex-shrink:0;
+    border-radius:12px; overflow:hidden; background:var(--line);
+  }
+  .fb-th img{ width:100%; height:100%; object-fit:cover; display:block }
+  .fb-th .n{
+    position:absolute; top:4px; inset-inline-start:4px;
+    min-width:18px; height:18px; padding:0 4px; border-radius:9px;
+    background:rgba(0,0,0,.62); color:#fff; font-size:10.5px; font-weight:800;
+    display:grid; place-items:center;
+  }
+  .fb-th .ov{
+    position:absolute; inset:0; display:grid; place-items:center; font-size:22px;
+    pointer-events:none;
+  }
+  .fb-row.s-up .fb-th .ov, .fb-row.s-ok .fb-th .ov, .fb-row.s-dup .fb-th .ov{
+    background:rgba(255,255,255,.55);
+  }
+  .fb-main{ flex:1; min-width:0; display:flex; flex-direction:column; gap:6px }
+  .fb-in-w{
+    display:flex; align-items:center; gap:6px; padding:0 5px 0 8px;
+    border-radius:12px; border:1px solid var(--line); background:var(--bg);
+    transition:border-color .15s;
+  }
+  .fb-in-w:focus-within{ border-color:#0866FF }
+  .fb-in{
+    flex:1; min-width:0; border:0; outline:0; background:transparent;
+    padding:9px 2px; color:var(--ink); font-family:inherit;
+    font-size:16px;           /* ⚠️ أقل من 16 الآيفون بيعمل زووم */
+    direction:ltr; text-align:left;
+  }
+  .fb-in::placeholder{ color:var(--muted); opacity:.7 }
+  .fb-in:disabled{ opacity:.75 }
+  .fb-paste{
+    flex-shrink:0; border:0; cursor:pointer; padding:6px 10px; border-radius:8px;
+    background:rgba(8,102,255,.10); color:#0866FF;
+    font-family:inherit; font-weight:800; font-size:11.5px;
+  }
+  .fb-st{ font-size:11.5px; line-height:1.5; color:var(--muted); padding:0 2px }
+  .fb-st .g{ color:#0866FF; font-weight:700 }
+  .fb-st .k{ color:var(--ok); font-weight:700 }
+  .fb-st .w{ color:#C77700; font-weight:700 }
+  .fb-st .b{ color:#D64545; font-weight:700 }
+  .fb-rm{
+    align-self:flex-start; flex-shrink:0; border:0; background:transparent; cursor:pointer;
+    color:var(--muted); font-size:14px; padding:4px 4px 8px;
+  }
+  .fb-row.s-lock .fb-paste, .fb-row.s-lock .fb-rm{ display:none }
+  .fb-row.s-lock.s-rm .fb-rm{ display:block }
+
+  .fb-foot{
+    position:sticky; bottom:-14px; z-index:2;      /* -14 = padding الـ mp-body */
+    margin:10px -16px -14px;
+    padding:10px 16px calc(14px + env(safe-area-inset-bottom, 0px));
+    background:var(--surface); border-top:1px solid var(--line);
+  }
+  .fb-need{ text-align:center; font-size:11.5px; font-weight:700; color:#C77700; margin-bottom:8px }
+  .fb-btns{ display:flex; gap:8px }
+  .fb-add{
+    flex:0 0 auto; padding:13px 14px; border-radius:14px; cursor:pointer;
+    border:1.5px solid var(--line); background:var(--surface); color:var(--ink);
+    font-family:inherit; font-weight:800; font-size:13.5px;
+  }
+  .fb-go{
+    flex:1; display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    padding:13px; border-radius:14px; border:0; cursor:pointer;
+    background:#0866FF; color:#fff; font-family:inherit; font-weight:800; font-size:14.5px;
+    box-shadow:0 6px 16px rgba(8,102,255,.28); transition:transform .12s, opacity .15s;
+  }
+  .fb-go:active:not(:disabled){ transform:scale(.98) }
+  .fb-go:disabled{ background:var(--line); color:var(--muted); box-shadow:none; cursor:default }
+  .fb-add:disabled{ opacity:.5 }
+  .fb-done{
+    margin-top:12px; padding:16px; border-radius:18px; text-align:center;
+    background:rgba(21,160,90,.07); border:1px solid rgba(21,160,90,.25);
+    display:flex; flex-direction:column; gap:6px;
+  }
+  .fb-done b{ font-size:15px; color:var(--ink) }
+  .fb-done span{ font-size:12px; color:var(--muted); margin-bottom:6px }
+  .fb-spin{
+    width:20px; height:20px; border-radius:50%; display:inline-block;
+    border:2.5px solid rgba(8,102,255,.25); border-top-color:#0866FF;
+    animation:fbspin .8s linear infinite;
+  }
+  .fb-spin.w{ width:15px; height:15px; border-color:rgba(255,255,255,.35); border-top-color:#fff }
+  .fb-go:disabled .fb-spin.w{ border-color:rgba(0,0,0,.12); border-top-color:var(--muted) }
+  @keyframes fbspin{ to{ transform:rotate(360deg) } }
+  body.dark .fb-st .g, body.dark .fb-hero em, body.dark .fb-paste,
+  body.dark .fb-drop{ color:#5AA0FF }
+  @media (prefers-reduced-motion:reduce){
+    .fb-spin{ animation-duration:2s }
+    .mp-kd, .mp-pl, .fb-drop, .fb-go{ transition:none }
+  }
+
   /* 👻 لينكات سناب */
   .mp-snap{ padding:2px 0 }
   .mp-sn-h{ margin-bottom:11px }
@@ -7547,7 +7795,8 @@ const PLAT = {
   tiktok:{ar:"تيك توك",c:"#111",g:"linear-gradient(135deg,#25F4EE,#111,#FE2C55)"},
   youtube:{ar:"يوتيوب",c:"#FF0000",g:"linear-gradient(135deg,#FF0000,#c4302b)"},
   x:{ar:"تويتر",c:"#111",g:"linear-gradient(135deg,#1d1d1f,#3a3a3d)"},
-  snapchat:{ar:"سناب",c:"#111",g:"linear-gradient(135deg,#FFFC00,#FFC400)"}
+  snapchat:{ar:"سناب",c:"#111",g:"linear-gradient(135deg,#FFFC00,#FFC400)"},
+  facebook:{ar:"فيسبوك",c:"#0866FF",g:"linear-gradient(135deg,#0866FF,#0A4FC2)"}
 };
 const NICHE_AR = {fashion:"فاشن",luxury:"لاكشري",moms:"عائلة وأمومة",sports:"رياضة ولياقة",food:"طعام وطبخ",gaming:"جيمنج",business:"أعمال",tech:"تقنية",entertainment:"ترفيه",other:"أخرى"};
 // الأجنت الأوتوماتيكي: بيظهر في العدد والفلاتر عشان الصورة تبقى كاملة،
@@ -15577,35 +15826,68 @@ function matchCandidate_(handles){
 //    إنستجرام/تيك توك → صور بس، النظام يقرا الهاندل ويضيفه
 //    سناب → لينكات الأول، وبعدها الصور بنفس الترتيب
 // ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+// 🎨 لوجوهات المنصات — SVG جوّه الصفحة
+//
+// ⚠️ مفيش تحميل من أي موقع برّه — اللوجو بيظهر فورًا حتى
+//    لو النت ضعيف، ومفيش أي لاج. (المسارات من Simple Icons)
+// ═══════════════════════════════════════════════════════════
+const MP_LOGO_D = {
+  "instagram": "M7.0301.084c-1.2768.0602-2.1487.264-2.911.5634-.7888.3075-1.4575.72-2.1228 1.3877-.6652.6677-1.075 1.3368-1.3802 2.127-.2954.7638-.4956 1.6365-.552 2.914-.0564 1.2775-.0689 1.6882-.0626 4.947.0062 3.2586.0206 3.6671.0825 4.9473.061 1.2765.264 2.1482.5635 2.9107.308.7889.72 1.4573 1.388 2.1228.6679.6655 1.3365 1.0743 2.1285 1.38.7632.295 1.6361.4961 2.9134.552 1.2773.056 1.6884.069 4.9462.0627 3.2578-.0062 3.668-.0207 4.9478-.0814 1.28-.0607 2.147-.2652 2.9098-.5633.7889-.3086 1.4578-.72 2.1228-1.3881.665-.6682 1.0745-1.3378 1.3795-2.1284.2957-.7632.4966-1.636.552-2.9124.056-1.2809.0692-1.6898.063-4.948-.0063-3.2583-.021-3.6668-.0817-4.9465-.0607-1.2797-.264-2.1487-.5633-2.9117-.3084-.7889-.72-1.4568-1.3876-2.1228C21.2982 1.33 20.628.9208 19.8378.6165 19.074.321 18.2017.1197 16.9244.0645 15.6471.0093 15.236-.005 11.977.0014 8.718.0076 8.31.0215 7.0301.0839m.1402 21.6932c-1.17-.0509-1.8053-.2453-2.2287-.408-.5606-.216-.96-.4771-1.3819-.895-.422-.4178-.6811-.8186-.9-1.378-.1644-.4234-.3624-1.058-.4171-2.228-.0595-1.2645-.072-1.6442-.079-4.848-.007-3.2037.0053-3.583.0607-4.848.05-1.169.2456-1.805.408-2.2282.216-.5613.4762-.96.895-1.3816.4188-.4217.8184-.6814 1.3783-.9003.423-.1651 1.0575-.3614 2.227-.4171 1.2655-.06 1.6447-.072 4.848-.079 3.2033-.007 3.5835.005 4.8495.0608 1.169.0508 1.8053.2445 2.228.408.5608.216.96.4754 1.3816.895.4217.4194.6816.8176.9005 1.3787.1653.4217.3617 1.056.4169 2.2263.0602 1.2655.0739 1.645.0796 4.848.0058 3.203-.0055 3.5834-.061 4.848-.051 1.17-.245 1.8055-.408 2.2294-.216.5604-.4763.96-.8954 1.3814-.419.4215-.8181.6811-1.3783.9-.4224.1649-1.0577.3617-2.2262.4174-1.2656.0595-1.6448.072-4.8493.079-3.2045.007-3.5825-.006-4.848-.0608M16.953 5.5864A1.44 1.44 0 1 0 18.39 4.144a1.44 1.44 0 0 0-1.437 1.4424M5.8385 12.012c.0067 3.4032 2.7706 6.1557 6.173 6.1493 3.4026-.0065 6.157-2.7701 6.1506-6.1733-.0065-3.4032-2.771-6.1565-6.174-6.1498-3.403.0067-6.156 2.771-6.1496 6.1738M8 12.0077a4 4 0 1 1 4.008 3.9921A3.9996 3.9996 0 0 1 8 12.0077",
+  "tiktok": "M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z",
+  "snapchat": "M12.206.793c.99 0 4.347.276 5.93 3.821.529 1.193.403 3.219.299 4.847l-.003.06c-.012.18-.022.345-.03.51.075.045.203.09.401.09.3-.016.659-.12 1.033-.301.165-.088.344-.104.464-.104.182 0 .359.029.509.09.45.149.734.479.734.838.015.449-.39.839-1.213 1.168-.089.029-.209.075-.344.119-.45.135-1.139.36-1.333.81-.09.224-.061.524.12.868l.015.015c.06.136 1.526 3.475 4.791 4.014.255.044.435.27.42.509 0 .075-.015.149-.045.225-.24.569-1.273.988-3.146 1.271-.059.091-.12.375-.164.57-.029.179-.074.36-.134.553-.076.271-.27.405-.555.405h-.03c-.135 0-.313-.031-.538-.074-.36-.075-.765-.135-1.273-.135-.3 0-.599.015-.913.074-.6.104-1.123.464-1.723.884-.853.599-1.826 1.288-3.294 1.288-.06 0-.119-.015-.18-.015h-.149c-1.468 0-2.427-.675-3.279-1.288-.599-.42-1.107-.779-1.707-.884-.314-.045-.629-.074-.928-.074-.54 0-.958.089-1.272.149-.211.043-.391.074-.54.074-.374 0-.523-.224-.583-.42-.061-.192-.09-.389-.135-.567-.046-.181-.105-.494-.166-.57-1.918-.222-2.95-.642-3.189-1.226-.031-.063-.052-.15-.055-.225-.015-.243.165-.465.42-.509 3.264-.54 4.73-3.879 4.791-4.02l.016-.029c.18-.345.224-.645.119-.869-.195-.434-.884-.658-1.332-.809-.121-.029-.24-.074-.346-.119-1.107-.435-1.257-.93-1.197-1.273.09-.479.674-.793 1.168-.793.146 0 .27.029.383.074.42.194.789.3 1.104.3.234 0 .384-.06.465-.105l-.046-.569c-.098-1.626-.225-3.651.307-4.837C7.392 1.077 10.739.807 11.727.807l.419-.015h.06z",
+  "facebook": "M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 2.103-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647Z"
+};
+
+function mpLogo_(p, size){
+  const d = MP_LOGO_D[p];
+  if(!d) return '';
+  // 📘 لوجو فيسبوك دايرة فيها حرف f مفرّغ — بنحط دايرة بيضا
+  //    وراه عشان الحرف يفضل أبيض حتى في الوضع الليلي.
+  const back = p === 'facebook'
+    ? '<circle cx="12" cy="12" r="11.6" fill="#fff"/>' : '';
+  return '<span class="pl-logo pl-' + p + (size ? ' ' + size : '') + '" aria-hidden="true">'
+    + '<svg viewBox="0 0 24 24">' + back + '<path d="' + d + '"/></svg></span>';
+}
+
 function mpChooser_(){
+  // 🎨 كل نوع ليه لونه — نفس الألوان في كل مكان
   const K = [
-    ['sent',       '📤', 'إثبات إرسال', 'أول رسالة للمؤثر'],
-    ['followup',   '🔄', 'متابعة',      'رسالة تانية — مالهاش تارجت'],
-    ['subscribed', '🎉', 'اشتراك',      'المؤثر اشترك معانا'],
+    ['sent',       '📤', 'إرسال',  'أول رسالة'],
+    ['followup',   '🔄', 'متابعة', 'رسالة تانية'],
+    ['subscribed', '🎉', 'اشتراك', 'اشترك معانا'],
   ];
+  const KL = { sent:'إثبات إرسال', followup:'متابعة', subscribed:'اشتراك' };
+
+  // 💡 الوصف بيتغيّر حسب النوع — عشان الموظفة تعرف هتعمل إيه بالظبط
+  const sub = MP.kind === 'subscribed';
   const P = [
-    ['instagram', '📸', 'إنستجرام', 'ارفعي الصور بس'],
-    ['tiktok',    '🎵', 'تيك توك',  'ارفعي الصور بس'],
-    ['snapchat',  '👻', 'سناب شات',
-      MP.kind === 'followup' ? 'ارفعي الصور بس' : 'لينكات + صور بالترتيب'],
+    ['instagram', 'إنستجرام', sub ? 'صور بس — تتربط بعدين' : 'صور بس — النظام بيقرا الاسم'],
+    ['tiktok',    'تيك توك',  sub ? 'صور بس — تتربط بعدين' : 'صور بس — النظام بيقرا الاسم'],
+    ['snapchat',  'سناب شات',
+      MP.kind === 'sent' ? 'لينكات أو صور بس' : sub ? 'صور بس — تتربط بعدين' : 'صور بس'],
+    ['facebook',  'فيسبوك',   'صورة + لينك تحت كل صورة'],
   ];
 
   return '<div class="mp-choose">'
-    + '<div class="mp-ch-t">١ · نوع الإثبات</div>'
-    + '<div class="mp-ch-g">'
+    + '<div class="mp-step"><i>١</i><span>نوع الإثبات</span></div>'
+    + '<div class="mp-kinds">'
     +   K.map(([v,i,l,d]) =>
-        '<button class="mp-ch-b' + (MP.kind===v ? ' on' : '') + '" '
+        '<button class="mp-kd k-' + v + (MP.kind===v ? ' on' : '') + '" '
         + 'onclick="mpKind(\'' + v + '\')">'
-        + '<span class="i">' + i + '</span>'
+        + '<span class="ki">' + i + '</span>'
         + '<b>' + l + '</b><u>' + d + '</u></button>').join('')
     + '</div>'
 
-    + '<div class="mp-ch-t">٢ · المنصة</div>'
-    + '<div class="mp-ch-g p">'
-    +   P.map(([v,i,l,d]) =>
-        '<button class="mp-ch-b" onclick="mpPlat(\'' + v + '\')">'
-        + '<span class="i">' + i + '</span>'
-        + '<b>' + l + '</b><u>' + d + '</u></button>').join('')
+    + '<div class="mp-step"><i>٢</i><span>المنصة</span>'
+    +   '<em>' + KL[MP.kind] + '</em></div>'
+    + '<div class="mp-plats">'
+    +   P.map(([v,l,d]) =>
+        '<button class="mp-pl p-' + v + '" onclick="mpPlat(\'' + v + '\')">'
+        + mpLogo_(v)
+        + (v === 'facebook' ? '<span class="nw">جديد</span>' : '<span class="go">‹</span>')
+        + '<span class="tx"><b>' + l + '</b><u>' + d + '</u></span>'
+        + '</button>').join('')
     + '</div>'
     + '</div>';
 }
@@ -15640,6 +15922,505 @@ function mpPlat(v){
   MP.snapStep = v === 'snapchat' ? 'links' : 'shots';
   MP.snapSentMode = null;  // 📸 نرجّع الاختيار فاضي كل مرة
   renderMobileProofs();
+}
+
+// ═══════════════════════════════════════════════════════════
+// 📘 فيسبوك — صورة + لينك تحت كل صورة
+//
+// ⚠️ القاعدة: مفيش صورة بتترفع من غير لينك. الموظفة بتحط
+//    لينك بروفايل المؤثر تحت كل صورة، والصورة بتتسجّل على
+//    المؤثر ده مباشرة في العدّاد اللي اختارته (إرسال →
+//    التارجت · متابعة → المتابعات · اشتراك → الاشتراك).
+//
+//    الرفع نفسه بيعدّي على mpUploadOne — نفس الحماية بالظبط
+//    بتاعة باقي المنصات: البصمة (الصورة الواحدة = واحد في
+//    العدّاد)، كشف "اترفعت قبل كده"، صور مكررة لنفس المؤثر،
+//    وشبكة الأمان لو النت قطع.
+// ═══════════════════════════════════════════════════════════
+
+// 🔗 نفس قواعد السيرفر بالظبط (parseFacebookLink في verify-proof)
+const FB_RESERVED_ = new Set([
+  'watch','reel','reels','photo','photo.php','photos','story.php',
+  'permalink.php','login','login.php','home.php','events','marketplace',
+  'hashtag','search','stories','posts','video.php','videos','sharer',
+  'sharer.php','dialog','l.php','gaming','help','settings',
+  'notifications','messages','friends','bookmarks','privacy','policies',
+  'ads','business','pg','media','plugins','recover','checkpoint',
+]);
+const FB_LINK_RE_ = /(?:https?:\/\/)?(?:[\w-]+\.)?(?:facebook\.com|fb\.com|fb\.me)\/[^\s,،"'<>]+/gi;
+
+function fbParse_(raw){
+  let s = String(raw || '').trim();
+  if(!s) return null;
+  // 📋 ممكن تلصق كلام مع اللينك ("شوفي البروفايل ده https://…")
+  const m = s.match(FB_LINK_RE_);
+  if(m) s = m[0];
+  if(!/^https?:\/\//i.test(s)) s = 'https://' + s;
+  let u;
+  try{ u = new URL(s); }catch(_){ return null; }
+
+  const host = u.hostname.toLowerCase()
+    .replace(/^(www|m|web|mbasic|touch|mobile|business|[a-z]{2}-[a-z]{2})\./, '');
+  if(host !== 'facebook.com' && host !== 'fb.com' && host !== 'fb.me') return null;
+
+  const parts = u.pathname.split('/').filter(Boolean).map(x => {
+    try{ return decodeURIComponent(x); }catch(_){ return x; }
+  });
+  const first = (parts[0] || '').toLowerCase();
+  const isId = v => !!v && /^\d{5,}$/.test(v);
+  const mk = (handle, url) => ({ handle: handle.toLowerCase(), url });
+
+  if(first === 'profile.php'){
+    const id = u.searchParams.get('id');
+    return isId(id) ? mk('id.' + id, 'https://www.facebook.com/profile.php?id=' + id) : null;
+  }
+  if(first === 'people' || first === 'pages'){
+    const id = parts.slice().reverse().find(x => isId(x));
+    return id ? mk('id.' + id, 'https://www.facebook.com/profile.php?id=' + id) : null;
+  }
+  if(first === 'share'){
+    if(/^[prv]$/i.test(parts[1] || '')) return null;      // بوست/ريل/فيديو
+    const code = parts[1] || '';
+    return /^[A-Za-z0-9_-]{4,}$/.test(code)
+      ? mk('share.' + code, 'https://www.facebook.com/share/' + code + '/') : null;
+  }
+  if(first === 'groups'){
+    const g = parts[1] || '';
+    return /^[A-Za-z0-9._-]{2,}$/.test(g)
+      ? mk('group.' + g, 'https://www.facebook.com/groups/' + g + '/') : null;
+  }
+  if(!first || FB_RESERVED_.has(first)) return null;
+  if(!/^[a-z0-9._-]{2,80}$/.test(first)) return null;
+  return mk(first, 'https://www.facebook.com/' + first);
+}
+
+// 🏷️ اسم مفهوم للموظفة بدل الهاندل الخام
+function fbLabel_(h){
+  h = String(h || '');
+  if(h.startsWith('id.'))    return 'حساب رقم ' + h.slice(3);
+  if(h.startsWith('share.')) return 'لينك مشاركة';
+  if(h.startsWith('group.')) return 'جروب ' + h.slice(6);
+  return '@' + h;
+}
+
+function fbH_(s){
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+const fbTodo_     = it => it.state === 'wait' || it.state === 'fail';
+const mpFbEditable_ = it => !MP.uploading && fbTodo_(it);
+
+// 🔁 نفس اللينك على أكتر من صورة في نفس الدفعة — تنبيه بس
+function mpFbDupMap_(){
+  const first = {}, dup = {};
+  MP.items.forEach((it, i) => {
+    const p = fbParse_(it.fbLink);
+    if(!p) return;
+    if(first[p.handle] == null) first[p.handle] = i + 1;
+    else dup[it.id] = first[p.handle];
+  });
+  return dup;
+}
+
+function mpFbRowCls_(it){
+  const p = fbParse_(it.fbLink);
+  let c = 'fb-row';
+  if(it.state === 'wait'){
+    if(p) c += ' s-good';
+    else if(it.fbTried) c += ' s-need';
+  } else {
+    // ⚠️ بادئة s- — الموقع فيه .dup و .ok عامّين بستايل تاني
+    c += ' s-' + (it.state === 'uploading' ? 'up' : it.state);
+  }
+  if(!mpFbEditable_(it)) c += ' s-lock';
+  if(it.state === 'dup' && !MP.uploading) c += ' s-rm';
+  return c;
+}
+
+function mpFbStatus_(it, dmap){
+  const p = fbParse_(it.fbLink);
+  const msg = String(it.msg || '').replace(/\s*\[[^\]]*\]\s*/g, ' ').trim();
+  if(it.state === 'uploading') return '<span class="g">⏳ بترفع…</span>';
+  if(it.state === 'ok'){
+    if(/^⚠️/.test(msg)) return '<span class="w">' + fbH_(msg) + '</span>';
+    return '<span class="k">✅ اتسجّلت على ' + fbH_(fbLabel_(it.fbHandle || (p && p.handle))) + '</span>';
+  }
+  if(it.state === 'dup')
+    return '<span class="b">' + fbH_(/^🚫/.test(msg) ? msg : '🚫 ' + (msg || 'الصورة دي اترفعت قبل كده')) + '</span>';
+  if(it.state === 'fail')
+    return '<span class="w">⏳ النت ضعيف — الصورة محفوظة، دوسي "ارفعي" تاني</span>';
+
+  // ⏸️ لسه مااترفعتش
+  if(!String(it.fbLink || '').trim())
+    return it.fbTried
+      ? '<span class="w">🔗 حطي لينك المؤثر — مفيش رفع من غيره</span>'
+      : '<span>🔗 لينك فيسبوك بتاع المؤثر اللي في الصورة</span>';
+  if(!p) return '<span class="w">⚠️ ده مش لينك بروفايل فيسبوك</span>';
+  return '<span class="g">✓ ' + fbH_(fbLabel_(p.handle)) + '</span>'
+    + (dmap[it.id] ? '<span class="w"> · نفس لينك صورة ' + dmap[it.id] + '</span>' : '');
+}
+
+function mpFbThumbOv_(it){
+  if(it.state === 'uploading') return '<span class="fb-spin"></span>';
+  if(it.state === 'ok')  return '✅';
+  if(it.state === 'dup') return '🚫';
+  return '';
+}
+
+function mpFbRow_(it, i, dmap){
+  const ed = mpFbEditable_(it);
+  return '<div class="' + mpFbRowCls_(it) + '" id="fbRow' + it.id + '">'
+    + '<div class="fb-th">'
+    +   '<img src="' + fbH_(it.preview) + '" alt="" loading="lazy" decoding="async">'
+    +   '<span class="n">' + (i + 1) + '</span>'
+    +   '<span class="ov" id="fbOv' + it.id + '">' + mpFbThumbOv_(it) + '</span>'
+    + '</div>'
+    + '<div class="fb-main">'
+    +   '<div class="fb-in-w">'
+    +     mpLogo_('facebook', 'xs')
+    +     '<input id="fbIn' + it.id + '" class="fb-in" type="url" dir="ltr" '
+    +       'inputmode="url" autocomplete="off" autocapitalize="off" '
+    +       'autocorrect="off" spellcheck="false" enterkeyhint="next" '
+    +       'placeholder="facebook.com/…" value="' + fbH_(it.fbLink || '') + '" '
+    +       'oninput="mpFbInput_(\'' + it.id + '\', this)" '
+    +       'onpaste="mpFbPasteEv_(event, \'' + it.id + '\')" '
+    +       'onkeydown="if(event.key===\'Enter\'){event.preventDefault();mpFbNext_(\'' + it.id + '\')}"'
+    +       (ed ? '' : ' disabled') + '>'
+    +     '<button class="fb-paste" onclick="mpFbPaste_(\'' + it.id + '\')">لصق</button>'
+    +   '</div>'
+    +   '<div class="fb-st" id="fbSt' + it.id + '">' + mpFbStatus_(it, dmap) + '</div>'
+    + '</div>'
+    + '<button class="fb-rm" aria-label="شيلي الصورة" '
+    +   'onclick="mpFbRemove_(\'' + it.id + '\')">✕</button>'
+    + '</div>';
+}
+
+// 📊 الملخّص + زرار الرفع — بيتحدّثوا لوحدهم من غير رسم الشاشة كلها
+function mpFbSum_(){
+  const n = MP.items.length;
+  const ok = MP.items.filter(x => x.state === 'ok').length;
+  const dup = MP.items.filter(x => x.state === 'dup').length;
+  const pct = n ? Math.round((ok + dup) / n * 100) : 0;
+  return '<div class="fb-bar"><span style="width:' + pct + '%"></span></div>'
+    + 'اتسجّلت <b>' + ok + '</b> من ' + n
+    + (dup ? ' · <i class="b">🚫 ' + dup + '</i>' : '');
+}
+
+function mpFbFoot_(){
+  const todo = MP.items.filter(fbTodo_);
+  const miss = todo.filter(x => !fbParse_(x.fbLink)).length;
+  const upN  = MP.items.filter(x => x.state === 'uploading').length;
+  let btn;
+  if(MP.uploading){
+    const doneN = MP.items.filter(x => x.state === 'ok' || x.state === 'dup').length;
+    btn = '<button class="fb-go" disabled><span class="fb-spin w"></span> بترفع… '
+        + doneN + '/' + MP.items.length + '</button>';
+  } else {
+    btn = '<button class="fb-go" onclick="mpFbUpload_()"' + (todo.length && !miss ? '' : ' disabled') + '>'
+        + '⬆️ ارفعي ' + todo.length + ' صورة</button>';
+  }
+  return (miss && !MP.uploading
+      ? '<div class="fb-need">🔗 ' + miss + ' صورة لسه من غير لينك</div>' : '')
+    + '<div class="fb-btns">'
+    +   '<button class="fb-add" onclick="mpFbPick_()"' + (MP.uploading || upN ? ' disabled' : '') + '>＋ صور</button>'
+    +   btn
+    + '</div>';
+}
+
+function mpFbScreen_(){
+  const KL = { sent:'إثبات إرسال', followup:'متابعة', subscribed:'اشتراك' };
+  const CL = { sent:'التارجت', followup:'عدّاد المتابعات', subscribed:'عدّاد الاشتراك' };
+  const n = MP.items.length;
+  const todo = MP.items.filter(fbTodo_).length;
+
+  let h = '<div id="fbScreen" class="fb-scr">'
+    + '<input type="file" id="fbFile" accept="image/*" multiple hidden '
+    +   'onchange="mpFbFiles_(this.files); this.value=\'\'">'
+    + '<div class="fb-hero">'
+    +   mpLogo_('facebook', 'lg')
+    +   '<div><b>فيسبوك · ' + KL[MP.kind] + '</b>'
+    +   '<span>كل صورة تحتها لينك المؤثر — بتتحسب على طول في '
+    +   '<em>' + CL[MP.kind] + '</em></span></div>'
+    + '</div>';
+
+  if(!n){
+    return h
+      + '<div class="fb-steps">'
+      +   '<div><i>📷</i>اختاري الصور</div>'
+      +   '<div><i>🔗</i>لينك تحت كل صورة</div>'
+      +   '<div><i>⬆️</i>ارفعي</div>'
+      + '</div>'
+      + '<button class="fb-drop" onclick="mpFbPick_()">'
+      +   '<span class="fb-drop-i">📷</span>اختاري الصور'
+      +   '<small>لحد ١٠٠ صورة في المرة</small>'
+      + '</button>'
+      + '<div class="fb-tip">💡 لو نسختي كذا لينك مرة واحدة، الصقيهم في أول خانة '
+      +   'وهيتوزّعوا على الصور بالترتيب.</div>'
+      + '</div>';
+  }
+
+  const dmap = mpFbDupMap_();
+  h += '<div class="fb-sum" id="fbSum">' + mpFbSum_() + '</div>'
+    + '<div class="fb-list">'
+    +   MP.items.map((it, i) => mpFbRow_(it, i, dmap)).join('')
+    + '</div>';
+
+  if(!todo && !MP.uploading){
+    const ok = MP.items.filter(x => x.state === 'ok').length;
+    h += '<div class="fb-done">'
+      +   '<b>✅ خلصت — ' + ok + ' صورة اتسجّلت</b>'
+      +   '<span>اتحسبوا في ' + CL[MP.kind] + '</span>'
+      +   '<button class="fb-go" onclick="mpFbNew_()">📷 دفعة جديدة</button>'
+      + '</div>';
+  } else {
+    h += '<div class="fb-foot" id="fbFoot">' + mpFbFoot_() + '</div>';
+  }
+  return h + '</div>';
+}
+
+// 🧬 شكل الشاشة — لو متغيّرش، بنحدّث الحالات بس (من غير لاج)
+function mpFbSig_(){
+  const todo = MP.items.filter(fbTodo_).length;
+  return MP.kind + '|' + (!todo && !MP.uploading ? 'D' : 'L') + '|'
+    + MP.items.map(x => x.id).join(',');
+}
+
+// ⚡ تحديث خفيف — الحالات والأزرار بس، الخانات زي ما هي
+//    (الموظفة بتكتب ومش بيقطع عليها ولا الصور بتترسم تاني)
+function mpFbPatch_(){
+  const dmap = mpFbDupMap_();
+  for(const it of MP.items){
+    const row = document.getElementById('fbRow' + it.id);
+    if(!row) continue;
+    const cls = mpFbRowCls_(it);
+    if(row.className !== cls) row.className = cls;
+    const st = document.getElementById('fbSt' + it.id);
+    const sh = mpFbStatus_(it, dmap);
+    if(st && st.innerHTML !== sh) st.innerHTML = sh;
+    const ov = document.getElementById('fbOv' + it.id);
+    const oh = mpFbThumbOv_(it);
+    if(ov && ov.innerHTML !== oh) ov.innerHTML = oh;
+    const inp = document.getElementById('fbIn' + it.id);
+    const ed = mpFbEditable_(it);
+    if(inp && inp.disabled === ed) inp.disabled = !ed;
+  }
+  const sum = document.getElementById('fbSum');
+  if(sum) sum.innerHTML = mpFbSum_();
+  const foot = document.getElementById('fbFoot');
+  if(foot) foot.innerHTML = mpFbFoot_();
+}
+
+function mpFbPick_(){
+  if(MP.uploading) return;
+  const f = document.getElementById('fbFile');
+  if(f) f.click();
+}
+
+async function mpFbFiles_(files){
+  let list = Array.from(files || []);
+  if(!list.length) return;
+  const room = 100 - MP.items.length;
+  if(room <= 0){ toastErr('الحد ١٠٠ صورة في الدفعة — ارفعي اللي عندك الأول'); return; }
+  if(list.length > room){
+    list = list.slice(0, room);
+    toastWarn('أخدنا أول ' + room + ' صورة بس — الحد ١٠٠ في الدفعة');
+  }
+
+  // 🔁 نفس الصورة مرتين؟ بنشيلها قبل ما توصل للرفع
+  const have = new Set(MP.items.map(x => x.hash).filter(Boolean));
+  const add = [];
+  let dropped = 0;
+  for(let i = 0; i < list.length; i++){
+    const f = list[i];
+    let h = '';
+    try{ h = await fileHash(f); }catch(_){ /* البصمة هتتحسب وقت الرفع */ }
+    if(h && have.has(h)){ dropped++; continue; }
+    if(h) have.add(h);
+    add.push({
+      id: 'fb' + Date.now() + '_' + i,
+      file: f, preview: URL.createObjectURL(f),
+      state: 'wait', fbLink: '', hash: h, kind: MP.kind,
+    });
+  }
+  if(dropped) toastOk('🔁 شيلنا ' + dropped + ' صورة مكررة');
+  if(!add.length) return;
+  MP.items = MP.items.concat(add);
+  renderMobileProofs();
+  sessSave_();
+}
+
+function mpFbInput_(id, el){
+  const it = MP.items.find(x => x.id === id);
+  if(!it || !mpFbEditable_(it)) return;
+  it.fbLink = el.value;
+  mpFbPatch_();
+  sessSave_();
+}
+
+// 📋 لصق كذا لينك مرة واحدة → بيتوزّعوا على الصور بالترتيب
+function mpFbPasteEv_(ev, id){
+  const t = ((ev.clipboardData || window.clipboardData) || { getData: () => '' })
+              .getData('text') || '';
+  const links = t.match(FB_LINK_RE_) || [];
+  if(links.length > 1){
+    ev.preventDefault();
+    mpFbApplyText_(id, t);
+  }
+}
+
+async function mpFbPaste_(id){
+  try{
+    const t = await navigator.clipboard.readText();
+    if(!t || !t.trim()) throw new Error('empty');
+    mpFbApplyText_(id, t);
+  }catch(_){
+    const el = document.getElementById('fbIn' + id);
+    if(el) el.focus();
+    toastWarn('دوسي مطوّل على الخانة واختاري "لصق"');
+  }
+}
+
+function mpFbApplyText_(id, t){
+  const idx = MP.items.findIndex(x => x.id === id);
+  if(idx < 0) return;
+  const links = String(t).match(FB_LINK_RE_) || [];
+  const vals = links.length ? links : [String(t).trim()];
+  let k = 0;
+  for(let i = idx; i < MP.items.length && k < vals.length; i++){
+    const it = MP.items[i];
+    if(!mpFbEditable_(it)) continue;
+    if(i !== idx && fbParse_(it.fbLink)) continue;    // اللي ليها لينك صح منلمسهاش
+    it.fbLink = vals[k++];
+    const el = document.getElementById('fbIn' + it.id);
+    if(el) el.value = it.fbLink;
+  }
+  if(links.length > 1){
+    toastOk('🔗 وزّعنا ' + k + ' لينك على الصور بالترتيب'
+      + (k < links.length ? ' · ' + (links.length - k) + ' زيادة عن الصور' : ''));
+  }
+  mpFbPatch_();
+  sessSave_();
+}
+
+// ↵ Enter → الخانة اللي بعدها اللي لسه فاضية
+function mpFbNext_(id){
+  const idx = MP.items.findIndex(x => x.id === id);
+  for(let i = idx + 1; i < MP.items.length; i++){
+    const it = MP.items[i];
+    if(mpFbEditable_(it) && !fbParse_(it.fbLink)){
+      const el = document.getElementById('fbIn' + it.id);
+      if(el){ el.focus(); el.scrollIntoView({ block:'center', behavior:'smooth' }); }
+      return;
+    }
+  }
+  const cur = document.getElementById('fbIn' + id);
+  if(cur) cur.blur();
+}
+
+function mpFbRemove_(id){
+  if(MP.uploading) return;
+  const it = MP.items.find(x => x.id === id);
+  if(!it || !(fbTodo_(it) || it.state === 'dup')) return;
+  try{ URL.revokeObjectURL(it.preview); }catch(_){}
+  MP.items = MP.items.filter(x => x.id !== id);
+  renderMobileProofs();
+  sessSave_();
+}
+
+function mpFbNew_(){
+  MP.items.forEach(x => { try{ URL.revokeObjectURL(x.preview); }catch(_){} });
+  MP.items = []; MP.done = 0;
+  sessClear_();
+  renderMobileProofs();
+}
+
+// ⬆️ الرفع — صورة ورا التانية (المتابعات لنفس المؤثر لازم
+//    تاخد أرقامها بالترتيب، والرفع المتوازي كان هيلخبطها)
+async function mpFbUpload_(){
+  if(MP.uploading) return;
+  const todo = MP.items.filter(fbTodo_);
+  if(!todo.length) return;
+
+  // 🔒 مفيش صورة بتترفع من غير لينك صح
+  const miss = todo.filter(x => !fbParse_(x.fbLink));
+  if(miss.length){
+    todo.forEach(x => { x.fbTried = true; });
+    mpFbPatch_();
+    toastErr('🔗 ' + miss.length + ' صورة من غير لينك صح — مفيش صورة بتترفع من غير لينك');
+    const el = document.getElementById('fbIn' + miss[0].id);
+    if(el){ el.scrollIntoView({ block:'center', behavior:'smooth' }); el.focus({ preventScroll:true }); }
+    return;
+  }
+
+  if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  MP.uploading = true;
+  renderMobileProofs();
+
+  const known = {};      // هاندل → uid (عشان مانسألش السيرفر مرتين على نفس المؤثر)
+  try{
+    for(const it of todo){
+      const p = fbParse_(it.fbLink);
+      it.kind   = it.kind || MP.kind;
+      it.action = it.kind;
+      it.seq    = undefined;            // السيرفر بيحدد رقم المتابعة
+      it.noPending     = true;          // فشل = تفضل عندها وتعيد (مش مستنية ربط)
+      it.linkConfident = true;          // الموظفة كتبت اللينك بنفسها
+      it.conf   = 'manual';
+      it.manual = true;
+      it.msg    = '';
+
+      // 1️⃣ المؤثر — موجود؟ ولا نضيفه
+      if(!it.uid || it.fbHandle !== p.handle){
+        it.state = 'uploading';
+        renderMobileProofs();
+        try{
+          let r = known[p.handle];
+          if(!r){
+            r = await retryPatient_(() => callApi('verifyProof', {
+              token: SESSION.token, action: 'ensureFacebook',
+              link: p.url, kind: it.kind,
+            }));
+            if(!r || !r.uid) throw new Error('مقدرناش نجيب المؤثر');
+            known[p.handle] = r;
+          }
+          it.uid = r.uid;
+          it.handle = r.handle || p.handle;
+          it.fbHandle = p.handle;
+        }catch(e){
+          const m = String(e && e.message || '').replace(/\s*\[[^\]]*\]\s*/g, ' ').trim();
+          if(NO_RETRY.test(m) || /فيسبوك/.test(m)){
+            it.state = 'dup';
+            it.msg = m;
+          } else {
+            it.state = 'fail';
+            it.msg = '⏳ مفيش نت كفاية';
+          }
+          renderMobileProofs();
+          continue;
+        }
+      }
+
+      // 2️⃣ الرفع والتسجيل — نفس طريق باقي المنصات بالظبط
+      await mpUploadOne(it);
+      if(it.state === 'uploading') it.state = 'fail';      // احتياط
+    }
+  } finally {
+    MP.uploading = false;
+  }
+
+  const ok   = todo.filter(x => x.state === 'ok').length;
+  const dup  = todo.filter(x => x.state === 'dup').length;
+  const fail = todo.filter(x => x.state === 'fail').length;
+  renderMobileProofs();
+  try{ buzzDone_(ok, dup + fail); }catch(_){}
+  toastOk('✅ ' + ok + ' صورة اتسجّلت'
+    + (dup  ? ' · 🚫 ' + dup + ' اترفعت قبل كده' : '')
+    + (fail ? ' · ⏳ ' + fail + ' محتاجين نت أحسن — دوسي ارفعي تاني' : ''));
+  sessSave_();            // بيمسح الجلسة لو مفيش حاجة فاضلة
+  invalidateCache();
+  refreshTargetBar();
 }
 
 // 📸 الموظفة اختارت طريقة إرسال سناب — لينكات أو صور بس
@@ -15991,6 +16772,10 @@ function mpSnapSentChoice_(){
 
 // ↩️ رجوع للاختيار
 function mpReset(){
+  if(MP.uploading && MP.plat === 'facebook'){
+    toastWarn('⏳ استني الرفع يخلص الأول');
+    return;
+  }
   if(MP.items.length && !confirm('هترجع؟ الصور المختارة هتتمسح')) return;
   MP.plat = ''; MP.items = []; MP.done = 0;
   MP.snapLinks = []; MP.snapStep = 'links';
@@ -16685,7 +17470,7 @@ async function mpLoadLists(){
 function mpCard_(c, mode){
   const h  = String(c.handle || '').replace('@','');
   const uid = c.uid;
-  const P = { instagram:'📷', tiktok:'🎵', snapchat:'👻', youtube:'▶️' };
+  const P = { instagram:'📷', tiktok:'🎵', snapchat:'👻', youtube:'▶️', facebook:'📘' };
   const late = Number(c.late_days != null ? c.late_days : (c._fuLate || 0));
 
   let badge = '';
@@ -17042,8 +17827,10 @@ function renderMobileProofs(){
   }
 
   // 📍 شريط المسار — نوع الإثبات + المنصة
-  const PLAT_L = { instagram:'📸 إنستجرام', tiktok:'🎵 تيك توك',
-                   snapchat:'👻 سناب شات' };
+  const PLAT_L = { instagram: mpLogo_('instagram','sm') + 'إنستجرام',
+                   tiktok:    mpLogo_('tiktok','sm')    + 'تيك توك',
+                   snapchat:  mpLogo_('snapchat','sm')  + 'سناب شات',
+                   facebook:  mpLogo_('facebook','sm')  + 'فيسبوك' };
   const KIND_L = { sent:'📤 إرسال', followup:'🔄 متابعة',
                    subscribed:'🎉 اشتراك' };
 
@@ -17167,6 +17954,34 @@ function renderMobileProofs(){
   if(!MP.plat){
     ov.innerHTML = mpShell_(mpChooser_());
     mpBind_();
+    return;
+  }
+
+  // ═══ 📘 فيسبوك — صورة + لينك تحت كل صورة (إرسال/متابعة/اشتراك)
+  //
+  // ⚠️ قبل شاشة الاشتراك: فيسبوك ليه شاشته في الأنواع التلاتة،
+  //    لأن اللينك إجباري تحت كل صورة.
+  //    ⚡ لو شكل الشاشة متغيّرش، بنحدّث الحالات بس — من غير ما
+  //    الصور تترسم تاني ولا الكتابة في الخانة تتقطع.
+  if(MP.plat === 'facebook'){
+    const sig = mpFbSig_();
+    if(MP._fbSig === sig && document.getElementById('fbScreen')){
+      mpFbPatch_();
+      return;
+    }
+    MP._fbSig = sig;
+    const ae  = document.activeElement;
+    const fid = ae && ae.id && ae.id.indexOf('fbIn') === 0 ? ae.id : '';
+    const bd  = ov.querySelector('.mp-body');
+    const top = bd ? bd.scrollTop : 0;
+    ov.innerHTML = mpShell_(crumbs + mpFbScreen_());
+    mpBind_();
+    const bd2 = ov.querySelector('.mp-body');
+    if(bd2) bd2.scrollTop = top;
+    if(fid){
+      const el = document.getElementById(fid);
+      if(el && !el.disabled) el.focus({ preventScroll: true });
+    }
     return;
   }
 
@@ -18241,7 +19056,10 @@ async function mpUploadOne(it){
         //    خالص من غير ما تتحسب، نسجّلها بـ uid مؤقت وتفضل
         //    تتحسب في التارجت، وتتحط للمراجعة بعدين.
         const msg = String(e && e.message || '');
-        if(!/idx_one_action_per_seq|duplicate key/i.test(msg)) throw e;
+        // 📘 فيسبوك: "متابعة N متسجّلة خلاص" (نادر جدًا) — بدل ما تفضل
+        //    تفشل كل مرة، تتسجّل وتتحسب وتروح لـ"صور مكررة لنفس المؤثر"
+        const fbSeq = it.noPending && /متسجّلة خلاص/.test(msg);
+        if(!/idx_one_action_per_seq|duplicate key/i.test(msg) && !fbSeq) throw e;
 
         const up = await callApi('verifyProof', {
           token: SESSION.token, action: 'uploadPhotoOnly', imageBase64: b64,
@@ -18366,6 +19184,17 @@ async function mpUploadOne(it){
     if(NO_RETRY.test(m)){
       it.state = 'dup';
       it.msg = m.replace(/\s*\[[^\]]*\]\s*/g, '').trim();
+      renderMobileProofs();
+      return;
+    }
+
+    // 📘 فيسبوك: مفيش "مستنية ربط" — الربط هناك محتاج لينك إنستجرام/
+    //    تيك توك/سناب ومش هيعرف يربط صورة فيسبوك. الصورة بتفضل
+    //    عند الموظفة (محفوظة) وتدوس "ارفعي" تاني — ومفيش أي عدّ
+    //    مرتين بسبب البصمة.
+    if(it.noPending){
+      it.state = 'fail';
+      it.canRetry = true;
       renderMobileProofs();
       return;
     }
@@ -18527,6 +19356,10 @@ function sessSave_(now){
             swapUid: x.swapUid || '', noUpload: !!x.noUpload,
             blocked: x.blocked || '', dupTarget: !!x.dupTarget,
             flag: x.flag || '', flagNote: x.flagNote || '',
+            // 📘 فيسبوك — اللينك اللي الموظفة كتبته تحت الصورة
+            //    (لو طلعت تنسخ لينك من التطبيق والصفحة اتقفلت)
+            fbLink: x.fbLink || '', fbHandle: x.fbHandle || '',
+            kind: x.kind || '',
           })),
       };
       if(!box.items.length){ await sessClear_(); return; }
@@ -18589,7 +19422,8 @@ function sessRestore_(box){
     signals: {},
     // ⚠️ اللي كان بيترفع نرجّعه جاهز.
     //    واللي لسه مااتفحصش يفضل scan عشان الفحص يكمّله.
-    state: x.state === 'uploading' ? 'ready' : x.state,
+    state: x.state === 'uploading'
+      ? (box.plat === 'facebook' ? 'wait' : 'ready') : x.state,
   }));
 
   // 📊 كام واحدة اتفحصت فعلاً
@@ -23056,7 +23890,7 @@ function globalSearchDlg(){
     }
     res.innerHTML = arr.map(c => {
       const P = { instagram:'📸', tiktok:'🎵', snapchat:'👻',
-                  youtube:'▶️' }[c.platform] || '🌐';
+                  youtube:'▶️', facebook:'📘' }[c.platform] || '🌐';
       const st = c.signup !== 'pending' ? '🎉 مشترك'
                : c.status === 'sent'    ? '✅ اتبعتله'
                : '⏳ لسه';
